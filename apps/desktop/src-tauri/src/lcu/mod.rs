@@ -1,0 +1,165 @@
+mod client;
+mod credentials;
+
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+
+use futures_util::{SinkExt, StreamExt};
+use rustls::ClientConfig;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use tauri::{AppHandle, Emitter, Manager};
+use tokio_tungstenite::tungstenite::Message;
+
+use client::{Error, LcuClient};
+use credentials::{Credentials, Finder};
+
+pub const STATUS_EVENT: &str = "lcu-status";
+const POLL_INTERVAL: Duration = Duration::from_secs(2);
+
+const PHASE_PATH: &str = "/lol-gameflow/v1/gameflow-phase";
+const SUMMONER_PATH: &str = "/lol-summoner/v1/current-summoner";
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Summoner {
+    pub game_name: String,
+    pub tag_line: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(tag = "state", rename_all = "camelCase")]
+pub enum LcuStatus {
+    Disconnected,
+    Connecting,
+    #[serde(rename_all = "camelCase")]
+    Connected {
+        summoner: Option<Summoner>,
+        phase: Option<String>,
+    },
+}
+
+#[derive(Default)]
+pub struct LcuState(Mutex<Option<LcuStatus>>);
+
+impl LcuState {
+    pub fn current(&self) -> LcuStatus {
+        self.0.lock().unwrap().clone().unwrap_or(LcuStatus::Disconnected)
+    }
+}
+
+fn publish(app: &AppHandle, status: LcuStatus) {
+    let state = app.state::<LcuState>();
+    let mut current = state.0.lock().unwrap();
+    if current.as_ref() != Some(&status) {
+        *current = Some(status.clone());
+        let _ = app.emit(STATUS_EVENT, status);
+    }
+}
+
+pub fn spawn(app: AppHandle) {
+    tauri::async_runtime::spawn(async move {
+        let tls = match client::tls_config() {
+            Ok(tls) => tls,
+            Err(error) => {
+                eprintln!("lcu: tls setup failed: {error}");
+                return;
+            }
+        };
+        let mut finder = Finder::new();
+        loop {
+            match finder.find() {
+                Some(credentials) => {
+                    publish(&app, LcuStatus::Connecting);
+                    // A client that is still starting refuses the socket; stay
+                    // in Connecting and retry instead of flickering to Disconnected.
+                    if let Err(error) = session(&app, tls.clone(), &credentials).await {
+                        eprintln!("lcu: session ended: {error}");
+                    }
+                    publish(&app, LcuStatus::Connecting);
+                }
+                None => publish(&app, LcuStatus::Disconnected),
+            }
+            tokio::time::sleep(POLL_INTERVAL).await;
+        }
+    });
+}
+
+/// Runs until the client closes or restarts.
+async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credentials) -> Result<(), Error> {
+    let api = LcuClient::new(&tls, credentials)?;
+    let mut events = client::connect_events(tls, credentials).await?;
+    for path in [PHASE_PATH, SUMMONER_PATH] {
+        let topic = format!("OnJsonApiEvent{}", path.replace('/', "_"));
+        events.send(Message::text(serde_json::json!([5, topic]).to_string())).await?;
+    }
+
+    // Both 404 until the player has logged in; the events fill them in later.
+    let mut phase: Option<String> = api.get(PHASE_PATH).await.ok();
+    let mut summoner: Option<Summoner> = api.get(SUMMONER_PATH).await.ok();
+    publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone() });
+
+    while let Some(message) = events.next().await {
+        let Message::Text(text) = message? else { continue };
+        let Some(event) = parse_event(&text) else { continue };
+        match event.uri.as_str() {
+            PHASE_PATH => phase = event.data.as_str().map(str::to_owned),
+            SUMMONER_PATH => summoner = serde_json::from_value(event.data).ok(),
+            _ => continue,
+        }
+        publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone() });
+    }
+    Ok(())
+}
+
+#[derive(Deserialize)]
+struct ApiEvent {
+    uri: String,
+    #[serde(default)]
+    data: Value,
+}
+
+/// WAMP 1.0 event frame: `[8, "<topic>", { uri, eventType, data }]`.
+fn parse_event(text: &str) -> Option<ApiEvent> {
+    let (code, _topic, event): (u8, String, ApiEvent) = serde_json::from_str(text).ok()?;
+    (code == 8).then_some(event)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_phase_event() {
+        let text = r#"[8,"OnJsonApiEvent_lol-gameflow_v1_gameflow-phase",{"data":"ChampSelect","eventType":"Update","uri":"/lol-gameflow/v1/gameflow-phase"}]"#;
+        let event = parse_event(text).unwrap();
+        assert_eq!(event.uri, PHASE_PATH);
+        assert_eq!(event.data, "ChampSelect");
+    }
+
+    #[test]
+    fn ignores_other_frames() {
+        assert!(parse_event(r#"[0,"session","1","server"]"#).is_none());
+    }
+
+    #[test]
+    fn riot_root_is_accepted() {
+        client::tls_config().unwrap();
+    }
+
+    /// Needs a running League client: `cargo test -- --ignored`.
+    #[tokio::test]
+    #[ignore]
+    async fn talks_to_running_client() {
+        let credentials = Finder::new().find().expect("League client is not running");
+        let tls = client::tls_config().unwrap();
+        let api = LcuClient::new(&tls, &credentials).unwrap();
+        let phase: String = api.get(PHASE_PATH).await.unwrap();
+        println!("phase: {phase}");
+        let mut events = client::connect_events(tls, &credentials).await.unwrap();
+        events
+            .send(Message::text(r#"[5,"OnJsonApiEvent_lol-gameflow_v1_gameflow-phase"]"#))
+            .await
+            .unwrap();
+    }
+}
