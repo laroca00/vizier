@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { About } from "./pages/About";
+import { Home } from "./pages/Home";
 import { LiquidGlass } from "./ui/LiquidGlass";
 import { ShaderGradient } from "./ui/ShaderGradient";
 import "./App.css";
@@ -5,25 +8,45 @@ import "./App.css";
 // Night cobalt to turquoise across the plane, bright cobalt on the folds.
 const GRADIENT: [string, string, string] = ["#0b1846", "#1c9c92", "#2f55c8"];
 
+const PAGES = [
+  { id: "home", label: "Ana sayfa", Component: Home },
+  { id: "about", label: "Hakkında", Component: About },
+] as const;
+
+type PageId = (typeof PAGES)[number]["id"];
+
 function App() {
+  const [pageId, setPageId] = useState<PageId>("home");
+  const [navigated, setNavigated] = useState(false);
+  const page = PAGES.find((p) => p.id === pageId)!;
+
+  function open(id: PageId) {
+    if (id === pageId) return;
+    setNavigated(true);
+    setPageId(id);
+  }
+
   return (
-    <div className="shell">
+    <div className="shell" data-navigated={navigated || undefined}>
       <ShaderGradient className="shell__backdrop" colors={GRADIENT} strength={3} reflection={0.18} />
-      <main className="shell__main">
-        <LiquidGlass className="welcome" radius={28} strength={2.5}>
-          <h1 className="wordmark">Vizier</h1>
-          <p className="welcome__line">TR sunucusu için League of Legends yardımcısı.</p>
-          <LiquidGlass className="status" shape="pill" blur={3} role="status">
-            <span className="status__dot" aria-hidden="true" />
-            League istemcisine bağlı değil
-          </LiquidGlass>
+      <nav className="shell__nav" aria-label="Ana menü">
+        <LiquidGlass className="nav" shape="pill" blur={4}>
+          {PAGES.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="nav__item"
+              aria-current={p.id === pageId ? "page" : undefined}
+              onClick={() => open(p.id)}
+            >
+              {p.label}
+            </button>
+          ))}
         </LiquidGlass>
+      </nav>
+      <main className="shell__main" key={page.id}>
+        <page.Component />
       </main>
-      <footer className="shell__legal" lang="en">
-        Vizier isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone
-        officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties
-        are trademarks or registered trademarks of Riot Games, Inc.
-      </footer>
     </div>
   );
 }
