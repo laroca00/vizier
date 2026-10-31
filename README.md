@@ -24,6 +24,15 @@ pnpm install
 pnpm dev
 ```
 
+### API service
+
+`services/api` holds the Riot API key and is the only part of Vizier that talks to the Riot Web API. Copy `services/api/.env.example` to `services/api/.env`, add a key from the [Developer Portal](https://developer.riotgames.com), then:
+
+```sh
+pnpm api   # http://localhost:8787
+pnpm test
+```
+
 ## Legal
 
 Vizier isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.

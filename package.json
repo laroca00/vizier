@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "pnpm --filter @vizier/desktop tauri dev",
     "build": "pnpm --filter @vizier/desktop tauri build",
-    "build:web": "pnpm --filter @vizier/desktop build"
+    "build:web": "pnpm --filter @vizier/desktop build",
+    "api": "pnpm --filter @vizier/api dev",
+    "test": "pnpm -r test"
   }
 }
