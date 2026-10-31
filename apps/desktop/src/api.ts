@@ -164,6 +164,28 @@ export function getPace(position: string, championId: number | null) {
   return get<Pace>(`/v1/pace/${position}${championId ? `?champion=${championId}` : ""}`);
 }
 
+export type LivePlayer = {
+  riotId: string | null;
+  championId: number;
+  teamId: number;
+  /** The player Vizier asked for, i.e. the one at this computer. */
+  you: boolean;
+  solo: { tier: string; rank: string; leaguePoints: number; wins: number; losses: number } | null;
+  /** Null when the player has never played the champion. */
+  mastery: { level: number; points: number; lastPlayTime: number } | null;
+};
+export type LiveGameInfo = { gameId: number; queueId: number | null; players: LivePlayer[] };
+
+/** Null until Riot lists the game, which can take a few seconds into the loading screen. */
+export async function getLiveGame(puuid: string): Promise<LiveGameInfo | null> {
+  try {
+    return await get<LiveGameInfo>(`/v1/live/${puuid}`);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
 export type BanSuggestions = { patches: string[]; champions: { championId: number; games: number; winRate: number }[] };
 
 export function getBans() {

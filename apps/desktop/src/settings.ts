@@ -13,6 +13,7 @@ export type Settings = {
   overlayBenchmarks: boolean;
   overlayItems: boolean;
   overlayPace: boolean;
+  overlayScouting: boolean;
 };
 
 const DEFAULTS: Settings = {
@@ -28,6 +29,7 @@ const DEFAULTS: Settings = {
   overlayBenchmarks: true,
   overlayItems: true,
   overlayPace: true,
+  overlayScouting: true,
 };
 
 const KEY = "vizier.settings";

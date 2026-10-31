@@ -14,6 +14,7 @@ const TOGGLES: { key: keyof Settings; label: string; hint: string }[] = [
 ];
 
 const OVERLAY_TOGGLES: { key: keyof Settings; label: string; hint: string }[] = [
+  { key: "overlayScouting", label: "Yükleme ekranında oyuncular", hint: "Herkesin dereceli sırası, sezon kazanma oranı ve şampiyonundaki ustalığı." },
   { key: "overlaySkills", label: "Yetenek önerisi", hint: "Yetenek puanın olduğunda hangisini yükselteceğini gösterir." },
   { key: "overlayObjectives", label: "Ejder, Baron ve inhibitör süreleri", hint: "Kesildiklerinde yeniden doğmalarına kalan süre." },
   { key: "overlayBenchmarks", label: "Emerald+ karşılaştırması", hint: "Dakika başına minyonun ve skora katkın, aynı roldeki Emerald+ medyanıyla." },

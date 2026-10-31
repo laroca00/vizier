@@ -10,7 +10,7 @@ import { Overlay } from "./overlay/Overlay";
 // One bundle serves both windows; the overlay window is told apart by its label.
 function isOverlay() {
   if (isTauri()) return getCurrentWindow().label === "overlay";
-  return import.meta.env.DEV && new URLSearchParams(location.search).get("fixture") === "overlay";
+  return import.meta.env.DEV && ["overlay", "scouting"].includes(new URLSearchParams(location.search).get("fixture") ?? "");
 }
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

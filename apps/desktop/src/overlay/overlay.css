@@ -89,3 +89,53 @@ html:has(.overlay) body {
     animation: none;
   }
 }
+
+.overlay:has(.scouting) {
+  width: 300px;
+}
+
+.scouting {
+  gap: 10px;
+}
+
+.scouting__list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scouting__player {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.scouting__player img,
+.scouting__blank {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.08);
+}
+
+.scouting__who {
+  display: grid;
+  min-width: 0;
+}
+
+.scouting__name {
+  overflow: hidden;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.scouting__rank,
+.scouting__mastery {
+  font-size: 12px;
+  color: var(--glaze-muted);
+  font-variant-numeric: tabular-nums;
+}

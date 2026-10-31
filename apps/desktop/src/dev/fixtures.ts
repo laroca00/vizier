@@ -1,4 +1,5 @@
 import type { ChampSelect } from "../lcu";
+import type { LiveGameInfo } from "../api";
 import type { LiveGame } from "../overlay/live";
 
 /** Dev only: `?fixture=champ-select` renders the draft page without a client. */
@@ -61,6 +62,24 @@ export function overlayFixture(): LiveGame | null {
     events: [
       { name: "DragonKill", time: 700, dragonType: "Fire", inhibKilled: null, killerName: "Ally" },
       { name: "InhibKilled", time: 760, dragonType: null, inhibKilled: "Barracks_T2_C1", killerName: "Vizier" },
+    ],
+  };
+}
+
+/** Dev only: `?fixture=scouting` renders the loading screen panel. */
+export function scoutingFixture(): LiveGameInfo | null {
+  if (!import.meta.env.DEV || new URLSearchParams(location.search).get("fixture") !== "scouting") return null;
+  const solo = (tier: string, rank: string, wins: number, losses: number) => ({ tier, rank, leaguePoints: 40, wins, losses });
+  const mastery = (points: number) => ({ level: 10, points, lastPlayTime: 0 });
+  return {
+    gameId: 1,
+    queueId: 420,
+    players: [
+      { riotId: "Vizier#TR1", championId: 103, teamId: 100, you: true, solo: solo("EMERALD", "II", 61, 52), mastery: mastery(184_000) },
+      { riotId: "Orman Kedisi#TR1", championId: 64, teamId: 100, you: false, solo: solo("EMERALD", "I", 40, 41), mastery: mastery(52_000) },
+      { riotId: "Uzun Bir Oyuncu Adı#TR1", championId: 266, teamId: 100, you: false, solo: null, mastery: null },
+      { riotId: "Rakip Orta#TR1", championId: 238, teamId: 200, you: false, solo: solo("DIAMOND", "IV", 88, 70), mastery: mastery(612_000) },
+      { riotId: "Destek#TR1", championId: 412, teamId: 200, you: false, solo: solo("PLATINUM", "I", 12, 9), mastery: mastery(9_400) },
     ],
   };
 }

@@ -3,11 +3,13 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getBenchmarks, getBuild, getPace, type Benchmarks, type Build, type Pace } from "../api";
 import { champions, items } from "../data/ddragon";
-import { overlayFixture } from "../dev/fixtures";
+import { overlayFixture, scoutingFixture } from "../dev/fixtures";
+import type { LcuStatus } from "../lcu";
 import { positionLabel } from "../labels";
 import { useSettings } from "../settings";
 import { useAsync } from "../useAsync";
 import { championKey, clock, findMe, itemDifference, myNumbers, nextSkill, objectiveTimers, paceAt, type LiveGame } from "./live";
+import { Scouting } from "./Scouting";
 import "./overlay.css";
 
 function useLiveGame(): LiveGame | null {
@@ -21,6 +23,31 @@ function useLiveGame(): LiveGame | null {
     };
   }, []);
   return game;
+}
+
+function useLoading() {
+  const [loading, setLoading] = useState(() => scoutingFixture() !== null);
+  useEffect(() => {
+    if (!isTauri()) return;
+    invoke<boolean>("live_loading").then(setLoading, () => {});
+    const off = listen<boolean>("live-loading", (event) => setLoading(event.payload));
+    return () => {
+      off.then((stop) => stop());
+    };
+  }, []);
+  return loading;
+}
+
+function usePuuid(active: boolean) {
+  const [puuid, setPuuid] = useState<string | null>(null);
+  useEffect(() => {
+    if (!active || !isTauri()) return;
+    invoke<LcuStatus>("lcu_status").then(
+      (status) => setPuuid(status.state === "connected" ? (status.summoner?.puuid ?? null) : null),
+      () => {},
+    );
+  }, [active]);
+  return puuid;
 }
 
 function useHidden() {
@@ -83,6 +110,8 @@ const thousands = (gold: number) => `${gold > 0 ? "+" : gold < 0 ? "−" : ""}${
 
 export function Overlay() {
   const game = useLiveGame();
+  const loading = useLoading();
+  const puuid = usePuuid(loading);
   const hidden = useHidden();
   const settings = useSettings();
   const time = useGameClock(game);
@@ -93,7 +122,15 @@ export function Overlay() {
   const position = me?.position || null;
   const [helpers] = useAsync(championId && position ? `${championId}:${position}` : null, () => loadHelpers(championId!, position!));
 
-  if (!game || !me || hidden || !settings.overlay) return null;
+  if (hidden || !settings.overlay) return null;
+  if (loading) {
+    return settings.overlayScouting ? (
+      <div className="overlay" aria-hidden="true">
+        <Scouting puuid={puuid} fixture={scoutingFixture()} />
+      </div>
+    ) : null;
+  }
+  if (!game || !me) return null;
   const extra = helpers.status === "done" ? helpers.value : { build: null, benchmarks: null, pace: null };
   const skill = settings.overlaySkills ? nextSkill(game.level, game.skills, extra.build?.skills ?? null) : null;
   const timers = settings.overlayObjectives ? objectiveTimers(game, me.team) : [];
