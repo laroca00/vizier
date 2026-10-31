@@ -28,7 +28,9 @@ export type Participant = {
   playerAugment4?: number;
   playerAugment5?: number;
   playerAugment6?: number;
+  kills?: number;
   deaths?: number;
+  assists?: number;
   totalMinionsKilled?: number;
   neutralMinionsKilled?: number;
   goldEarned?: number;
