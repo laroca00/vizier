@@ -1,4 +1,4 @@
-// Aggregates over the crawler's TR Emerald+ games: benchmarks, tier lists,
+// Aggregates over the crawler's EUW and TR Emerald+ games: benchmarks, tier lists,
 // bans. Everything reads the two newest stored patches.
 
 export const METRICS = ["cs10", "cs_pm", "gold_pm", "vision_pm", "kill_participation", "damage_share", "deaths"] as const;

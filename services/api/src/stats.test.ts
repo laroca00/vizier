@@ -152,7 +152,7 @@ describe("coach with benchmarks", () => {
     const bench = { position: "MIDDLE", championId: null, patches: ["16.21"], metrics: { cs_pm: spread(5, 9), cs10: spread(50, 90), vision_pm: spread(0.4, 1.2) } };
     const coaching = coachByRules(summary, bench);
     const cs = coaching.points.find((p) => p.title === "Minyon toplaman düşük")!;
-    expect(cs.detail).toContain("TR Emerald+ orta koridor oyuncularının %98 kadarı");
+    expect(cs.detail).toContain("Emerald+ orta koridor oyuncularının %98 kadarı");
     expect(cs.detail).toContain("medyan 7");
     expect(coaching.points.find((p) => p.title === "Koridor evresinde minyon kaçırdın")?.detail).toContain("medyanı 70");
   });

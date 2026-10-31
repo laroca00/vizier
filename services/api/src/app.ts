@@ -22,7 +22,7 @@ import { STORED_QUEUES } from "./crawler.ts";
 import { proBuilds, proTeams } from "./pros.ts";
 import { goldGraph, type Timeline as FullTimeline } from "./timeline.ts";
 import { findHabits, gameNumbers } from "./trends.ts";
-import { MATCH_ID, RiotError, regionOfMatch, type RiotClient } from "./riot/client.ts";
+import { MATCH_ID, RiotError, regionOfMatch, type Platform, type RiotClient } from "./riot/client.ts";
 import type { Account, ActiveGame, ChampionMastery, LeagueEntry, Match, Summoner } from "./riot/types.ts";
 import type { Store } from "./store.ts";
 
@@ -67,6 +67,16 @@ export type AppOptions = {
 
 export type CoachResult = Coaching & { source: "claude" | "workers-ai" | "rules" };
 
+// Players Vizier serves: TR and EUW. KR and NA are read only for pros.
+const PLAYER_PLATFORMS = new Set<Platform>(["tr1", "euw1"]);
+
+/** TR unless `?platform=` names EUW. */
+function platformOf(value: string | undefined): Platform {
+  if (value === undefined) return "tr1";
+  if (!PLAYER_PLATFORMS.has(value as Platform)) badRequest("Unsupported platform");
+  return value as Platform;
+}
+
 /** Ranked solo unless `?queue=` names another stored queue. */
 function queueOf(value: string | undefined): number {
   if (value === undefined) return 420;
@@ -103,6 +113,7 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
   app.get("/v1/profiles/:gameName/:tagLine", async (c) => {
     const { gameName, tagLine } = c.req.param();
     if (!GAME_NAME.test(gameName) || !TAG_LINE.test(tagLine)) badRequest("Invalid Riot ID");
+    const platform = platformOf(c.req.query("platform"));
 
     const key = `${gameName}#${tagLine}`.toLowerCase();
     const account = await cached(`account:${key}`, 60 * MINUTE, () =>
@@ -114,10 +125,10 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
     );
     if (!account) return c.json({ error: "Riot ID not found" }, 404);
 
-    const profile = await cached(`profile:${account.puuid}`, 5 * MINUTE, async () => {
+    const profile = await cached(`profile:${platform}:${account.puuid}`, 5 * MINUTE, async () => {
       const [summoner, ranks] = await Promise.all([
-        riot.get<Summoner>("tr1", "/lol/summoner/v4/summoners/by-puuid", `/lol/summoner/v4/summoners/by-puuid/${account.puuid}`),
-        riot.get<LeagueEntry[]>("tr1", "/lol/league/v4/entries/by-puuid", `/lol/league/v4/entries/by-puuid/${account.puuid}`),
+        riot.get<Summoner>(platform, "/lol/summoner/v4/summoners/by-puuid", `/lol/summoner/v4/summoners/by-puuid/${account.puuid}`),
+        riot.get<LeagueEntry[]>(platform, "/lol/league/v4/entries/by-puuid", `/lol/league/v4/entries/by-puuid/${account.puuid}`),
       ]);
       return {
         account,
@@ -139,9 +150,10 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
   app.get("/v1/live/:puuid", async (c) => {
     const { puuid } = c.req.param();
     if (!PUUID.test(puuid)) badRequest("Invalid PUUID");
-    const game = await cached(`active-game:${puuid}`, MINUTE, () =>
+    const platform = platformOf(c.req.query("platform"));
+    const game = await cached(`active-game:${platform}:${puuid}`, MINUTE, () =>
       riot.get<ActiveGame>(
-        "tr1",
+        platform,
         "/lol/spectator/v5/active-games/by-summoner",
         `/lol/spectator/v5/active-games/by-summoner/${puuid}`,
       ),
@@ -154,11 +166,11 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
         if (!p.puuid) return { riotId: p.riotId ?? null, championId: p.championId, teamId: p.teamId, you: false, solo: null, mastery: null };
         const [ranks, mastery] = await Promise.all([
           cached(`ranks:${p.puuid}`, 30 * MINUTE, () =>
-            riot.get<LeagueEntry[]>("tr1", "/lol/league/v4/entries/by-puuid", `/lol/league/v4/entries/by-puuid/${p.puuid}`),
+            riot.get<LeagueEntry[]>(platform, "/lol/league/v4/entries/by-puuid", `/lol/league/v4/entries/by-puuid/${p.puuid}`),
           ),
           cached(`mastery:${p.puuid}:${p.championId}`, 30 * MINUTE, () =>
             riot.get<ChampionMastery>(
-              "tr1",
+              platform,
               "/lol/champion-mastery/v4/champion-masteries/by-puuid/by-champion",
               `/lol/champion-mastery/v4/champion-masteries/by-puuid/${p.puuid}/by-champion/${p.championId}`,
             ),

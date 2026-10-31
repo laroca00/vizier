@@ -96,7 +96,7 @@ function csFinding(s: MatchSummary, bench?: Benchmarks): Finding[] {
         score: (LOW_RANK - rank) * 30,
         minute: 10,
         title: "Koridor evresinde minyon kaçırdın",
-        detail: `İlk 10 dakikada ${Math.round(s.player.cs10)} minyon topladın; TR Emerald+ ${role} oyuncularının medyanı ${cs10Bench.quantiles[10]}. Rakibe vuruş yapacağın anları son vuruş sırasına göre seç.`,
+        detail: `İlk 10 dakikada ${Math.round(s.player.cs10)} minyon topladın; Emerald+ ${role} oyuncularının medyanı ${cs10Bench.quantiles[10]}. Rakibe vuruş yapacağın anları son vuruş sırasına göre seç.`,
       });
     }
   }
@@ -108,7 +108,7 @@ function csFinding(s: MatchSummary, bench?: Benchmarks): Finding[] {
         score: (LOW_RANK - rank) * 30,
         minute: null,
         title: "Minyon toplaman düşük",
-        detail: `Dakikada ${cs} minyon topladın; TR Emerald+ ${role} oyuncularının %${aheadShare(rank)} kadarı bundan fazlasını topluyor, medyan ${csBench.quantiles[10]}. Maçın ortasında boş kalan koridorlardaki dalgaları toplamak bu farkı kapatır.`,
+        detail: `Dakikada ${cs} minyon topladın; Emerald+ ${role} oyuncularının %${aheadShare(rank)} kadarı bundan fazlasını topluyor, medyan ${csBench.quantiles[10]}. Maçın ortasında boş kalan koridorlardaki dalgaları toplamak bu farkı kapatır.`,
       });
     }
     return found;
@@ -229,7 +229,7 @@ function visionFinding(s: MatchSummary, bench?: Benchmarks): Finding[] {
         minute: null,
         title: "Görüş skorun düşük",
         detail:
-          `Dakikada ${perMinute} görüş skoru topladın; TR Emerald+ ${ROLE_NAMES[s.position] ?? "aynı rol"} oyuncularının medyanı ${visionBench.quantiles[10]}.` +
+          `Dakikada ${perMinute} görüş skoru topladın; Emerald+ ${ROLE_NAMES[s.position] ?? "aynı rol"} oyuncularının medyanı ${visionBench.quantiles[10]}.` +
           (wardsKilled === 0 ? " Hiç totem kırmadın; her üsse dönüşte bir kontrol totemi al." : ""),
       },
     ];
@@ -249,7 +249,7 @@ function visionFinding(s: MatchSummary, bench?: Benchmarks): Finding[] {
   ];
 }
 
-/** `bench` is the TR Emerald+ distribution for the player's role; without it fixed targets apply. */
+/** `bench` is the Emerald+ distribution for the player's role; without it fixed targets apply. */
 export function coachByRules(s: MatchSummary, bench?: Benchmarks): Coaching {
   const findings = [
     ...laneFindings(s),
