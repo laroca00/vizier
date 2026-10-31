@@ -296,8 +296,86 @@
 
 .matches__when {
   grid-column: 4;
-  grid-row: 1 / span 2;
+  grid-row: 1;
   font-size: 13px;
+  color: var(--glaze-muted);
+}
+
+.matches__coach {
+  grid-column: 4;
+  grid-row: 2;
+  justify-self: end;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--turquoise);
+  background: none;
+  cursor: pointer;
+}
+
+.matches__coach:hover {
+  text-decoration: underline;
+}
+
+.coach {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(520px, 100%);
+  max-height: 100%;
+  padding: 28px 30px;
+  overflow-y: auto;
+  --delay: 0ms;
+}
+
+.coach__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.coach__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 450;
+}
+
+.coach__headline {
+  margin: 0;
+  font-size: 17px;
+}
+
+.coach__note {
+  margin: 0 0 12px;
+  color: var(--glaze-muted);
+}
+
+.coach__points {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coach__point-title {
+  margin: 0 0 4px;
+  font-weight: 500;
+}
+
+.coach__minute {
+  margin-right: 8px;
+  font-variant-numeric: tabular-nums;
+  color: var(--turquoise);
+}
+
+.coach__point-detail {
+  max-width: 62ch;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 350;
   color: var(--glaze-muted);
 }
 

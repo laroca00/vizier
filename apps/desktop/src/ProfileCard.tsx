@@ -24,13 +24,15 @@ async function load(summoner: Summoner): Promise<Loaded> {
   return { profile, matches, version, champions: championList };
 }
 
-export function ProfileCard({ summoner }: { summoner: Summoner }) {
+export type CoachTarget = { matchId: string; puuid: string; championName: string };
+
+export function ProfileCard({ summoner, onCoach }: { summoner: Summoner; onCoach: (target: CoachTarget) => void }) {
   const [state, retry] = useAsync(`${summoner.gameName}#${summoner.tagLine}`, () => load(summoner));
 
   return (
     <LiquidGlass className="panel profile" radius={28} strength={2.5}>
       {state.status === "done" ? (
-        <ProfileBody {...state.value} />
+        <ProfileBody {...state.value} onCoach={onCoach} />
       ) : state.status === "error" ? (
         <div className="profile__message" role="alert">
           <p>Profil alınamadı. Vizier sunucusuna şu an ulaşılamıyor.</p>
@@ -47,7 +49,7 @@ export function ProfileCard({ summoner }: { summoner: Summoner }) {
   );
 }
 
-function ProfileBody({ profile, matches, version, champions }: Loaded) {
+function ProfileBody({ profile, matches, version, champions, onCoach }: Loaded & { onCoach: (target: CoachTarget) => void }) {
   const { account, summoner, ranks } = profile;
   const puuid = account.puuid;
 
@@ -107,6 +109,15 @@ function ProfileBody({ profile, matches, version, champions }: Loaded) {
                     {me.kills}/{me.deaths}/{me.assists}
                   </span>
                   <span className="matches__when">{timeAgo(match.info.gameEndTimestamp)}</span>
+                  <button
+                    type="button"
+                    className="matches__coach"
+                    onClick={() =>
+                      onCoach({ matchId: match.metadata.matchId, puuid, championName: champion?.name ?? "Bilinmeyen şampiyon" })
+                    }
+                  >
+                    Analiz et
+                  </button>
                 </li>
               );
             })}

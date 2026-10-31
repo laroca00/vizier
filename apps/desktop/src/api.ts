@@ -38,8 +38,8 @@ export class ApiError extends Error {
   }
 }
 
-async function get<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`);
+async function get<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, init);
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as { error?: string } | null;
     throw new ApiError(response.status, body?.error ?? response.statusText);
@@ -76,4 +76,17 @@ export async function getBuild(championId: number, position: string | null): Pro
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
   }
+}
+
+export type Coaching = {
+  headline: string;
+  points: { minute: number | null; title: string; detail: string }[];
+};
+
+export function getCoaching(matchId: string, puuid: string) {
+  return get<Coaching>(`/v1/coach/${matchId}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ puuid }),
+  });
 }
