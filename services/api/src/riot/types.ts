@@ -18,7 +18,23 @@ export type Participant = {
   championId: number;
   teamPosition: string;
   win: boolean;
+  summoner1Id?: number;
+  summoner2Id?: number;
+  item0?: number;
+  item1?: number;
+  item2?: number;
+  item3?: number;
+  item4?: number;
+  item5?: number;
+  perks?: {
+    statPerks: { offense: number; flex: number; defense: number };
+    styles: { description: string; style: number; selections: { perk: number }[] }[];
+  };
 };
+
+/** challenger/grandmaster/master leagues; division pages are a bare array of these. */
+export type LeagueEntryWithPuuid = { puuid: string };
+export type LeagueList = { entries: LeagueEntryWithPuuid[] };
 
 export type Match = {
   metadata: { matchId: string; participants: string[] };

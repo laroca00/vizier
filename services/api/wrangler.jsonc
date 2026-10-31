@@ -4,8 +4,8 @@
   "main": "src/worker.ts",
   "compatibility_date": "2026-10-01",
   "observability": { "enabled": true },
-  // Clears expired cache rows once a day.
-  "triggers": { "crons": ["0 4 * * *"] },
+  // Every 2 minutes: crawl ranked games. 04:00 UTC: clear expired cache rows and old patches.
+  "triggers": { "crons": ["*/2 * * * *", "0 4 * * *"] },
   "d1_databases": [
     {
       "binding": "DB",

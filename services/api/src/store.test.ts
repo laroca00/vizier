@@ -1,29 +1,7 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
 import type { Match } from "./riot/types.ts";
 import { D1Store } from "./store.ts";
-
-// Just enough of D1's API over node:sqlite to run the real migration and queries.
-function fakeD1() {
-  const sqlite = new DatabaseSync(":memory:");
-  sqlite.exec(readFileSync(join(import.meta.dirname, "../migrations/0001_init.sql"), "utf8"));
-  const statement = (sql: string, params: unknown[] = []) => ({
-    bind: (...values: unknown[]) => statement(sql, values),
-    first: async () => sqlite.prepare(sql).get(...(params as never[])) ?? null,
-    run: async () => sqlite.prepare(sql).run(...(params as never[])),
-  });
-  const db = {
-    prepare: (sql: string) => statement(sql),
-    batch: async (statements: { run(): Promise<unknown> }[]) => {
-      sqlite.exec("BEGIN");
-      for (const s of statements) await s.run();
-      sqlite.exec("COMMIT");
-    },
-  };
-  return { db: db as unknown as D1Database, sqlite };
-}
+import { fakeD1 } from "./test/fakeD1.ts";
 
 const match: Match = {
   metadata: { matchId: "TR1_42", participants: ["a", "b"] },

@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
+import { aggregateBuild, POSITIONS } from "./builds.ts";
 import { RiotError, type RiotClient } from "./riot/client.ts";
 import type { Account, LeagueEntry, Match, Summoner } from "./riot/types.ts";
 import type { Store } from "./store.ts";
@@ -21,7 +22,8 @@ function badRequest(message: string): never {
   throw new HTTPException(400, { message });
 }
 
-export function createApp(riot: RiotClient, store: Store) {
+/** `statsDb` holds the crawler tables; without it the builds route answers 503. */
+export function createApp(riot: RiotClient, store: Store, statsDb?: D1Database) {
   // Concurrent misses for the same key share one Riot call.
   const pending = new Map<string, Promise<unknown>>();
 
@@ -112,6 +114,20 @@ export function createApp(riot: RiotClient, store: Store) {
     if (!match) return c.json({ error: "Match not found" }, 404);
     await store.putMatch(match);
     return c.json(match);
+  });
+
+  app.get("/v1/builds/:championId", async (c) => {
+    const championId = Number(c.req.param("championId"));
+    if (!Number.isInteger(championId) || championId <= 0) badRequest("Invalid champion id");
+    const position = c.req.query("position")?.toUpperCase() ?? null;
+    if (position !== null && !POSITIONS.has(position)) badRequest("Unsupported position");
+    if (!statsDb) return c.json({ error: "Build stats are not available" }, 503);
+
+    const build = await cached(`build:${championId}:${position ?? "ANY"}`, 30 * MINUTE, () =>
+      aggregateBuild(statsDb, championId, position),
+    );
+    if (!build) return c.json({ error: "No games for this champion yet" }, 404);
+    return c.json(build);
   });
 
   app.onError((error, c) => {
