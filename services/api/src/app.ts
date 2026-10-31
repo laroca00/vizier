@@ -18,9 +18,10 @@ import {
   type Benchmarks,
 } from "./stats.ts";
 import { STORED_QUEUES } from "./crawler.ts";
+import { proBuilds, proTeams } from "./pros.ts";
 import { goldGraph, type Timeline as FullTimeline } from "./timeline.ts";
 import { findHabits, gameNumbers } from "./trends.ts";
-import { RiotError, type RiotClient } from "./riot/client.ts";
+import { MATCH_ID, RiotError, regionOfMatch, type RiotClient } from "./riot/client.ts";
 import type { Account, ActiveGame, ChampionMastery, LeagueEntry, Match, Summoner } from "./riot/types.ts";
 import type { Store } from "./store.ts";
 
@@ -31,7 +32,6 @@ const QUEUES = new Set([400, 420, 440, 450, 490, 1700]);
 const GAME_NAME = /^.{3,16}$/u;
 const TAG_LINE = /^[\p{L}\p{N}]{3,5}$/u;
 const PUUID = /^[\w-]{78}$/;
-const MATCH_ID = /^TR1_\d+$/;
 
 // Tauri serves the app from these origins on Windows; 1420 is the dev server.
 const ORIGINS = ["http://tauri.localhost", "https://tauri.localhost", "tauri://localhost", "http://localhost:1420"];
@@ -202,7 +202,7 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
     // Match documents never change once a game is over.
     const stored = await store.getMatch(matchId);
     if (stored) return c.json(stored);
-    const match = await riot.get<Match>("europe", "/lol/match/v5/matches", `/lol/match/v5/matches/${matchId}`);
+    const match = await riot.get<Match>(regionOfMatch(matchId), "/lol/match/v5/matches", `/lol/match/v5/matches/${matchId}`);
     if (!match) return c.json({ error: "Match not found" }, 404);
     await store.putMatch(match);
     return c.json(match);
@@ -302,6 +302,27 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
     return c.json(await cached(`augments:${championId}`, 60 * MINUTE, () => augmentStats(statsDb, championId)));
   });
 
+  app.get("/v1/pros/builds", async (c) => {
+    const championParam = c.req.query("champion");
+    const championId = championParam === undefined ? undefined : Number(championParam);
+    if (championId !== undefined && (!Number.isInteger(championId) || championId <= 0)) badRequest("Invalid champion id");
+    const position = c.req.query("position")?.toUpperCase();
+    if (position !== undefined && !POSITIONS.has(position)) badRequest("Unsupported position");
+    const team = c.req.query("team");
+    if (team !== undefined && !/^[\w .-]{1,40}$/.test(team)) badRequest("Invalid team");
+    const limit = Number(c.req.query("limit") ?? 30);
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) badRequest("limit must be 1-100");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    const key = `pro-builds:${championId ?? "ANY"}:${position ?? "ANY"}:${team ?? "ANY"}:${limit}`;
+    // Pro games arrive every few minutes; a short cache keeps the list fresh.
+    return c.json({ builds: await cached(key, 5 * MINUTE, () => proBuilds(statsDb, { championId, position, team, limit })) });
+  });
+
+  app.get("/v1/pros/teams", async (c) => {
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json({ teams: await cached("pro-teams", 60 * MINUTE, () => proTeams(statsDb)) });
+  });
+
   app.get("/v1/bans", async (c) => {
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json(await cached("bans", 60 * MINUTE, () => banSuggestions(statsDb)));
@@ -310,7 +331,7 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
   const matchById = async (matchId: string): Promise<Match | null> => {
     const stored = await store.getMatch(matchId);
     if (stored) return stored;
-    const match = await riot.get<Match>("europe", "/lol/match/v5/matches", `/lol/match/v5/matches/${matchId}`);
+    const match = await riot.get<Match>(regionOfMatch(matchId), "/lol/match/v5/matches", `/lol/match/v5/matches/${matchId}`);
     if (match) await store.putMatch(match);
     return match;
   };
@@ -349,7 +370,7 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
     if (!match) return c.json({ error: "Match not found" }, 404);
     const graph = await cached(`graph:${matchId}`, Infinity, async () => {
       const timeline = await riot.get<FullTimeline>(
-        "europe",
+        regionOfMatch(matchId),
         "/lol/match/v5/matches/timeline",
         `/lol/match/v5/matches/${matchId}/timeline`,
       );
@@ -380,13 +401,13 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
 
     let match = (await store.getMatch(matchId)) as CoachMatch | undefined;
     if (!match) {
-      const fetched = await riot.get<Match>("europe", "/lol/match/v5/matches", `/lol/match/v5/matches/${matchId}`);
+      const fetched = await riot.get<Match>(regionOfMatch(matchId), "/lol/match/v5/matches", `/lol/match/v5/matches/${matchId}`);
       if (!fetched) return c.json({ error: "Match not found" }, 404);
       await store.putMatch(fetched);
       match = fetched as unknown as CoachMatch;
     }
     const timeline = await riot.get<Timeline>(
-      "europe",
+      regionOfMatch(matchId),
       "/lol/match/v5/matches/timeline",
       `/lol/match/v5/matches/${matchId}/timeline`,
     );

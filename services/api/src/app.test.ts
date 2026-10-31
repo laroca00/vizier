@@ -51,7 +51,7 @@ describe("api", () => {
     expect((await app.request("/v1/profiles/ab/TR1")).status).toBe(400);
     expect((await app.request(`/v1/players/${PUUID}/matches?count=500`)).status).toBe(400);
     expect((await app.request(`/v1/players/${PUUID}/matches?queue=999`)).status).toBe(400);
-    expect((await app.request("/v1/matches/EUW1_123")).status).toBe(400);
+    expect((await app.request("/v1/matches/BR1_123")).status).toBe(400);
     expect(calls).toEqual([]);
   });
 

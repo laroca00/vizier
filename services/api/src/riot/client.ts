@@ -1,12 +1,33 @@
 import { RateLimiter, systemClock, type Clock } from "./rateLimiter.ts";
 
-/** TR1 platform routing and its regional host. */
-export type Routing = "tr1" | "europe";
+/** Platforms Vizier reads from: TR and EUW players, and KR and NA for pros. */
+export type Platform = "tr1" | "euw1" | "kr" | "na1";
+export type Region = "europe" | "asia" | "americas";
+export type Routing = Platform | Region;
+
+export const PLATFORMS: Platform[] = ["tr1", "euw1", "kr", "na1"];
 
 const HOSTS: Record<Routing, string> = {
   tr1: "https://tr1.api.riotgames.com",
+  euw1: "https://euw1.api.riotgames.com",
+  kr: "https://kr.api.riotgames.com",
+  na1: "https://na1.api.riotgames.com",
   europe: "https://europe.api.riotgames.com",
+  asia: "https://asia.api.riotgames.com",
+  americas: "https://americas.api.riotgames.com",
 };
+
+/** match-v5 lives on the regional host of the platform. */
+export function regionOf(platform: Platform): Region {
+  return platform === "kr" ? "asia" : platform === "na1" ? "americas" : "europe";
+}
+
+/** Match ids start with their platform: "TR1_123", "KR_456". */
+export const MATCH_ID = /^(TR1|EUW1|KR|NA1)_\d+$/;
+
+export function regionOfMatch(matchId: string): Region {
+  return regionOf(matchId.split("_")[0].toLowerCase() as Platform);
+}
 
 const MAX_ATTEMPTS = 4;
 
