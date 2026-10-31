@@ -20,7 +20,8 @@ import {
 } from "./stats.ts";
 import { STORED_QUEUES } from "./crawler.ts";
 import { proBuilds, proTeams } from "./pros.ts";
-import { goldGraph, type Timeline as FullTimeline } from "./timeline.ts";
+import { csByMinute, goldGraph, type Timeline as FullTimeline } from "./timeline.ts";
+import { scoreGame, weakestMinutes } from "./report.ts";
 import { findHabits, gameNumbers } from "./trends.ts";
 import { MATCH_ID, RiotError, regionOfMatch, type Platform, type RiotClient } from "./riot/client.ts";
 import type { Account, ActiveGame, ChampionMastery, LeagueEntry, Match, Summoner } from "./riot/types.ts";
@@ -403,6 +404,40 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
     });
     if (!graph) return c.json({ error: "Timeline not found" }, 404);
     return c.json(graph);
+  });
+
+  // The post-game report card: category scores and the early CS curve
+  // against Emerald+ players on the same champion and role.
+  app.get("/v1/matches/:matchId/report", async (c) => {
+    const { matchId } = c.req.param();
+    if (!MATCH_ID.test(matchId)) badRequest("Invalid match ID");
+    const puuid = c.req.query("puuid") ?? "";
+    if (!PUUID.test(puuid)) badRequest("Invalid PUUID");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    const match = await matchById(matchId);
+    if (!match) return c.json({ error: "Match not found" }, 404);
+    const game = gameNumbers(match, puuid);
+    if (!game) return c.json({ error: "No role in this game to compare against" }, 404);
+
+    const report = await cached(`report:${matchId}:${puuid}`, 6 * 60 * MINUTE, async () => {
+      const [bench, curve, timeline] = await Promise.all([
+        benchmarksFor(game.position, game.championId),
+        cached(`pace:${game.position}:${game.championId}`, 6 * 60 * MINUTE, () => pace(statsDb, game.position, game.championId)),
+        riot.get<FullTimeline>(regionOfMatch(matchId), "/lol/match/v5/matches/timeline", `/lol/match/v5/matches/${matchId}/timeline`),
+      ]);
+      const participantId = match.info.participants.find((p) => p.puuid === puuid)?.participantId;
+      const mine = timeline && participantId ? (csByMinute(timeline).get(participantId) ?? []) : [];
+      const median = curve.median.slice(0, mine.length);
+      return {
+        position: game.position,
+        championId: game.championId,
+        // Whether the scores compare against the champion or, short of games, the whole role.
+        comparedTo: bench?.championId ? "champion" : "role",
+        ...(bench ? scoreGame(game, bench) : { overall: null, scores: [] }),
+        cs: { mine, median, weakest: weakestMinutes(mine, median) },
+      };
+    });
+    return c.json(report);
   });
 
   app.post("/v1/coach/:matchId", async (c) => {
