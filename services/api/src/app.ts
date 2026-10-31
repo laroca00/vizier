@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import type Anthropic from "@anthropic-ai/sdk";
@@ -6,7 +6,7 @@ import { aggregateBuild, POSITIONS } from "./builds.ts";
 import { coach, summarize, type Coaching, type CoachMatch, type Timeline } from "./coach.ts";
 import { rewriteWithWorkersAi } from "./coachRewrite.ts";
 import { coachByRules } from "./coachRules.ts";
-import { banSuggestions, benchmarks, tierList, type Benchmarks } from "./stats.ts";
+import { banSuggestions, benchmarks, championOverview, counters, tierList, type Benchmarks } from "./stats.ts";
 import { goldGraph, type Timeline as FullTimeline } from "./timeline.ts";
 import { findHabits, gameNumbers } from "./trends.ts";
 import { RiotError, type RiotClient } from "./riot/client.ts";
@@ -181,6 +181,31 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai 
     if (!POSITIONS.has(position)) badRequest("Unsupported position");
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json(await cached(`tierlist:${position}`, 60 * MINUTE, () => tierList(statsDb, position)));
+  });
+
+  const championRequest = (c: Context) => {
+    const championId = Number(c.req.param("championId"));
+    if (!Number.isInteger(championId) || championId <= 0) badRequest("Invalid champion id");
+    const position = c.req.query("position")?.toUpperCase() ?? null;
+    if (position !== null && !POSITIONS.has(position)) badRequest("Unsupported position");
+    return { championId, position };
+  };
+
+  app.get("/v1/champions/:championId", async (c) => {
+    const { championId, position } = championRequest(c);
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    const overview = await cached(`champion:${championId}:${position ?? "ANY"}`, 60 * MINUTE, () =>
+      championOverview(statsDb, championId, position),
+    );
+    if (!overview) return c.json({ error: "No games for this champion yet" }, 404);
+    return c.json(overview);
+  });
+
+  app.get("/v1/champions/:championId/counters", async (c) => {
+    const { championId, position } = championRequest(c);
+    if (!position) badRequest("position is required");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json(await cached(`counters:${championId}:${position}`, 60 * MINUTE, () => counters(statsDb, championId, position)));
   });
 
   app.get("/v1/bans", async (c) => {

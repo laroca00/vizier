@@ -5,7 +5,7 @@ import { coachByRules } from "./coachRules.ts";
 import { Crawler } from "./crawler.ts";
 import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
-import { banSuggestions, benchmarks, quantiles, rankOf, tierList } from "./stats.ts";
+import { banSuggestions, benchmarks, championOverview, counters, quantiles, rankOf, tierList } from "./stats.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 import { findHabits, type GameNumbers } from "./trends.ts";
 
@@ -26,7 +26,7 @@ function player(id: number, teamId: number, championId: number, win: boolean, cs
   };
 }
 
-async function seed(games: { me: number; them: number; win: boolean }[]) {
+async function seed(games: { me: number; them: number; win: boolean; version?: string }[]) {
   const { db } = fakeD1();
   const crawler = new Crawler(db, { get: async () => null } as unknown as RiotClient);
   let n = 0;
@@ -34,7 +34,7 @@ async function seed(games: { me: number; them: number; win: boolean }[]) {
     n++;
     const match: Match = {
       metadata: { matchId: `TR1_${n}`, participants: [] },
-      info: { gameVersion: "16.21.1", queueId: 420, gameStartTimestamp: n, gameDuration: 1800, participants: [player(1, 100, g.me, g.win, 210 + n), player(6, 200, g.them, !g.win, 180)] },
+      info: { gameVersion: g.version ?? "16.21.1", queueId: 420, gameStartTimestamp: n, gameDuration: 1800, participants: [player(1, 100, g.me, g.win, 210 + n), player(6, 200, g.them, !g.win, 180)] },
     };
     await crawler.save(match);
   }
@@ -84,6 +84,33 @@ describe("benchmarks, tiers and bans", () => {
     expect(vsZed).toMatchObject({ vs: 238, games: 20, winRate: 1 });
     const vsAkali = await aggregateBuild(db, 103, "MIDDLE", 84, async () => new Set());
     expect(vsAkali).toMatchObject({ vs: null, games: 23 });
+  });
+});
+
+describe("champion pages", () => {
+  it("summarises a champion and compares the two newest patches", async () => {
+    const db = await seed([
+      ...Array.from({ length: 10 }, (_, i) => ({ me: 103, them: 238, win: i < 4, version: "16.20.1" })),
+      ...Array.from({ length: 10 }, (_, i) => ({ me: 103, them: 238, win: i < 6 })),
+    ]);
+    const overview = await championOverview(db, 103, null);
+    expect(overview).toMatchObject({ position: "MIDDLE", games: 20, winRate: 0.5, pickRate: 0.5, winRateChange: 0.2 });
+    expect(overview?.positions).toEqual([{ position: "MIDDLE", games: 20, share: 1 }]);
+    expect(await championOverview(db, 1, null)).toBeNull();
+  });
+
+  it("lists matchups with enough games, hardest first", async () => {
+    const db = await seed([
+      ...Array.from({ length: 12 }, (_, i) => ({ me: 103, them: 238, win: i < 3 })),
+      ...Array.from({ length: 12 }, (_, i) => ({ me: 103, them: 7, win: i < 9 })),
+      ...Array.from({ length: 4 }, () => ({ me: 103, them: 84, win: true })),
+    ]);
+    const result = await counters(db, 103, "MIDDLE");
+    expect(result.games).toBe(28);
+    expect(result.matchups).toEqual([
+      { championId: 238, games: 12, winRate: 0.25 },
+      { championId: 7, games: 12, winRate: 0.75 },
+    ]);
   });
 });
 
