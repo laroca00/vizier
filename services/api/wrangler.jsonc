@@ -10,8 +10,7 @@
     {
       "binding": "DB",
       "database_name": "vizier",
-      // Replaced with the real id after `wrangler d1 create vizier`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "3c95ce45-f597-46e1-81dc-68837d020be9",
       "migrations_dir": "migrations"
     }
   ]
