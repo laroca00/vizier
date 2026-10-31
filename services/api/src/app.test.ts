@@ -128,6 +128,7 @@ describe("queues and gated stats", () => {
   it("refuses Arena augment stats until they are approved", async () => {
     const { app } = fakeRiot({});
     expect((await app.request("/v1/champions/103/arena-augments")).status).toBe(403);
+    expect((await app.request("/v1/mayhem/augments")).status).toBe(403);
   });
 
   it("checks the queue and the role it allows", async () => {

@@ -5,7 +5,7 @@ import { coachByRules } from "./coachRules.ts";
 import { Crawler } from "./crawler.ts";
 import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
-import { banSuggestions, benchmarks, championOverview, counters, pace, quantiles, rankOf, synergies, tierList } from "./stats.ts";
+import { banSuggestions, benchmarks, championOverview, counters, mayhemAugments, pace, quantiles, rankOf, synergies, tierList } from "./stats.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 import { findHabits, type GameNumbers } from "./trends.ts";
 
@@ -211,5 +211,32 @@ describe("synergies and queues", () => {
     const aram = await tierList(db, "", 450);
     expect(aram.champions.map((c) => [c.championId, c.tier])).toEqual([[103, "S"], [238, "D"]]);
     expect((await championOverview(db, 103, null, 450))?.games).toBe(12);
+  });
+});
+
+describe("ARAM Mayhem augments", () => {
+  it("tiers augments by the smoothed win rate of games they were taken in", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, { get: async () => null } as unknown as RiotClient);
+    for (let n = 1; n <= 12; n++) {
+      const win = n <= 9;
+      const match: Match = {
+        metadata: { matchId: `EUW1_${n}`, participants: [] },
+        info: {
+          gameVersion: "16.21.1", queueId: 2400, gameStartTimestamp: n, gameDuration: 1100,
+          participants: [
+            { ...player(1, 100, 103, win, 40), playerAugment1: 7, playerAugment2: 9 },
+            { ...player(6, 200, 238, !win, 40), playerAugment1: 9 },
+          ],
+        },
+      };
+      await crawler.save(match);
+    }
+    const result = await mayhemAugments(db);
+    expect(result.games).toBe(24);
+    expect(result.augments).toEqual([
+      { augmentId: 7, games: 12, pickRate: 0.5, winRate: 0.75, tier: "S" },
+      { augmentId: 9, games: 24, pickRate: 1, winRate: 0.5, tier: "B" },
+    ]);
   });
 });

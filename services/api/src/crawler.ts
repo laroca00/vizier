@@ -5,12 +5,16 @@ import { patchOf, type LeagueEntryWithPuuid, type LeagueList, type Match, type P
 const RANKED_SOLO = 420;
 export const ARAM = 450;
 export const ARENA = 1700;
+export const MAYHEM = 2400;
 // URF and ARURF come and go with rotations; their games are kept when they show up.
 const URF = [900, 1900];
 /** Queues whose games are stored. Only ranked solo has roles, timelines and bans. */
-export const STORED_QUEUES = new Set([RANKED_SOLO, ARAM, ARENA, ...URF]);
+export const STORED_QUEUES = new Set([RANKED_SOLO, ARAM, MAYHEM, ARENA, ...URF]);
 // Asked for in turns, one per run, from one of that run's players.
-const EXTRA_QUEUES = [ARAM, ARENA, ...URF];
+const EXTRA_QUEUES = [ARAM, MAYHEM, ARENA, ...URF];
+// EUW and TR Emerald+ players share one pool; both live on the Europe region,
+// so their games come from the same match-v5 host.
+const SEED_PLATFORMS = ["tr1", "euw1"] as const;
 // Arena writes 16 rows a game; this keeps a run near 100 written rows.
 const EXTRA_MATCHES_PER_RUN = 2;
 const DAY = 86_400_000;
@@ -98,13 +102,15 @@ export class Crawler {
     if (row && this.now() - Number(row.value) < RESEED_AFTER) return 0;
 
     const players: { puuid: string; tier: string }[] = [];
-    for (const [tier, path] of APEX_LEAGUES) {
-      const league = await this.riot.get<LeagueList>("tr1", path, path);
-      for (const entry of league?.entries ?? []) players.push({ puuid: entry.puuid, tier });
-    }
-    for (const [tier, path] of DIVISION_PAGES) {
-      const page = await this.riot.get<LeagueEntryWithPuuid[]>("tr1", "/lol/league/v4/entries", path);
-      for (const entry of page ?? []) players.push({ puuid: entry.puuid, tier });
+    for (const platform of SEED_PLATFORMS) {
+      for (const [tier, path] of APEX_LEAGUES) {
+        const league = await this.riot.get<LeagueList>(platform, path, path);
+        for (const entry of league?.entries ?? []) players.push({ puuid: entry.puuid, tier });
+      }
+      for (const [tier, path] of DIVISION_PAGES) {
+        const page = await this.riot.get<LeagueEntryWithPuuid[]>(platform, "/lol/league/v4/entries", path);
+        for (const entry of page ?? []) players.push({ puuid: entry.puuid, tier });
+      }
     }
 
     const insert = this.db.prepare("INSERT OR IGNORE INTO crawl_players (puuid, tier) VALUES (?, ?)");

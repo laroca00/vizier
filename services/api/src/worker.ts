@@ -16,6 +16,8 @@ type Env = {
   COACH_PUUIDS?: string;
   /** "approved" once Riot has confirmed in writing that Arena augment stats may be shown. */
   ARENA_AUGMENTS?: string;
+  /** "on" once Riot has said ARAM Mayhem augment stats may be shown. */
+  MAYHEM_AUGMENTS?: string;
 };
 
 const COACH_DAILY_LIMIT = 20;
@@ -60,7 +62,9 @@ export default {
     if (url.pathname.startsWith("/updates/")) return serveUpdate(env, url.pathname.slice("/updates/".length));
     const client = riotFor(env);
     if (!client) return Response.json({ error: "RIOT_API_KEY is not set" }, { status: 500 });
-    app ??= createApp(client, new D1Store(env.DB), { statsDb: env.DB, claude: coachFor(env), ai: env.AI, arenaAugments: env.ARENA_AUGMENTS === "approved" });
+    app ??= createApp(client, new D1Store(env.DB), { statsDb: env.DB, claude: coachFor(env), ai: env.AI, arenaAugments: env.ARENA_AUGMENTS === "approved",
+      mayhemAugments: env.MAYHEM_AUGMENTS === "on",
+    });
     return app.fetch(request, env, ctx);
   },
 

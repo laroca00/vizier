@@ -342,6 +342,45 @@ export async function synergies(
 
 export type AugmentStat = { augmentId: number; games: number; topFourRate: number };
 
+export type MayhemAugment = { augmentId: number; games: number; pickRate: number; winRate: number; tier: string };
+
+/**
+ * ARAM Mayhem augments across all champions, tiered like champions are.
+ * Served behind a flag until Riot says whether these may be shown.
+ */
+export async function mayhemAugments(db: D1Database): Promise<{ patches: string[]; games: number; augments: MayhemAugment[] }> {
+  const patches = await latestPatches(db);
+  if (patches.length === 0) return { patches, games: 0, augments: [] };
+  const { results } = await db
+    .prepare(
+      `SELECT augments, win FROM participant_stats
+        WHERE patch IN (${placeholders(patches.length)}) AND queue_id = 2400 AND augments IS NOT NULL`,
+    )
+    .bind(...patches)
+    .all<{ augments: string; win: number }>();
+  const counts = new Map<number, { games: number; wins: number }>();
+  for (const r of results) {
+    for (const id of new Set(r.augments.split(",").map(Number))) {
+      const c = counts.get(id) ?? { games: 0, wins: 0 };
+      c.games++;
+      c.wins += r.win;
+      counts.set(id, c);
+    }
+  }
+  const augments = [...counts.entries()]
+    .filter(([, c]) => c.games >= MIN_TIER_GAMES)
+    .map(([augmentId, c]) => ({
+      augmentId,
+      games: c.games,
+      pickRate: round3(c.games / results.length),
+      winRate: round3(c.wins / c.games),
+      score: round3(smoothed(c.wins, c.games)),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .map(({ score, ...a }) => ({ ...a, tier: TIER_CUTS.find(([cut]) => score >= cut)?.[1] ?? "D" }));
+  return { patches, games: results.length, augments };
+}
+
 /**
  * Arena augment top-four rates for a champion. Riot's policy forbids showing
  * these without written approval, so the API serves them only behind a flag.

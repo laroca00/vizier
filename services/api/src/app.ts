@@ -12,6 +12,7 @@ import {
   benchmarks,
   championOverview,
   counters,
+  mayhemAugments as mayhemTiers,
   pace,
   synergies,
   tierList,
@@ -60,6 +61,8 @@ export type AppOptions = {
   ai?: { run(model: string, input: unknown): Promise<unknown> };
   /** Arena augment stats; off until Riot approves showing them. */
   arenaAugments?: boolean;
+  /** ARAM Mayhem augment tiers; off until Riot confirms they may be shown. */
+  mayhemAugments?: boolean;
 };
 
 export type CoachResult = Coaching & { source: "claude" | "workers-ai" | "rules" };
@@ -72,7 +75,7 @@ function queueOf(value: string | undefined): number {
   return queue;
 }
 
-export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai, arenaAugments = false }: AppOptions = {}) {
+export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai, arenaAugments = false, mayhemAugments = false }: AppOptions = {}) {
   // Concurrent misses for the same key share one Riot call.
   const pending = new Map<string, Promise<unknown>>();
 
@@ -300,6 +303,12 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
     if (!arenaAugments) return c.json({ error: "Arena augment stats are not enabled" }, 403);
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json(await cached(`augments:${championId}`, 60 * MINUTE, () => augmentStats(statsDb, championId)));
+  });
+
+  app.get("/v1/mayhem/augments", async (c) => {
+    if (!mayhemAugments) return c.json({ error: "ARAM Mayhem augment stats are not enabled" }, 403);
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json(await cached("mayhem-augments", 60 * MINUTE, () => mayhemTiers(statsDb)));
   });
 
   app.get("/v1/pros/builds", async (c) => {

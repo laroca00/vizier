@@ -84,7 +84,8 @@ describe("Crawler", () => {
     });
 
     const result = await new Crawler(db, riot, () => now).run();
-    expect(result).toEqual({ seeded: 2, matches: 2 });
+    // TR and EUW leagues are both asked; this fake answers the same two players for each.
+    expect(result).toEqual({ seeded: 4, matches: 2 });
     expect(calls.filter((c) => c.includes("/matches/TR1_") && !c.endsWith("/timeline"))).toHaveLength(3);
     expect(calls.filter((c) => c.endsWith("/timeline")).length).toBeLessThanOrEqual(2);
     expect(sqlite.prepare("SELECT COUNT(*) AS n FROM crawled_matches").get()).toEqual({ n: 3 });
