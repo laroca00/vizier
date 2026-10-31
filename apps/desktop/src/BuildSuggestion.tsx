@@ -1,3 +1,4 @@
+import { formatPercent, useLang, useT, type Lang } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getBuild, type Build } from "./api";
@@ -46,7 +47,7 @@ export function orderSpells(recommended: number[], current: [number, number]): [
   return current[0] === FLASH ? [FLASH, other] : [other, FLASH];
 }
 
-const percent = (rate: number) => `%${Math.round(rate * 100)}`;
+const percentIn = (lang: Lang) => (rate: number) => formatPercent(rate, lang);
 
 type ImportState =
   | { status: "idle" }
@@ -72,6 +73,8 @@ type Props = {
 const SKILL_KEYS = ["", "Q", "W", "E", "R"];
 
 export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs, inDraft = true, queue = 420 }: Props) {
+  const percent = percentIn(useLang());
+  const t = useT();
   const [state, retry] = useAsync(`${queue}:${championId}:${position}:${vs}`, () => load(championId, position, vs, queue));
   const [runeImport, setRuneImport] = useState<ImportState>({ status: "idle" });
   const [spellImport, setSpellImport] = useState<ImportState>({ status: "idle" });
@@ -92,18 +95,18 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   if (state.status === "error") {
     return (
       <div className="build">
-        <p className="build__note">Öneri alınamadı.</p>
+        <p className="build__note">{t("Öneri alınamadı.")}</p>
         <button type="button" className="button" onClick={retry}>
-          Tekrar dene
+          {t("Tekrar dene")}
         </button>
       </div>
     );
   }
-  if (state.status !== "done") return <p className="build__note">Öneri yükleniyor</p>;
+  if (state.status !== "done") return <p className="build__note">{t("Öneri yükleniyor")}</p>;
 
   const { build, version } = state.value;
   if (!build || build.runes.length === 0) {
-    return <p className="build__note">{championName} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.</p>;
+    return <p className="build__note">{t("{champion} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.", { champion: championName })}</p>;
   }
 
   const page = build.runes[0];
@@ -130,11 +133,11 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
       );
       setRuneImport(
         result.status === "imported"
-          ? { status: "done", message: "Rünler aktarıldı" }
+          ? { status: "done", message: t("Rünler aktarıldı") }
           : { status: "choose", pages: result.pages },
       );
     } catch {
-      setRuneImport({ status: "error", message: "Rünler aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene." });
+      setRuneImport({ status: "error", message: t("Rünler aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene.") });
     }
   }
 
@@ -142,9 +145,9 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
     setSpellImport({ status: "working" });
     try {
       await invoke("import_spells", { spells: orderSpells(spells.ids, currentSpells) });
-      setSpellImport({ status: "done", message: "Büyüler aktarıldı" });
+      setSpellImport({ status: "done", message: t("Büyüler aktarıldı") });
     } catch {
-      setSpellImport({ status: "error", message: "Büyüler aktarılamadı. Seçim kilitlendikten sonra değiştirilemez." });
+      setSpellImport({ status: "error", message: t("Büyüler aktarılamadı. Seçim kilitlendikten sonra değiştirilemez.") });
     }
   }
 
@@ -155,14 +158,14 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
         championId,
         title: `Vizier ${championName}`,
         blocks: [
-          ...(build!.startItems ? [{ title: "Başlangıç", items: build!.startItems.ids }] : []),
-          ...(build!.coreItems ? [{ title: "Ana eşyalar, bu sırayla", items: build!.coreItems.ids }] : []),
-          { title: "Sık alınan eşyalar", items: shownItems.map((i) => i.id) },
+          ...(build!.startItems ? [{ title: t("Başlangıç"), items: build!.startItems.ids }] : []),
+          ...(build!.coreItems ? [{ title: t("Ana eşyalar, bu sırayla"), items: build!.coreItems.ids }] : []),
+          { title: t("Sık alınan eşyalar"), items: shownItems.map((i) => i.id) },
         ],
       });
-      setItemImport({ status: "done", message: "Eşya seti aktarıldı" });
+      setItemImport({ status: "done", message: t("Eşya seti aktarıldı") });
     } catch {
-      setItemImport({ status: "error", message: "Eşya seti aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene." });
+      setItemImport({ status: "error", message: t("Eşya seti aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene.") });
     }
   }
 
@@ -172,20 +175,22 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   return (
     <div className="build">
       <p className="build__summary">
-        Yama {build.patches[0]}, {build.games} maç, kazanma oranı {percent(build.winRate)}
-        {vs && build.vs === null ? ". Bu eşleşme için yeterli maç yok; genel öneri gösteriliyor" : ""}
+        {t("Yama {patch}, {games} maç, kazanma oranı {rate}", { patch: build.patches[0], games: build.games, rate: percent(build.winRate) })}
+        {vs && build.vs === null ? `. ${t("Bu eşleşme için yeterli maç yok; genel öneri gösteriliyor")}` : ""}
       </p>
 
       {build.skills && (
-        <section className="build__block" aria-label="Yetenek sırası">
+        <section className="build__block" aria-label={t("Yetenek sırası")}>
           <p className="build__stat">
-            Yetenek sırası: önce {build.skills.firstLevels.map((s) => SKILL_KEYS[s]).join(", ")}, en çok{" "}
-            {build.skills.maxOrder.map((s) => SKILL_KEYS[s]).join(" > ")}
+            {t("Yetenek sırası: önce {first}, en çok {max}", {
+              first: build.skills.firstLevels.map((s) => SKILL_KEYS[s]).join(", "),
+              max: build.skills.maxOrder.map((s) => SKILL_KEYS[s]).join(" > "),
+            })}
           </p>
         </section>
       )}
 
-      <section className="build__block" aria-label="Önerilen rünler">
+      <section className="build__block" aria-label={t("Önerilen rünler")}>
         <div className="build__runes">
           {primary && <img src={runeIconUrl(primary.icon)} alt={primary.name} title={primary.name} width={22} height={22} className="build__style" />}
           {page.perks.slice(0, 4).map((id, i) => {
@@ -201,10 +206,10 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           })}
         </div>
         <p className="build__stat">
-          {page.games} maçta, {percent(page.winRate)} kazanma
+          {t("{games} maçta, {rate} kazanma", { games: page.games, rate: percent(page.winRate) })}
         </p>
         <ImportControls
-          label="Rünleri aktar"
+          label={t("Rünleri aktar")}
           state={runeImport}
           disabled={!canImport}
           onImport={() => importRunes()}
@@ -213,21 +218,21 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
       </section>
 
       {spells && (
-        <section className="build__block" aria-label="Önerilen büyüler">
+        <section className="build__block" aria-label={t("Önerilen büyüler")}>
           <div className="build__row">
             {spells.ids.map((id) => {
               const spell = state.value.spells.get(id);
               return spell ? <img key={id} src={spellIconUrl(version, spell.id)} alt={spell.name} title={spell.name} width={30} height={30} /> : null;
             })}
-            <span className="build__stat">{percent(spells.winRate)} kazanma</span>
+            <span className="build__stat">{t("{rate} kazanma", { rate: percent(spells.winRate) })}</span>
           </div>
-          {inDraft && <ImportControls label="Büyüleri aktar" state={spellImport} disabled={!canImport} onImport={importSpells} />}
+          {inDraft && <ImportControls label={t("Büyüleri aktar")} state={spellImport} disabled={!canImport} onImport={importSpells} />}
         </section>
       )}
 
       {(build.startItems || build.coreItems) && (
-        <section className="build__block" aria-label="Başlangıç ve ana eşyalar">
-          {[build.startItems && { label: "Başlangıç", ids: build.startItems.ids }, build.coreItems && { label: "Ana eşyalar", ids: build.coreItems.ids }]
+        <section className="build__block" aria-label={t("Başlangıç ve ana eşyalar")}>
+          {[build.startItems && { label: t("Başlangıç"), ids: build.startItems.ids }, build.coreItems && { label: t("Ana eşyalar"), ids: build.coreItems.ids }]
             .filter((row): row is { label: string; ids: number[] } => !!row)
             .map((row) => (
               <div className="build__row" key={row.label}>
@@ -242,7 +247,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
       )}
 
       {shownItems.length > 0 && (
-        <section className="build__block" aria-label="Sık alınan eşyalar">
+        <section className="build__block" aria-label={t("Sık alınan eşyalar")}>
           <div className="build__row">
             {shownItems.map((item) => {
               const info = state.value.items.get(item.id);
@@ -251,14 +256,14 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
                   key={item.id}
                   src={itemIconUrl(version, item.id)}
                   alt={info?.name ?? ""}
-                  title={`${info?.name ?? ""}: ${percent(item.games / build.games)} maçta alındı`}
+                  title={t("{item}: {share} maçta alındı", { item: info?.name ?? "", share: percent(item.games / build.games) })}
                   width={30}
                   height={30}
                 />
               );
             })}
           </div>
-          <ImportControls label="Eşya setini aktar" state={itemImport} disabled={!canImport} onImport={importItems} />
+          <ImportControls label={t("Eşya setini aktar")} state={itemImport} disabled={!canImport} onImport={importItems} />
         </section>
       )}
     </div>
@@ -278,10 +283,11 @@ function ImportControls({
   onImport: () => void;
   onChoose?: (pageId: number) => void;
 }) {
+  const t = useT();
   if (state.status === "choose" && onChoose) {
     return (
-      <div className="build__choose" role="group" aria-label="Üzerine yazılacak rün sayfası">
-        <p className="build__note">Boş rün sayfası yok. Hangisinin yerine yazılsın?</p>
+      <div className="build__choose" role="group" aria-label={t("Üzerine yazılacak rün sayfası")}>
+        <p className="build__note">{t("Boş rün sayfası yok. Hangisinin yerine yazılsın?")}</p>
         <div className="build__pages">
           {state.pages.map((p) => (
             <button key={p.id} type="button" className="button" onClick={() => onChoose(p.id)}>

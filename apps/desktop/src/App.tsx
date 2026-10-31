@@ -13,6 +13,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { TierListPage } from "./pages/TierListPage";
 import type { CoachTarget } from "./ProfileCard";
 import { SearchPalette, type RiotId } from "./SearchPalette";
+import { setClientLocale, useT } from "./i18n";
 import { useSettings } from "./settings";
 import { LiquidGlass } from "./ui/LiquidGlass";
 import { ShaderGradient } from "./ui/ShaderGradient";
@@ -38,6 +39,7 @@ async function bringToFront() {
 function App() {
   const lcu = useLcuStatus();
   const settings = useSettings();
+  const t = useT();
   const draft = useChampSelect() ?? fixture;
   const [view, setView] = useState<View>(draft ? "draft" : "home");
   const [navigated, setNavigated] = useState(false);
@@ -52,6 +54,9 @@ function App() {
   const summoner = lcu.state === "connected" ? lcu.summoner : null;
   const lastGameId = lcu.state === "connected" ? lcu.lastGameId : null;
   const platform = platformOf(lcu.state === "connected" ? lcu.region : null);
+  const clientLocale = lcu.state === "connected" ? (lcu.region?.locale ?? null) : null;
+
+  useEffect(() => setClientLocale(clientLocale), [clientLocale]);
 
   // Jump to the draft when it starts and leave it when it ends, but don't
   // pull the player back if they switched away during it.
@@ -124,7 +129,7 @@ function App() {
         reflection={0.18}
         paused={settings.pauseBackgroundInGame && phase === "InProgress"}
       />
-      <nav className="shell__nav" aria-label="Ana menü">
+      <nav className="shell__nav" aria-label={t("Ana menü")}>
         <LiquidGlass className="nav" shape="pill" blur={4}>
           {items.map((item) => (
             <button
@@ -134,13 +139,13 @@ function App() {
               aria-current={item.id === view ? "page" : undefined}
               onClick={() => open(item.id)}
             >
-              {item.label}
+              {t(item.label)}
             </button>
           ))}
         </LiquidGlass>
         <LiquidGlass className="nav" shape="pill" blur={4}>
           <button type="button" className="nav__item nav__search" aria-keyshortcuts="Control+K" onClick={() => setSearching(true)}>
-            Ara <kbd>Ctrl K</kbd>
+            {t("Ara")} <kbd>Ctrl K</kbd>
           </button>
         </LiquidGlass>
         <UpdateNotice />

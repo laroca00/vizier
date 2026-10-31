@@ -1,5 +1,6 @@
 import { getProfile, getRecentMatches, getTrends, type Match, type Profile } from "./api";
 import { championIconUrl, champions, latestVersion, profileIconUrl, type Champion } from "./data/ddragon";
+import { useLang, useT } from "./i18n";
 import { queueLabel, tierLabel, timeAgo } from "./labels";
 import type { Platform, Summoner } from "./lcu";
 import { LiquidGlass } from "./ui/LiquidGlass";
@@ -35,6 +36,7 @@ export type CoachTarget = {
 type ProfileProps = { summoner: Summoner; platform: Platform; onCoach: (target: CoachTarget) => void; onOpenMatch: (matchId: string, puuid: string) => void };
 
 export function ProfileCard({ summoner, platform, onCoach, onOpenMatch }: ProfileProps) {
+  const t = useT();
   const [state, retry] = useAsync(`${platform}:${summoner.gameName}#${summoner.tagLine}`, () => load(summoner, platform));
 
   return (
@@ -43,14 +45,14 @@ export function ProfileCard({ summoner, platform, onCoach, onOpenMatch }: Profil
         <ProfileBody {...state.value} onCoach={onCoach} onOpenMatch={onOpenMatch} />
       ) : state.status === "error" ? (
         <div className="profile__message" role="alert">
-          <p>Profil alınamadı. Vizier sunucusuna şu an ulaşılamıyor.</p>
+          <p>{t("Profil alınamadı. Vizier sunucusuna şu an ulaşılamıyor.")}</p>
           <button type="button" className="button" onClick={retry}>
-            Tekrar dene
+            {t("Tekrar dene")}
           </button>
         </div>
       ) : (
         <p className="profile__message" aria-live="polite">
-          Profil yükleniyor
+          {t("Profil yükleniyor")}
         </p>
       )}
     </LiquidGlass>
@@ -58,15 +60,16 @@ export function ProfileCard({ summoner, platform, onCoach, onOpenMatch }: Profil
 }
 
 function Habits({ puuid }: { puuid: string }) {
+  const t = useT();
   const [state] = useAsync(puuid, () => getTrends(puuid));
   if (state.status !== "done" || state.value.games === 0) return null;
   const { games, wins, habits } = state.value;
   return (
-    <section aria-label="Alışkanlıklar">
-      <h3 className="profile__heading">Son {games} dereceli maç</h3>
+    <section aria-label={t("Alışkanlıklar")}>
+      <h3 className="profile__heading">{t("Son {games} dereceli maç", { games })}</h3>
       <p className="profile__empty">
-        {wins} galibiyet, {games - wins} mağlubiyet.
-        {habits.length === 0 ? " Emerald+ oyuncularına göre belirgin bir zayıf alışkanlık görünmüyor." : ""}
+        {t("{wins} galibiyet, {losses} mağlubiyet.", { wins, losses: games - wins })}
+        {habits.length === 0 ? ` ${t("Emerald+ oyuncularına göre belirgin bir zayıf alışkanlık görünmüyor.")}` : ""}
       </p>
       {habits.length > 0 && (
         <ul className="habits">
@@ -83,6 +86,8 @@ function Habits({ puuid }: { puuid: string }) {
 }
 
 function ProfileBody({ profile, matches, version, champions, onCoach, onOpenMatch }: Loaded & Omit<ProfileProps, "summoner" | "platform">) {
+  const t = useT();
+  const lang = useLang();
   const { account, summoner, ranks } = profile;
   const puuid = account.puuid;
 
@@ -103,17 +108,17 @@ function ProfileBody({ profile, matches, version, champions, onCoach, onOpenMatc
 
       <section aria-label="Dereceler">
         {ranks.length === 0 ? (
-          <p className="profile__empty">Bu sezon dereceli maç yok.</p>
+          <p className="profile__empty">{t("Bu sezon dereceli maç yok.")}</p>
         ) : (
           <ul className="ranks">
             {ranks.map((r) => (
               <li key={r.queueType}>
-                <span className="ranks__queue">{queueLabel(r.queueType)}</span>
+                <span className="ranks__queue">{queueLabel(r.queueType, lang)}</span>
                 <span className="ranks__tier">
-                  {tierLabel(r.tier, r.rank)}, {r.leaguePoints} LP
+                  {tierLabel(r.tier, r.rank, lang)}, {r.leaguePoints} LP
                 </span>
                 <span className="ranks__record">
-                  {r.wins} galibiyet, {r.losses} mağlubiyet
+                  {t("{wins} galibiyet, {losses} mağlubiyet", { wins: r.wins, losses: r.losses })}
                 </span>
               </li>
             ))}
@@ -123,10 +128,10 @@ function ProfileBody({ profile, matches, version, champions, onCoach, onOpenMatc
 
       <Habits puuid={puuid} />
 
-      <section aria-label="Son maçlar">
-        <h3 className="profile__heading">Son maçlar</h3>
+      <section aria-label={t("Son maçlar")}>
+        <h3 className="profile__heading">{t("Son maçlar")}</h3>
         {matches.length === 0 ? (
-          <p className="profile__empty">Henüz maç yok. Oynadığın maçlar burada görünecek.</p>
+          <p className="profile__empty">{t("Henüz maç yok. Oynadığın maçlar burada görünecek.")}</p>
         ) : (
           <ul className="matches">
             {matches.map((match) => {
@@ -138,23 +143,23 @@ function ProfileBody({ profile, matches, version, champions, onCoach, onOpenMatc
                   <button
                     type="button"
                     className="matches__open"
-                    aria-label={`${champion?.name ?? "Maç"} maçının detayını aç`}
+                    aria-label={t("{champion} maçının detayını aç", { champion: champion?.name ?? t("Maç") })}
                     onClick={() => onOpenMatch(match.metadata.matchId, puuid)}
                   />
                   {champion && (
                     <img src={championIconUrl(version, champion.id)} alt="" width={32} height={32} className="matches__icon" />
                   )}
-                  <span className="matches__champion">{champion?.name ?? "Bilinmeyen şampiyon"}</span>
-                  <span className="matches__result">{me.win ? "Galibiyet" : "Mağlubiyet"}</span>
+                  <span className="matches__champion">{champion?.name ?? t("Bilinmeyen şampiyon")}</span>
+                  <span className="matches__result">{me.win ? t("Galibiyet") : t("Mağlubiyet")}</span>
                   <span className="matches__kda">
                     {me.kills}/{me.deaths}/{me.assists}
                   </span>
-                  <span className="matches__when">{timeAgo(match.info.gameEndTimestamp)}</span>
+                  <span className="matches__when">{timeAgo(match.info.gameEndTimestamp, lang)}</span>
                   <button
                     type="button"
                     className="matches__coach"
                     onClick={() =>
-                      onCoach({ matchId: match.metadata.matchId, puuid, championName: champion?.name ?? "Bilinmeyen şampiyon" })
+                      onCoach({ matchId: match.metadata.matchId, puuid, championName: champion?.name ?? t("Bilinmeyen şampiyon") })
                     }
                   >
                     Analiz et

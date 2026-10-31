@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { translate, type Lang } from "./i18n";
 
 export type Summoner = { gameName: string; tagLine: string; puuid: string };
 
@@ -38,8 +39,9 @@ const PHASE_LABELS: Record<string, string> = {
   EndOfGame: "Maç bitti",
 };
 
-export function phaseLabel(phase: string | null): string | null {
-  return phase ? (PHASE_LABELS[phase] ?? null) : null;
+export function phaseLabel(phase: string | null, lang: Lang = "tr"): string | null {
+  const label = phase ? PHASE_LABELS[phase] : undefined;
+  return label ? translate(lang, label) : null;
 }
 
 export type DraftMember = {

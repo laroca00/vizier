@@ -1,4 +1,5 @@
 import notices from "../../../../THIRD_PARTY_NOTICES.md?raw";
+import { useT } from "../i18n";
 import { LiquidGlass } from "../ui/LiquidGlass";
 
 const CREDITS = [
@@ -9,10 +10,11 @@ const CREDITS = [
 ];
 
 export function About() {
+  const t = useT();
   return (
     <LiquidGlass className="panel about" radius={28} strength={2.5}>
-      <h1 className="about__title enter">Hakkında</h1>
-      <p className="about__version enter">Sürüm {__APP_VERSION__}</p>
+      <h1 className="about__title enter">{t("Hakkında")}</h1>
+      <p className="about__version enter">{t("Sürüm {version}", { version: __APP_VERSION__ })}</p>
 
       <section className="about__section enter" aria-labelledby="about-riot">
         <h2 id="about-riot">Riot Games</h2>
@@ -24,19 +26,19 @@ export function About() {
       </section>
 
       <section className="about__section enter" aria-labelledby="about-oss">
-        <h2 id="about-oss">Açık kaynak</h2>
+        <h2 id="about-oss">{t("Açık kaynak")}</h2>
         <ul className="credits">
           {CREDITS.map((credit) => (
             <li key={credit.name}>
               <span className="credits__name">{credit.name}</span>
               <span className="credits__use">
-                {credit.use}, {credit.license}
+                {t(credit.use)}, {credit.license}
               </span>
             </li>
           ))}
         </ul>
         <details className="notices">
-          <summary>Lisans metinleri</summary>
+          <summary>{t("Lisans metinleri")}</summary>
           <pre lang="en">{notices}</pre>
         </details>
       </section>

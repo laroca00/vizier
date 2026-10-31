@@ -1,22 +1,23 @@
+import { translate, useLang, type Lang } from "./i18n";
 import { phaseLabel, type LcuStatus } from "./lcu";
 import { LiquidGlass } from "./ui/LiquidGlass";
 
-function describe(status: LcuStatus): { title: string; detail: string | null } {
+function describe(status: LcuStatus, lang: Lang): { title: string; detail: string | null } {
   switch (status.state) {
     case "disconnected":
-      return { title: "League istemcisine bağlı değil", detail: null };
+      return { title: translate(lang, "League istemcisine bağlı değil"), detail: null };
     case "connecting":
-      return { title: "League istemcisine bağlanıyor", detail: null };
+      return { title: translate(lang, "League istemcisine bağlanıyor"), detail: null };
     case "connected":
       return {
-        title: status.summoner ? `${status.summoner.gameName}#${status.summoner.tagLine}` : "League istemcisine bağlı",
-        detail: phaseLabel(status.phase),
+        title: status.summoner ? `${status.summoner.gameName}#${status.summoner.tagLine}` : translate(lang, "League istemcisine bağlı"),
+        detail: phaseLabel(status.phase, lang),
       };
   }
 }
 
 export function ClientStatus({ status, className }: { status: LcuStatus; className?: string }) {
-  const { title, detail } = describe(status);
+  const { title, detail } = describe(status, useLang());
 
   return (
     <LiquidGlass className={`status ${className ?? ""}`} shape="pill" blur={3} role="status">

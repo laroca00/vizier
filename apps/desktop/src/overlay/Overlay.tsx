@@ -5,10 +5,11 @@ import { getBenchmarks, getBuild, getPace, type Benchmarks, type Build, type Pac
 import { champions, items } from "../data/ddragon";
 import { overlayFixture, scoutingFixture } from "../dev/fixtures";
 import { platformOf, type LcuStatus, type Platform } from "../lcu";
+import { formatPercent, setClientLocale, useLang, useT, type Params } from "../i18n";
 import { positionLabel } from "../labels";
 import { useSettings } from "../settings";
 import { useAsync } from "../useAsync";
-import { championKey, clock, findMe, itemDifference, myNumbers, nextSkill, objectiveTimers, paceAt, type LiveGame } from "./live";
+import { championKey, clock, type Timer, findMe, itemDifference, myNumbers, nextSkill, objectiveTimers, paceAt, type LiveGame } from "./live";
 import { Scouting } from "./Scouting";
 import "./overlay.css";
 
@@ -23,6 +24,16 @@ function useLiveGame(): LiveGame | null {
     };
   }, []);
   return game;
+}
+
+function useClientLocale() {
+  useEffect(() => {
+    if (!isTauri()) return;
+    invoke<LcuStatus>("lcu_status").then(
+      (status) => setClientLocale(status.state === "connected" ? (status.region?.locale ?? null) : null),
+      () => {},
+    );
+  }, []);
 }
 
 function useLoading() {
@@ -112,6 +123,9 @@ const median = (benchmarks: Benchmarks | null, metric: string) => benchmarks?.me
 const thousands = (gold: number) => `${gold > 0 ? "+" : gold < 0 ? "−" : ""}${(Math.abs(gold) / 1000).toFixed(1)}k`;
 
 export function Overlay() {
+  useClientLocale();
+  const t = useT();
+  const lang = useLang();
   const game = useLiveGame();
   const loading = useLoading();
   const player = usePlayer(loading);
@@ -147,16 +161,16 @@ export function Overlay() {
       {skill && (
         <section className="overlay__card overlay__skill">
           <span className="overlay__key">{skill}</span>
-          <span>yükselt</span>
+          <span>{t("yükselt")}</span>
         </section>
       )}
 
       {timers.length > 0 && (
         <section className="overlay__card">
-          {timers.map((t) => (
-            <p key={t.id} className="overlay__row" data-ours={t.ours ?? undefined}>
-              <span>{t.label}</span>
-              <span className="overlay__value">{clock(t.at - time)}</span>
+          {timers.map((timer) => (
+            <p key={timer.id} className="overlay__row" data-ours={timer.ours ?? undefined}>
+              <span>{timerLabel(timer, t)}</span>
+              <span className="overlay__value">{clock(timer.at - time)}</span>
             </p>
           ))}
         </section>
@@ -164,14 +178,14 @@ export function Overlay() {
 
       {numbers && (numbers.csPerMinute !== null || numbers.killParticipation !== null) && (
         <section className="overlay__card">
-          <p className="overlay__caption">Emerald+ {positionLabel(position!)?.toLocaleLowerCase("tr")} medyanına göre</p>
+          <p className="overlay__caption">{t("Emerald+ {role} medyanına göre", { role: positionLabel(position!, lang)?.toLocaleLowerCase(lang) ?? "" })}</p>
           {numbers.csPerMinute !== null && (
             <Benchmark label="CS/dk" value={numbers.csPerMinute.toFixed(1)} target={median(extra.benchmarks, "cs_pm")} raw={numbers.csPerMinute} />
           )}
           {numbers.killParticipation !== null && (
             <Benchmark
-              label="Skora katkı"
-              value={`%${Math.round(numbers.killParticipation * 100)}`}
+              label={t("Skora katkı")}
+              value={formatPercent(numbers.killParticipation, lang)}
               target={median(extra.benchmarks, "kill_participation")}
               raw={numbers.killParticipation}
               percent
@@ -186,9 +200,9 @@ export function Overlay() {
 
       {paceTarget !== null && (
         <section className="overlay__card">
-          <p className="overlay__caption">Tempo, {clock(time)} itibarıyla</p>
+          <p className="overlay__caption">{t("Tempo, {time} itibarıyla", { time: clock(time) })}</p>
           <p className="overlay__row" data-ahead={me.scores.creepScore >= paceTarget}>
-            <span>Minyon ve kamp</span>
+            <span>{t("Minyon ve kamp")}</span>
             <span className="overlay__value">
               {me.scores.creepScore}
               <span className="overlay__target"> / {Math.round(paceTarget)}</span>
@@ -199,15 +213,15 @@ export function Overlay() {
 
       {items && (
         <section className="overlay__card">
-          <p className="overlay__caption">Eşya altını farkı</p>
+          <p className="overlay__caption">{t("Eşya altını farkı")}</p>
           {items.lane !== null && (
             <p className="overlay__row" data-ahead={items.lane >= 0}>
-              <span>Koridor rakibine göre</span>
+              <span>{t("Koridor rakibine göre")}</span>
               <span className="overlay__value">{thousands(items.lane)}</span>
             </p>
           )}
           <p className="overlay__row" data-ahead={items.team >= 0}>
-            <span>Takım</span>
+            <span>{t("Takım")}</span>
             <span className="overlay__value">{thousands(items.team)}</span>
           </p>
         </section>
@@ -217,13 +231,22 @@ export function Overlay() {
 }
 
 function Benchmark({ label, value, target, raw, percent }: { label: string; value: string; target: number | null; raw: number; percent?: boolean }) {
+  const lang = useLang();
   return (
     <p className="overlay__row" data-ahead={target === null ? undefined : raw >= target}>
       <span>{label}</span>
       <span className="overlay__value">
         {value}
-        {target !== null && <span className="overlay__target"> / {percent ? `%${Math.round(target * 100)}` : target.toFixed(1)}</span>}
+        {target !== null && <span className="overlay__target"> / {percent ? formatPercent(target, lang) : target.toFixed(1)}</span>}
       </span>
     </p>
   );
+}
+
+const TIMER_NAMES = { dragon: "Ejder", baron: "Baron" } as const;
+const LANE_NAMES = { top: "üst", mid: "orta", bot: "alt" } as const;
+
+function timerLabel(timer: Timer, t: (text: string, params?: Params) => string) {
+  if (timer.kind !== "inhibitor") return t(TIMER_NAMES[timer.kind]);
+  return t(timer.ours ? "Bizim {lane} inhibitör" : "Rakip {lane} inhibitör", { lane: t(LANE_NAMES[timer.lane ?? "mid"]) });
 }

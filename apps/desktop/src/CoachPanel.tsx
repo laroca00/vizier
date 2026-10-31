@@ -1,3 +1,4 @@
+import { useT } from "./i18n";
 import { useEffect, useState } from "react";
 import { ApiError, getCoaching } from "./api";
 import type { CoachTarget } from "./ProfileCard";
@@ -23,6 +24,7 @@ function errorMessage(error: unknown) {
 }
 
 export function CoachPanel({ matchId, puuid, championName, justFinished, onClose }: CoachTarget & { onClose: () => void }) {
+  const t = useT();
   const [state, retry] = useAsync(`${matchId}:${puuid}`, () => getCoaching(matchId, puuid));
   const [retries, setRetries] = useState(0);
   const waitingForRiot =
@@ -37,14 +39,14 @@ export function CoachPanel({ matchId, puuid, championName, justFinished, onClose
     return () => clearTimeout(timer);
   }, [waitingForRiot, retry]);
 
-  const title = justFinished ? "Son maçının analizi" : `${championName} maçının analizi`;
+  const title = justFinished ? t("Son maçının analizi") : t("{champion} maçının analizi", { champion: championName });
 
   return (
     <LiquidGlass className="panel coach" radius={28} strength={2.5}>
       <header className="coach__header">
         <h2 className="coach__title">{title}</h2>
         <button type="button" className="button" onClick={onClose}>
-          Geri
+          {t("Geri")}
         </button>
       </header>
 
@@ -55,29 +57,29 @@ export function CoachPanel({ matchId, puuid, championName, justFinished, onClose
             {state.value.points.map((point, i) => (
               <li key={i}>
                 <p className="coach__point-title">
-                  {point.minute !== null && <span className="coach__minute">{Math.floor(point.minute)}. dk</span>}
+                  {point.minute !== null && <span className="coach__minute">{t("{m}. dk", { m: Math.floor(point.minute) })}</span>}
                   {point.title}
                 </p>
                 <p className="coach__point-detail">{point.detail}</p>
               </li>
             ))}
           </ol>
-          {state.value.source && <p className="coach__source">{SOURCES[state.value.source] ?? ""}</p>}
+          {state.value.source && <p className="coach__source">{t(SOURCES[state.value.source] ?? "")}</p>}
         </>
       ) : waitingForRiot ? (
         <p className="coach__note" aria-live="polite">
-          Riot maçı birkaç dakika içinde yayınlıyor. Vizier hazır olunca analizi kendiliğinden getirecek.
+          {t("Riot maçı birkaç dakika içinde yayınlıyor. Vizier hazır olunca analizi kendiliğinden getirecek.")}
         </p>
       ) : state.status === "error" ? (
         <div role="alert">
-          <p className="coach__note">{errorMessage(state.error)}</p>
+          <p className="coach__note">{t(errorMessage(state.error))}</p>
           <button type="button" className="button" onClick={retry}>
-            Tekrar dene
+            {t("Tekrar dene")}
           </button>
         </div>
       ) : (
         <p className="coach__note" aria-live="polite">
-          Maç inceleniyor.
+          {t("Maç inceleniyor.")}
         </p>
       )}
     </LiquidGlass>

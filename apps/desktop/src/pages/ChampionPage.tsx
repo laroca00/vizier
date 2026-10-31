@@ -1,3 +1,4 @@
+import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { useState } from "react";
 import { getChampion, getCounters, getSynergies, type ChampionOverview, type Counters } from "../api";
 import { BuildSuggestion } from "../BuildSuggestion";
@@ -10,7 +11,7 @@ import { useAsync } from "../useAsync";
 
 const SHOWN_MATCHUPS = 5;
 const MIN_ROLE_GAMES = 10;
-const percent = (n: number) => `%${(n * 100).toFixed(1)}`;
+const percentIn = (lang: Lang) => (n: number) => formatPercent(n, lang, 1);
 const signed = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n * 100).toFixed(1)}`;
 
 async function loadStatic() {
@@ -27,11 +28,13 @@ type Props = {
 };
 
 export function ChampionPage({ championId, initialPosition = null, initialQueue = RANKED, onOpenChampion }: Props) {
+  const t = useT();
+  const lang = useLang();
   const [position, setPosition] = useState<string | null>(initialPosition);
   const [queue, setQueue] = useState(initialQueue);
   const [data] = useAsync("static", loadStatic);
   const [state, retry] = useAsync(`${queue}:${championId}:${position}`, () => getChampion(championId, position, queue));
-  const queueLabel = QUEUES.find((q) => q.id === queue)?.label ?? "";
+  const queueLabel = t(QUEUES.find((q) => q.id === queue)?.label ?? "");
   const champion = data.status === "done" ? data.value.champions.get(championId) : undefined;
   const version = data.status === "done" ? data.value.version : null;
 
@@ -40,38 +43,44 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
       <header className="champion__header enter">
         {champion && version && <img className="champion__portrait" src={championIconUrl(version, champion.id)} alt="" width={64} height={64} />}
         <div>
-          <h1 className="champion__name">{champion?.name ?? "Şampiyon"}</h1>
+          <h1 className="champion__name">{champion?.name ?? t("Şampiyon")}</h1>
           {state.status === "done" && state.value && (
             <p className="detail__meta">
-              Yama {state.value.patches[0]}, Emerald+{" "}
-              {queue === RANKED ? POSITIONS[state.value.position ?? ""]?.toLocaleLowerCase("tr") : queueLabel}, {state.value.games} maç
+              {t("Yama {patch}, Emerald+ {scope}, {games} maç", {
+                patch: state.value.patches[0],
+                scope: queue === RANKED ? t(POSITIONS[state.value.position ?? ""] ?? "").toLocaleLowerCase(lang) : queueLabel,
+                games: state.value.games,
+              })}
             </p>
           )}
         </div>
       </header>
 
-      <div className="tiers__tabs enter" role="tablist" aria-label="Oyun modu">
+      <div className="tiers__tabs enter" role="tablist" aria-label={t("Oyun modu")}>
         {QUEUES.map((q) => (
           <button key={q.id} type="button" role="tab" aria-selected={q.id === queue} className="nav__item" onClick={() => setQueue(q.id)}>
-            {q.label}
+            {t(q.label)}
           </button>
         ))}
       </div>
 
       {state.status === "error" ? (
         <div role="alert">
-          <p className="coach__note">Şampiyon istatistikleri alınamadı. Vizier sunucusuna şu an ulaşılamıyor.</p>
+          <p className="coach__note">{t("Şampiyon istatistikleri alınamadı. Vizier sunucusuna şu an ulaşılamıyor.")}</p>
           <button type="button" className="button" onClick={retry}>
-            Tekrar dene
+            {t("Tekrar dene")}
           </button>
         </div>
       ) : state.status !== "done" ? (
         <p className="coach__note" aria-live="polite">
-          Yükleniyor
+          {t("Yükleniyor")}
         </p>
       ) : !state.value ? (
         <p className="coach__note">
-          {champion?.name ?? "Bu şampiyon"} için {queueLabel} modunda henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.
+          {t("{champion} için {mode} modunda henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.", {
+            champion: champion?.name ?? t("Bu şampiyon"),
+            mode: queueLabel,
+          })}
         </p>
       ) : (
         <Overview
@@ -101,6 +110,8 @@ type OverviewProps = {
 };
 
 function Overview({ overview, championId, championName, champions, version, queue, onPosition, onOpenChampion }: OverviewProps) {
+  const percent = percentIn(useLang());
+  const t = useT();
   const position = overview.position;
   const ranked = queue === RANKED && position !== null;
   // A role with a handful of games is someone's troll pick, not a way to play the champion.
@@ -108,7 +119,7 @@ function Overview({ overview, championId, championName, champions, version, queu
   return (
     <>
       {ranked && roles.length > 1 && (
-        <div className="tiers__tabs enter" role="tablist" aria-label="Rol">
+        <div className="tiers__tabs enter" role="tablist" aria-label={t("Rol")}>
           {roles.map((p) => (
             <button
               key={p.position}
@@ -118,7 +129,7 @@ function Overview({ overview, championId, championName, champions, version, queu
               className="nav__item"
               onClick={() => onPosition(p.position)}
             >
-              {POSITIONS[p.position]} <span className="champion__share">%{Math.round(p.share * 100)}</span>
+              {t(POSITIONS[p.position])} <span className="champion__share">{percent(p.share).replace(/\.0(?=%|$)/, "")}</span>
             </button>
           ))}
         </div>
@@ -138,22 +149,22 @@ function Overview({ overview, championId, championName, champions, version, queu
           </dd>
         </div>
         <div>
-          <dt>{winLabel(queue)}</dt>
+          <dt>{t(winLabel(queue))}</dt>
           <dd>{percent(overview.winRate)}</dd>
         </div>
         <div>
-          <dt>Geçen yamaya göre</dt>
+          <dt>{t("Geçen yamaya göre")}</dt>
           <dd data-trend={overview.winRateChange == null ? undefined : overview.winRateChange >= 0 ? "up" : "down"}>
-            {overview.winRateChange == null ? "–" : `${signed(overview.winRateChange)} puan`}
+            {overview.winRateChange == null ? "–" : t("{change} puan", { change: signed(overview.winRateChange) })}
           </dd>
         </div>
         <div>
-          <dt>Seçilme</dt>
+          <dt>{t("Seçilme")}</dt>
           <dd>{percent(overview.pickRate)}</dd>
         </div>
         {overview.banRate != null && (
           <div>
-            <dt>Yasaklanma</dt>
+            <dt>{t("Yasaklanma")}</dt>
             <dd>{percent(overview.banRate)}</dd>
           </div>
         )}
@@ -161,7 +172,7 @@ function Overview({ overview, championId, championName, champions, version, queu
 
       <div className="champion__body">
         <section className="enter" aria-label="Build">
-          <h2 className="draft__heading">Build</h2>
+          <h2 className="draft__heading">{t("Build")}</h2>
           <BuildSuggestion
             championId={championId}
             championName={championName}
@@ -174,12 +185,12 @@ function Overview({ overview, championId, championName, champions, version, queu
           />
         </section>
         {ranked && (
-          <section className="enter champion__pros" aria-label="Pro maçları">
-            <h2 className="draft__heading">Pro'lar bu şampiyonu nasıl oynadı</h2>
+          <section className="enter champion__pros" aria-label={t("Pro maçları")}>
+            <h2 className="draft__heading">{t("Pro'lar bu şampiyonu nasıl oynadı")}</h2>
             <ProBuildList
               filter={{ championId, limit: 6 }}
               compact
-              emptyText="Worlds oyuncularının bu şampiyonla son 30 günde solo kuyruk maçı yok."
+              emptyText={t("Worlds oyuncularının bu şampiyonla son 30 günde solo kuyruk maçı yok.")}
             />
           </section>
         )}
@@ -215,20 +226,21 @@ type CounterProps = {
 };
 
 function CounterLists({ championId, position, champions, version, onOpenChampion }: CounterProps) {
+  const t = useT();
   const [state, retry] = useAsync(`${championId}:${position}`, () => getCounters(championId, position));
   return (
-    <section className="enter" aria-label="Eşleşmeler">
+    <section className="enter" aria-label={t("Eşleşmeler")}>
       {state.status === "error" ? (
         <div role="alert">
-          <p className="coach__note">Eşleşmeler alınamadı.</p>
+          <p className="coach__note">{t("Eşleşmeler alınamadı.")}</p>
           <button type="button" className="button" onClick={retry}>
-            Tekrar dene
+            {t("Tekrar dene")}
           </button>
         </div>
       ) : state.status !== "done" ? null : state.value.matchups.length < 2 ? (
         <>
-          <h2 className="draft__heading">Eşleşmeler</h2>
-          <p className="build__note">Koridor rakiplerine göre ayırmak için henüz yeterli maç yok.</p>
+          <h2 className="draft__heading">{t("Eşleşmeler")}</h2>
+          <p className="build__note">{t("Koridor rakiplerine göre ayırmak için henüz yeterli maç yok.")}</p>
         </>
       ) : (
         <Matchups counters={state.value} champions={champions} version={version} onOpenChampion={onOpenChampion} />
@@ -238,6 +250,8 @@ function CounterLists({ championId, position, champions, version, onOpenChampion
 }
 
 function Matchups({ counters, champions, version, onOpenChampion }: { counters: Counters } & Omit<CounterProps, "championId" | "position">) {
+  const percent = percentIn(useLang());
+  const t = useT();
   const all = counters.matchups;
   const shown = Math.min(SHOWN_MATCHUPS, Math.floor(all.length / 2));
   const groups = [
@@ -249,7 +263,7 @@ function Matchups({ counters, champions, version, onOpenChampion }: { counters: 
 
   return groups.map((group) => (
     <div key={group.title} className="matchups">
-      <h2 className="draft__heading">{group.title}</h2>
+      <h2 className="draft__heading">{t(group.title)}</h2>
       <ul className="matchups__list">
         {group.list.map((m, i) => {
           const opponent = champions.get(m.championId);
@@ -264,7 +278,7 @@ function Matchups({ counters, champions, version, onOpenChampion }: { counters: 
                 <span style={{ "--size": `${Math.abs(lean) * 50}%`, "--i": i } as React.CSSProperties} data-side={lean < 0 ? "loss" : "win"} />
               </span>
               <span className="matchups__rate">{percent(m.winRate)}</span>
-              <span className="matchups__games">{m.games} maç</span>
+              <span className="matchups__games">{t("{games} maç", { games: m.games })}</span>
             </li>
           );
         })}
@@ -282,11 +296,14 @@ function AllyList({
   version,
   onOpenChampion,
 }: Omit<CounterProps, "onOpenChampion"> & { onOpenChampion: (championId: number, position: string) => void }) {
+  const percent = percentIn(useLang());
+  const t = useT();
+  const lang = useLang();
   const [state] = useAsync(`allies:${championId}:${position}`, () => getSynergies(championId, position));
   if (state.status !== "done" || state.value.allies.length === 0) return null;
   return (
-    <section className="matchups" aria-label="Takım arkadaşları">
-      <h2 className="draft__heading">En iyi anlaştığı takım arkadaşları</h2>
+    <section className="matchups" aria-label={t("Takım arkadaşları")}>
+      <h2 className="draft__heading">{t("En iyi anlaştığı takım arkadaşları")}</h2>
       <ul className="matchups__list matchups__list--plain">
         {state.value.allies.slice(0, SHOWN_ALLIES).map((a) => {
           const ally = champions.get(a.championId);
@@ -296,9 +313,9 @@ function AllyList({
                 {ally && version && <img src={championIconUrl(version, ally.id)} alt="" width={26} height={26} />}
                 <span className="matchups__name">{ally?.name ?? a.championId}</span>
               </button>
-              <span className="matchups__games">{POSITIONS[a.position]?.toLocaleLowerCase("tr")}</span>
+              <span className="matchups__games">{t(POSITIONS[a.position] ?? "").toLocaleLowerCase(lang)}</span>
               <span className="matchups__rate">{percent(a.winRate)}</span>
-              <span className="matchups__games">{a.games} maç</span>
+              <span className="matchups__games">{t("{games} maç", { games: a.games })}</span>
             </li>
           );
         })}

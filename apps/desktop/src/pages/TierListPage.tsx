@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { getBans, getTierList } from "../api";
 import { championIconUrl, champions, latestVersion } from "../data/ddragon";
 import { POSITIONS } from "../labels";
@@ -7,7 +8,7 @@ import { LiquidGlass } from "../ui/LiquidGlass";
 import { useAsync } from "../useAsync";
 
 const ORDER = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
-const percent = (n: number) => `%${(n * 100).toFixed(1)}`;
+const percentIn = (lang: Lang) => (n: number) => formatPercent(n, lang, 1);
 const signed = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n * 100).toFixed(1)}`;
 
 /** Rows per game in the tier list: one per role and team on the Rift, every player elsewhere. */
@@ -26,6 +27,8 @@ async function load(queue: number, position: string) {
 }
 
 export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: number, position: string | null, queue: number) => void }) {
+  const percent = percentIn(useLang());
+  const t = useT();
   const [queue, setQueue] = useState(RANKED);
   const [position, setPosition] = useState("MIDDLE");
   const [state, retry] = useAsync(`${queue}:${position}`, () => load(queue, position));
@@ -34,27 +37,30 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
   return (
     <LiquidGlass className="panel tiers" radius={28} strength={2.5}>
       <header className="draft__header">
-        <h1 className="draft__title">Tier listesi</h1>
+        <h1 className="draft__title">{t("Tier listesi")}</h1>
         {state.status === "done" && state.value.list.patches.length > 0 && (
           <p className="draft__phase">
-            Yama {state.value.list.patches[0]}, Emerald+ oyuncularından {Math.round(state.value.list.games / playersPerGame(queue))} maç
+            {t("Yama {patch}, Emerald+ oyuncularından {games} maç", {
+              patch: state.value.list.patches[0],
+              games: Math.round(state.value.list.games / playersPerGame(queue)),
+            })}
           </p>
         )}
       </header>
 
-      <div className="tiers__tabs" role="tablist" aria-label="Oyun modu">
+      <div className="tiers__tabs" role="tablist" aria-label={t("Oyun modu")}>
         {QUEUES.map((q) => (
           <button key={q.id} type="button" role="tab" aria-selected={q.id === queue} className="nav__item" onClick={() => setQueue(q.id)}>
-            {q.label}
+            {t(q.label)}
           </button>
         ))}
       </div>
 
       {ranked && (
-        <div className="tiers__tabs tiers__tabs--roles" role="tablist" aria-label="Rol">
+        <div className="tiers__tabs tiers__tabs--roles" role="tablist" aria-label={t("Rol")}>
           {ORDER.map((p) => (
             <button key={p} type="button" role="tab" aria-selected={p === position} className="nav__item" onClick={() => setPosition(p)}>
-              {POSITIONS[p]}
+              {t(POSITIONS[p])}
             </button>
           ))}
         </div>
@@ -62,29 +68,31 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
 
       {state.status === "error" ? (
         <div role="alert">
-          <p className="coach__note">Tier listesi alınamadı.</p>
+          <p className="coach__note">{t("Tier listesi alınamadı.")}</p>
           <button type="button" className="button" onClick={retry}>
-            Tekrar dene
+            {t("Tekrar dene")}
           </button>
         </div>
       ) : state.status !== "done" ? (
-        <p className="coach__note">Yükleniyor</p>
+        <p className="coach__note">{t("Yükleniyor")}</p>
       ) : (
         <div className="tiers__body" data-solo={!state.value.bans || undefined}>
           {state.value.list.champions.length === 0 ? (
             <p className="coach__note">
-              {ranked ? "Bu rol" : `${QUEUES.find((q) => q.id === queue)?.label}`} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.
+              {t("{what} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.", {
+                what: ranked ? t("Bu rol") : t(QUEUES.find((q) => q.id === queue)?.label ?? ""),
+              })}
             </p>
           ) : (
             <table className="tiers__table">
               <thead>
                 <tr>
                   <th scope="col">Tier</th>
-                  <th scope="col">Şampiyon</th>
-                  <th scope="col">{winLabel(queue)}</th>
-                  <th scope="col">Değişim</th>
-                  <th scope="col">Seçilme</th>
-                  <th scope="col">Maç</th>
+                  <th scope="col">{t("Şampiyon")}</th>
+                  <th scope="col">{t(winLabel(queue))}</th>
+                  <th scope="col">{t("Değişim")}</th>
+                  <th scope="col">{t("Seçilme")}</th>
+                  <th scope="col">{t("Maç")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -121,9 +129,9 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
           )}
 
           {state.value.bans && (
-            <aside className="tiers__bans" aria-label="Yasak önerileri">
-              <h2 className="draft__heading">Yasak önerileri</h2>
-              <p className="build__note">Sık seçilip sık kazanan şampiyonlar; yasaklamak rakibin en çok kazandığı seçenekleri kapatır.</p>
+            <aside className="tiers__bans" aria-label={t("Yasak önerileri")}>
+              <h2 className="draft__heading">{t("Yasak önerileri")}</h2>
+              <p className="build__note">{t("Sık seçilip sık kazanan şampiyonlar; yasaklamak rakibin en çok kazandığı seçenekleri kapatır.")}</p>
               <ul className="bans">
                 {state.value.bans.champions.map((c) => {
                   const champion = state.value.champions.get(c.championId);

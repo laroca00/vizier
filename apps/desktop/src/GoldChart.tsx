@@ -1,20 +1,23 @@
+import { intlLocale, useLang, useT, type Params } from "./i18n";
 import { useId, useState } from "react";
 
 const WIDTH = 480;
 const HEIGHT = 150;
 const PAD = { top: 12, right: 8, bottom: 22, left: 8 };
 
-const format = new Intl.NumberFormat("tr");
-
-function describe(diff: number) {
-  if (diff === 0) return "eşit";
-  return diff > 0 ? `takımın ${format.format(diff)} altın önde` : `rakip ${format.format(-diff)} altın önde`;
+function describe(diff: number, t: (text: string, params?: Params) => string, format: Intl.NumberFormat) {
+  if (diff === 0) return t("eşit");
+  return diff > 0 ? t("takımın {gold} altın önde", { gold: format.format(diff) }) : t("rakip {gold} altın önde", { gold: format.format(-diff) });
 }
 
 /** `diff` is the player's team minus the enemy team, one value per minute. */
 export function GoldChart({ diff }: { diff: number[] }) {
+  const t = useT();
+  const lang = useLang();
   const id = useId().replace(/[^\w-]/g, "");
   const [hover, setHover] = useState<number | null>(null);
+  const format = new Intl.NumberFormat(intlLocale(lang));
+  const say = (v: number) => describe(v, t, format);
   if (diff.length < 2) return null;
 
   const extent = Math.max(1000, ...diff.map(Math.abs));
@@ -35,7 +38,8 @@ export function GoldChart({ diff }: { diff: number[] }) {
     setHover(Math.max(0, Math.min(diff.length - 1, i)));
   }
 
-  const summary = `Altın farkı ${diff.length - 1} dakika boyunca. En büyük fark ${peak}. dakikada, ${describe(diff[peak])}. Maç sonunda ${describe(diff[diff.length - 1])}.`;
+  const trend = t("En büyük fark {peak}. dakikada, {peakDiff}. Maç sonunda {endDiff}.", { peak, peakDiff: say(diff[peak]), endDiff: say(diff[diff.length - 1]) });
+  const summary = `${t("Altın farkı {minutes} dakika boyunca.", { minutes: diff.length - 1 })} ${trend}`;
 
   return (
     <figure className="gold">
@@ -59,8 +63,8 @@ export function GoldChart({ diff }: { diff: number[] }) {
         <path d={area} className="gold__area gold__area--behind" clipPath={`url(#${id}-below)`} />
         <line x1={PAD.left} x2={WIDTH - PAD.right} y1={zero} y2={zero} className="gold__zero" />
         <path d={line} className="gold__line" />
-        <text x={PAD.left + 2} y={PAD.top + 10} className="gold__label">Takımın önde</text>
-        <text x={PAD.left + 2} y={HEIGHT - PAD.bottom - 4} className="gold__label">Rakip önde</text>
+        <text x={PAD.left + 2} y={PAD.top + 10} className="gold__label">{t("Takımın önde")}</text>
+        <text x={PAD.left + 2} y={HEIGHT - PAD.bottom - 4} className="gold__label">{t("Rakip önde")}</text>
         {ticks.map((i) => (
           <text key={i} x={x(i)} y={HEIGHT - 6} className="gold__tick" textAnchor="middle">
             {i}
@@ -74,22 +78,22 @@ export function GoldChart({ diff }: { diff: number[] }) {
         )}
       </svg>
       <figcaption className="gold__caption" aria-live="polite">
-        {hover !== null ? `${hover}. dakika: ${describe(diff[hover])}` : `Dakika başına altın farkı. ${summary.split(". ").slice(1).join(". ")}`}
+        {hover !== null ? t("{minute}. dakika: {diff}", { minute: hover, diff: say(diff[hover]) }) : `${t("Dakika başına altın farkı.")} ${trend}`}
       </figcaption>
       <details className="gold__table">
-        <summary>Tablo olarak göster</summary>
+        <summary>{t("Tablo olarak göster")}</summary>
         <table>
           <thead>
             <tr>
-              <th scope="col">Dakika</th>
-              <th scope="col">Fark</th>
+              <th scope="col">{t("Dakika")}</th>
+              <th scope="col">{t("Fark")}</th>
             </tr>
           </thead>
           <tbody>
             {diff.map((v, i) => (
               <tr key={i}>
                 <td>{i}</td>
-                <td>{describe(v)}</td>
+                <td>{say(v)}</td>
               </tr>
             ))}
           </tbody>

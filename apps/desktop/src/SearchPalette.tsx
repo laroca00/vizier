@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { championIconUrl, champions, latestVersion, type Champion } from "./data/ddragon";
 import type { Platform } from "./lcu";
+import { useT } from "./i18n";
 import { useAsync } from "./useAsync";
 
 export type RiotId = { gameName: string; tagLine: string; platform: Platform };
@@ -61,6 +62,7 @@ type Props = {
 };
 
 export function SearchPalette({ open, onClose, onChampion, onProfile, home }: Props) {
+  const t = useT();
   const dialog = useRef<HTMLDialogElement>(null);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -105,7 +107,7 @@ export function SearchPalette({ open, onClose, onChampion, onProfile, home }: Pr
     <dialog
       ref={dialog}
       className="palette"
-      aria-label="Ara"
+      aria-label={t("Ara")}
       onClose={onClose}
       onClick={(event) => event.target === dialog.current && onClose()}
     >
@@ -113,7 +115,7 @@ export function SearchPalette({ open, onClose, onChampion, onProfile, home }: Pr
         <input
           className="palette__input"
           type="search"
-          placeholder="Şampiyon ya da Riot ID (Ad#TR1)"
+          placeholder={t("Şampiyon ya da Riot ID (Ad#TR1)")}
           autoFocus
           role="combobox"
           aria-expanded={results.length > 0}
@@ -127,16 +129,16 @@ export function SearchPalette({ open, onClose, onChampion, onProfile, home }: Pr
           onKeyDown={onKeyDown}
         />
         {query.trim() && (
-          <ul className="palette__results" id={listId} role="listbox" aria-label="Sonuçlar">
+          <ul className="palette__results" id={listId} role="listbox" aria-label={t("Sonuçlar")}>
             {results.length === 0 ? (
               <li className="palette__empty">
                 {data.status === "error"
-                  ? "Şampiyon listesi yüklenemedi. İnternet bağlantını kontrol et."
+                  ? t("Şampiyon listesi yüklenemedi. İnternet bağlantını kontrol et.")
                   : data.status !== "done"
-                    ? "Şampiyonlar yükleniyor"
+                    ? t("Şampiyonlar yükleniyor")
                     : query.includes("#")
-                    ? "Riot ID, Ad#Etiket biçiminde olmalı. Etiket 3-5 harf ya da rakam."
-                    : "Bu adla bir şampiyon yok. Bir oyuncu arıyorsan etiketiyle yaz: Ad#TR1"}
+                    ? t("Riot ID, Ad#Etiket biçiminde olmalı. Etiket 3-5 harf ya da rakam.")
+                    : t("Bu adla bir şampiyon yok. Bir oyuncu arıyorsan etiketiyle yaz: Ad#TR1")}
               </li>
             ) : (
               results.map((result, i) => (
@@ -158,13 +160,13 @@ export function SearchPalette({ open, onClose, onChampion, onProfile, home }: Pr
                         {result.riotId.gameName}
                         <span className="profile__tag">#{result.riotId.tagLine}</span>
                       </span>
-                      <span className="palette__kind">{SERVERS.find((s) => s.platform === result.riotId.platform)?.label} profili</span>
+                      <span className="palette__kind">{t("{server} profili", { server: SERVERS.find((s) => s.platform === result.riotId.platform)?.label ?? "" })}</span>
                     </>
                   ) : (
                     <>
                       <img src={championIconUrl(version, result.champion.id)} alt="" width={28} height={28} />
                       <span>{result.champion.name}</span>
-                      <span className="palette__kind">Şampiyon</span>
+                      <span className="palette__kind">{t("Şampiyon")}</span>
                     </>
                   )}
                 </li>

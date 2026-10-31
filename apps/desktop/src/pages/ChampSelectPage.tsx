@@ -1,3 +1,4 @@
+import { useLang, useT } from "../i18n";
 import { useEffect, useState } from "react";
 import { getBans } from "../api";
 import {
@@ -37,6 +38,8 @@ function shownChampion(member: DraftMember) {
 }
 
 export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
+  const t = useT();
+  const lang = useLang();
   const [data] = useAsync("static", loadStatic);
   const [bans] = useAsync("bans", getBans);
   // Enemy roles are hidden in ranked champ select, so the player names their lane opponent.
@@ -50,21 +53,21 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   return (
     <LiquidGlass className="panel draft" radius={28} strength={2.5}>
       <header className="draft__header enter">
-        <h1 className="draft__title">Şampiyon seçimi</h1>
+        <h1 className="draft__title">{t("Şampiyon seçimi")}</h1>
         <p className="draft__phase">
-          {draftPhaseLabel(draft.phase)}
-          <span className="draft__timer" aria-label={`${seconds} saniye kaldı`}>
+          {draftPhaseLabel(draft.phase, lang)}
+          <span className="draft__timer" aria-label={t("{seconds} saniye kaldı", { seconds })}>
             {seconds}
           </span>
         </p>
       </header>
 
       <div className="draft__body">
-        <section className="draft__me enter" aria-label="Senin seçimin">
+        <section className="draft__me enter" aria-label={t("Senin seçimin")}>
           {me && <MyPick member={me} data={ready} />}
           {me && ready && shownChampion(me) > 0 && (
             <>
-              <h2 className="draft__heading draft__heading--spaced">Vizier önerisi</h2>
+              <h2 className="draft__heading draft__heading--spaced">{t("Vizier önerisi")}</h2>
               <BuildSuggestion
                 championId={shownChampion(me)}
                 championName={ready.champions.get(shownChampion(me))?.name ?? ""}
@@ -77,26 +80,26 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
               <ProBuildList
                 filter={{ championId: shownChampion(me), limit: 3 }}
                 compact
-                emptyText="Worlds oyuncularının bu şampiyonla son maçı yok."
+                emptyText={t("Worlds oyuncularının bu şampiyonla son maçı yok.")}
               />
             </>
           )}
         </section>
 
-        <section className="draft__teams enter" aria-label="Takımlar">
-          <h2 className="draft__heading">Takımın</h2>
+        <section className="draft__teams enter" aria-label={t("Takımlar")}>
+          <h2 className="draft__heading">{t("Takımın")}</h2>
           <ul className="team">
             {draft.myTeam.map((member) => (
               <TeamRow key={member.cellId} member={member} data={ready} />
             ))}
           </ul>
 
-          <h2 className="draft__heading">Rakip takım</h2>
+          <h2 className="draft__heading">{t("Rakip takım")}</h2>
           {enemyPicks.length === 0 ? (
-            <p className="draft__empty">Henüz seçim yok</p>
+            <p className="draft__empty">{t("Henüz seçim yok")}</p>
           ) : (
             <>
-              <p className="draft__empty">Koridor rakibini seç; öneri o eşleşmeye göre değişir.</p>
+              <p className="draft__empty">{t("Koridor rakibini seç; öneri o eşleşmeye göre değişir.")}</p>
               <ul className="strip strip--pickable">
                 {enemyPicks.map((id) => {
                   const champion = ready?.champions.get(id);
@@ -120,13 +123,13 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
 
           {draft.phase !== "FINALIZATION" && bans.status === "done" && bans.value.champions.length > 0 && (
             <>
-              <h2 className="draft__heading">Yasak önerisi</h2>
-              <ChampionStrip ids={bans.value.champions.map((c) => c.championId).filter((id) => !draft.bans.includes(id))} data={ready} empty="Öneri yok" />
+              <h2 className="draft__heading">{t("Yasak önerisi")}</h2>
+              <ChampionStrip ids={bans.value.champions.map((c) => c.championId).filter((id) => !draft.bans.includes(id))} data={ready} empty={t("Öneri yok")} />
             </>
           )}
 
-          <h2 className="draft__heading">Yasaklar</h2>
-          <ChampionStrip ids={draft.bans} data={ready} empty="Yasak yok" muted />
+          <h2 className="draft__heading">{t("Yasaklar")}</h2>
+          <ChampionStrip ids={draft.bans} data={ready} empty={t("Yasak yok")} muted />
         </section>
       </div>
     </LiquidGlass>
@@ -134,6 +137,8 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
 }
 
 function MyPick({ member, data }: { member: DraftMember; data: StaticData | null }) {
+  const t = useT();
+  const lang = useLang();
   const championId = shownChampion(member);
   const champion = data?.champions.get(championId);
   const locked = member.championId !== 0;
@@ -144,9 +149,9 @@ function MyPick({ member, data }: { member: DraftMember; data: StaticData | null
         {champion && data && <img src={championIconUrl(data.version, champion.id)} alt="" width={88} height={88} />}
       </div>
       <div>
-        <p className="my-pick__name">{champion?.name ?? "Şampiyon seçilmedi"}</p>
+        <p className="my-pick__name">{champion?.name ?? t("Şampiyon seçilmedi")}</p>
         <p className="my-pick__meta">
-          {[positionLabel(member.position), champion && !locked ? "seçilmek üzere" : null].filter(Boolean).join(", ")}
+          {[positionLabel(member.position, lang), champion && !locked ? t("seçilmek üzere") : null].filter(Boolean).join(", ")}
         </p>
         {data && (
           <div className="my-pick__spells">
@@ -164,18 +169,20 @@ function MyPick({ member, data }: { member: DraftMember; data: StaticData | null
 }
 
 function TeamRow({ member, data }: { member: DraftMember; data: StaticData | null }) {
+  const t = useT();
+  const lang = useLang();
   const champion = data?.champions.get(shownChampion(member));
   const locked = member.championId !== 0;
   return (
     <li data-local={member.isLocal || undefined} data-locked={locked || undefined}>
-      <span className="team__position">{positionLabel(member.position) ?? ""}</span>
+      <span className="team__position">{positionLabel(member.position, lang) ?? ""}</span>
       {champion && data ? (
         <img src={championIconUrl(data.version, champion.id)} alt="" width={28} height={28} className="team__icon" />
       ) : (
         <span className="team__icon team__icon--empty" />
       )}
-      <span className="team__name">{champion?.name ?? "Seçim bekleniyor"}</span>
-      {member.isLocal && <span className="team__you">Sen</span>}
+      <span className="team__name">{champion?.name ?? t("Seçim bekleniyor")}</span>
+      {member.isLocal && <span className="team__you">{t("Sen")}</span>}
     </li>
   );
 }

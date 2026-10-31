@@ -1,3 +1,4 @@
+import { useLang, useT, type Params } from "./i18n";
 import { useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getProBuilds, type ProBuild, type ProFilter } from "./api";
@@ -36,7 +37,7 @@ export function parseRunes(key: string) {
 
 type ImportState = { status: "idle" | "working" } | { status: "done" | "error"; message: string };
 
-async function importBuild(build: ProBuild, championName: string, finished: (id: number) => boolean): Promise<string> {
+async function importBuild(build: ProBuild, championName: string, finished: (id: number) => boolean, t: (text: string, params?: Params) => string): Promise<string> {
   const name = `Vizier ${build.player} ${championName}`;
   const runeResult = await invoke<{ status: "imported" } | { status: "needsSlot" }>("import_runes", {
     page: { name, ...parseRunes(build.runes) },
@@ -48,18 +49,19 @@ async function importBuild(build: ProBuild, championName: string, finished: (id:
     championId: build.championId,
     title: name,
     blocks: [
-      ...(build.startItems.length ? [{ title: "Başlangıç", items: build.startItems }] : []),
-      { title: `${build.player} sırası`, items: core.length ? core : build.items },
+      ...(build.startItems.length ? [{ title: t("Başlangıç"), items: build.startItems }] : []),
+      { title: t("{player} sırası", { player: build.player }), items: core.length ? core : build.items },
     ],
   });
   return runeResult.status === "imported"
-    ? "Rünler ve eşya seti aktarıldı"
-    : "Eşya seti aktarıldı. Rün sayfaların dolu; şampiyon seçiminde Vizier önerisinden bir sayfanın yerine yazabilirsin.";
+    ? t("Rünler ve eşya seti aktarıldı")
+    : t("Eşya seti aktarıldı. Rün sayfaların dolu; şampiyon seçiminde Vizier önerisinden bir sayfanın yerine yazabilirsin.");
 }
 
 type Props = { filter: ProFilter; compact?: boolean; emptyText: string };
 
 export function ProBuildList({ filter, compact = false, emptyText }: Props) {
+  const t = useT();
   const key = `${filter.championId ?? ""}:${filter.position ?? ""}:${filter.team ?? ""}:${filter.group ?? ""}:${filter.limit ?? ""}`;
   const [state, retry] = useAsync(key, () => getProBuilds(filter));
   const [data] = useAsync("static", loadStatic);
@@ -67,14 +69,14 @@ export function ProBuildList({ filter, compact = false, emptyText }: Props) {
   if (state.status === "error") {
     return (
       <div role="alert">
-        <p className="build__note">Pro maçları alınamadı.</p>
+        <p className="build__note">{t("Pro maçları alınamadı.")}</p>
         <button type="button" className="button" onClick={retry}>
-          Tekrar dene
+          {t("Tekrar dene")}
         </button>
       </div>
     );
   }
-  if (state.status !== "done" || data.status !== "done") return <p className="build__note">Pro maçları yükleniyor</p>;
+  if (state.status !== "done" || data.status !== "done") return <p className="build__note">{t("Pro maçları yükleniyor")}</p>;
   if (state.value.length === 0) return <p className="build__note">{emptyText}</p>;
 
   return (
@@ -87,6 +89,8 @@ export function ProBuildList({ filter, compact = false, emptyText }: Props) {
 }
 
 function ProRow({ build, data, compact }: { build: ProBuild; data: Static; compact: boolean }) {
+  const t = useT();
+  const lang = useLang();
   const [importState, setImportState] = useState<ImportState>({ status: "idle" });
   const champion = data.champions.get(build.championId);
   const opponent = build.opponentChampionId ? data.champions.get(build.opponentChampionId) : undefined;
@@ -96,10 +100,10 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: Static; compa
   async function onImport() {
     setImportState({ status: "working" });
     try {
-      const message = await importBuild(build, champion?.name ?? "", (id) => !!data.items.get(id)?.complete);
+      const message = await importBuild(build, champion?.name ?? "", (id) => !!data.items.get(id)?.complete, t);
       setImportState({ status: "done", message });
     } catch {
-      setImportState({ status: "error", message: "Aktarılamadı. League istemcisinin açık olduğundan emin ol." });
+      setImportState({ status: "error", message: t("Aktarılamadı. League istemcisinin açık olduğundan emin ol.") });
     }
   }
 
@@ -107,7 +111,7 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: Static; compa
     <li className="pros__row" data-result={build.win ? "win" : "loss"}>
       <span className="pros__who">
         <span className="pros__player">{build.player}</span>
-        <span className="pros__team">{build.team || "Takımsız"}</span>
+        <span className="pros__team">{build.team || t("Takımsız")}</span>
       </span>
       <span className="pros__matchup">
         {champion && <img src={championIconUrl(data.version, champion.id)} alt={champion.name} title={champion.name} width={30} height={30} />}
@@ -120,7 +124,7 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: Static; compa
       </span>
       <span className="pros__kda">
         {build.kills}/{build.deaths}/{build.assists}
-        {!compact && <span className="pros__sub">{Math.round(build.cs / Math.max(1, minutes) * 10) / 10} CS/dk</span>}
+        {!compact && <span className="pros__sub">{t("{v} CS/dk", { v: Math.round((build.cs / Math.max(1, minutes)) * 10) / 10 })}</span>}
       </span>
       {keystone && <img className="pros__keystone" src={runeIconUrl(keystone.icon)} alt={keystone.name} title={keystone.name} width={26} height={26} />}
       <span className="pros__items">
@@ -131,13 +135,13 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: Static; compa
       </span>
       {!compact && (
         <span className="pros__when">
-          {timeAgo(build.gameStart + build.duration * 1000)}
-          <span className="pros__sub">Yama {build.patch}</span>
+          {timeAgo(build.gameStart + build.duration * 1000, lang)}
+          <span className="pros__sub">{t("Yama {patch}", { patch: build.patch })}</span>
         </span>
       )}
       <span className="pros__action">
         <button type="button" className="button" disabled={!isTauri() || importState.status === "working"} onClick={onImport}>
-          Aktar
+          {t("Aktar")}
         </button>
         {(importState.status === "done" || importState.status === "error") && (
           <span className="build__feedback" data-status={importState.status} role="status">

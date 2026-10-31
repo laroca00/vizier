@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import type { LanguageSetting } from "./i18n";
 
 export type Settings = {
   autoImportRunes: boolean;
@@ -14,6 +15,8 @@ export type Settings = {
   overlayItems: boolean;
   overlayPace: boolean;
   overlayScouting: boolean;
+  /** "auto" follows the League client's language. */
+  language: LanguageSetting;
 };
 
 const DEFAULTS: Settings = {
@@ -30,6 +33,7 @@ const DEFAULTS: Settings = {
   overlayItems: true,
   overlayPace: true,
   overlayScouting: true,
+  language: "auto",
 };
 
 const KEY = "vizier.settings";

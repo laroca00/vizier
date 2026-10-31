@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getLiveGame, type LiveGameInfo, type LivePlayer } from "../api";
 import { championIconUrl, champions, latestVersion, type Champion } from "../data/ddragon";
+import { useLang, useT } from "../i18n";
 import { tierLabel } from "../labels";
 import type { Platform } from "../lcu";
 
@@ -31,6 +32,7 @@ function useLiveGameInfo(player: { puuid: string; platform: Platform } | null, f
 const thousands = (n: number) => (n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
 
 export function Scouting({ player, fixture }: { player: { puuid: string; platform: Platform } | null; fixture: LiveGameInfo | null }) {
+  const t = useT();
   const info = useLiveGameInfo(player, fixture);
   const [data, setData] = useState<{ version: string; champions: Map<number, Champion> } | null>(null);
   useEffect(() => {
@@ -46,7 +48,7 @@ export function Scouting({ player, fixture }: { player: { puuid: string; platfor
     <section className="overlay__card scouting">
       {teams.map((team) => (
         <div key={team} className="scouting__team">
-          <p className="overlay__caption">{team === myTeam ? "Takımın" : "Rakip takım"}</p>
+          <p className="overlay__caption">{team === myTeam ? t("Takımın") : t("Rakip takım")}</p>
           <ul className="scouting__list">
             {info.players
               .filter((p) => p.teamId === team)
@@ -61,6 +63,8 @@ export function Scouting({ player, fixture }: { player: { puuid: string; platfor
 }
 
 function PlayerRow({ player, champion, version }: { player: LivePlayer; champion: Champion | undefined; version: string }) {
+  const t = useT();
+  const lang = useLang();
   const name = player.riotId?.split("#")[0] ?? "Bot";
   const solo = player.solo;
   const games = solo ? solo.wins + solo.losses : 0;
@@ -70,10 +74,12 @@ function PlayerRow({ player, champion, version }: { player: LivePlayer; champion
       <span className="scouting__who">
         <span className="scouting__name">{name}</span>
         <span className="scouting__rank">
-          {solo ? `${tierLabel(solo.tier, solo.rank)}, %${Math.round((solo.wins / Math.max(1, games)) * 100)} / ${games} maç` : "Bu sezon derecesiz"}
+          {solo
+            ? t("{rank}, %{rate} / {games} maç", { rank: tierLabel(solo.tier, solo.rank, lang), rate: Math.round((solo.wins / Math.max(1, games)) * 100), games })
+            : t("Bu sezon derecesiz")}
         </span>
       </span>
-      <span className="scouting__mastery">{player.mastery ? `${thousands(player.mastery.points)} ustalık` : "İlk maçı"}</span>
+      <span className="scouting__mastery">{player.mastery ? t("{points} ustalık", { points: thousands(player.mastery.points) }) : t("İlk maçı")}</span>
     </li>
   );
 }

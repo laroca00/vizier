@@ -69,9 +69,9 @@ const ELDER_RESPAWN = 360;
 const BARON_RESPAWN = 360;
 const INHIBITOR_RESPAWN = 300;
 
-export type Timer = { id: string; label: string; at: number; ours: boolean | null };
+export type Timer = { id: string; kind: "dragon" | "baron" | "inhibitor"; lane?: "top" | "mid" | "bot"; at: number; ours: boolean | null };
 
-const LANES: Record<string, string> = { L: "üst", C: "orta", R: "alt" };
+const LANES = { L: "top", C: "mid", R: "bot" } as const;
 
 /** Respawn countdowns from kills the game announced. */
 export function objectiveTimers(game: LiveGame, myTeam: string): Timer[] {
@@ -81,10 +81,10 @@ export function objectiveTimers(game: LiveGame, myTeam: string): Timer[] {
   const dragon = last("DragonKill");
   if (dragon) {
     const elder = dragon.dragonType === "Elder";
-    timers.push({ id: "dragon", label: "Ejder", at: dragon.time + (elder ? ELDER_RESPAWN : DRAGON_RESPAWN), ours: null });
+    timers.push({ id: "dragon", kind: "dragon", at: dragon.time + (elder ? ELDER_RESPAWN : DRAGON_RESPAWN), ours: null });
   }
   const baron = last("BaronKill");
-  if (baron) timers.push({ id: "baron", label: "Baron", at: baron.time + BARON_RESPAWN, ours: null });
+  if (baron) timers.push({ id: "baron", kind: "baron", at: baron.time + BARON_RESPAWN, ours: null });
 
   // "Barracks_T2_C1": T1 is the blue side (ORDER), T2 red (CHAOS); L, C, R are top, mid, bottom.
   const inhibitors = new Map<string, LiveEvent>();
@@ -95,7 +95,8 @@ export function objectiveTimers(game: LiveGame, myTeam: string): Timer[] {
     const ours = (match[1] === "1") === (myTeam === "ORDER");
     timers.push({
       id: name,
-      label: `${ours ? "Bizim" : "Rakip"} ${LANES[match[2]]} inhibitör`,
+      kind: "inhibitor",
+      lane: LANES[match[2] as keyof typeof LANES],
       at: e.time + INHIBITOR_RESPAWN,
       ours,
     });
