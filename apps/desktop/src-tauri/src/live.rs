@@ -11,6 +11,7 @@ use crate::lcu::tls_config;
 
 pub const LIVE_EVENT: &str = "live-game";
 pub const TOGGLE_EVENT: &str = "overlay-toggle";
+pub const LOADING_EVENT: &str = "live-loading";
 pub const OVERLAY_LABEL: &str = "overlay";
 const URL: &str = "https://127.0.0.1:2999/liveclientdata/allgamedata";
 const IN_GAME_INTERVAL: Duration = Duration::from_secs(1);
@@ -175,14 +176,16 @@ pub fn parse(json: &str) -> Result<LiveGame, serde_json::Error> {
 pub struct OverlayState {
     enabled: AtomicBool,
     pub hidden: AtomicBool,
+    /// The game process answers but the match hasn't started: the loading screen.
+    pub loading: AtomicBool,
     last: Mutex<Option<LiveGame>>,
 }
 
 impl OverlayState {
     pub fn set_enabled(&self, app: &AppHandle, enabled: bool) {
         self.enabled.store(enabled, Ordering::Relaxed);
-        let in_game = self.last.lock().unwrap().is_some();
-        set_visible(app, enabled && in_game);
+        let active = self.last.lock().unwrap().is_some() || self.loading.load(Ordering::Relaxed);
+        set_visible(app, enabled && active);
     }
 
     pub fn current(&self) -> Option<LiveGame> {
@@ -244,12 +247,16 @@ pub fn spawn(app: AppHandle) {
         };
         loop {
             // Connection refused outside a game; loading screens answer 404.
-            let game = match http.get(URL).timeout(Duration::from_secs(2)).send().await {
-                Ok(response) if response.status().is_success() => response.text().await.ok().and_then(|body| parse(&body).ok()),
-                _ => None,
+            let (game, loading) = match http.get(URL).timeout(Duration::from_secs(2)).send().await {
+                Ok(response) if response.status().is_success() => (response.text().await.ok().and_then(|body| parse(&body).ok()), false),
+                Ok(response) => (None, response.status() == reqwest::StatusCode::NOT_FOUND),
+                Err(_) => (None, false),
             };
             let in_game = game.is_some();
             let state = app.state::<OverlayState>();
+            if state.loading.swap(loading, Ordering::Relaxed) != loading {
+                let _ = app.emit_to(OVERLAY_LABEL, LOADING_EVENT, loading);
+            }
             let changed = {
                 let mut last = state.last.lock().unwrap();
                 let changed = *last != game;
@@ -259,8 +266,8 @@ pub fn spawn(app: AppHandle) {
             if changed {
                 let _ = app.emit_to(OVERLAY_LABEL, LIVE_EVENT, game);
             }
-            set_visible(&app, in_game && state.enabled.load(Ordering::Relaxed));
-            tokio::time::sleep(if in_game { IN_GAME_INTERVAL } else { IDLE_INTERVAL }).await;
+            set_visible(&app, (in_game || loading) && state.enabled.load(Ordering::Relaxed));
+            tokio::time::sleep(if in_game || loading { IN_GAME_INTERVAL } else { IDLE_INTERVAL }).await;
         }
     });
 }

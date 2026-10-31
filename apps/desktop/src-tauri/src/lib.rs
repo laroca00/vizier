@@ -26,6 +26,11 @@ fn live_game(state: tauri::State<'_, OverlayState>) -> Option<LiveGame> {
 }
 
 #[tauri::command]
+fn live_loading(state: tauri::State<'_, OverlayState>) -> bool {
+    state.loading.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+#[tauri::command]
 fn overlay_hidden(state: tauri::State<'_, OverlayState>) -> bool {
     state.hidden.load(std::sync::atomic::Ordering::Relaxed)
 }
@@ -134,6 +139,7 @@ pub fn run() {
             import_spells,
             import_item_set,
             live_game,
+            live_loading,
             overlay_hidden,
             set_overlay_enabled
         ])
