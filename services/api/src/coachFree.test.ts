@@ -68,6 +68,10 @@ describe("acceptRewrite", () => {
     expect(acceptRewrite(original, invented)).toBeNull();
     expect(acceptRewrite(original, dropped)).toBeNull();
     expect(acceptRewrite(original, { response: "üzgünüm" })).toBeNull();
+    const stutter = { response: '{"headline":"x","points":[{"title":"a","detail":"10. dakikada hemen hemen hemen 900 altın geriydin."}]}' };
+    expect(acceptRewrite(original, stutter)).toBeNull();
+    const fine = { response: '{"headline":"x","points":[{"title":"a","detail":"10. dakikada hemen hemen 900 altın geriydin."}]}' };
+    expect(acceptRewrite(original, fine)).not.toBeNull();
   });
 });
 

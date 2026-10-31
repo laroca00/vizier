@@ -7,18 +7,27 @@ import type { Coaching } from "./coach.ts";
 
 export const REWRITE_MODEL = "@cf/google/gemma-4-26b-a4b-it";
 
-const SYSTEM = `Bir League of Legends koçusun. Sana bir oyuncunun maçından çıkarılmış tespitler JSON olarak verilecek.
+const SYSTEM = `Bir League of Legends koçusun. Sana bir oyuncunun maçından çıkarılmış tespitler JSON olarak verilecek. Bu metinler bir kural motorundan geliyor ve kalıp gibi duruyor.
 
-Görevin bu tespitleri oyuncuya konuşur gibi, akıcı ve doğal bir Türkçeyle yeniden yazmak. Kurallar:
+Görevin her tespiti, maçı izlemiş bir koçun oyuncuyla konuşması gibi yeniden yazmak: cümleleri birleştir ya da böl, sırayı değiştir, kalıp ifadeleri at, neden önemli olduğunu ve bir sonraki maçta ne yapacağını net söyle. Metni aynen kopyalama.
+
+Kurallar:
 - Her tespiti aynı sırada, aynı sayıda yaz. Yeni tespit ekleme, birini çıkarma.
 - Metindeki sayıları, dakikaları ve şampiyon adlarını aynen koru. Metinde olmayan hiçbir sayı, olay ya da öneri ekleme.
 - Oyuncuya "sen" diye hitap et. Abartılı övgü ve dolgu cümlesi kullanma.
-- Sadece şu biçimde JSON döndür, başka hiçbir şey yazma:
+
+Örnek giriş: {"title": "Görüş skorun düşük", "detail": "Dakikada 0.5 görüş skoru topladın; bu rol için 1.1 civarı beklenir. 2 totem koydun, 4 totem kırdın."}
+Örnek çıkış: {"title": "Haritayı göremiyordun", "detail": "Maç boyunca sadece 2 totem koydun; dakikada 0.5 görüş skoru, bu rolde beklenen 1.1'in yarısı bile değil. Totem kırmakta fena değildin (4 tane), ama kendi görüşünü de kurman lazım: her üsse dönüşte totemini yenile."}
+
+Sadece şu biçimde JSON döndür, başka hiçbir şey yazma:
 {"headline": "...", "points": [{"title": "...", "detail": "..."}]}`;
 
 type Ai = { run(model: string, input: unknown): Promise<unknown> };
 
 const numbersIn = (text: string) => new Set(text.match(/\d+(?:[.,]\d+)?/g) ?? []);
+// The model sometimes stutters ("hemen hemen hemen"); two in a row can be
+// real Turkish, three is a glitch.
+const STUTTER = /(?:^|\s)(\S+)(?:\s+){2,}(?=\s|$)/iu;
 
 /** Workers AI answers either `{ response }` or, for newer models, an OpenAI-style chat completion. */
 function replyText(reply: unknown): unknown {
@@ -53,6 +62,7 @@ export function acceptRewrite(original: Coaching, reply: unknown): Coaching | nu
     const source = original.points[i];
     if (typeof point?.title !== "string" || typeof point?.detail !== "string") return null;
     if (!point.title.trim() || !point.detail.trim() || point.detail.length > 700) return null;
+    if (STUTTER.test(point.title) || STUTTER.test(point.detail)) return null;
     const allowed = numbersIn(`${source.title} ${source.detail}`);
     for (const n of numbersIn(`${point.title} ${point.detail}`)) if (!allowed.has(n)) return null;
     points.push({ minute: source.minute, title: point.title.trim(), detail: point.detail.trim() });
