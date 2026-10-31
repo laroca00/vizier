@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { getBenchmarks, getBuild, type Benchmarks, type Build } from "../api";
+import { getBenchmarks, getBuild, getPace, type Benchmarks, type Build, type Pace } from "../api";
 import { champions, items } from "../data/ddragon";
 import { overlayFixture } from "../dev/fixtures";
 import { positionLabel } from "../labels";
 import { useSettings } from "../settings";
 import { useAsync } from "../useAsync";
-import { championKey, clock, findMe, itemDifference, myNumbers, nextSkill, objectiveTimers, type LiveGame } from "./live";
+import { championKey, clock, findMe, itemDifference, myNumbers, nextSkill, objectiveTimers, paceAt, type LiveGame } from "./live";
 import "./overlay.css";
 
 function useLiveGame(): LiveGame | null {
@@ -66,15 +66,16 @@ async function loadStatic(): Promise<Static> {
   };
 }
 
-type Helpers = { build: Build | null; benchmarks: Benchmarks | null };
+type Helpers = { build: Build | null; benchmarks: Benchmarks | null; pace: Pace | null };
 
 async function loadHelpers(championId: number, position: string): Promise<Helpers> {
   // Either can be missing for a rare pick; the panels that need it just stay hidden.
-  const [build, benchmarks] = await Promise.all([
+  const [build, benchmarks, pace] = await Promise.all([
     getBuild(championId, position).catch(() => null),
     getBenchmarks(position, championId).catch(() => null),
+    getPace(position, championId).catch(() => null),
   ]);
-  return { build, benchmarks };
+  return { build, benchmarks, pace };
 }
 
 const median = (benchmarks: Benchmarks | null, metric: string) => benchmarks?.metrics[metric]?.quantiles[10] ?? null;
@@ -93,11 +94,12 @@ export function Overlay() {
   const [helpers] = useAsync(championId && position ? `${championId}:${position}` : null, () => loadHelpers(championId!, position!));
 
   if (!game || !me || hidden || !settings.overlay) return null;
-  const extra = helpers.status === "done" ? helpers.value : { build: null, benchmarks: null };
+  const extra = helpers.status === "done" ? helpers.value : { build: null, benchmarks: null, pace: null };
   const skill = settings.overlaySkills ? nextSkill(game.level, game.skills, extra.build?.skills ?? null) : null;
   const timers = settings.overlayObjectives ? objectiveTimers(game, me.team) : [];
   const numbers = settings.overlayBenchmarks && position ? myNumbers(game) : null;
   const gold = data.status === "done" ? data.value.gold : null;
+  const paceTarget = settings.overlayPace && extra.pace ? paceAt(extra.pace.median, time / 60) : null;
   const items = settings.overlayItems && gold ? itemDifference(game, (id) => gold.get(id) ?? 0) : null;
 
   return (
@@ -138,6 +140,19 @@ export function Overlay() {
           <p className="overlay__row">
             <span>KDA</span>
             <span className="overlay__value">{numbers.kda.toFixed(1)}</span>
+          </p>
+        </section>
+      )}
+
+      {paceTarget !== null && (
+        <section className="overlay__card">
+          <p className="overlay__caption">Tempo, {clock(time)} itibarıyla</p>
+          <p className="overlay__row" data-ahead={me.scores.creepScore >= paceTarget}>
+            <span>Minyon ve kamp</span>
+            <span className="overlay__value">
+              {me.scores.creepScore}
+              <span className="overlay__target"> / {Math.round(paceTarget)}</span>
+            </span>
           </p>
         </section>
       )}

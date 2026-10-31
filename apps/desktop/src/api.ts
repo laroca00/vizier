@@ -158,6 +158,12 @@ export function getBenchmarks(position: string, championId: number | null) {
   return get<Benchmarks>(`/v1/benchmarks/${position}${championId ? `?champion=${championId}` : ""}`);
 }
 
+export type Pace = { position: string; championId: number | null; patches: string[]; games: number; median: number[] };
+
+export function getPace(position: string, championId: number | null) {
+  return get<Pace>(`/v1/pace/${position}${championId ? `?champion=${championId}` : ""}`);
+}
+
 export type BanSuggestions = { patches: string[]; champions: { championId: number; games: number; winRate: number }[] };
 
 export function getBans() {

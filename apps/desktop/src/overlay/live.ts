@@ -139,3 +139,12 @@ export function myNumbers(game: LiveGame) {
     kda: (kills + assists) / Math.max(1, deaths),
   };
 }
+
+/** The median CS at `minutes` into the game, read off a per-minute curve that starts at minute 1. */
+export function paceAt(median: number[], minutes: number): number | null {
+  if (minutes < 1 || minutes > median.length) return null;
+  const whole = Math.floor(minutes);
+  const before = median[whole - 1];
+  const after = median[whole] ?? before;
+  return before + (after - before) * (minutes - whole);
+}
