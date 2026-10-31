@@ -10,7 +10,7 @@ import { banSuggestions, benchmarks, championOverview, counters, pace, tierList,
 import { goldGraph, type Timeline as FullTimeline } from "./timeline.ts";
 import { findHabits, gameNumbers } from "./trends.ts";
 import { RiotError, type RiotClient } from "./riot/client.ts";
-import type { Account, LeagueEntry, Match, Summoner } from "./riot/types.ts";
+import type { Account, ActiveGame, ChampionMastery, LeagueEntry, Match, Summoner } from "./riot/types.ts";
 import type { Store } from "./store.ts";
 
 const MINUTE = 60_000;
@@ -109,6 +109,49 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai 
       };
     });
     return c.json(profile);
+  });
+
+  // The loading screen: who is in the player's game, once the game has revealed them.
+  app.get("/v1/live/:puuid", async (c) => {
+    const { puuid } = c.req.param();
+    if (!PUUID.test(puuid)) badRequest("Invalid PUUID");
+    const game = await cached(`active-game:${puuid}`, MINUTE, () =>
+      riot.get<ActiveGame>(
+        "tr1",
+        "/lol/spectator/v5/active-games/by-summoner",
+        `/lol/spectator/v5/active-games/by-summoner/${puuid}`,
+      ),
+    );
+    if (!game) return c.json({ error: "Not in a game" }, 404);
+
+    const players = await Promise.all(
+      game.participants.map(async (p) => {
+        // Bots and some special modes have no PUUID.
+        if (!p.puuid) return { riotId: p.riotId ?? null, championId: p.championId, teamId: p.teamId, you: false, solo: null, mastery: null };
+        const [ranks, mastery] = await Promise.all([
+          cached(`ranks:${p.puuid}`, 30 * MINUTE, () =>
+            riot.get<LeagueEntry[]>("tr1", "/lol/league/v4/entries/by-puuid", `/lol/league/v4/entries/by-puuid/${p.puuid}`),
+          ),
+          cached(`mastery:${p.puuid}:${p.championId}`, 30 * MINUTE, () =>
+            riot.get<ChampionMastery>(
+              "tr1",
+              "/lol/champion-mastery/v4/champion-masteries/by-puuid/by-champion",
+              `/lol/champion-mastery/v4/champion-masteries/by-puuid/${p.puuid}/by-champion/${p.championId}`,
+            ),
+          ),
+        ]);
+        const solo = ranks?.find((r) => r.queueType === "RANKED_SOLO_5x5");
+        return {
+          riotId: p.riotId ?? null,
+          championId: p.championId,
+          teamId: p.teamId,
+          you: p.puuid === puuid,
+          solo: solo ? { tier: solo.tier, rank: solo.rank, leaguePoints: solo.leaguePoints, wins: solo.wins, losses: solo.losses } : null,
+          mastery: mastery ? { level: mastery.championLevel, points: mastery.championPoints, lastPlayTime: mastery.lastPlayTime } : null,
+        };
+      }),
+    );
+    return c.json({ gameId: game.gameId, queueId: game.gameQueueConfigId ?? null, players });
   });
 
   app.get("/v1/players/:puuid/matches", async (c) => {

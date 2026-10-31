@@ -86,3 +86,40 @@ describe("api", () => {
     expect(response.headers.get("access-control-allow-origin")).toBe("http://tauri.localhost");
   });
 });
+
+describe("live game", () => {
+  it("adds ranks and champion mastery to everyone in the game", async () => {
+    const other = "y".repeat(78);
+    const { app, calls } = fakeRiot({
+      [`/lol/spectator/v5/active-games/by-summoner/${PUUID}`]: {
+        gameId: 77,
+        gameQueueConfigId: 420,
+        participants: [
+          { puuid: PUUID, riotId: "Ben#TR1", championId: 103, teamId: 100, spell1Id: 4, spell2Id: 14 },
+          { puuid: other, riotId: "Rakip#TR1", championId: 238, teamId: 200, spell1Id: 4, spell2Id: 12 },
+        ],
+      },
+      [`/lol/league/v4/entries/by-puuid/${PUUID}`]: [
+        { queueType: "RANKED_FLEX_SR", tier: "GOLD", rank: "I", leaguePoints: 3, wins: 1, losses: 1 },
+        { queueType: "RANKED_SOLO_5x5", tier: "EMERALD", rank: "II", leaguePoints: 45, wins: 60, losses: 50 },
+      ],
+      [`/lol/champion-mastery/v4/champion-masteries/by-puuid/${other}/by-champion/238`]: { championId: 238, championLevel: 12, championPoints: 140000, lastPlayTime: 5 },
+    });
+    const response = await app.request(`/v1/live/${PUUID}`);
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { players: unknown[] };
+    expect(body.players).toEqual([
+      { riotId: "Ben#TR1", championId: 103, teamId: 100, you: true, solo: { tier: "EMERALD", rank: "II", leaguePoints: 45, wins: 60, losses: 50 }, mastery: null },
+      { riotId: "Rakip#TR1", championId: 238, teamId: 200, you: false, solo: null, mastery: { level: 12, points: 140000, lastPlayTime: 5 } },
+    ]);
+    // A second look during the same loading screen costs nothing.
+    const before = calls.length;
+    await app.request(`/v1/live/${PUUID}`);
+    expect(calls.length).toBe(before);
+  });
+
+  it("answers 404 outside a game", async () => {
+    const { app } = fakeRiot({});
+    expect((await app.request(`/v1/live/${PUUID}`)).status).toBe(404);
+  });
+});

@@ -64,3 +64,11 @@ export type Match = {
 export function patchOf(gameVersion: string): string {
   return gameVersion.split(".").slice(0, 2).join(".");
 }
+
+export type ActiveGame = {
+  gameId: number;
+  gameQueueConfigId?: number;
+  participants: { puuid: string | null; riotId?: string; championId: number; teamId: number; spell1Id: number; spell2Id: number }[];
+};
+
+export type ChampionMastery = { championId: number; championLevel: number; championPoints: number; lastPlayTime: number };
