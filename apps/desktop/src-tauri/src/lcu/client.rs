@@ -58,6 +58,18 @@ impl LcuClient {
             .error_for_status()?;
         Ok(response.json().await?)
     }
+
+    /// PUT, POST or PATCH with a JSON body. The response body is ignored.
+    pub async fn send(&self, method: reqwest::Method, path: &str, body: &serde_json::Value) -> Result<(), Error> {
+        self.http
+            .request(method, format!("{}{path}", self.base))
+            .header(AUTHORIZATION, &self.authorization)
+            .json(body)
+            .send()
+            .await?
+            .error_for_status()?;
+        Ok(())
+    }
 }
 
 pub type EventStream = WebSocketStream<TlsStream<TcpStream>>;

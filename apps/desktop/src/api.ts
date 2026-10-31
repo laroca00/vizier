@@ -55,3 +55,25 @@ export async function getRecentMatches(puuid: string, count: number): Promise<Ma
   const { matchIds } = await get<{ matchIds: string[] }>(`/v1/players/${puuid}/matches?count=${count}`);
   return Promise.all(matchIds.map((id) => get<Match>(`/v1/matches/${id}`)));
 }
+
+export type Choice<T> = T & { games: number; winRate: number };
+
+export type Build = {
+  patches: string[];
+  games: number;
+  winRate: number;
+  runes: Choice<{ primaryStyle: number; subStyle: number; perks: number[] }>[];
+  spells: Choice<{ ids: number[] }>[];
+  items: Choice<{ id: number }>[];
+};
+
+/** Null when Vizier has no games for the champion yet. */
+export async function getBuild(championId: number, position: string | null): Promise<Build | null> {
+  const query = position ? `?position=${position.toUpperCase()}` : "";
+  try {
+    return await get<Build>(`/v1/builds/${championId}${query}`);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}

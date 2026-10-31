@@ -8,6 +8,7 @@ import {
   type Champion,
   type SummonerSpell,
 } from "../data/ddragon";
+import { BuildSuggestion } from "../BuildSuggestion";
 import { draftPhaseLabel, positionLabel } from "../labels";
 import type { ChampSelect, DraftMember } from "../lcu";
 import { LiquidGlass } from "../ui/LiquidGlass";
@@ -54,6 +55,17 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
       <div className="draft__body">
         <section className="draft__me enter" aria-label="Senin seçimin">
           {me && <MyPick member={me} data={ready} />}
+          {me && ready && shownChampion(me) > 0 && (
+            <>
+              <h2 className="draft__heading draft__heading--spaced">Vizier önerisi</h2>
+              <BuildSuggestion
+                championId={shownChampion(me)}
+                championName={ready.champions.get(shownChampion(me))?.name ?? ""}
+                position={me.position || null}
+                currentSpells={me.spells as [number, number]}
+              />
+            </>
+          )}
         </section>
 
         <section className="draft__teams enter" aria-label="Takımlar">

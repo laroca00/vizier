@@ -390,6 +390,85 @@
   color: var(--glaze-muted);
 }
 
+.draft__heading--spaced {
+  margin-top: 26px;
+}
+
+.build {
+  display: grid;
+  gap: 16px;
+}
+
+.build__summary,
+.build__note,
+.build__stat {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 350;
+  color: var(--glaze-muted);
+}
+
+.build__block {
+  display: grid;
+  gap: 8px;
+}
+
+.build__runes,
+.build__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.build__runes img,
+.build__row img {
+  display: block;
+  border-radius: 8px;
+}
+
+.build__style {
+  opacity: 0.8;
+  margin: 0 2px 0 6px;
+}
+
+.build__style:first-child {
+  margin-left: 0;
+}
+
+.build__action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.build__feedback {
+  font-size: 14px;
+  animation: rise var(--duration-standard) var(--ease-enter) both;
+  --rise: 4px;
+}
+
+.build__feedback[data-status="done"] {
+  color: var(--turquoise);
+}
+
+.build__feedback[data-status="error"] {
+  color: #f08a7e;
+}
+
+.build__pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .my-pick {
   display: flex;
   gap: 18px;

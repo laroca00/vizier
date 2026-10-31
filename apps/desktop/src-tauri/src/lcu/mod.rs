@@ -1,5 +1,6 @@
 pub mod champ_select;
 mod client;
+pub mod writes;
 mod credentials;
 
 use std::sync::{Arc, Mutex};
@@ -13,7 +14,8 @@ use tauri::{AppHandle, Emitter, Manager};
 use tokio_tungstenite::tungstenite::Message;
 
 use champ_select::ChampSelect;
-use client::{Error, LcuClient};
+pub use client::LcuClient;
+use client::Error;
 use credentials::{Credentials, Finder};
 
 pub const STATUS_EVENT: &str = "lcu-status";
@@ -48,6 +50,16 @@ pub struct LcuState(Mutex<Option<LcuStatus>>);
 impl LcuState {
     pub fn current(&self) -> LcuStatus {
         self.0.lock().unwrap().clone().unwrap_or(LcuStatus::Disconnected)
+    }
+}
+
+/// The live client connection, for commands that write to the client.
+#[derive(Default)]
+pub struct LcuApi(Mutex<Option<Arc<LcuClient>>>);
+
+impl LcuApi {
+    pub fn get(&self) -> Option<Arc<LcuClient>> {
+        self.0.lock().unwrap().clone()
     }
 }
 
@@ -98,6 +110,7 @@ pub fn spawn(app: AppHandle) {
                         eprintln!("lcu: session ended: {error}");
                     }
                     publish_champ_select(&app, None);
+                    *app.state::<LcuApi>().0.lock().unwrap() = None;
                     publish(&app, LcuStatus::Connecting);
                 }
                 None => publish(&app, LcuStatus::Disconnected),
@@ -109,7 +122,7 @@ pub fn spawn(app: AppHandle) {
 
 /// Runs until the client closes or restarts.
 async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credentials) -> Result<(), Error> {
-    let api = LcuClient::new(&tls, credentials)?;
+    let api = Arc::new(LcuClient::new(&tls, credentials)?);
     let mut events = client::connect_events(tls, credentials).await?;
     for path in [PHASE_PATH, SUMMONER_PATH, champ_select::SESSION_PATH] {
         let topic = format!("OnJsonApiEvent{}", path.replace('/', "_"));
@@ -120,6 +133,7 @@ async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credenti
     let mut phase: Option<String> = api.get(PHASE_PATH).await.ok();
     let mut summoner: Option<Summoner> = api.get(SUMMONER_PATH).await.ok();
     publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone() });
+    *app.state::<LcuApi>().0.lock().unwrap() = Some(api.clone());
     // 404 outside champ select. Vizier may also start in the middle of one.
     let session: Option<Value> = api.get(champ_select::SESSION_PATH).await.ok();
     publish_champ_select(app, session.and_then(champ_select::parse));
