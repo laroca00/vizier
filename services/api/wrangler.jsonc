@@ -6,6 +6,8 @@
   "observability": { "enabled": true },
   // Every 2 minutes: crawl ranked games. 04:00 UTC: clear expired cache rows and old patches.
   "triggers": { "crons": ["*/2 * * * *", "0 4 * * *"] },
+  // Free coach wording; see src/coachRewrite.ts.
+  "ai": { "binding": "AI" },
   "d1_databases": [
     {
       "binding": "DB",

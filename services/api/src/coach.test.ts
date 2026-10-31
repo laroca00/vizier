@@ -88,7 +88,7 @@ describe("POST /v1/coach/:matchId", () => {
         },
       },
     } as unknown as Anthropic;
-    const app = createApp(riot, new MemoryStore(), undefined, { client, allowedPuuids: new Set(allowed), dailyLimit });
+    const app = createApp(riot, new MemoryStore(), { claude: { client, allowedPuuids: new Set(allowed), dailyLimit } });
     const post = (puuid = ME, id = "TR1_5") =>
       app.request(`/v1/coach/${id}`, { method: "POST", body: JSON.stringify({ puuid }), headers: { "content-type": "application/json" } });
     return { app, post, calls: () => calls };
@@ -98,27 +98,22 @@ describe("POST /v1/coach/:matchId", () => {
     const { post, calls } = setup();
     const first = await post();
     expect(first.status).toBe(200);
-    expect(await first.json()).toEqual({ headline: "Koridor erken kaybedildi.", points: [] });
+    expect(await first.json()).toEqual({ headline: "Koridor erken kaybedildi.", points: [], source: "claude" });
     await post();
     expect(calls()).toBe(1);
   });
 
-  it("refuses accounts outside the allow list", async () => {
+  it("gives accounts outside the allow list the free coach", async () => {
     const { post, calls } = setup([THEM]);
-    expect((await post()).status).toBe(403);
+    const response = await post();
+    expect(response.status).toBe(200);
+    expect(((await response.json()) as { source: string }).source).toBe("rules");
     expect(calls()).toBe(0);
   });
 
-  it("stops at the daily limit", async () => {
+  it("stops Claude at the daily limit", async () => {
     const { post } = setup([ME, THEM], 1);
     expect((await post(ME)).status).toBe(200);
     expect((await post(THEM)).status).toBe(429);
-  });
-
-  it("answers 503 when coaching is not configured", async () => {
-    const riot = { get: async () => null } as unknown as RiotClient;
-    const app = createApp(riot, new MemoryStore());
-    const response = await app.request("/v1/coach/TR1_5", { method: "POST", body: JSON.stringify({ puuid: ME }) });
-    expect(response.status).toBe(503);
   });
 });

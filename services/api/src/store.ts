@@ -47,9 +47,11 @@ export class D1Store implements Store {
   }
 
   async putCached(key: string, value: unknown, ttlMs: number) {
+    // D1 stores Infinity as NULL, which the NOT NULL column rejects.
+    const expiresAt = Number.isFinite(ttlMs) ? this.now() + ttlMs : Number.MAX_SAFE_INTEGER;
     await this.db
       .prepare("INSERT OR REPLACE INTO cache (key, value, expires_at) VALUES (?, ?, ?)")
-      .bind(key, JSON.stringify(value), this.now() + ttlMs)
+      .bind(key, JSON.stringify(value), expiresAt)
       .run();
   }
 

@@ -15,6 +15,10 @@ Vizier only uses the interfaces Riot exposes to third-party apps:
 
 It never reads or writes game memory.
 
+## Install
+
+Build the installer with `pnpm build`. It lands in `apps/desktop/src-tauri/target/release/bundle/nsis/Vizier_<version>_x64-setup.exe` (an MSI is built next to it under `bundle/msi/`).
+
 ## Development
 
 Requirements: Node 22+, pnpm, Rust (stable, MSVC toolchain) and the Visual Studio C++ Build Tools.
@@ -47,7 +51,7 @@ npx wrangler secret put RIOT_API_KEY
 pnpm deploy
 ```
 
-Post-game coaching calls the Claude API and costs money per analysis, so it is off until both secrets are set: `ANTHROPIC_API_KEY`, and `COACH_PUUIDS` (comma-separated PUUIDs allowed to use it). Each match is analysed once and cached, with a cap of 20 analyses a day.
+Post-game coaching is free: rules find the issues in a match and Workers AI rewords them within its free daily allocation; if the rewrite changes any number, the rule wording is served instead. Claude can take over for chosen accounts by setting `ANTHROPIC_API_KEY` and `COACH_PUUIDS` (comma-separated PUUIDs); that path costs money per analysis and is capped at 20 a day.
 
 ## Legal
 

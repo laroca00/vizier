@@ -7,6 +7,7 @@ import { D1Store } from "./store.ts";
 
 type Env = {
   DB: D1Database;
+  AI?: Ai;
   RIOT_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
   /** Comma-separated PUUIDs allowed to request coaching. */
@@ -42,7 +43,7 @@ export default {
   fetch(request, env, ctx) {
     const client = riotFor(env);
     if (!client) return Response.json({ error: "RIOT_API_KEY is not set" }, { status: 500 });
-    app ??= createApp(client, new D1Store(env.DB), env.DB, coachFor(env));
+    app ??= createApp(client, new D1Store(env.DB), { statsDb: env.DB, claude: coachFor(env), ai: env.AI });
     return app.fetch(request, env, ctx);
   },
 

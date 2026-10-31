@@ -44,6 +44,13 @@ describe("D1Store", () => {
     expect(sqlite.prepare("SELECT COUNT(*) AS n FROM cache").get()).toEqual({ n: 0 });
   });
 
+  it("stores a value cached for good with a finite expiry", async () => {
+    const { db, sqlite } = fakeD1();
+    await new D1Store(db).putCached("forever", 1, Infinity);
+    const row = sqlite.prepare("SELECT expires_at FROM cache WHERE key = 'forever'").get() as { expires_at: number };
+    expect(Number.isFinite(row.expires_at)).toBe(true);
+  });
+
   it("keeps a cached null, so a known 404 is not refetched", async () => {
     const { db } = fakeD1();
     const store = new D1Store(db);

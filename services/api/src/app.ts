@@ -4,6 +4,8 @@ import { HTTPException } from "hono/http-exception";
 import type Anthropic from "@anthropic-ai/sdk";
 import { aggregateBuild, POSITIONS } from "./builds.ts";
 import { coach, summarize, type Coaching, type CoachMatch, type Timeline } from "./coach.ts";
+import { rewriteWithWorkersAi } from "./coachRewrite.ts";
+import { coachByRules } from "./coachRules.ts";
 import { RiotError, type RiotClient } from "./riot/client.ts";
 import type { Account, LeagueEntry, Match, Summoner } from "./riot/types.ts";
 import type { Store } from "./store.ts";
@@ -31,11 +33,22 @@ export type CoachConfig = {
   dailyLimit: number;
 };
 
-/**
- * `statsDb` holds the crawler tables and `coachConfig` enables coaching;
- * without them those routes answer 503.
- */
-export function createApp(riot: RiotClient, store: Store, statsDb?: D1Database, coachConfig?: CoachConfig) {
+// A rewrite costs ~100 of the 10,000 free daily Workers AI neurons; past this
+// the rule wording is served as is.
+const FREE_REWRITES_PER_DAY = 80;
+
+export type AppOptions = {
+  /** Crawler tables; without them the builds route answers 503. */
+  statsDb?: D1Database;
+  /** Claude coaching for allowed accounts; everyone else gets the free coach. */
+  claude?: CoachConfig;
+  /** Workers AI binding that rewords the free coach's findings. */
+  ai?: { run(model: string, input: unknown): Promise<unknown> };
+};
+
+export type CoachResult = Coaching & { source: "claude" | "workers-ai" | "rules" };
+
+export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai }: AppOptions = {}) {
   // Concurrent misses for the same key share one Riot call.
   const pending = new Map<string, Promise<unknown>>();
 
@@ -148,16 +161,16 @@ export function createApp(riot: RiotClient, store: Store, statsDb?: D1Database, 
     const body = (await c.req.json().catch(() => null)) as { puuid?: unknown } | null;
     const puuid = typeof body?.puuid === "string" ? body.puuid : "";
     if (!PUUID.test(puuid)) badRequest("Invalid PUUID");
-    if (!coachConfig) return c.json({ error: "Coaching is not enabled" }, 503);
-    if (!coachConfig.allowedPuuids.has(puuid)) return c.json({ error: "Coaching is not enabled for this account" }, 403);
 
-    const key = `coach:${matchId}:${puuid}`;
-    const done = await store.getCached<Coaching>(key);
+    const useClaude = claude?.allowedPuuids.has(puuid) ?? false;
+    const key = `coach:${useClaude ? "claude" : "free"}:${matchId}:${puuid}`;
+    const done = await store.getCached<CoachResult>(key);
     if (done) return c.json(done);
 
     const today = new Date().toISOString().slice(0, 10);
-    const used = (await store.getCached<number>(`coach-count:${today}`)) ?? 0;
-    if (used >= coachConfig.dailyLimit) return c.json({ error: "Daily coaching limit reached" }, 429);
+    const counterKey = `coach-count:${useClaude ? "claude" : "rewrite"}:${today}`;
+    const used = (await store.getCached<number>(counterKey)) ?? 0;
+    if (useClaude && used >= claude!.dailyLimit) return c.json({ error: "Daily coaching limit reached" }, 429);
 
     let match = (await store.getMatch(matchId)) as CoachMatch | undefined;
     if (!match) {
@@ -175,10 +188,23 @@ export function createApp(riot: RiotClient, store: Store, statsDb?: D1Database, 
     const summary = summarize(match, timeline, puuid);
     if (!summary) return c.json({ error: "Player is not in this match" }, 404);
 
-    await store.putCached(`coach-count:${today}`, used + 1, 2 * 24 * 60 * MINUTE);
-    const coaching = await coach(coachConfig.client, summary);
-    await store.putCached(key, coaching, Infinity);
-    return c.json(coaching);
+    let result: CoachResult;
+    if (useClaude) {
+      await store.putCached(counterKey, used + 1, 2 * 24 * 60 * MINUTE);
+      result = { ...(await coach(claude!.client, summary)), source: "claude" };
+    } else {
+      const rules = coachByRules(summary);
+      let rewritten: Coaching | null = null;
+      if (ai && used < FREE_REWRITES_PER_DAY && rules.points.length > 0) {
+        await store.putCached(counterKey, used + 1, 2 * 24 * 60 * MINUTE);
+        rewritten = await rewriteWithWorkersAi(ai, rules);
+      }
+      result = rewritten ? { ...rewritten, source: "workers-ai" } : { ...rules, source: "rules" };
+    }
+    // Rule-only results are kept briefly so a later request can still get the
+    // reworded version once Workers AI answers again.
+    await store.putCached(key, result, result.source === "rules" ? 6 * 60 * MINUTE : Infinity);
+    return c.json(result);
   });
 
   app.onError((error, c) => {
