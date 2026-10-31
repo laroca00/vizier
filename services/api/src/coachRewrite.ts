@@ -27,7 +27,7 @@ type Ai = { run(model: string, input: unknown): Promise<unknown> };
 const numbersIn = (text: string) => new Set(text.match(/\d+(?:[.,]\d+)?/g) ?? []);
 // The model sometimes stutters ("hemen hemen hemen"); two in a row can be
 // real Turkish, three is a glitch.
-const STUTTER = /(?:^|\s)(\S+)(?:\s+){2,}(?=\s|$)/iu;
+const STUTTER = /(?:^|\s)(\S+)(?:\s+\1){2,}(?=\s|$)/iu;
 
 /** Workers AI answers either `{ response }` or, for newer models, an OpenAI-style chat completion. */
 function replyText(reply: unknown): unknown {
