@@ -1,6 +1,7 @@
 import { getGoldGraph, getMatch, type Match, type MatchParticipant } from "./api";
 import { championIconUrl, champions, itemIconUrl, latestVersion, type Champion } from "./data/ddragon";
 import { GoldChart } from "./GoldChart";
+import { ReportCard } from "./ReportCard";
 import { positionLabel } from "./labels";
 import { LiquidGlass } from "./ui/LiquidGlass";
 import { useAsync } from "./useAsync";
@@ -74,6 +75,7 @@ function DetailBody({ match, diff, version, champions, puuid }: Loaded & { puuid
       <p className="detail__meta">
         {me ? (me.win ? "Galibiyet" : "Mağlubiyet") : ""}, {minutes} dakika
       </p>
+      <ReportCard matchId={match.metadata.matchId} puuid={puuid} />
       {diff && <GoldChart diff={diff} />}
       {teams.map((team, i) => (
         <section key={i} aria-label={i === 0 ? "Takımın" : "Rakip takım"}>

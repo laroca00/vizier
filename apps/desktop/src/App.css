@@ -1624,3 +1624,198 @@
   order: 2;
   --delay: 320ms;
 }
+
+.report {
+  display: grid;
+  gap: 14px;
+}
+
+.report__head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.report__overall {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 0;
+}
+
+.report__number {
+  font-size: 44px;
+  font-weight: 300;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-variation-settings: "SHRP" 100;
+}
+
+.report__of,
+.report__basis {
+  font-size: 13px;
+  color: var(--glaze-muted);
+}
+
+.report__basis {
+  margin: 0;
+  max-width: 34ch;
+}
+
+.report__scores {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.report__scores li {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(80px, 1fr) 2.2rem;
+  align-items: center;
+  column-gap: 12px;
+}
+
+.report__score {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.report__detail {
+  grid-column: 2 / -1;
+  font-size: 12px;
+  color: var(--glaze-faint);
+}
+
+.report__track {
+  position: relative;
+  height: 8px;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.07);
+}
+
+.report__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 9999px;
+  background: var(--turquoise);
+  transform-origin: left;
+  animation: lean 480ms var(--ease-enter) both;
+}
+
+/* 50 is the Emerald+ median: a tick shows where "average" sits. */
+.report__median {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: 50%;
+  width: 1px;
+  background: rgb(255 255 255 / 0.35);
+}
+
+.cs {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.cs__legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--glaze-muted);
+}
+
+.cs__key::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 0;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-top: 2px solid var(--key-color);
+}
+
+.cs__key--mine {
+  --key-color: #1c9c92;
+}
+
+.cs__key--median::before {
+  border-top-style: dashed;
+}
+
+.cs__key--median {
+  --key-color: #c98500;
+}
+
+.cs__plot {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.cs__grid {
+  stroke: rgb(255 255 255 / 0.07);
+}
+
+.cs__tick,
+.cs__end {
+  font-size: 11px;
+  fill: var(--glaze-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.cs__end {
+  fill: var(--glaze-muted);
+}
+
+.cs__line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.cs__line--mine {
+  stroke: #1c9c92;
+}
+
+.cs__line--median {
+  stroke: #c98500;
+  stroke-dasharray: 5 4;
+}
+
+.cs__weak {
+  fill: rgb(210 65 47 / 0.14);
+}
+
+.cs__cursor {
+  stroke: rgb(255 255 255 / 0.3);
+}
+
+.cs__dot {
+  stroke: #0e1d52;
+  stroke-width: 2;
+}
+
+.cs__dot--mine {
+  fill: #1c9c92;
+}
+
+.cs__dot--median {
+  fill: #c98500;
+}
+
+.cs__caption {
+  margin: 0;
+  font-size: 12px;
+  color: var(--glaze-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .report__fill {
+    animation: none;
+  }
+}

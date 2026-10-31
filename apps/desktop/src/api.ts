@@ -241,6 +241,25 @@ export async function getProTeams() {
   return (await get<{ teams: { team: string; group: ProGroup; players: string[] }[] }>("/v1/pros/teams")).teams;
 }
 
+export type GameReport = {
+  position: string;
+  championId: number;
+  comparedTo: "champion" | "role";
+  overall: number | null;
+  scores: { category: string; score: number; metrics: { metric: string; value: number; median: number; score: number }[] }[];
+  cs: { mine: number[]; median: number[]; weakest: number[] };
+};
+
+/** Null when the game has no role to compare (ARAM, Arena) or isn't published yet. */
+export async function getReport(matchId: string, puuid: string): Promise<GameReport | null> {
+  try {
+    return await get<GameReport>(`/v1/matches/${matchId}/report?puuid=${puuid}`);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
 export type BanSuggestions = { patches: string[]; champions: { championId: number; games: number; winRate: number }[] };
 
 export function getBans() {
