@@ -1,17 +1,22 @@
 import type { Platform } from "./riot/client.ts";
 
+export type ProGroup = "worlds" | "turkey";
+
 export type ProPlayer = {
   name: string;
+  /** Empty when the player has no team right now. */
   team: string;
   /** match-v5 teamPosition of their usual role. */
   role: "TOP" | "JUNGLE" | "MIDDLE" | "BOTTOM" | "UTILITY";
   accounts: { riotId: string; platform: Platform }[];
+  /** Worlds unless set. */
+  group?: ProGroup;
 };
 
 // Worlds 2026: the four LCK teams, and BrokenBlade (G2) as the Turkish player
 // at the event. Accounts as listed on trackingthepros.com on 2026-10-31.
 // Players switch accounts often; check the source before each event.
-export const PRO_PLAYERS: ProPlayer[] = [
+const WORLDS_PLAYERS: ProPlayer[] = [
   { name: "Kiin", team: "Gen.G", role: "TOP", accounts: [{ riotId: "kiin#KR1", platform: "kr" }, { riotId: "asdzxcvqwe#123", platform: "na1" }] },
   {
     name: "Canyon",
@@ -122,3 +127,80 @@ export const PRO_PLAYERS: ProPlayer[] = [
     ],
   },
 ];
+
+// Turkish players, current and former TCL, wherever they play now. Accounts
+// as listed on lolpros.gg and trackingthepros.com on 2026-10-31; only those
+// shown with a server are kept.
+const TURKISH_PLAYERS: ProPlayer[] = [
+  {
+    name: "Armut",
+    team: "",
+    role: "TOP",
+    accounts: [
+      { riotId: "Pompaci Armut#123", platform: "euw1" },
+      { riotId: "TR STAGE BEAST#EUW", platform: "euw1" },
+      { riotId: "ARMUTONG#EUW", platform: "euw1" },
+    ],
+  },
+  { name: "113", team: "Misa Esports", role: "JUNGLE", accounts: [{ riotId: "can win#monk", platform: "euw1" }] },
+  {
+    name: "Rhilech",
+    team: "Natus Vincere",
+    role: "JUNGLE",
+    accounts: [
+      { riotId: "Rhilech#15105", platform: "euw1" },
+      { riotId: "Shiba lnui#EUW", platform: "euw1" },
+      { riotId: "151005#EUW", platform: "euw1" },
+    ],
+  },
+  {
+    name: "Naak Nako",
+    team: "Team Vitality",
+    role: "TOP",
+    accounts: [
+      { riotId: "VIT NaakNako#TOP", platform: "na1" },
+      { riotId: "E Q D E Q A R#EUW", platform: "euw1" },
+    ],
+  },
+  { name: "Elwind", team: "", role: "TOP", accounts: [{ riotId: "Elwind#EUW", platform: "euw1" }, { riotId: "95Jh2D7R95SKDONY#EUW", platform: "euw1" }] },
+  { name: "Closer", team: "", role: "JUNGLE", accounts: [{ riotId: "Closer#kral", platform: "na1" }] },
+  {
+    name: "Ferret",
+    team: "Partizan Sangal",
+    role: "JUNGLE",
+    accounts: [
+      { riotId: "Psychoferret#71300", platform: "euw1" },
+      { riotId: "ßE HUMBLE#EUW", platform: "euw1" },
+    ],
+  },
+  { name: "Robin", team: "", role: "JUNGLE", accounts: [{ riotId: "beri hibiskus#EUW", platform: "euw1" }] },
+  {
+    name: "Mojito",
+    team: "",
+    role: "JUNGLE",
+    accounts: [
+      { riotId: "Mojito#QWE", platform: "na1" },
+      { riotId: "Shin Jin Young#EUW", platform: "euw1" },
+    ],
+  },
+  { name: "StarScreen", team: "Pyramid IV Esports", role: "TOP", accounts: [{ riotId: "StarScreen#1702", platform: "euw1" }] },
+  { name: "fabFabulous", team: "Dark Passage", role: "TOP", accounts: [{ riotId: "FABFABFAB#EUW", platform: "euw1" }, { riotId: "nuD6lhwuEMqymodp#EUW", platform: "euw1" }] },
+  { name: "Zeitnot", team: "", role: "BOTTOM", accounts: [{ riotId: "zeitnot#7149", platform: "euw1" }, { riotId: "I8RTSdenbYAa7axs#EUW", platform: "euw1" }] },
+  { name: "Padden", team: "", role: "BOTTOM", accounts: [{ riotId: "FB paddyN#EUW", platform: "euw1" }] },
+  { name: "Kaori", team: "", role: "BOTTOM", accounts: [{ riotId: "Kaori#EUW33", platform: "euw1" }] },
+  { name: "HolyPhoenix", team: "", role: "BOTTOM", accounts: [{ riotId: "BW HolyPhoenix#PHX", platform: "euw1" }] },
+  { name: "Zergsting", team: "", role: "UTILITY", accounts: [{ riotId: "Zergsting#EUW", platform: "euw1" }, { riotId: "Son of Frozen#EUW", platform: "euw1" }] },
+  {
+    name: "Tolerant",
+    team: "",
+    role: "UTILITY",
+    accounts: [
+      { riotId: "Sukuna#361", platform: "euw1" },
+      { riotId: "GeneraIIeutnant#EUW", platform: "euw1" },
+      { riotId: "gap support#EUW", platform: "euw1" },
+    ],
+  },
+  { name: "Japone", team: "Misa Esports", role: "UTILITY", accounts: [{ riotId: "InsaneMentality#EUW", platform: "euw1" }, { riotId: "DP Japone#EUW", platform: "euw1" }] },
+];
+
+export const PRO_PLAYERS: ProPlayer[] = [...WORLDS_PLAYERS, ...TURKISH_PLAYERS.map((p) => ({ ...p, group: "turkey" as const }))];

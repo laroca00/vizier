@@ -74,6 +74,7 @@ describe("ProCrawler", () => {
       kills: 7, cs: 260, spells: [4, 12], items: [6655, 3020, 4645], startItems: [1056], skillOrder: [1, 3],
     });
     expect(await proBuilds(db, { championId: 238 })).toEqual([]);
-    expect(await proTeams(db)).toEqual([{ team: "T1", players: ["Faker"] }]);
+    expect(await proTeams(db)).toEqual([{ team: "T1", group: "worlds", players: ["Faker"] }]);
+    expect(await proBuilds(db, { group: "turkey" })).toEqual([]);
   });
 });

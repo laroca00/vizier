@@ -1,5 +1,5 @@
 import { runeKey } from "./crawler.ts";
-import { PRO_PLAYERS, type ProPlayer } from "./proPlayers.ts";
+import { PRO_PLAYERS, type ProGroup, type ProPlayer } from "./proPlayers.ts";
 import { regionOf, type Platform, type RiotClient } from "./riot/client.ts";
 import { patchOf, type Account, type Match } from "./riot/types.ts";
 import { buildPaths, type Timeline } from "./timeline.ts";
@@ -16,6 +16,7 @@ export type ProBuild = {
   matchId: string;
   player: string;
   team: string;
+  group: ProGroup;
   platform: string;
   patch: string;
   gameStart: number;
@@ -70,11 +71,11 @@ export class ProCrawler {
         statements.push(
           this.db
             .prepare(
-              `INSERT INTO pro_accounts (puuid, player, team, role, platform, riot_id) VALUES (?, ?, ?, ?, ?, ?)
+              `INSERT INTO pro_accounts (puuid, player, team, role, platform, riot_id, grp) VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (puuid) DO UPDATE SET player = excluded.player, team = excluded.team, role = excluded.role,
-                  platform = excluded.platform, riot_id = excluded.riot_id`,
+                  platform = excluded.platform, riot_id = excluded.riot_id, grp = excluded.grp`,
             )
-            .bind(account.puuid, player.name, player.team, player.role, platform, riotId),
+            .bind(account.puuid, player.name, player.team, player.role, platform, riotId, player.group ?? "worlds"),
         );
       }
     }
@@ -88,8 +89,8 @@ export class ProCrawler {
     const any = await this.db.prepare("SELECT 1 AS found FROM pro_accounts LIMIT 1").first();
     if (!any) await this.syncAccounts();
     const account = await this.db
-      .prepare("SELECT puuid, player, team, platform FROM pro_accounts ORDER BY last_crawled_at LIMIT 1")
-      .first<{ puuid: string; player: string; team: string; platform: Platform }>();
+      .prepare("SELECT puuid, player, team, platform, grp FROM pro_accounts ORDER BY last_crawled_at LIMIT 1")
+      .first<{ puuid: string; player: string; team: string; platform: Platform; grp: string }>();
     if (!account) return 0;
     await this.db.prepare("UPDATE pro_accounts SET last_crawled_at = ? WHERE puuid = ?").bind(this.now(), account.puuid).run();
 
@@ -118,7 +119,11 @@ export class ProCrawler {
     return saved;
   }
 
-  async save(match: Match, timeline: Timeline | null, account: { puuid: string; player: string; team: string; platform: string }): Promise<boolean> {
+  async save(
+    match: Match,
+    timeline: Timeline | null,
+    account: { puuid: string; player: string; team: string; platform: string; grp?: string },
+  ): Promise<boolean> {
     const { info } = match;
     if (info.queueId !== RANKED_SOLO || info.gameDuration < MIN_DURATION_SECONDS) return false;
     const me = info.participants.find((p) => p.puuid === account.puuid);
@@ -131,8 +136,8 @@ export class ProCrawler {
       .prepare(
         `INSERT OR IGNORE INTO pro_matches
           (match_id, puuid, player, team, platform, patch, game_start, duration, champion_id, opponent_champion_id,
-           team_position, win, kills, deaths, assists, cs, gold, runes, spells, items, start_items, skill_order, purchase_order)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           team_position, win, kills, deaths, assists, cs, gold, runes, spells, items, start_items, skill_order, purchase_order, grp)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         match.metadata.matchId,
@@ -158,6 +163,7 @@ export class ProCrawler {
         path ? path.startItems.join(",") : null,
         path ? path.skillOrder.join("") : null,
         path ? path.purchases.join(",") : null,
+        account.grp ?? "worlds",
       )
       .run();
     return true;
@@ -168,6 +174,7 @@ type Row = {
   match_id: string;
   player: string;
   team: string;
+  grp: ProGroup;
   platform: string;
   patch: string;
   game_start: number;
@@ -189,25 +196,27 @@ type Row = {
   purchase_order: string | null;
 };
 
-export type ProFilter = { championId?: number; position?: string; team?: string; limit?: number };
+export type ProFilter = { championId?: number; position?: string; team?: string; group?: ProGroup; limit?: number };
 
 /** Newest first. */
-export async function proBuilds(db: D1Database, { championId, position, team, limit = 30 }: ProFilter = {}): Promise<ProBuild[]> {
+export async function proBuilds(db: D1Database, { championId, position, team, group, limit = 30 }: ProFilter = {}): Promise<ProBuild[]> {
   const where = [
     championId ? "champion_id = ?" : "",
     position ? "team_position = ?" : "",
     team ? "team = ?" : "",
+    group ? "grp = ?" : "",
   ].filter(Boolean);
   const { results } = await db
     .prepare(
       `SELECT * FROM pro_matches ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY game_start DESC LIMIT ?`,
     )
-    .bind(...[championId, position, team].filter((v) => v !== undefined), limit)
+    .bind(...[championId, position, team, group].filter((v) => v !== undefined), limit)
     .all<Row>();
   return results.map((r) => ({
     matchId: r.match_id,
     player: r.player,
     team: r.team,
+    group: r.grp,
     platform: r.platform,
     patch: r.patch,
     gameStart: r.game_start,
@@ -231,13 +240,18 @@ export async function proBuilds(db: D1Database, { championId, position, team, li
 }
 
 /** Teams and players with stored games, for the page's filters. */
-export async function proTeams(db: D1Database): Promise<{ team: string; players: string[] }[]> {
+export async function proTeams(db: D1Database): Promise<{ team: string; group: ProGroup; players: string[] }[]> {
   const { results } = await db
-    .prepare("SELECT DISTINCT team, player FROM pro_accounts ORDER BY team, player")
-    .all<{ team: string; player: string }>();
-  const teams = new Map<string, string[]>();
-  for (const r of results) teams.set(r.team, [...(teams.get(r.team) ?? []), r.player]);
-  return [...teams.entries()].map(([team, players]) => ({ team, players }));
+    .prepare("SELECT DISTINCT team, grp, player FROM pro_accounts ORDER BY grp DESC, team, player")
+    .all<{ team: string; grp: ProGroup; player: string }>();
+  const teams = new Map<string, { group: ProGroup; players: string[] }>();
+  for (const r of results) {
+    const key = `${r.grp}:${r.team}`;
+    const entry = teams.get(key) ?? { group: r.grp, players: [] };
+    entry.players.push(r.player);
+    teams.set(key, entry);
+  }
+  return [...teams.entries()].map(([key, { group, players }]) => ({ team: key.slice(group.length + 1), group, players }));
 }
 
 // Builds older than this describe last month's game.

@@ -331,12 +331,14 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
     if (position !== undefined && !POSITIONS.has(position)) badRequest("Unsupported position");
     const team = c.req.query("team");
     if (team !== undefined && !/^[\w .-]{1,40}$/.test(team)) badRequest("Invalid team");
+    const group = c.req.query("group");
+    if (group !== undefined && group !== "worlds" && group !== "turkey") badRequest("Unsupported group");
     const limit = Number(c.req.query("limit") ?? 30);
     if (!Number.isInteger(limit) || limit < 1 || limit > 100) badRequest("limit must be 1-100");
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
-    const key = `pro-builds:${championId ?? "ANY"}:${position ?? "ANY"}:${team ?? "ANY"}:${limit}`;
+    const key = `pro-builds:${championId ?? "ANY"}:${position ?? "ANY"}:${team ?? "ANY"}:${group ?? "ANY"}:${limit}`;
     // Pro games arrive every few minutes; a short cache keeps the list fresh.
-    return c.json({ builds: await cached(key, 5 * MINUTE, () => proBuilds(statsDb, { championId, position, team, limit })) });
+    return c.json({ builds: await cached(key, 5 * MINUTE, () => proBuilds(statsDb, { championId, position, team, group, limit })) });
   });
 
   app.get("/v1/pros/teams", async (c) => {
