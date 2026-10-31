@@ -91,3 +91,19 @@ export function goldGraph(timeline: Timeline, teamOf: (participantId: number) =>
     });
   return { goldDiff, objectives };
 }
+
+// Enough to cover laning and the early jungle clears.
+export const PACE_MINUTES = 15;
+
+/** Per participant id: total CS (lane plus jungle) at the end of minutes 1 to 15. */
+export function csByMinute(timeline: Timeline): Map<number, number[]> {
+  const result = new Map<number, number[]>();
+  for (const frame of timeline.info.frames.slice(1, PACE_MINUTES + 1)) {
+    for (const [id, pf] of Object.entries(frame.participantFrames)) {
+      const list = result.get(Number(id)) ?? [];
+      list.push(pf.minionsKilled + pf.jungleMinionsKilled);
+      result.set(Number(id), list);
+    }
+  }
+  return result;
+}

@@ -6,7 +6,7 @@ import { aggregateBuild, POSITIONS } from "./builds.ts";
 import { coach, summarize, type Coaching, type CoachMatch, type Timeline } from "./coach.ts";
 import { rewriteWithWorkersAi } from "./coachRewrite.ts";
 import { coachByRules } from "./coachRules.ts";
-import { banSuggestions, benchmarks, championOverview, counters, tierList, type Benchmarks } from "./stats.ts";
+import { banSuggestions, benchmarks, championOverview, counters, pace, tierList, type Benchmarks } from "./stats.ts";
 import { goldGraph, type Timeline as FullTimeline } from "./timeline.ts";
 import { findHabits, gameNumbers } from "./trends.ts";
 import { RiotError, type RiotClient } from "./riot/client.ts";
@@ -174,6 +174,16 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai 
     if (championId !== null && (!Number.isInteger(championId) || championId <= 0)) badRequest("Invalid champion id");
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json(await benchmarksFor(position, championId));
+  });
+
+  app.get("/v1/pace/:position", async (c) => {
+    const position = c.req.param("position").toUpperCase();
+    if (!POSITIONS.has(position)) badRequest("Unsupported position");
+    const championParam = c.req.query("champion");
+    const championId = championParam === undefined ? null : Number(championParam);
+    if (championId !== null && (!Number.isInteger(championId) || championId <= 0)) badRequest("Invalid champion id");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json(await cached(`pace:${position}:${championId ?? "ANY"}`, 6 * 60 * MINUTE, () => pace(statsDb, position, championId)));
   });
 
   app.get("/v1/tierlist/:position", async (c) => {

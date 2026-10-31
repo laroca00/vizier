@@ -1,5 +1,5 @@
 import type { RiotClient } from "./riot/client.ts";
-import { buildPaths, type BuildPath, type Timeline } from "./timeline.ts";
+import { buildPaths, csByMinute, type BuildPath, type Timeline } from "./timeline.ts";
 import { patchOf, type LeagueEntryWithPuuid, type LeagueList, type Match, type Participant } from "./riot/types.ts";
 
 const RANKED_SOLO = 420;
@@ -157,10 +157,11 @@ export class Crawler {
       `INSERT OR IGNORE INTO participant_stats
         (match_id, patch, champion_id, team_position, win, runes, spells, items,
          opponent_champion_id, duration, deaths, cs10, cs_pm, gold_pm, vision_pm,
-         kill_participation, damage_share, start_items, skill_order, purchase_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         kill_participation, damage_share, start_items, skill_order, purchase_order, cs_minutes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const paths = timeline ? buildPaths(timeline) : new Map<number, BuildPath>();
+    const pace = timeline ? csByMinute(timeline) : new Map<number, number[]>();
     const minutes = info.gameDuration / 60;
     const round = (n: number) => Math.round(n * 100) / 100;
     const rows = info.participants.flatMap((p) => {
@@ -172,6 +173,7 @@ export class Crawler {
       const cs = (p.totalMinionsKilled ?? 0) + (p.neutralMinionsKilled ?? 0);
       const cs10 = p.teamPosition === "JUNGLE" ? c.jungleCsBefore10Minutes : c.laneMinionsFirst10Minutes;
       const path = p.participantId ? paths.get(p.participantId) : undefined;
+      const csMinutes = p.participantId ? pace.get(p.participantId) : undefined;
       return [
         insert.bind(
           matchId,
@@ -194,6 +196,7 @@ export class Crawler {
           path ? path.startItems.join(",") : null,
           path ? path.skillOrder.join("") : null,
           path ? path.purchases.join(",") : null,
+          csMinutes?.length ? csMinutes.join(",") : null,
         ),
       ];
     });

@@ -233,3 +233,37 @@ export async function banSuggestions(db: D1Database, limit = 5): Promise<{ patch
     .slice(0, limit);
   return { patches, champions };
 }
+
+export type Pace = { position: string; championId: number | null; patches: string[]; games: number; median: number[] };
+
+// Fewer games here than for benchmarks: only games with a timeline carry a pace.
+const MIN_CHAMPION_PACE_GAMES = 20;
+
+/** Median total CS at the end of each early minute, for the role or the champion in it. */
+export async function pace(db: D1Database, position: string, championId: number | null = null): Promise<Pace> {
+  const patches = await latestPatches(db);
+  const load = async (champion: number | null) => {
+    if (patches.length === 0) return [];
+    const { results } = await db
+      .prepare(
+        `SELECT cs_minutes FROM participant_stats
+          WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND cs_minutes IS NOT NULL
+          ${champion ? "AND champion_id = ?" : ""}`,
+      )
+      .bind(...patches, position, ...(champion ? [champion] : []))
+      .all<{ cs_minutes: string }>();
+    return results.map((r) => r.cs_minutes.split(",").map(Number));
+  };
+  let used = championId;
+  let rows = championId ? await load(championId) : [];
+  if (rows.length < MIN_CHAMPION_PACE_GAMES) {
+    used = null;
+    rows = await load(null);
+  }
+  const longest = Math.max(0, ...rows.map((r) => r.length));
+  const median = Array.from({ length: longest }, (_, minute) => {
+    const values = rows.map((r) => r[minute]).filter((v) => v !== undefined);
+    return quantiles(values)[10];
+  });
+  return { position, championId: used, patches, games: rows.length, median };
+}

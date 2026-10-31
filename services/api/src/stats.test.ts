@@ -5,7 +5,7 @@ import { coachByRules } from "./coachRules.ts";
 import { Crawler } from "./crawler.ts";
 import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
-import { banSuggestions, benchmarks, championOverview, counters, quantiles, rankOf, tierList } from "./stats.ts";
+import { banSuggestions, benchmarks, championOverview, counters, pace, quantiles, rankOf, tierList } from "./stats.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 import { findHabits, type GameNumbers } from "./trends.ts";
 
@@ -111,6 +111,33 @@ describe("champion pages", () => {
       { championId: 238, games: 12, winRate: 0.25 },
       { championId: 7, games: 12, winRate: 0.75 },
     ]);
+  });
+});
+
+describe("pace", () => {
+  it("takes the median CS per minute from games with a timeline", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, { get: async () => null } as unknown as RiotClient);
+    const frame = (minute: number, cs: number) => ({
+      timestamp: minute * 60_000,
+      events: [],
+      participantFrames: {
+        "1": { totalGold: 0, xp: 0, minionsKilled: cs, jungleMinionsKilled: 0, level: 1 },
+        "6": { totalGold: 0, xp: 0, minionsKilled: 0, jungleMinionsKilled: cs / 2, level: 1 },
+      },
+    });
+    for (const [n, perMinute] of [[1, 6], [2, 8], [3, 10]]) {
+      const match: Match = {
+        metadata: { matchId: `TR1_${n}`, participants: [] },
+        info: { gameVersion: "16.21.1", queueId: 420, gameStartTimestamp: n, gameDuration: 1800, participants: [player(1, 100, 103, true, 200), player(6, 200, 238, false, 180)] },
+      };
+      const timeline = { info: { frames: [0, 1, 2].map((m) => frame(m, m * perMinute)) } };
+      await crawler.save(match, timeline);
+    }
+    const result = await pace(db, "MIDDLE");
+    // Both seeded players are mid: minute 1 has 3, 4, 5, 6, 8 and 10 CS.
+    expect(result).toMatchObject({ games: 6, championId: null, median: [5.5, 11] });
+    expect((await pace(db, "TOP")).median).toEqual([]);
   });
 });
 
