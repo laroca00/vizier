@@ -1,0 +1,13 @@
+{
+  "name": "vizier",
+  "private": true,
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @vizier/desktop tauri dev",
+    "build": "pnpm --filter @vizier/desktop tauri build",
+    "build:web": "pnpm --filter @vizier/desktop build"
+  }
+}
