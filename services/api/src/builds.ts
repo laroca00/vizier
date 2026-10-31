@@ -87,6 +87,7 @@ export async function aggregateBuild(
   position: string | null,
   vs: number | null = null,
   loadFinished: () => Promise<Set<number>> = finishedItems,
+  queue = 420,
 ): Promise<Build | null> {
   const { results: patchRows } = await db
     .prepare("SELECT patch FROM crawled_matches GROUP BY patch ORDER BY MAX(game_start) DESC")
@@ -94,13 +95,13 @@ export async function aggregateBuild(
   if (patchRows.length === 0) return null;
 
   const query = (patches: string[], opponent: number | null) => {
-    const filters = [position ? "AND team_position = ?" : "", opponent ? "AND opponent_champion_id = ?" : ""].join(" ");
+    const filters = ["AND queue_id = ?", position ? "AND team_position = ?" : "", opponent ? "AND opponent_champion_id = ?" : ""].join(" ");
     return db
       .prepare(
         `SELECT win, runes, spells, items, start_items, skill_order, purchase_order FROM participant_stats
           WHERE patch IN (${patches.map(() => "?").join(",")}) AND champion_id = ? ${filters}`,
       )
-      .bind(...patches, championId, ...(position ? [position] : []), ...(opponent ? [opponent] : []))
+      .bind(...patches, championId, queue, ...(position ? [position] : []), ...(opponent ? [opponent] : []))
       .all<Row>();
   };
 

@@ -79,7 +79,16 @@ export async function benchmarks(db: D1Database, position: string, championId: n
   return { position, championId: usedChampion, patches, metrics };
 }
 
-export type TierEntry = { championId: number; games: number; winRate: number; pickRate: number; score: number; tier: string };
+export type TierEntry = {
+  championId: number;
+  games: number;
+  winRate: number;
+  pickRate: number;
+  score: number;
+  tier: string;
+  /** Newest patch against the one before, when both have enough games. */
+  winRateChange: number | null;
+};
 
 const smoothed = (wins: number, games: number) => (wins + PRIOR_GAMES / 2) / (games + PRIOR_GAMES);
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
@@ -94,28 +103,49 @@ function assignTiers(entries: Omit<TierEntry, "tier">[]): TierEntry[] {
     .map((e) => ({ ...e, tier: TIER_CUTS.find(([cut]) => e.score >= cut)?.[1] ?? "D" }));
 }
 
-export async function tierList(db: D1Database, position: string): Promise<{ patches: string[]; games: number; champions: TierEntry[] }> {
+/** `position` is "" for queues without roles (ARAM, Arena, URF). */
+export async function tierList(
+  db: D1Database,
+  position: string,
+  queue = 420,
+): Promise<{ patches: string[]; games: number; champions: TierEntry[] }> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return { patches, games: 0, champions: [] };
-  const { results } = await db
+  const { results: byPatch } = await db
     .prepare(
-      `SELECT champion_id, COUNT(*) AS games, SUM(win) AS wins FROM participant_stats
-        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ?
-        GROUP BY champion_id`,
+      `SELECT champion_id, patch, COUNT(*) AS games, SUM(win) AS wins FROM participant_stats
+        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ?
+        GROUP BY champion_id, patch`,
     )
-    .bind(...patches, position)
-    .all<{ champion_id: number; games: number; wins: number }>();
-  const total = results.reduce((sum, r) => sum + r.games, 0);
-  const entries = results
-    .filter((r) => r.games >= MIN_TIER_GAMES)
-    .map((r) => ({
-      championId: r.champion_id,
-      games: r.games,
-      winRate: round3(r.wins / r.games),
-      pickRate: round3(r.games / total),
-      score: round3(smoothed(r.wins, r.games)),
+    .bind(...patches, position, queue)
+    .all<{ champion_id: number; patch: string; games: number; wins: number }>();
+  const byChampion = new Map<number, { games: number; wins: number; patches: Map<string, { games: number; wins: number }> }>();
+  for (const r of byPatch) {
+    const c = byChampion.get(r.champion_id) ?? { games: 0, wins: 0, patches: new Map() };
+    c.games += r.games;
+    c.wins += r.wins;
+    c.patches.set(r.patch, r);
+    byChampion.set(r.champion_id, c);
+  }
+  const total = [...byChampion.values()].reduce((sum, c) => sum + c.games, 0);
+  const entries = [...byChampion.entries()]
+    .filter(([, c]) => c.games >= MIN_TIER_GAMES)
+    .map(([championId, c]) => ({
+      championId,
+      games: c.games,
+      winRate: round3(c.wins / c.games),
+      pickRate: round3(c.games / total),
+      score: round3(smoothed(c.wins, c.games)),
+      winRateChange: patchChange(patches, c.patches),
     }));
   return { patches, games: total, champions: assignTiers(entries) };
+}
+
+function patchChange(patches: string[], byPatch: Map<string, { games: number; wins: number }>): number | null {
+  const [newest, previous] = patches.map((p) => byPatch.get(p));
+  return newest && previous && newest.games >= MIN_TIER_GAMES && previous.games >= MIN_TIER_GAMES
+    ? round3(newest.wins / newest.games - previous.wins / previous.games)
+    : null;
 }
 
 export type ChampionOverview = {
@@ -130,52 +160,67 @@ export type ChampionOverview = {
   tier: string | null;
   /** Newest patch against the one before, when both have enough games. */
   winRateChange: number | null;
+  /** Share of ranked games the champion was banned in; null outside ranked. */
+  banRate: number | null;
 };
 
-export async function championOverview(db: D1Database, championId: number, position: string | null): Promise<ChampionOverview | null> {
+export async function championOverview(
+  db: D1Database,
+  championId: number,
+  position: string | null,
+  queue = 420,
+): Promise<ChampionOverview | null> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return null;
+  const ranked = queue === 420;
   const { results: byPosition } = await db
     .prepare(
       `SELECT team_position AS position, COUNT(*) AS games FROM participant_stats
-        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position != ''
+        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND queue_id = ?
         GROUP BY team_position ORDER BY games DESC`,
     )
-    .bind(...patches, championId)
+    .bind(...patches, championId, queue)
     .all<{ position: string; games: number }>();
   const played = byPosition.reduce((sum, p) => sum + p.games, 0);
   if (played === 0) return null;
-  const positions = byPosition.map((p) => ({ ...p, share: round3(p.games / played) }));
-  const used = position && positions.some((p) => p.position === position) ? position : positions[0].position;
+  const positions = ranked ? byPosition.filter((p) => p.position).map((p) => ({ ...p, share: round3(p.games / played) })) : [];
+  const used = !ranked ? "" : position && positions.some((p) => p.position === position) ? position : positions[0]?.position;
+  if (used === undefined) return null;
 
+  const list = await tierList(db, used, queue);
+  const entry = list.champions.find((c) => c.championId === championId);
   const { results: byPatch } = await db
     .prepare(
       `SELECT patch, COUNT(*) AS games, SUM(win) AS wins FROM participant_stats
-        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ?
+        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ? AND queue_id = ?
         GROUP BY patch`,
     )
-    .bind(...patches, championId, used)
+    .bind(...patches, championId, used, queue)
     .all<{ patch: string; games: number; wins: number }>();
   const games = byPatch.reduce((sum, p) => sum + p.games, 0);
   const wins = byPatch.reduce((sum, p) => sum + p.wins, 0);
-  const [newest, previous] = patches.map((patch) => byPatch.find((p) => p.patch === patch));
-  const winRateChange =
-    newest && previous && newest.games >= MIN_TIER_GAMES && previous.games >= MIN_TIER_GAMES
-      ? round3(newest.wins / newest.games - previous.wins / previous.games)
-      : null;
 
-  const list = await tierList(db, used);
-  const entry = list.champions.find((c) => c.championId === championId);
   return {
     patches,
     positions,
-    position: used,
+    position: used || null,
     games,
-    winRate: round3(wins / games),
+    winRate: round3(wins / Math.max(games, 1)),
     pickRate: round3(games / Math.max(list.games, 1)),
     tier: entry?.tier ?? null,
-    winRateChange,
+    winRateChange: patchChange(patches, new Map(byPatch.map((p) => [p.patch, p]))),
+    banRate: ranked ? await banRate(db, patches, championId) : null,
   };
+}
+
+async function banRate(db: D1Database, patches: string[], championId: number): Promise<number | null> {
+  const { results } = await db
+    .prepare(`SELECT bans FROM crawled_matches WHERE patch IN (${placeholders(patches.length)}) AND queue_id = 420 AND bans IS NOT NULL`)
+    .bind(...patches)
+    .all<{ bans: string }>();
+  if (results.length < MIN_TIER_GAMES) return null;
+  const banned = results.filter((r) => r.bans.split(",").map(Number).includes(championId)).length;
+  return round3(banned / results.length);
 }
 
 export type Matchup = { championId: number; games: number; winRate: number };
@@ -214,7 +259,7 @@ export async function banSuggestions(db: D1Database, limit = 5): Promise<{ patch
   const { results } = await db
     .prepare(
       `SELECT champion_id, COUNT(*) AS games, SUM(win) AS wins FROM participant_stats
-        WHERE patch IN (${placeholders(patches.length)}) GROUP BY champion_id`,
+        WHERE patch IN (${placeholders(patches.length)}) AND queue_id = 420 GROUP BY champion_id`,
     )
     .bind(...patches)
     .all<{ champion_id: number; games: number; wins: number }>();
@@ -266,4 +311,63 @@ export async function pace(db: D1Database, position: string, championId: number 
     return quantiles(values)[10];
   });
   return { position, championId: used, patches, games: rows.length, median };
+}
+
+/** How the champion does with each ranked teammate; best first. */
+export async function synergies(
+  db: D1Database,
+  championId: number,
+  position: string,
+): Promise<{ patches: string[]; games: number; allies: (Matchup & { position: string })[] }> {
+  const patches = await latestPatches(db);
+  if (patches.length === 0) return { patches, games: 0, allies: [] };
+  const { results } = await db
+    .prepare(
+      `SELECT ally.champion_id AS ally, ally.team_position AS position, COUNT(*) AS games, SUM(me.win) AS wins
+        FROM participant_stats me JOIN participant_stats ally
+          ON ally.match_id = me.match_id AND ally.team_id = me.team_id AND ally.champion_id != me.champion_id
+        WHERE me.patch IN (${placeholders(patches.length)}) AND me.champion_id = ? AND me.team_position = ?
+          AND me.queue_id = 420 AND me.team_id IS NOT NULL
+        GROUP BY ally.champion_id, ally.team_position`,
+    )
+    .bind(...patches, championId, position)
+    .all<{ ally: number; position: string; games: number; wins: number }>();
+  const allies = results
+    .filter((r) => r.games >= MIN_TIER_GAMES)
+    .map((r) => ({ championId: r.ally, position: r.position, games: r.games, winRate: round3(r.wins / r.games), score: smoothed(r.wins, r.games) }))
+    .sort((a, b) => b.score - a.score)
+    .map(({ score: _, ...a }) => a);
+  return { patches, games: results.reduce((sum, r) => sum + r.games, 0), allies };
+}
+
+export type AugmentStat = { augmentId: number; games: number; topFourRate: number };
+
+/**
+ * Arena augment top-four rates for a champion. Riot's policy forbids showing
+ * these without written approval, so the API serves them only behind a flag.
+ */
+export async function arenaAugments(db: D1Database, championId: number): Promise<{ patches: string[]; games: number; augments: AugmentStat[] }> {
+  const patches = await latestPatches(db);
+  if (patches.length === 0) return { patches, games: 0, augments: [] };
+  const { results } = await db
+    .prepare(
+      `SELECT augments, win FROM participant_stats
+        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND queue_id = 1700 AND augments IS NOT NULL`,
+    )
+    .bind(...patches, championId)
+    .all<{ augments: string; win: number }>();
+  const counts = new Map<number, { games: number; wins: number }>();
+  for (const r of results) {
+    for (const id of new Set(r.augments.split(",").map(Number))) {
+      const c = counts.get(id) ?? { games: 0, wins: 0 };
+      c.games++;
+      c.wins += r.win;
+      counts.set(id, c);
+    }
+  }
+  const augments = [...counts.entries()]
+    .filter(([, c]) => c.games >= MIN_TIER_GAMES)
+    .map(([augmentId, c]) => ({ augmentId, games: c.games, topFourRate: round3(c.wins / c.games) }))
+    .sort((a, b) => b.topFourRate - a.topFourRate);
+  return { patches, games: results.length, augments };
 }

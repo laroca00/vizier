@@ -5,7 +5,7 @@ import { coachByRules } from "./coachRules.ts";
 import { Crawler } from "./crawler.ts";
 import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
-import { banSuggestions, benchmarks, championOverview, counters, pace, quantiles, rankOf, tierList } from "./stats.ts";
+import { banSuggestions, benchmarks, championOverview, counters, pace, quantiles, rankOf, synergies, tierList } from "./stats.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 import { findHabits, type GameNumbers } from "./trends.ts";
 
@@ -169,5 +169,47 @@ describe("findHabits", () => {
     expect(trends.habits).toEqual([
       { title: "Maç boyunca minyon toplaman düşük", detail: "Son 10 maçın 8 tanesinde dakika başına minyonun Emerald+ medyanı olan 7 değerinin altındaydı." },
     ]);
+  });
+});
+
+describe("synergies and queues", () => {
+  it("ranks teammates by how the champion does with them", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, { get: async () => null } as unknown as RiotClient);
+    const jungler = (id: number, champion: number, win: boolean) => ({ ...player(id, 100, champion, win, 50), teamPosition: "JUNGLE" });
+    for (let n = 1; n <= 20; n++) {
+      const withLee = n <= 10;
+      const win = withLee ? n <= 8 : n <= 13;
+      const match: Match = {
+        metadata: { matchId: `TR1_${n}`, participants: [] },
+        info: {
+          gameVersion: "16.21.1", queueId: 420, gameStartTimestamp: n, gameDuration: 1800,
+          participants: [player(1, 100, 103, win, 200), jungler(2, withLee ? 64 : 104, win), player(6, 200, 238, !win, 180)],
+        },
+      };
+      await crawler.save(match);
+    }
+    const result = await synergies(db, 103, "MIDDLE");
+    expect(result.allies).toEqual([
+      { championId: 64, position: "JUNGLE", games: 10, winRate: 0.8 },
+      { championId: 104, position: "JUNGLE", games: 10, winRate: 0.3 },
+    ]);
+  });
+
+  it("keeps ARAM games out of ranked tiers and builds", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, { get: async () => null } as unknown as RiotClient);
+    for (let n = 1; n <= 12; n++) {
+      const match: Match = {
+        metadata: { matchId: `TR1_${n}`, participants: [] },
+        info: { gameVersion: "16.21.1", queueId: 450, gameStartTimestamp: n, gameDuration: 1200, participants: [player(1, 100, 103, true, 50), player(6, 200, 238, false, 50)] },
+      };
+      await crawler.save(match);
+    }
+    expect((await tierList(db, "MIDDLE")).champions).toEqual([]);
+    expect(await aggregateBuild(db, 103, null, null, async () => new Set())).toBeNull();
+    const aram = await tierList(db, "", 450);
+    expect(aram.champions.map((c) => [c.championId, c.tier])).toEqual([[103, "S"], [238, "D"]]);
+    expect((await championOverview(db, 103, null, 450))?.games).toBe(12);
   });
 });

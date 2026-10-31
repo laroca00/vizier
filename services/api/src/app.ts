@@ -6,7 +6,18 @@ import { aggregateBuild, POSITIONS } from "./builds.ts";
 import { coach, summarize, type Coaching, type CoachMatch, type Timeline } from "./coach.ts";
 import { rewriteWithWorkersAi } from "./coachRewrite.ts";
 import { coachByRules } from "./coachRules.ts";
-import { banSuggestions, benchmarks, championOverview, counters, pace, tierList, type Benchmarks } from "./stats.ts";
+import {
+  arenaAugments as augmentStats,
+  banSuggestions,
+  benchmarks,
+  championOverview,
+  counters,
+  pace,
+  synergies,
+  tierList,
+  type Benchmarks,
+} from "./stats.ts";
+import { STORED_QUEUES } from "./crawler.ts";
 import { goldGraph, type Timeline as FullTimeline } from "./timeline.ts";
 import { findHabits, gameNumbers } from "./trends.ts";
 import { RiotError, type RiotClient } from "./riot/client.ts";
@@ -47,11 +58,21 @@ export type AppOptions = {
   claude?: CoachConfig;
   /** Workers AI binding that rewords the free coach's findings. */
   ai?: { run(model: string, input: unknown): Promise<unknown> };
+  /** Arena augment stats; off until Riot approves showing them. */
+  arenaAugments?: boolean;
 };
 
 export type CoachResult = Coaching & { source: "claude" | "workers-ai" | "rules" };
 
-export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai }: AppOptions = {}) {
+/** Ranked solo unless `?queue=` names another stored queue. */
+function queueOf(value: string | undefined): number {
+  if (value === undefined) return 420;
+  const queue = Number(value);
+  if (!STORED_QUEUES.has(queue)) badRequest("Unsupported queue");
+  return queue;
+}
+
+export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai, arenaAugments = false }: AppOptions = {}) {
   // Concurrent misses for the same key share one Riot call.
   const pending = new Map<string, Promise<unknown>>();
 
@@ -195,10 +216,11 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai 
     const vsParam = c.req.query("vs");
     const vs = vsParam === undefined ? null : Number(vsParam);
     if (vs !== null && (!Number.isInteger(vs) || vs <= 0)) badRequest("Invalid opponent champion id");
+    const queue = queueOf(c.req.query("queue"));
     if (!statsDb) return c.json({ error: "Build stats are not available" }, 503);
 
-    const build = await cached(`build:${championId}:${position ?? "ANY"}:${vs ?? "ANY"}`, 30 * MINUTE, () =>
-      aggregateBuild(statsDb, championId, position, vs),
+    const build = await cached(`build:${queue}:${championId}:${position ?? "ANY"}:${vs ?? "ANY"}`, 30 * MINUTE, () =>
+      aggregateBuild(statsDb, championId, queue === 420 ? position : null, queue === 420 ? vs : null, undefined, queue),
     );
     if (!build) return c.json({ error: "No games for this champion yet" }, 404);
     return c.json(build);
@@ -229,11 +251,14 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai 
     return c.json(await cached(`pace:${position}:${championId ?? "ANY"}`, 6 * 60 * MINUTE, () => pace(statsDb, position, championId)));
   });
 
+  // Queues without roles (ARAM, Arena, URF) use ALL.
   app.get("/v1/tierlist/:position", async (c) => {
+    const queue = queueOf(c.req.query("queue"));
     const position = c.req.param("position").toUpperCase();
-    if (!POSITIONS.has(position)) badRequest("Unsupported position");
+    if (queue === 420 ? !POSITIONS.has(position) : position !== "ALL") badRequest("Unsupported position");
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
-    return c.json(await cached(`tierlist:${position}`, 60 * MINUTE, () => tierList(statsDb, position)));
+    const role = queue === 420 ? position : "";
+    return c.json(await cached(`tierlist:${queue}:${position}`, 60 * MINUTE, () => tierList(statsDb, role, queue)));
   });
 
   const championRequest = (c: Context) => {
@@ -246,9 +271,10 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai 
 
   app.get("/v1/champions/:championId", async (c) => {
     const { championId, position } = championRequest(c);
+    const queue = queueOf(c.req.query("queue"));
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
-    const overview = await cached(`champion:${championId}:${position ?? "ANY"}`, 60 * MINUTE, () =>
-      championOverview(statsDb, championId, position),
+    const overview = await cached(`champion:${queue}:${championId}:${position ?? "ANY"}`, 60 * MINUTE, () =>
+      championOverview(statsDb, championId, position, queue),
     );
     if (!overview) return c.json({ error: "No games for this champion yet" }, 404);
     return c.json(overview);
@@ -259,6 +285,21 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai 
     if (!position) badRequest("position is required");
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json(await cached(`counters:${championId}:${position}`, 60 * MINUTE, () => counters(statsDb, championId, position)));
+  });
+
+  app.get("/v1/champions/:championId/synergies", async (c) => {
+    const { championId, position } = championRequest(c);
+    if (!position) badRequest("position is required");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json(await cached(`synergies:${championId}:${position}`, 60 * MINUTE, () => synergies(statsDb, championId, position)));
+  });
+
+  // Riot's policy forbids Arena augment win rates without written approval.
+  app.get("/v1/champions/:championId/arena-augments", async (c) => {
+    const { championId } = championRequest(c);
+    if (!arenaAugments) return c.json({ error: "Arena augment stats are not enabled" }, 403);
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json(await cached(`augments:${championId}`, 60 * MINUTE, () => augmentStats(statsDb, championId)));
   });
 
   app.get("/v1/bans", async (c) => {

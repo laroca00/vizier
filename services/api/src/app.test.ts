@@ -123,3 +123,17 @@ describe("live game", () => {
     expect((await app.request(`/v1/live/${PUUID}`)).status).toBe(404);
   });
 });
+
+describe("queues and gated stats", () => {
+  it("refuses Arena augment stats until they are approved", async () => {
+    const { app } = fakeRiot({});
+    expect((await app.request("/v1/champions/103/arena-augments")).status).toBe(403);
+  });
+
+  it("checks the queue and the role it allows", async () => {
+    const { app } = fakeRiot({});
+    expect((await app.request("/v1/tierlist/MIDDLE?queue=999")).status).toBe(400);
+    expect((await app.request("/v1/tierlist/MIDDLE?queue=450")).status).toBe(400);
+    expect((await app.request("/v1/tierlist/ALL")).status).toBe(400);
+  });
+});
