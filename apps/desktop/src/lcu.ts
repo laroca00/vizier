@@ -26,26 +26,53 @@ export function phaseLabel(phase: string | null): string | null {
   return phase ? (PHASE_LABELS[phase] ?? null) : null;
 }
 
-export function useLcuStatus(): LcuStatus {
-  const [status, setStatus] = useState<LcuStatus>({ state: "disconnected" });
+export type DraftMember = {
+  cellId: number;
+  championId: number;
+  pickIntent: number;
+  /** Lowercase LCU position (`middle`, `utility`, ...), empty outside role queues. */
+  position: string;
+  spells: [number, number];
+  isLocal: boolean;
+};
+
+export type ChampSelect = {
+  myTeam: DraftMember[];
+  theirTeam: DraftMember[];
+  bans: number[];
+  phase: string;
+  phaseEndsAt: number;
+};
+
+/** Subscribes to a backend event and seeds it from a command on mount. */
+function useBackendState<T>(event: string, command: string, initial: T): T {
+  const [value, setValue] = useState<T>(initial);
 
   useEffect(() => {
     if (!isTauri()) return;
     let active = true;
     let heardEvent = false;
-    const unlisten = listen<LcuStatus>("lcu-status", (event) => {
+    const unlisten = listen<T>(event, (e) => {
       heardEvent = true;
-      setStatus(event.payload);
+      setValue(e.payload);
     });
     // An event can land before this resolves; it is newer, so keep it.
-    invoke<LcuStatus>("lcu_status").then((initial) => {
-      if (active && !heardEvent) setStatus(initial);
+    invoke<T>(command).then((current) => {
+      if (active && !heardEvent) setValue(current);
     });
     return () => {
       active = false;
       unlisten.then((stop) => stop());
     };
-  }, []);
+  }, [event, command]);
 
-  return status;
+  return value;
+}
+
+export function useLcuStatus(): LcuStatus {
+  return useBackendState<LcuStatus>("lcu-status", "lcu_status", { state: "disconnected" });
+}
+
+export function useChampSelect(): ChampSelect | null {
+  return useBackendState<ChampSelect | null>("lcu-champ-select", "champ_select", null);
 }

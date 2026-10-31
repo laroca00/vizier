@@ -1,0 +1,134 @@
+use serde::{Deserialize, Serialize};
+
+pub const SESSION_PATH: &str = "/lol-champ-select/v1/session";
+
+// The session also carries player names and PUUIDs. Ranked champ select hides
+// other players on purpose, so only what the draft itself shows is kept.
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawSession {
+    local_player_cell_id: i64,
+    #[serde(default)]
+    my_team: Vec<RawMember>,
+    #[serde(default)]
+    their_team: Vec<RawMember>,
+    #[serde(default)]
+    bans: RawBans,
+    timer: RawTimer,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawMember {
+    cell_id: i64,
+    #[serde(default)]
+    champion_id: i64,
+    #[serde(default)]
+    champion_pick_intent: i64,
+    #[serde(default)]
+    assigned_position: String,
+    #[serde(default)]
+    spell1_id: i64,
+    #[serde(default)]
+    spell2_id: i64,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct RawBans {
+    #[serde(default)]
+    my_team_bans: Vec<i64>,
+    #[serde(default)]
+    their_team_bans: Vec<i64>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawTimer {
+    phase: String,
+    adjusted_time_left_in_phase: i64,
+    internal_now_in_epoch_ms: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Member {
+    pub cell_id: i64,
+    /// Locked champion, 0 until locked.
+    pub champion_id: i64,
+    /// Hovered champion before locking, 0 if none.
+    pub pick_intent: i64,
+    /// Empty outside role queues.
+    pub position: String,
+    pub spells: [i64; 2],
+    pub is_local: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChampSelect {
+    pub my_team: Vec<Member>,
+    pub their_team: Vec<Member>,
+    pub bans: Vec<i64>,
+    pub phase: String,
+    /// Epoch milliseconds; the client and Vizier share the machine clock.
+    pub phase_ends_at: i64,
+}
+
+fn member(raw: RawMember, local_cell: i64) -> Member {
+    Member {
+        cell_id: raw.cell_id,
+        champion_id: raw.champion_id,
+        pick_intent: raw.champion_pick_intent,
+        position: raw.assigned_position,
+        spells: [raw.spell1_id, raw.spell2_id],
+        is_local: raw.cell_id == local_cell,
+    }
+}
+
+pub fn parse(value: serde_json::Value) -> Option<ChampSelect> {
+    let raw: RawSession = serde_json::from_value(value).ok()?;
+    let local = raw.local_player_cell_id;
+    Some(ChampSelect {
+        my_team: raw.my_team.into_iter().map(|m| member(m, local)).collect(),
+        their_team: raw.their_team.into_iter().map(|m| member(m, local)).collect(),
+        bans: raw
+            .bans
+            .my_team_bans
+            .into_iter()
+            .chain(raw.bans.their_team_bans)
+            .filter(|&id| id > 0)
+            .collect(),
+        phase: raw.timer.phase,
+        phase_ends_at: raw.timer.internal_now_in_epoch_ms + raw.timer.adjusted_time_left_in_phase,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn keeps_draft_and_drops_identities() {
+        let session = serde_json::json!({
+            "localPlayerCellId": 2,
+            "myTeam": [
+                { "cellId": 2, "championId": 0, "championPickIntent": 103, "assignedPosition": "middle",
+                  "spell1Id": 4, "spell2Id": 14, "gameName": "Someone", "puuid": "secret" },
+                { "cellId": 3, "championId": 64, "assignedPosition": "jungle", "spell1Id": 11, "spell2Id": 4 }
+            ],
+            "theirTeam": [{ "cellId": 7, "championId": 0 }],
+            "bans": { "myTeamBans": [238, -1], "theirTeamBans": [157] },
+            "timer": { "phase": "BAN_PICK", "adjustedTimeLeftInPhase": 25000, "internalNowInEpochMs": 1000 }
+        });
+        let parsed = parse(session).unwrap();
+        assert_eq!(parsed.my_team[0].pick_intent, 103);
+        assert!(parsed.my_team[0].is_local);
+        assert!(!parsed.my_team[1].is_local);
+        assert_eq!(parsed.bans, vec![238, 157]);
+        assert_eq!(parsed.phase_ends_at, 26000);
+        let json = serde_json::to_string(&parsed).unwrap();
+        assert!(!json.contains("Someone") && !json.contains("secret"));
+    }
+}

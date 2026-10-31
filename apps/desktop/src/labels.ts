@@ -28,6 +28,22 @@ export const POSITIONS: Record<string, string> = {
   UTILITY: "Destek",
 };
 
+const DRAFT_PHASES: Record<string, string> = {
+  PLANNING: "Niyet belirleme",
+  BAN_PICK: "Seçim ve yasaklar",
+  FINALIZATION: "Son hazırlık",
+  GAME_STARTING: "Oyun başlıyor",
+};
+
+export function draftPhaseLabel(phase: string) {
+  return DRAFT_PHASES[phase] ?? phase;
+}
+
+/** The LCU sends lowercase positions, match-v5 uppercase. */
+export function positionLabel(position: string) {
+  return POSITIONS[position.toUpperCase()] ?? null;
+}
+
 export function tierLabel(tier: string, division: string) {
   const name = TIERS[tier] ?? tier;
   return APEX.has(tier) ? name : `${name} ${division}`;

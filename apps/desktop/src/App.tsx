@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { useLcuStatus } from "./lcu";
+import { useEffect, useRef, useState } from "react";
+import { champSelectFixture } from "./dev/fixtures";
+import { useChampSelect, useLcuStatus } from "./lcu";
 import { About } from "./pages/About";
+import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { LiquidGlass } from "./ui/LiquidGlass";
 import { ShaderGradient } from "./ui/ShaderGradient";
@@ -9,23 +11,36 @@ import "./App.css";
 // Night cobalt to turquoise across the plane, bright cobalt on the folds.
 const GRADIENT: [string, string, string] = ["#0b1846", "#1c9c92", "#2f55c8"];
 
-const PAGES = [
-  { id: "home", label: "Ana sayfa", Component: Home },
-  { id: "about", label: "Hakkında", Component: About },
-] as const;
+type View = "home" | "about" | "draft";
 
-type PageId = (typeof PAGES)[number]["id"];
+const fixture = champSelectFixture();
 
 function App() {
   const lcu = useLcuStatus();
-  const [pageId, setPageId] = useState<PageId>("home");
+  const draft = useChampSelect() ?? fixture;
+  const [view, setView] = useState<View>(draft ? "draft" : "home");
   const [navigated, setNavigated] = useState(false);
-  const page = PAGES.find((p) => p.id === pageId)!;
+  const draftActive = useRef(draft !== null);
 
-  function open(id: PageId) {
-    if (id === pageId) return;
+  // Jump to the draft when it starts and leave it when it ends, but don't
+  // pull the player back if they switched away during it.
+  useEffect(() => {
+    const active = draft !== null;
+    if (active && !draftActive.current) setView("draft");
+    if (!active && draftActive.current) setView((v) => (v === "draft" ? "home" : v));
+    draftActive.current = active;
+  }, [draft]);
+
+  const items: { id: View; label: string }[] = [
+    { id: "home", label: "Ana sayfa" },
+    ...(draft ? [{ id: "draft" as const, label: "Şampiyon seçimi" }] : []),
+    { id: "about", label: "Hakkında" },
+  ];
+
+  function open(id: View) {
+    if (id === view) return;
     setNavigated(true);
-    setPageId(id);
+    setView(id);
   }
 
   return (
@@ -33,21 +48,27 @@ function App() {
       <ShaderGradient className="shell__backdrop" colors={GRADIENT} strength={3} reflection={0.18} />
       <nav className="shell__nav" aria-label="Ana menü">
         <LiquidGlass className="nav" shape="pill" blur={4}>
-          {PAGES.map((p) => (
+          {items.map((item) => (
             <button
-              key={p.id}
+              key={item.id}
               type="button"
               className="nav__item"
-              aria-current={p.id === pageId ? "page" : undefined}
-              onClick={() => open(p.id)}
+              aria-current={item.id === view ? "page" : undefined}
+              onClick={() => open(item.id)}
             >
-              {p.label}
+              {item.label}
             </button>
           ))}
         </LiquidGlass>
       </nav>
-      <main className="shell__main" key={page.id}>
-        <page.Component lcu={lcu} />
+      <main className="shell__main" key={view}>
+        {view === "draft" && draft ? (
+          <ChampSelectPage draft={draft} />
+        ) : view === "about" ? (
+          <About />
+        ) : (
+          <Home lcu={lcu} />
+        )}
       </main>
     </div>
   );

@@ -1,3 +1,4 @@
+pub mod champ_select;
 mod client;
 mod credentials;
 
@@ -11,10 +12,12 @@ use serde_json::Value;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio_tungstenite::tungstenite::Message;
 
+use champ_select::ChampSelect;
 use client::{Error, LcuClient};
 use credentials::{Credentials, Finder};
 
 pub const STATUS_EVENT: &str = "lcu-status";
+pub const CHAMP_SELECT_EVENT: &str = "lcu-champ-select";
 const POLL_INTERVAL: Duration = Duration::from_secs(2);
 
 const PHASE_PATH: &str = "/lol-gameflow/v1/gameflow-phase";
@@ -48,6 +51,24 @@ impl LcuState {
     }
 }
 
+#[derive(Default)]
+pub struct ChampSelectState(Mutex<Option<ChampSelect>>);
+
+impl ChampSelectState {
+    pub fn current(&self) -> Option<ChampSelect> {
+        self.0.lock().unwrap().clone()
+    }
+}
+
+fn publish_champ_select(app: &AppHandle, value: Option<ChampSelect>) {
+    let state = app.state::<ChampSelectState>();
+    let mut current = state.0.lock().unwrap();
+    if *current != value {
+        *current = value.clone();
+        let _ = app.emit(CHAMP_SELECT_EVENT, value);
+    }
+}
+
 fn publish(app: &AppHandle, status: LcuStatus) {
     let state = app.state::<LcuState>();
     let mut current = state.0.lock().unwrap();
@@ -76,6 +97,7 @@ pub fn spawn(app: AppHandle) {
                     if let Err(error) = session(&app, tls.clone(), &credentials).await {
                         eprintln!("lcu: session ended: {error}");
                     }
+                    publish_champ_select(&app, None);
                     publish(&app, LcuStatus::Connecting);
                 }
                 None => publish(&app, LcuStatus::Disconnected),
@@ -89,7 +111,7 @@ pub fn spawn(app: AppHandle) {
 async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credentials) -> Result<(), Error> {
     let api = LcuClient::new(&tls, credentials)?;
     let mut events = client::connect_events(tls, credentials).await?;
-    for path in [PHASE_PATH, SUMMONER_PATH] {
+    for path in [PHASE_PATH, SUMMONER_PATH, champ_select::SESSION_PATH] {
         let topic = format!("OnJsonApiEvent{}", path.replace('/', "_"));
         events.send(Message::text(serde_json::json!([5, topic]).to_string())).await?;
     }
@@ -98,6 +120,9 @@ async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credenti
     let mut phase: Option<String> = api.get(PHASE_PATH).await.ok();
     let mut summoner: Option<Summoner> = api.get(SUMMONER_PATH).await.ok();
     publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone() });
+    // 404 outside champ select. Vizier may also start in the middle of one.
+    let session: Option<Value> = api.get(champ_select::SESSION_PATH).await.ok();
+    publish_champ_select(app, session.and_then(champ_select::parse));
 
     while let Some(message) = events.next().await {
         let Message::Text(text) = message? else { continue };
@@ -105,6 +130,11 @@ async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credenti
         match event.uri.as_str() {
             PHASE_PATH => phase = event.data.as_str().map(str::to_owned),
             SUMMONER_PATH => summoner = serde_json::from_value(event.data).ok(),
+            // A Delete event carries no data, which parses to None.
+            champ_select::SESSION_PATH => {
+                publish_champ_select(app, champ_select::parse(event.data));
+                continue;
+            }
             _ => continue,
         }
         publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone() });

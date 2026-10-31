@@ -29,3 +29,19 @@ export function profileIconUrl(version: string, iconId: number) {
 export function championIconUrl(version: string, championId: string) {
   return `${BASE}/cdn/${version}/img/champion/${championId}.png`;
 }
+
+export type SummonerSpell = { id: string; key: number; name: string };
+
+let spellsByKey: Promise<Map<number, SummonerSpell>> | undefined;
+
+export function summonerSpells(): Promise<Map<number, SummonerSpell>> {
+  spellsByKey ??= latestVersion()
+    .then((v) => fetch(`${BASE}/cdn/${v}/data/tr_TR/summoner.json`))
+    .then((response) => response.json() as Promise<{ data: Record<string, { id: string; key: string; name: string }> }>)
+    .then(({ data }) => new Map(Object.values(data).map((s) => [Number(s.key), { id: s.id, key: Number(s.key), name: s.name }])));
+  return spellsByKey;
+}
+
+export function spellIconUrl(version: string, spellId: string) {
+  return `${BASE}/cdn/${version}/img/spell/${spellId}.png`;
+}
