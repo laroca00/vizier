@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Vizier",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.vizier.desktop",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -34,6 +34,18 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU3OEI1NEQ1MEE3N0JDRDMKUldUVHZIY0sxVlNMVnh4ejB0QS84NVA5b1MydmFsUmZSSXEzZDFyQXlGMjJ6VjRBM2ErTW1nYXIK",
+      "endpoints": [
+        "https://vizier-api.vizier-api.workers.dev/updates/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

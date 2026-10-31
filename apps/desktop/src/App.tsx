@@ -12,6 +12,7 @@ import type { CoachTarget } from "./ProfileCard";
 import { useSettings } from "./settings";
 import { LiquidGlass } from "./ui/LiquidGlass";
 import { ShaderGradient } from "./ui/ShaderGradient";
+import { UpdateNotice } from "./UpdateNotice";
 import "./App.css";
 
 // Night cobalt to turquoise across the plane, bright cobalt on the folds.
@@ -101,6 +102,7 @@ function App() {
             </button>
           ))}
         </LiquidGlass>
+        <UpdateNotice />
       </nav>
       <main className="shell__main" key={view}>
         {view === "draft" && draft ? (

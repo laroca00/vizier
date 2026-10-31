@@ -8,6 +8,7 @@ import { D1Store } from "./store.ts";
 type Env = {
   DB: D1Database;
   AI?: Ai;
+  UPDATES?: KVNamespace;
   RIOT_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
   /** Comma-separated PUUIDs allowed to request coaching. */
@@ -39,8 +40,21 @@ function riotFor(env: Env) {
   return riot;
 }
 
+/** latest.json and the installers it points at; the files are signed, so serving them needs no auth. */
+async function serveUpdate(env: Env, name: string): Promise<Response> {
+  if (!env.UPDATES || !/^[\w.-]+$/.test(name)) return new Response("Not found", { status: 404 });
+  const body = await env.UPDATES.get(name, "arrayBuffer");
+  if (!body) return new Response("Not found", { status: 404 });
+  const type = name.endsWith(".json") ? "application/json" : "application/octet-stream";
+  // latest.json changes on every release; installers never change once uploaded.
+  const cache = name === "latest.json" ? "no-cache" : "public, max-age=31536000, immutable";
+  return new Response(body, { headers: { "content-type": type, "cache-control": cache } });
+}
+
 export default {
-  fetch(request, env, ctx) {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith("/updates/")) return serveUpdate(env, url.pathname.slice("/updates/".length));
     const client = riotFor(env);
     if (!client) return Response.json({ error: "RIOT_API_KEY is not set" }, { status: 500 });
     app ??= createApp(client, new D1Store(env.DB), { statsDb: env.DB, claude: coachFor(env), ai: env.AI });

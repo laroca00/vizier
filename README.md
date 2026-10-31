@@ -17,7 +17,11 @@ It never reads or writes game memory.
 
 ## Install
 
-Build the installer with `pnpm build`. It lands in `apps/desktop/src-tauri/target/release/bundle/nsis/Vizier_<version>_x64-setup.exe` (an MSI is built next to it under `bundle/msi/`).
+The first install is manual; after that Vizier updates itself. Build the installer with `pnpm build`. It lands in `apps/desktop/src-tauri/target/release/bundle/nsis/Vizier_<version>_x64-setup.exe` (an MSI is built next to it under `bundle/msi/`).
+
+## Releasing an update
+
+Bump `version` in `apps/desktop/src-tauri/tauri.conf.json`, then run `pnpm release "what changed"`. The script builds an installer signed with the key in `~/.tauri/vizier.key`, which stays out of the repo; without it no update can be published. It uploads the installer and `latest.json` to the API Worker's KV store, where installed apps look for updates.
 
 ## Development
 

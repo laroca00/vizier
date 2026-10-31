@@ -24,7 +24,20 @@
 
 .shell__nav {
   position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 24px var(--gutter) 0;
+}
+
+.update {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  animation: rise var(--duration-standard) var(--ease-enter) both;
 }
 
 .nav {
