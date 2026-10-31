@@ -22,6 +22,7 @@ import { STORED_QUEUES } from "./crawler.ts";
 import { proBuilds, proTeams } from "./pros.ts";
 import { csByMinute, goldGraph, type Timeline as FullTimeline } from "./timeline.ts";
 import { scoreGame, weakestMinutes } from "./report.ts";
+import { championPool, lpHistory, recordLp } from "./profileStats.ts";
 import { findHabits, gameNumbers } from "./trends.ts";
 import { MATCH_ID, RiotError, regionOfMatch, type Platform, type RiotClient } from "./riot/client.ts";
 import type { Account, ActiveGame, ChampionMastery, LeagueEntry, Match, Summoner } from "./riot/types.ts";
@@ -131,6 +132,8 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
         riot.get<Summoner>(platform, "/lol/summoner/v4/summoners/by-puuid", `/lol/summoner/v4/summoners/by-puuid/${account.puuid}`),
         riot.get<LeagueEntry[]>(platform, "/lol/league/v4/entries/by-puuid", `/lol/league/v4/entries/by-puuid/${account.puuid}`),
       ]);
+      // A fresh rank read is when LP history gets its next point.
+      if (statsDb && ranks?.length) await recordLp(statsDb, account.puuid, ranks).catch((error) => console.error(error));
       return {
         account,
         summoner: summoner && { profileIconId: summoner.profileIconId, summonerLevel: summoner.summonerLevel },
@@ -359,6 +362,36 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
     if (match) await store.putMatch(match);
     return match;
   };
+
+  app.get("/v1/players/:puuid/champions", async (c) => {
+    const { puuid } = c.req.param();
+    if (!PUUID.test(puuid)) badRequest("Invalid PUUID");
+    const pool = await cached(`champion-pool:${puuid}`, 30 * MINUTE, async () => {
+      const ids =
+        (await riot.get<string[]>(
+          "europe",
+          "/lol/match/v5/matches/by-puuid/ids",
+          `/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&start=0&count=20`,
+        )) ?? [];
+      const matches: Match[] = [];
+      // Match documents are stored once, so a second player sharing a game costs nothing.
+      for (const id of ids) {
+        const match = await matchById(id);
+        if (match) matches.push(match);
+      }
+      return { games: matches.length, champions: championPool(matches, puuid) };
+    });
+    return c.json(pool);
+  });
+
+  app.get("/v1/players/:puuid/lp", async (c) => {
+    const { puuid } = c.req.param();
+    if (!PUUID.test(puuid)) badRequest("Invalid PUUID");
+    const queue = c.req.query("queue") ?? "RANKED_SOLO_5x5";
+    if (queue !== "RANKED_SOLO_5x5" && queue !== "RANKED_FLEX_SR") badRequest("Unsupported queue");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json({ snapshots: await lpHistory(statsDb, puuid, queue) });
+  });
 
   app.get("/v1/players/:puuid/trends", async (c) => {
     const { puuid } = c.req.param();
