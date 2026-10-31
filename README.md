@@ -47,6 +47,8 @@ npx wrangler secret put RIOT_API_KEY
 pnpm deploy
 ```
 
+Post-game coaching calls the Claude API and costs money per analysis, so it is off until both secrets are set: `ANTHROPIC_API_KEY`, and `COACH_PUUIDS` (comma-separated PUUIDs allowed to use it). Each match is analysed once and cached, with a cap of 20 analyses a day.
+
 ## Legal
 
 Vizier isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.

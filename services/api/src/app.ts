@@ -1,7 +1,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
+import type Anthropic from "@anthropic-ai/sdk";
 import { aggregateBuild, POSITIONS } from "./builds.ts";
+import { coach, summarize, type Coaching, type CoachMatch, type Timeline } from "./coach.ts";
 import { RiotError, type RiotClient } from "./riot/client.ts";
 import type { Account, LeagueEntry, Match, Summoner } from "./riot/types.ts";
 import type { Store } from "./store.ts";
@@ -22,8 +24,18 @@ function badRequest(message: string): never {
   throw new HTTPException(400, { message });
 }
 
-/** `statsDb` holds the crawler tables; without it the builds route answers 503. */
-export function createApp(riot: RiotClient, store: Store, statsDb?: D1Database) {
+export type CoachConfig = {
+  client: Anthropic;
+  /** Coaching costs money per call, so only these accounts can request it. */
+  allowedPuuids: Set<string>;
+  dailyLimit: number;
+};
+
+/**
+ * `statsDb` holds the crawler tables and `coachConfig` enables coaching;
+ * without them those routes answer 503.
+ */
+export function createApp(riot: RiotClient, store: Store, statsDb?: D1Database, coachConfig?: CoachConfig) {
   // Concurrent misses for the same key share one Riot call.
   const pending = new Map<string, Promise<unknown>>();
 
@@ -44,7 +56,7 @@ export function createApp(riot: RiotClient, store: Store, statsDb?: D1Database) 
   }
 
   const app = new Hono();
-  app.use("/v1/*", cors({ origin: ORIGINS, allowMethods: ["GET"] }));
+  app.use("/v1/*", cors({ origin: ORIGINS, allowMethods: ["GET", "POST"] }));
 
   app.get("/health", (c) => c.json({ ok: true }));
 
@@ -128,6 +140,45 @@ export function createApp(riot: RiotClient, store: Store, statsDb?: D1Database) 
     );
     if (!build) return c.json({ error: "No games for this champion yet" }, 404);
     return c.json(build);
+  });
+
+  app.post("/v1/coach/:matchId", async (c) => {
+    const { matchId } = c.req.param();
+    if (!MATCH_ID.test(matchId)) badRequest("Invalid match ID");
+    const body = (await c.req.json().catch(() => null)) as { puuid?: unknown } | null;
+    const puuid = typeof body?.puuid === "string" ? body.puuid : "";
+    if (!PUUID.test(puuid)) badRequest("Invalid PUUID");
+    if (!coachConfig) return c.json({ error: "Coaching is not enabled" }, 503);
+    if (!coachConfig.allowedPuuids.has(puuid)) return c.json({ error: "Coaching is not enabled for this account" }, 403);
+
+    const key = `coach:${matchId}:${puuid}`;
+    const done = await store.getCached<Coaching>(key);
+    if (done) return c.json(done);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const used = (await store.getCached<number>(`coach-count:${today}`)) ?? 0;
+    if (used >= coachConfig.dailyLimit) return c.json({ error: "Daily coaching limit reached" }, 429);
+
+    let match = (await store.getMatch(matchId)) as CoachMatch | undefined;
+    if (!match) {
+      const fetched = await riot.get<Match>("europe", "/lol/match/v5/matches", `/lol/match/v5/matches/${matchId}`);
+      if (!fetched) return c.json({ error: "Match not found" }, 404);
+      await store.putMatch(fetched);
+      match = fetched as unknown as CoachMatch;
+    }
+    const timeline = await riot.get<Timeline>(
+      "europe",
+      "/lol/match/v5/matches/timeline",
+      `/lol/match/v5/matches/${matchId}/timeline`,
+    );
+    if (!timeline) return c.json({ error: "Timeline not found" }, 404);
+    const summary = summarize(match, timeline, puuid);
+    if (!summary) return c.json({ error: "Player is not in this match" }, 404);
+
+    await store.putCached(`coach-count:${today}`, used + 1, 2 * 24 * 60 * MINUTE);
+    const coaching = await coach(coachConfig.client, summary);
+    await store.putCached(key, coaching, Infinity);
+    return c.json(coaching);
   });
 
   app.onError((error, c) => {

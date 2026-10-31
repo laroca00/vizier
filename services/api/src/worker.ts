@@ -1,10 +1,29 @@
+import Anthropic from "@anthropic-ai/sdk";
 import type { Hono } from "hono";
-import { createApp } from "./app.ts";
+import { createApp, type CoachConfig } from "./app.ts";
 import { Crawler, pruneOldPatches } from "./crawler.ts";
 import { RiotClient } from "./riot/client.ts";
 import { D1Store } from "./store.ts";
 
-type Env = { DB: D1Database; RIOT_API_KEY?: string };
+type Env = {
+  DB: D1Database;
+  RIOT_API_KEY?: string;
+  ANTHROPIC_API_KEY?: string;
+  /** Comma-separated PUUIDs allowed to request coaching. */
+  COACH_PUUIDS?: string;
+};
+
+const COACH_DAILY_LIMIT = 20;
+
+function coachFor(env: Env): CoachConfig | undefined {
+  const allowed = (env.COACH_PUUIDS ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+  if (!env.ANTHROPIC_API_KEY || allowed.length === 0) return undefined;
+  return {
+    client: new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }),
+    allowedPuuids: new Set(allowed),
+    dailyLimit: COACH_DAILY_LIMIT,
+  };
+}
 
 const DAILY_CRON = "0 4 * * *";
 
@@ -23,7 +42,7 @@ export default {
   fetch(request, env, ctx) {
     const client = riotFor(env);
     if (!client) return Response.json({ error: "RIOT_API_KEY is not set" }, { status: 500 });
-    app ??= createApp(client, new D1Store(env.DB), env.DB);
+    app ??= createApp(client, new D1Store(env.DB), env.DB, coachFor(env));
     return app.fetch(request, env, ctx);
   },
 
