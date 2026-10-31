@@ -14,7 +14,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use tokio_tungstenite::tungstenite::Message;
 
 use champ_select::ChampSelect;
-pub use client::LcuClient;
+pub use client::{LcuClient, tls_config};
 use client::Error;
 use credentials::{Credentials, Finder};
 
