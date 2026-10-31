@@ -3,13 +3,23 @@ import { buildPaths, csByMinute, type BuildPath, type Timeline } from "./timelin
 import { patchOf, type LeagueEntryWithPuuid, type LeagueList, type Match, type Participant } from "./riot/types.ts";
 
 const RANKED_SOLO = 420;
+export const ARAM = 450;
+export const ARENA = 1700;
+// URF and ARURF come and go with rotations; their games are kept when they show up.
+const URF = [900, 1900];
+/** Queues whose games are stored. Only ranked solo has roles, timelines and bans. */
+export const STORED_QUEUES = new Set([RANKED_SOLO, ARAM, ARENA, ...URF]);
+// Asked for in turns, one per run, from one of that run's players.
+const EXTRA_QUEUES = [ARAM, ARENA, ...URF];
+// Arena writes 16 rows a game; this keeps a run near 100 written rows.
+const EXTRA_MATCHES_PER_RUN = 2;
 const DAY = 86_400_000;
 
 // Sized for the free plans: about 10 Riot calls per run keeps room in a
 // development key's 100 per 2 minutes for app traffic, and 8 matches x 11 rows
 // every 2 minutes stays under D1's 100k written rows a day.
 const PLAYERS_PER_RUN = 2;
-const MATCHES_PER_RUN = 8;
+const MATCHES_PER_RUN = 6;
 // A timeline is ~1 MB of JSON; parsing more than a couple per run would push
 // past the free plan's CPU time.
 const TIMELINES_PER_RUN = 2;
@@ -115,28 +125,37 @@ export class Crawler {
       .all<{ puuid: string }>();
 
     const startTime = Math.floor((this.now() - LOOKBACK) / 1000);
-    const candidates = new Set<string>();
-    for (const { puuid } of due) {
-      const ids = await this.riot.get<string[]>(
+    const ids = (puuid: string, queue: number, count: number) =>
+      this.riot.get<string[]>(
         "europe",
         "/lol/match/v5/matches/by-puuid/ids",
-        `/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=${RANKED_SOLO}&startTime=${startTime}&start=0&count=20`,
+        `/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=${queue}&startTime=${startTime}&start=0&count=${count}`,
       );
-      for (const id of ids ?? []) candidates.add(id);
+    const candidates = new Set<string>();
+    const extras = new Set<string>();
+    for (const [i, { puuid }] of due.entries()) {
+      for (const id of (await ids(puuid, RANKED_SOLO, 20)) ?? []) candidates.add(id);
+      if (i === 0) {
+        // Runs are two minutes apart, so this walks through the queues.
+        const queue = EXTRA_QUEUES[Math.floor(this.now() / 120_000) % EXTRA_QUEUES.length];
+        for (const id of (await ids(puuid, queue, 10)) ?? []) extras.add(id);
+      }
       await this.db
         .prepare("UPDATE crawl_players SET last_crawled_at = ? WHERE puuid = ?")
         .bind(this.now(), puuid)
         .run();
     }
-    if (candidates.size === 0) return [];
+    const list = [...candidates, ...extras];
+    if (list.length === 0) return [];
 
-    const list = [...candidates];
     const { results: known } = await this.db
       .prepare(`SELECT match_id FROM crawled_matches WHERE match_id IN (${list.map(() => "?").join(",")})`)
       .bind(...list)
       .all<{ match_id: string }>();
     const seen = new Set(known.map((k) => k.match_id));
-    return list.filter((id) => !seen.has(id)).slice(0, MATCHES_PER_RUN);
+    const fresh = (set: Set<string>, limit: number) => [...set].filter((id) => !seen.has(id)).slice(0, limit);
+    for (const id of candidates) extras.delete(id);
+    return [...fresh(candidates, MATCHES_PER_RUN), ...fresh(extras, EXTRA_MATCHES_PER_RUN)];
   }
 
   /** Returns false for games that carry no build signal. */
@@ -144,11 +163,13 @@ export class Crawler {
     const { info } = match;
     const matchId = match.metadata.matchId;
     const patch = patchOf(info.gameVersion);
+    const ranked = info.queueId === RANKED_SOLO;
+    const bans = ranked ? (info.teams ?? []).flatMap((t) => t.bans ?? []).map((b) => b.championId).filter((id) => id > 0) : [];
     // Recorded either way so a skipped game isn't fetched again.
     const record = this.db
-      .prepare("INSERT OR IGNORE INTO crawled_matches (match_id, patch, game_start) VALUES (?, ?, ?)")
-      .bind(matchId, patch, info.gameStartTimestamp);
-    if (info.queueId !== RANKED_SOLO || info.gameDuration < MIN_DURATION_SECONDS) {
+      .prepare("INSERT OR IGNORE INTO crawled_matches (match_id, patch, game_start, queue_id, bans) VALUES (?, ?, ?, ?, ?)")
+      .bind(matchId, patch, info.gameStartTimestamp, info.queueId, ranked ? bans.join(",") : null);
+    if (!STORED_QUEUES.has(info.queueId) || info.gameDuration < MIN_DURATION_SECONDS) {
       await record.run();
       return false;
     }
@@ -157,18 +178,26 @@ export class Crawler {
       `INSERT OR IGNORE INTO participant_stats
         (match_id, patch, champion_id, team_position, win, runes, spells, items,
          opponent_champion_id, duration, deaths, cs10, cs_pm, gold_pm, vision_pm,
-         kill_participation, damage_share, start_items, skill_order, purchase_order, cs_minutes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         kill_participation, damage_share, start_items, skill_order, purchase_order, cs_minutes,
+         queue_id, team_id, augments)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const paths = timeline ? buildPaths(timeline) : new Map<number, BuildPath>();
     const pace = timeline ? csByMinute(timeline) : new Map<number, number[]>();
     const minutes = info.gameDuration / 60;
     const round = (n: number) => Math.round(n * 100) / 100;
     const rows = info.participants.flatMap((p) => {
-      const runes = runeKey(p.perks);
-      if (!runes || !p.teamPosition) return [];
+      // Arena has no rune pages; every other stored queue does.
+      const runes = info.queueId === ARENA ? "" : runeKey(p.perks);
+      if (runes === null || (ranked && !p.teamPosition)) return [];
+      const position = ranked ? p.teamPosition : "";
+      // In Arena a top-four finish is the win.
+      const win = info.queueId === ARENA ? (p.placement ?? 9) <= 4 : p.win;
+      const augments = [p.playerAugment1, p.playerAugment2, p.playerAugment3, p.playerAugment4, p.playerAugment5, p.playerAugment6].filter(
+        (id): id is number => !!id,
+      );
       const spells = [p.summoner1Id ?? 0, p.summoner2Id ?? 0].sort((a, b) => a - b).join(",");
-      const opponent = info.participants.find((o) => o.teamId !== p.teamId && o.teamPosition === p.teamPosition);
+      const opponent = ranked ? info.participants.find((o) => o.teamId !== p.teamId && o.teamPosition === p.teamPosition) : undefined;
       const c = p.challenges ?? {};
       const cs = (p.totalMinionsKilled ?? 0) + (p.neutralMinionsKilled ?? 0);
       const cs10 = p.teamPosition === "JUNGLE" ? c.jungleCsBefore10Minutes : c.laneMinionsFirst10Minutes;
@@ -179,8 +208,8 @@ export class Crawler {
           matchId,
           patch,
           p.championId,
-          p.teamPosition,
-          p.win ? 1 : 0,
+          position,
+          win ? 1 : 0,
           runes,
           spells,
           itemsOf(p),
@@ -197,6 +226,9 @@ export class Crawler {
           path ? path.skillOrder.join("") : null,
           path ? path.purchases.join(",") : null,
           csMinutes?.length ? csMinutes.join(",") : null,
+          info.queueId,
+          p.teamId ?? null,
+          augments.length ? augments.join(",") : null,
         ),
       ];
     });

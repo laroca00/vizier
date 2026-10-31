@@ -68,12 +68,15 @@ describe("runeKey", () => {
 });
 
 describe("Crawler", () => {
-  it("seeds players, then saves only new ranked games", async () => {
+  it("seeds players, then saves only new games from stored queues", async () => {
     const { db, sqlite } = fakeD1();
     const now = 10 * DAY;
     const { riot, calls } = fakeRiot((path) => {
       if (path.includes("challengerleagues")) return { entries: [{ puuid: "a" }, { puuid: "b" }] };
-      if (path.includes("/ids?")) return path.includes("/a/") ? ["TR1_1", "TR1_2"] : ["TR1_2", "TR1_3"];
+      if (path.includes("/ids?")) {
+        if (!path.includes("queue=420")) return [];
+        return path.includes("/a/") ? ["TR1_1", "TR1_2"] : ["TR1_2", "TR1_3"];
+      }
       if (path.endsWith("TR1_1")) return match("TR1_1", [participant(103, true), participant(64, false, { teamPosition: "JUNGLE" })]);
       if (path.endsWith("TR1_2")) return match("TR1_2", [participant(103, false)], { gameDuration: 200 });
       if (path.endsWith("TR1_3")) return match("TR1_3", [participant(103, true)], { queueId: 450 });
@@ -81,13 +84,15 @@ describe("Crawler", () => {
     });
 
     const result = await new Crawler(db, riot, () => now).run();
-    expect(result).toEqual({ seeded: 2, matches: 1 });
+    expect(result).toEqual({ seeded: 2, matches: 2 });
     expect(calls.filter((c) => c.includes("/matches/TR1_") && !c.endsWith("/timeline"))).toHaveLength(3);
     expect(calls.filter((c) => c.endsWith("/timeline")).length).toBeLessThanOrEqual(2);
     expect(sqlite.prepare("SELECT COUNT(*) AS n FROM crawled_matches").get()).toEqual({ n: 3 });
-    expect(sqlite.prepare("SELECT champion_id, team_position, win, spells, items FROM participant_stats ORDER BY champion_id").all()).toEqual([
-      { champion_id: 64, team_position: "JUNGLE", win: 0, spells: "4,14", items: "3157,3020,3157" },
-      { champion_id: 103, team_position: "MIDDLE", win: 1, spells: "4,14", items: "3157,3020,3157" },
+    // TR1_2 is a remake; TR1_3 is ARAM, stored without a role.
+    expect(sqlite.prepare("SELECT champion_id, team_position, win, queue_id FROM participant_stats ORDER BY match_id, champion_id").all()).toEqual([
+      { champion_id: 64, team_position: "JUNGLE", win: 0, queue_id: 420 },
+      { champion_id: 103, team_position: "MIDDLE", win: 1, queue_id: 420 },
+      { champion_id: 103, team_position: "", win: 1, queue_id: 450 },
     ]);
 
     // Same day: no reseed, and already crawled games are skipped.
@@ -141,6 +146,39 @@ describe("pruneOldPatches", () => {
     expect(sqlite.prepare("SELECT DISTINCT patch FROM participant_stats ORDER BY patch").all()).toEqual([
       { patch: "16.20" },
       { patch: "16.21" },
+    ]);
+  });
+});
+
+describe("other queues", () => {
+  it("keeps ranked bans on the match and counts an Arena top four as a win", async () => {
+    const { db, sqlite } = fakeD1();
+    const crawler = new Crawler(db, fakeRiot(() => null).riot);
+    await crawler.save(
+      match("TR1_10", [participant(103, true, { teamId: 100 })], {
+        teams: [
+          { teamId: 100, bans: [{ championId: 238, pickTurn: 1 }, { championId: -1, pickTurn: 2 }] },
+          { teamId: 200, bans: [{ championId: 157, pickTurn: 6 }] },
+        ],
+      }),
+    );
+    await crawler.save(
+      match(
+        "TR1_11",
+        [
+          participant(103, false, { perks: undefined, placement: 3, playerAugment1: 11, playerAugment2: 42 }),
+          participant(64, true, { perks: undefined, placement: 6 }),
+        ],
+        { queueId: 1700 },
+      ),
+    );
+    expect(sqlite.prepare("SELECT match_id, queue_id, bans FROM crawled_matches ORDER BY match_id").all()).toEqual([
+      { match_id: "TR1_10", queue_id: 420, bans: "238,157" },
+      { match_id: "TR1_11", queue_id: 1700, bans: null },
+    ]);
+    expect(sqlite.prepare("SELECT champion_id, win, augments, runes, team_id FROM participant_stats WHERE match_id = 'TR1_11' ORDER BY champion_id").all()).toEqual([
+      { champion_id: 64, win: 0, augments: null, runes: "", team_id: null },
+      { champion_id: 103, win: 1, augments: "11,42", runes: "", team_id: null },
     ]);
   });
 });

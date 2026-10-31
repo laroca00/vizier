@@ -20,6 +20,14 @@ export type Participant = {
   championId: number;
   teamPosition: string;
   win: boolean;
+  /** Arena only: where the player's team finished, 1 to 8. */
+  placement?: number;
+  playerAugment1?: number;
+  playerAugment2?: number;
+  playerAugment3?: number;
+  playerAugment4?: number;
+  playerAugment5?: number;
+  playerAugment6?: number;
   deaths?: number;
   totalMinionsKilled?: number;
   neutralMinionsKilled?: number;
@@ -57,6 +65,7 @@ export type Match = {
     gameStartTimestamp: number;
     gameDuration: number;
     participants: Participant[];
+    teams?: { teamId: number; bans?: { championId: number; pickTurn: number }[] }[];
   };
 };
 
