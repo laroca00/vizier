@@ -260,6 +260,19 @@ export async function getReport(matchId: string, puuid: string): Promise<GameRep
   }
 }
 
+export type ChampionPool = { games: number; champions: { championId: number; games: number; wins: number; kills: number; deaths: number; assists: number }[] };
+
+export function getChampionPool(puuid: string) {
+  return get<ChampionPool>(`/v1/players/${puuid}/champions`);
+}
+
+export type LpSnapshot = { queue: string; tier: string; rank: string; lp: number; wins: number; losses: number; at: number; points: number };
+
+/** Empty until Vizier has seen the player's rank change at least once. */
+export async function getLpHistory(puuid: string, queue = "RANKED_SOLO_5x5"): Promise<LpSnapshot[]> {
+  return (await get<{ snapshots: LpSnapshot[] }>(`/v1/players/${puuid}/lp?queue=${queue}`)).snapshots;
+}
+
 export type BanSuggestions = { patches: string[]; champions: { championId: number; games: number; winRate: number }[] };
 
 export function getBans() {

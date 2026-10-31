@@ -1,6 +1,7 @@
 import { getProfile, getRecentMatches, getTrends, type Match, type Profile } from "./api";
 import { championIconUrl, champions, latestVersion, profileIconUrl, type Champion } from "./data/ddragon";
 import { useLang, useT } from "./i18n";
+import { ChampionPool, LpHistory } from "./ProfileExtras";
 import { queueLabel, tierLabel, timeAgo } from "./labels";
 import type { Platform, Summoner } from "./lcu";
 import { LiquidGlass } from "./ui/LiquidGlass";
@@ -126,6 +127,8 @@ function ProfileBody({ profile, matches, version, champions, onCoach, onOpenMatc
         )}
       </section>
 
+      <LpHistory puuid={puuid} />
+      <ChampionPool puuid={puuid} version={version} champions={champions} />
       <Habits puuid={puuid} />
 
       <section aria-label={t("Son maçlar")}>

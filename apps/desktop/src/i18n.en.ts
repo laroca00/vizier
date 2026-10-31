@@ -205,6 +205,15 @@ export const EN: Record<string, string> = {
   "Henüz maç yok. Oynadığın maçlar burada görünecek.": "No games yet. Your games will show up here.",
   "{champion} maçının detayını aç": "Open the {champion} game",
 
+  "Şampiyon havuzu": "Champion pool",
+  "Şampiyon havuzu, son {games} dereceli maç": "Champion pool, last {games} ranked games",
+  "{kda} KDA": "{kda} KDA",
+  "LP geçmişi": "LP history",
+  "LP geçmişi, Tek/Çift": "LP history, Solo/Duo",
+  "Vizier LP'ni profil her açıldığında kaydediyor. Birkaç maç sonra değişim burada çizilecek.":
+    "Vizier records your LP each time your profile opens. After a few games the change will be drawn here.",
+  "{from} seviyesinden {to} seviyesine, {change} LP.": "From {from} to {to}, {change} LP.",
+
   // Search
   "Şampiyon ya da Riot ID (Ad#TR1)": "Champion or Riot ID (Name#EUW)",
   Sonuçlar: "Results",

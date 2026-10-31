@@ -1841,3 +1841,67 @@
 .settings__language option {
   color: var(--ink);
 }
+
+.pool {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pool li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto 3.4rem 4.6rem;
+  align-items: center;
+  column-gap: 10px;
+}
+
+.pool img {
+  border-radius: 7px;
+}
+
+.pool__name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pool__games,
+.pool__kda {
+  font-size: 13px;
+  color: var(--glaze-muted);
+}
+
+.pool__rate,
+.pool__kda {
+  text-align: right;
+}
+
+.lp {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+
+.lp__plot {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.lp__line {
+  fill: none;
+  stroke: #1c9c92;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.lp__dot {
+  fill: #1c9c92;
+  stroke: #0e1d52;
+  stroke-width: 2;
+}
