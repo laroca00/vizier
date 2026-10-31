@@ -10,6 +10,7 @@ import {
   type SummonerSpell,
 } from "../data/ddragon";
 import { BuildSuggestion } from "../BuildSuggestion";
+import { ProBuildList } from "../ProBuildList";
 import { draftPhaseLabel, positionLabel } from "../labels";
 import type { ChampSelect, DraftMember } from "../lcu";
 import { LiquidGlass } from "../ui/LiquidGlass";
@@ -71,6 +72,12 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 currentSpells={me.spells as [number, number]}
                 locked={me.championId !== 0}
                 vs={vs}
+              />
+              <h2 className="draft__heading draft__heading--spaced">Pro'lar</h2>
+              <ProBuildList
+                filter={{ championId: shownChampion(me), limit: 3 }}
+                compact
+                emptyText="Worlds oyuncularının bu şampiyonla son maçı yok."
               />
             </>
           )}

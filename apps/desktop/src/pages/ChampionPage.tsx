@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getChampion, getCounters, getSynergies, type ChampionOverview, type Counters } from "../api";
 import { BuildSuggestion } from "../BuildSuggestion";
+import { ProBuildList } from "../ProBuildList";
 import { championIconUrl, champions, latestVersion, type Champion } from "../data/ddragon";
 import { POSITIONS } from "../labels";
 import { QUEUES, RANKED, winLabel } from "../queues";
@@ -172,6 +173,16 @@ function Overview({ overview, championId, championName, champions, version, queu
             queue={queue}
           />
         </section>
+        {ranked && (
+          <section className="enter champion__pros" aria-label="Pro maçları">
+            <h2 className="draft__heading">Pro'lar bu şampiyonu nasıl oynadı</h2>
+            <ProBuildList
+              filter={{ championId, limit: 6 }}
+              compact
+              emptyText="Worlds oyuncularının bu şampiyonla son 30 günde solo kuyruk maçı yok."
+            />
+          </section>
+        )}
         {ranked && (
           <div>
             <CounterLists

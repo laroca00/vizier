@@ -199,6 +199,45 @@ export async function getLiveGame(puuid: string): Promise<LiveGameInfo | null> {
   }
 }
 
+export type ProBuild = {
+  matchId: string;
+  player: string;
+  team: string;
+  platform: string;
+  patch: string;
+  gameStart: number;
+  duration: number;
+  championId: number;
+  opponentChampionId: number | null;
+  position: string;
+  win: boolean;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  gold: number;
+  runes: string;
+  spells: number[];
+  items: number[];
+  startItems: number[];
+  skillOrder: number[];
+  purchases: number[];
+};
+export type ProFilter = { championId?: number; position?: string; team?: string; limit?: number };
+
+export async function getProBuilds(filter: ProFilter): Promise<ProBuild[]> {
+  const params = new URLSearchParams();
+  if (filter.championId) params.set("champion", String(filter.championId));
+  if (filter.position) params.set("position", filter.position);
+  if (filter.team) params.set("team", filter.team);
+  if (filter.limit) params.set("limit", String(filter.limit));
+  return (await get<{ builds: ProBuild[] }>(`/v1/pros/builds${params.size ? `?${params}` : ""}`)).builds;
+}
+
+export async function getProTeams() {
+  return (await get<{ teams: { team: string; players: string[] }[] }>("/v1/pros/teams")).teams;
+}
+
 export type BanSuggestions = { patches: string[]; champions: { championId: number; games: number; winRate: number }[] };
 
 export function getBans() {

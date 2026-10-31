@@ -8,6 +8,7 @@ import { ChampionPage } from "./pages/ChampionPage";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { ProfilePage } from "./pages/ProfilePage";
+import { ProsPage } from "./pages/ProsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TierListPage } from "./pages/TierListPage";
 import type { CoachTarget } from "./ProfileCard";
@@ -21,7 +22,7 @@ import "./App.css";
 // Night cobalt to turquoise across the plane, bright cobalt on the folds.
 const GRADIENT: [string, string, string] = ["#0b1846", "#1c9c92", "#2f55c8"];
 
-type View = "home" | "about" | "draft" | "settings" | "tiers" | "champion" | "profile";
+type View = "home" | "about" | "draft" | "settings" | "tiers" | "pros" | "champion" | "profile";
 
 const fixture = champSelectFixture();
 const POST_GAME_PHASES = new Set(["PreEndOfGame", "EndOfGame"]);
@@ -102,6 +103,7 @@ function App() {
     { id: "home", label: "Ana sayfa" },
     ...(draft ? [{ id: "draft" as const, label: "Şampiyon seçimi" }] : []),
     { id: "tiers", label: "Tier listesi" },
+    { id: "pros", label: "Pro'lar" },
     { id: "settings", label: "Ayarlar" },
     { id: "about", label: "Hakkında" },
   ];
@@ -151,6 +153,8 @@ function App() {
           <SettingsPage />
         ) : view === "tiers" ? (
           <TierListPage onOpenChampion={openChampion} />
+        ) : view === "pros" ? (
+          <ProsPage />
         ) : view === "champion" && champion ? (
           <ChampionPage
             key={`${champion.id}:${champion.position}:${champion.queue}`}

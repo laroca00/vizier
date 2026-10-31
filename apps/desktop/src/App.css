@@ -1535,3 +1535,92 @@
 .champion__body > div > section + section {
   margin-top: 22px;
 }
+
+.pros {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pros__row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 9rem) auto 5.5rem 26px minmax(0, 1fr) 6.5rem auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.04);
+  box-shadow: inset 3px 0 0 var(--result-color, transparent);
+}
+
+.pros__row[data-result="win"] {
+  --result-color: var(--turquoise);
+}
+
+.pros__row[data-result="loss"] {
+  --result-color: var(--bole);
+}
+
+.pros[data-compact] .pros__row {
+  grid-template-columns: minmax(6rem, 8rem) auto 4.5rem 26px minmax(0, 1fr) auto;
+}
+
+.pros__who,
+.pros__kda,
+.pros__when {
+  display: grid;
+  min-width: 0;
+}
+
+.pros__player {
+  font-weight: 500;
+}
+
+.pros__team,
+.pros__sub {
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--glaze-faint);
+}
+
+.pros__matchup,
+.pros__items {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pros__matchup img,
+.pros__items img,
+.pros__keystone {
+  border-radius: 7px;
+}
+
+.pros__vs {
+  font-size: 12px;
+  color: var(--glaze-faint);
+}
+
+.pros__action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.pros__action .build__feedback {
+  max-width: 16rem;
+  text-align: right;
+}
+
+.champion__pros {
+  grid-column: 1 / -1;
+  order: 2;
+  --delay: 320ms;
+}
