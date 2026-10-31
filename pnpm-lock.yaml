@@ -168,6 +168,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@fontsource-variable/geologica':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@tauri-apps/api':
         specifier: ^2
         version: 2.12.4
@@ -201,6 +204,9 @@ importers:
         version: 8.3.5
 
 packages:
+
+  '@fontsource-variable/geologica@5.3.0':
+    resolution: {integrity: sha512-N4pGIVYOXkyXDMooL/HeNYWbx7aMxRP+xABgkjZwi6bVeM/GM/cqHdO8UNFQiR5QR52yLI1RrzgKxm0DKWO2wQ==}
 
   '@oxc-project/types@0.156.0':
     resolution: {integrity: sha512-1Duyg48TdJNdyhEB8Xn1L36bT9Pv6GUtlKjHxOys8xkaF/rQq3XJE+bAurSK/AgIz5mGFsb77cn9Pb20+WCScw==}
@@ -595,6 +601,8 @@ packages:
         optional: true
 
 snapshots:
+
+  '@fontsource-variable/geologica@5.3.0': {}
 
   '@oxc-project/types@0.156.0': {}
 
