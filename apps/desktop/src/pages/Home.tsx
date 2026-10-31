@@ -1,13 +1,36 @@
+import { useState } from "react";
 import { ClientStatus } from "../ClientStatus";
+import { matchFixture } from "../dev/fixtures";
 import { CoachPanel } from "../CoachPanel";
 import type { LcuStatus } from "../lcu";
+import { MatchDetail } from "../MatchDetail";
 import { ProfileCard, type CoachTarget } from "../ProfileCard";
 import { LiquidGlass } from "../ui/LiquidGlass";
 
 type Props = { lcu: LcuStatus; coaching: CoachTarget | null; onCoach: (target: CoachTarget | null) => void };
 
 export function Home({ lcu, coaching, onCoach }: Props) {
-  const summoner = lcu.state === "connected" ? lcu.summoner : null;
+  const fixture = matchFixture();
+  const summoner =
+    lcu.state === "connected" ? lcu.summoner : fixture ? { gameName: "", tagLine: "", puuid: fixture.puuid } : null;
+  const [openMatch, setOpenMatch] = useState<string | null>(fixture?.matchId ?? null);
+
+  let side = null;
+  if (coaching) {
+    side = <CoachPanel {...coaching} onClose={() => onCoach(null)} />;
+  } else if (openMatch && summoner) {
+    side = (
+      <MatchDetail
+        matchId={openMatch}
+        puuid={summoner.puuid}
+        onClose={() => setOpenMatch(null)}
+        onCoach={() => onCoach({ matchId: openMatch, puuid: summoner.puuid, championName: "Bu" })}
+      />
+    );
+  } else if (summoner) {
+    side = <ProfileCard summoner={summoner} onCoach={onCoach} onOpenMatch={setOpenMatch} />;
+  }
+
   return (
     <div className="home">
       <LiquidGlass className="panel welcome" radius={28} strength={2.5}>
@@ -15,11 +38,7 @@ export function Home({ lcu, coaching, onCoach }: Props) {
         <p className="welcome__line enter">TR sunucusu için League of Legends yardımcısı.</p>
         <ClientStatus status={lcu} className="enter" />
       </LiquidGlass>
-      {coaching ? (
-        <CoachPanel {...coaching} onClose={() => onCoach(null)} />
-      ) : (
-        summoner && <ProfileCard summoner={summoner} onCoach={onCoach} />
-      )}
+      {side}
     </div>
   );
 }

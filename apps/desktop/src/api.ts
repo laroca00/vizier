@@ -17,11 +17,27 @@ export type Profile = {
 
 export type MatchParticipant = {
   puuid: string;
+  participantId: number;
+  teamId: number;
+  riotIdGameName?: string;
+  riotIdTagline?: string;
   championId: number;
+  champLevel: number;
   teamPosition: string;
   kills: number;
   deaths: number;
   assists: number;
+  totalMinionsKilled: number;
+  neutralMinionsKilled: number;
+  goldEarned: number;
+  totalDamageDealtToChampions: number;
+  item0: number;
+  item1: number;
+  item2: number;
+  item3: number;
+  item4: number;
+  item5: number;
+  item6: number;
   win: boolean;
 };
 
@@ -65,11 +81,19 @@ export type Build = {
   runes: Choice<{ primaryStyle: number; subStyle: number; perks: number[] }>[];
   spells: Choice<{ ids: number[] }>[];
   items: Choice<{ id: number }>[];
+  /** The opponent the numbers are for, or null when they cover every matchup. */
+  vs: number | null;
+  startItems: Choice<{ ids: number[] }> | null;
+  coreItems: Choice<{ ids: number[] }> | null;
+  skills: Choice<{ maxOrder: number[]; firstLevels: number[] }> | null;
 };
 
 /** Null when Vizier has no games for the champion yet. */
-export async function getBuild(championId: number, position: string | null): Promise<Build | null> {
-  const query = position ? `?position=${position.toUpperCase()}` : "";
+export async function getBuild(championId: number, position: string | null, vs: number | null = null): Promise<Build | null> {
+  const params = new URLSearchParams();
+  if (position) params.set("position", position.toUpperCase());
+  if (vs) params.set("vs", String(vs));
+  const query = params.size ? `?${params}` : "";
   try {
     return await get<Build>(`/v1/builds/${championId}${query}`);
   } catch (error) {
@@ -90,4 +114,33 @@ export function getCoaching(matchId: string, puuid: string) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ puuid }),
   });
+}
+
+export type TierEntry = { championId: number; games: number; winRate: number; pickRate: number; tier: string };
+export type TierList = { patches: string[]; games: number; champions: TierEntry[] };
+
+export function getTierList(position: string) {
+  return get<TierList>(`/v1/tierlist/${position}`);
+}
+
+export type BanSuggestions = { patches: string[]; champions: { championId: number; games: number; winRate: number }[] };
+
+export function getBans() {
+  return get<BanSuggestions>("/v1/bans");
+}
+
+export type Trends = { games: number; wins: number; habits: { title: string; detail: string }[] };
+
+export function getTrends(puuid: string) {
+  return get<Trends>(`/v1/players/${puuid}/trends`);
+}
+
+export type GoldGraph = { goldDiff: number[]; objectives: { minute: number; teamId: number; type: string }[] };
+
+export function getGoldGraph(matchId: string) {
+  return get<GoldGraph>(`/v1/matches/${matchId}/graph`);
+}
+
+export function getMatch(matchId: string) {
+  return get<Match>(`/v1/matches/${matchId}`);
 }

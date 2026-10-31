@@ -1,4 +1,4 @@
-import { getProfile, getRecentMatches, type Match, type Profile } from "./api";
+import { getProfile, getRecentMatches, getTrends, type Match, type Profile } from "./api";
 import { championIconUrl, champions, latestVersion, profileIconUrl, type Champion } from "./data/ddragon";
 import { queueLabel, tierLabel, timeAgo } from "./labels";
 import type { Summoner } from "./lcu";
@@ -32,13 +32,15 @@ export type CoachTarget = {
   justFinished?: boolean;
 };
 
-export function ProfileCard({ summoner, onCoach }: { summoner: Summoner; onCoach: (target: CoachTarget) => void }) {
+type ProfileProps = { summoner: Summoner; onCoach: (target: CoachTarget) => void; onOpenMatch: (matchId: string) => void };
+
+export function ProfileCard({ summoner, onCoach, onOpenMatch }: ProfileProps) {
   const [state, retry] = useAsync(`${summoner.gameName}#${summoner.tagLine}`, () => load(summoner));
 
   return (
     <LiquidGlass className="panel profile" radius={28} strength={2.5}>
       {state.status === "done" ? (
-        <ProfileBody {...state.value} onCoach={onCoach} />
+        <ProfileBody {...state.value} onCoach={onCoach} onOpenMatch={onOpenMatch} />
       ) : state.status === "error" ? (
         <div className="profile__message" role="alert">
           <p>Profil alınamadı. Vizier sunucusuna şu an ulaşılamıyor.</p>
@@ -55,7 +57,32 @@ export function ProfileCard({ summoner, onCoach }: { summoner: Summoner; onCoach
   );
 }
 
-function ProfileBody({ profile, matches, version, champions, onCoach }: Loaded & { onCoach: (target: CoachTarget) => void }) {
+function Habits({ puuid }: { puuid: string }) {
+  const [state] = useAsync(puuid, () => getTrends(puuid));
+  if (state.status !== "done" || state.value.games === 0) return null;
+  const { games, wins, habits } = state.value;
+  return (
+    <section aria-label="Alışkanlıklar">
+      <h3 className="profile__heading">Son {games} dereceli maç</h3>
+      <p className="profile__empty">
+        {wins} galibiyet, {games - wins} mağlubiyet.
+        {habits.length === 0 ? " Emerald+ oyuncularına göre belirgin bir zayıf alışkanlık görünmüyor." : ""}
+      </p>
+      {habits.length > 0 && (
+        <ul className="habits">
+          {habits.map((h) => (
+            <li key={h.title}>
+              <p className="coach__point-title">{h.title}</p>
+              <p className="coach__point-detail">{h.detail}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function ProfileBody({ profile, matches, version, champions, onCoach, onOpenMatch }: Loaded & Omit<ProfileProps, "summoner">) {
   const { account, summoner, ranks } = profile;
   const puuid = account.puuid;
 
@@ -94,6 +121,8 @@ function ProfileBody({ profile, matches, version, champions, onCoach }: Loaded &
         )}
       </section>
 
+      <Habits puuid={puuid} />
+
       <section aria-label="Son maçlar">
         <h3 className="profile__heading">Son maçlar</h3>
         {matches.length === 0 ? (
@@ -106,6 +135,12 @@ function ProfileBody({ profile, matches, version, champions, onCoach }: Loaded &
               const champion = champions.get(me.championId);
               return (
                 <li key={match.metadata.matchId} data-result={me.win ? "win" : "loss"}>
+                  <button
+                    type="button"
+                    className="matches__open"
+                    aria-label={`${champion?.name ?? "Maç"} maçının detayını aç`}
+                    onClick={() => onOpenMatch(match.metadata.matchId)}
+                  />
                   {champion && (
                     <img src={championIconUrl(version, champion.id)} alt="" width={32} height={32} className="matches__icon" />
                   )}

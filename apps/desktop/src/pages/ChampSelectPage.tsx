@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getBans } from "../api";
 import {
   championIconUrl,
   champions,
@@ -36,6 +37,11 @@ function shownChampion(member: DraftMember) {
 
 export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const [data] = useAsync("static", loadStatic);
+  const [bans] = useAsync("bans", getBans);
+  // Enemy roles are hidden in ranked champ select, so the player names their lane opponent.
+  const [opponent, setOpponent] = useState<number | null>(null);
+  const enemyPicks = draft.theirTeam.map((m) => m.championId).filter((id) => id > 0);
+  const vs = opponent !== null && enemyPicks.includes(opponent) ? opponent : null;
   const seconds = useSecondsLeft(draft.phaseEndsAt);
   const me = draft.myTeam.find((m) => m.isLocal);
   const ready = data.status === "done" ? data.value : null;
@@ -64,6 +70,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 position={me.position || null}
                 currentSpells={me.spells as [number, number]}
                 locked={me.championId !== 0}
+                vs={vs}
               />
             </>
           )}
@@ -78,7 +85,38 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
           </ul>
 
           <h2 className="draft__heading">Rakip takım</h2>
-          <ChampionStrip ids={draft.theirTeam.map((m) => m.championId)} data={ready} empty="Henüz seçim yok" />
+          {enemyPicks.length === 0 ? (
+            <p className="draft__empty">Henüz seçim yok</p>
+          ) : (
+            <>
+              <p className="draft__empty">Koridor rakibini seç; öneri o eşleşmeye göre değişir.</p>
+              <ul className="strip strip--pickable">
+                {enemyPicks.map((id) => {
+                  const champion = ready?.champions.get(id);
+                  return (
+                    <li key={id}>
+                      <button
+                        type="button"
+                        className="strip__pick"
+                        aria-pressed={vs === id}
+                        title={champion?.name}
+                        onClick={() => setOpponent(vs === id ? null : id)}
+                      >
+                        {champion && ready && <img src={championIconUrl(ready.version, champion.id)} alt={champion.name} width={32} height={32} />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+
+          {draft.phase !== "FINALIZATION" && bans.status === "done" && bans.value.champions.length > 0 && (
+            <>
+              <h2 className="draft__heading">Yasak önerisi</h2>
+              <ChampionStrip ids={bans.value.champions.map((c) => c.championId).filter((id) => !draft.bans.includes(id))} data={ready} empty="Öneri yok" />
+            </>
+          )}
 
           <h2 className="draft__heading">Yasaklar</h2>
           <ChampionStrip ids={draft.bans} data={ready} empty="Yasak yok" muted />

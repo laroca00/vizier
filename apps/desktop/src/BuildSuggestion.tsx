@@ -27,9 +27,9 @@ type Data = {
   items: Map<number, Item>;
 };
 
-async function load(championId: number, position: string | null): Promise<Data> {
+async function load(championId: number, position: string | null, vs: number | null): Promise<Data> {
   const [build, version, runeStyles, spells, itemList] = await Promise.all([
-    getBuild(championId, position),
+    getBuild(championId, position, vs),
     latestVersion(),
     runes(),
     summonerSpells(),
@@ -62,10 +62,14 @@ type Props = {
   currentSpells: [number, number];
   /** Auto-import waits for the pick to be locked. */
   locked: boolean;
+  /** Lane opponent the player picked, if any. */
+  vs: number | null;
 };
 
-export function BuildSuggestion({ championId, championName, position, currentSpells, locked }: Props) {
-  const [state, retry] = useAsync(`${championId}:${position}`, () => load(championId, position));
+const SKILL_KEYS = ["", "Q", "W", "E", "R"];
+
+export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs }: Props) {
+  const [state, retry] = useAsync(`${championId}:${position}:${vs}`, () => load(championId, position, vs));
   const [runeImport, setRuneImport] = useState<ImportState>({ status: "idle" });
   const [spellImport, setSpellImport] = useState<ImportState>({ status: "idle" });
   const [itemImport, setItemImport] = useState<ImportState>({ status: "idle" });
@@ -147,7 +151,11 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
       await invoke("import_item_set", {
         championId,
         title: `Vizier ${championName}`,
-        blocks: [{ title: "Vizier: sık alınan eşyalar", items: shownItems.map((i) => i.id) }],
+        blocks: [
+          ...(build!.startItems ? [{ title: "Başlangıç", items: build!.startItems.ids }] : []),
+          ...(build!.coreItems ? [{ title: "Ana eşyalar, bu sırayla", items: build!.coreItems.ids }] : []),
+          { title: "Sık alınan eşyalar", items: shownItems.map((i) => i.id) },
+        ],
       });
       setItemImport({ status: "done", message: "Eşya seti aktarıldı" });
     } catch {
@@ -162,7 +170,17 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
     <div className="build">
       <p className="build__summary">
         Yama {build.patches[0]}, {build.games} maç, kazanma oranı {percent(build.winRate)}
+        {vs && build.vs === null ? ". Bu eşleşme için yeterli maç yok; genel öneri gösteriliyor" : ""}
       </p>
+
+      {build.skills && (
+        <section className="build__block" aria-label="Yetenek sırası">
+          <p className="build__stat">
+            Yetenek sırası: önce {build.skills.firstLevels.map((s) => SKILL_KEYS[s]).join(", ")}, en çok{" "}
+            {build.skills.maxOrder.map((s) => SKILL_KEYS[s]).join(" > ")}
+          </p>
+        </section>
+      )}
 
       <section className="build__block" aria-label="Önerilen rünler">
         <div className="build__runes">
@@ -201,6 +219,22 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
             <span className="build__stat">{percent(spells.winRate)} kazanma</span>
           </div>
           <ImportControls label="Büyüleri aktar" state={spellImport} disabled={!canImport} onImport={importSpells} />
+        </section>
+      )}
+
+      {(build.startItems || build.coreItems) && (
+        <section className="build__block" aria-label="Başlangıç ve ana eşyalar">
+          {[build.startItems && { label: "Başlangıç", ids: build.startItems.ids }, build.coreItems && { label: "Ana eşyalar", ids: build.coreItems.ids }]
+            .filter((row): row is { label: string; ids: number[] } => !!row)
+            .map((row) => (
+              <div className="build__row" key={row.label}>
+                <span className="build__stat build__row-label">{row.label}</span>
+                {row.ids.map((id, i) => {
+                  const info = state.value.items.get(id);
+                  return <img key={`${id}-${i}`} src={itemIconUrl(version, id)} alt={info?.name ?? ""} title={info?.name} width={28} height={28} />;
+                })}
+              </div>
+            ))}
         </section>
       )}
 

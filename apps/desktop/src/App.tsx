@@ -7,6 +7,7 @@ import { About } from "./pages/About";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { SettingsPage } from "./pages/SettingsPage";
+import { TierListPage } from "./pages/TierListPage";
 import type { CoachTarget } from "./ProfileCard";
 import { useSettings } from "./settings";
 import { LiquidGlass } from "./ui/LiquidGlass";
@@ -16,7 +17,7 @@ import "./App.css";
 // Night cobalt to turquoise across the plane, bright cobalt on the folds.
 const GRADIENT: [string, string, string] = ["#0b1846", "#1c9c92", "#2f55c8"];
 
-type View = "home" | "about" | "draft" | "settings";
+type View = "home" | "about" | "draft" | "settings" | "tiers";
 
 const fixture = champSelectFixture();
 const POST_GAME_PHASES = new Set(["PreEndOfGame", "EndOfGame"]);
@@ -66,6 +67,7 @@ function App() {
   const items: { id: View; label: string }[] = [
     { id: "home", label: "Ana sayfa" },
     ...(draft ? [{ id: "draft" as const, label: "Şampiyon seçimi" }] : []),
+    { id: "tiers", label: "Tier listesi" },
     { id: "settings", label: "Ayarlar" },
     { id: "about", label: "Hakkında" },
   ];
@@ -107,6 +109,8 @@ function App() {
           <About />
         ) : view === "settings" ? (
           <SettingsPage />
+        ) : view === "tiers" ? (
+          <TierListPage />
         ) : (
           <Home lcu={lcu} coaching={coaching} onCoach={setCoaching} />
         )}

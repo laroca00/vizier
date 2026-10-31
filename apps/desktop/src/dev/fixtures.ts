@@ -23,3 +23,12 @@ export function champSelectFixture(): ChampSelect | null {
     phaseEndsAt: Date.now() + 27_000,
   };
 }
+
+/** Dev only: `?fixture=match` opens a stored TR Challenger game on the home page. */
+export function matchFixture(): { matchId: string; puuid: string } | null {
+  if (!import.meta.env.DEV || new URLSearchParams(location.search).get("fixture") !== "match") return null;
+  return {
+    matchId: "TR1_1755261501",
+    puuid: import.meta.env.VITE_FIXTURE_PUUID ?? "",
+  };
+}
