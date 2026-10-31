@@ -60,7 +60,7 @@ async function importBuild(build: ProBuild, championName: string, finished: (id:
 type Props = { filter: ProFilter; compact?: boolean; emptyText: string };
 
 export function ProBuildList({ filter, compact = false, emptyText }: Props) {
-  const key = `${filter.championId ?? ""}:${filter.position ?? ""}:${filter.team ?? ""}:${filter.limit ?? ""}`;
+  const key = `${filter.championId ?? ""}:${filter.position ?? ""}:${filter.team ?? ""}:${filter.group ?? ""}:${filter.limit ?? ""}`;
   const [state, retry] = useAsync(key, () => getProBuilds(filter));
   const [data] = useAsync("static", loadStatic);
 
@@ -107,7 +107,7 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: Static; compa
     <li className="pros__row" data-result={build.win ? "win" : "loss"}>
       <span className="pros__who">
         <span className="pros__player">{build.player}</span>
-        <span className="pros__team">{build.team}</span>
+        <span className="pros__team">{build.team || "Takımsız"}</span>
       </span>
       <span className="pros__matchup">
         {champion && <img src={championIconUrl(data.version, champion.id)} alt={champion.name} title={champion.name} width={30} height={30} />}
