@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { champSelectFixture } from "./dev/fixtures";
 import { useChampSelect, useLcuStatus } from "./lcu";
@@ -70,6 +70,10 @@ function App() {
     setCoaching({ matchId: `TR1_${lastGameId}`, puuid: summoner.puuid, championName: "Son", justFinished: true });
     setView("home");
   }, [phase, lastGameId, summoner, settings.openAnalysisAfterGame]);
+
+  useEffect(() => {
+    if (isTauri()) invoke("set_overlay_enabled", { enabled: settings.overlay }).catch(() => {});
+  }, [settings.overlay]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

@@ -151,7 +151,14 @@ export function getCounters(championId: number, position: string) {
   return get<Counters>(`/v1/champions/${championId}/counters?position=${position}`);
 }
 
-export type BanSuggestions ={ patches: string[]; champions: { championId: number; games: number; winRate: number }[] };
+export type Distribution = { games: number; quantiles: number[] };
+export type Benchmarks = { position: string; championId: number | null; patches: string[]; metrics: Partial<Record<string, Distribution>> };
+
+export function getBenchmarks(position: string, championId: number | null) {
+  return get<Benchmarks>(`/v1/benchmarks/${position}${championId ? `?champion=${championId}` : ""}`);
+}
+
+export type BanSuggestions = { patches: string[]; champions: { championId: number; games: number; winRate: number }[] };
 
 export function getBans() {
   return get<BanSuggestions>("/v1/bans");

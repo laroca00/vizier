@@ -1506,3 +1506,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.settings__heading {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 500;
+  --delay: 180ms;
+}

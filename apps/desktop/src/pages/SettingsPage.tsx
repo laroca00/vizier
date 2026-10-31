@@ -13,6 +13,13 @@ const TOGGLES: { key: keyof Settings; label: string; hint: string }[] = [
   { key: "pauseBackgroundInGame", label: "Oyundayken arka plan animasyonunu durdur", hint: "Oyun sırasında ekran kartına yük bindirmez." },
 ];
 
+const OVERLAY_TOGGLES: { key: keyof Settings; label: string; hint: string }[] = [
+  { key: "overlaySkills", label: "Yetenek önerisi", hint: "Yetenek puanın olduğunda hangisini yükselteceğini gösterir." },
+  { key: "overlayObjectives", label: "Ejder, Baron ve inhibitör süreleri", hint: "Kesildiklerinde yeniden doğmalarına kalan süre." },
+  { key: "overlayBenchmarks", label: "Emerald+ karşılaştırması", hint: "Dakika başına minyonun ve skora katkın, aynı roldeki Emerald+ medyanıyla." },
+  { key: "overlayItems", label: "Eşya altını farkı", hint: "Koridor rakibine ve rakip takıma göre eşyalarına harcanan altın." },
+];
+
 function useAutostart() {
   const [on, setOn] = useState<boolean | null>(null);
   useEffect(() => {
@@ -52,6 +59,36 @@ export function SettingsPage() {
           <li key={key}>
             <label className="toggle">
               <input type="checkbox" checked={settings[key]} onChange={(e) => updateSettings({ [key]: e.target.checked })} />
+              <span className="toggle__text">
+                <span className="toggle__label">{label}</span>
+                <span className="toggle__hint">{hint}</span>
+              </span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      <h2 className="settings__heading enter">Oyun içi</h2>
+      <ul className="settings__list enter">
+        <li>
+          <label className="toggle">
+            <input type="checkbox" checked={settings.overlay} onChange={(e) => updateSettings({ overlay: e.target.checked })} />
+            <span className="toggle__text">
+              <span className="toggle__label">Oyun içi paneli göster</span>
+              <span className="toggle__hint">
+                Sol üst köşede durur, tıklamaları oyuna geçirir. Oyun ayarlarında Kenarlıksız pencere seçili olmalı. Ctrl+Shift+O ile oyun sırasında gizleyip açabilirsin.
+              </span>
+            </span>
+          </label>
+        </li>
+        {OVERLAY_TOGGLES.map(({ key, label, hint }) => (
+          <li key={key}>
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={settings[key]}
+                disabled={!settings.overlay}
+                onChange={(e) => updateSettings({ [key]: e.target.checked })}
+              />
               <span className="toggle__text">
                 <span className="toggle__label">{label}</span>
                 <span className="toggle__hint">{hint}</span>

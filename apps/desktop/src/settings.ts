@@ -7,6 +7,11 @@ export type Settings = {
   showOnChampSelect: boolean;
   openAnalysisAfterGame: boolean;
   pauseBackgroundInGame: boolean;
+  overlay: boolean;
+  overlaySkills: boolean;
+  overlayObjectives: boolean;
+  overlayBenchmarks: boolean;
+  overlayItems: boolean;
 };
 
 const DEFAULTS: Settings = {
@@ -16,6 +21,11 @@ const DEFAULTS: Settings = {
   showOnChampSelect: true,
   openAnalysisAfterGame: true,
   pauseBackgroundInGame: true,
+  overlay: true,
+  overlaySkills: true,
+  overlayObjectives: true,
+  overlayBenchmarks: true,
+  overlayItems: true,
 };
 
 const KEY = "vizier.settings";
@@ -30,6 +40,14 @@ function read(): Settings {
 }
 
 let current = read();
+
+// The overlay is a second window on the same origin; this keeps it in step
+// with changes made on the settings page.
+window.addEventListener("storage", (event) => {
+  if (event.key !== KEY) return;
+  current = read();
+  for (const listener of listeners) listener();
+});
 
 export function updateSettings(patch: Partial<Settings>) {
   current = { ...current, ...patch };
