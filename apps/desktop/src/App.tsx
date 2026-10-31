@@ -42,7 +42,7 @@ function App() {
   const [navigated, setNavigated] = useState(false);
   const [coaching, setCoaching] = useState<CoachTarget | null>(null);
   const [searching, setSearching] = useState(false);
-  const [champion, setChampion] = useState<{ id: number; position: string | null } | null>(null);
+  const [champion, setChampion] = useState<{ id: number; position: string | null; queue: number } | null>(null);
   const [riotId, setRiotId] = useState<RiotId | null>(null);
   const draftActive = useRef(draft !== null);
   const analysedGame = useRef<number | null>(null);
@@ -86,9 +86,9 @@ function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  function openChampion(id: number, position: string | null = null) {
+  function openChampion(id: number, position: string | null = null, queue = 420) {
     setNavigated(true);
-    setChampion({ id, position });
+    setChampion({ id, position, queue });
     setView("champion");
   }
 
@@ -153,9 +153,10 @@ function App() {
           <TierListPage onOpenChampion={openChampion} />
         ) : view === "champion" && champion ? (
           <ChampionPage
-            key={`${champion.id}:${champion.position}`}
+            key={`${champion.id}:${champion.position}:${champion.queue}`}
             championId={champion.id}
             initialPosition={champion.position}
+            initialQueue={champion.queue}
             onOpenChampion={openChampion}
           />
         ) : view === "profile" && riotId ? (

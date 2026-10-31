@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { getChampion, getCounters, type ChampionOverview, type Counters } from "../api";
+import { getChampion, getCounters, getSynergies, type ChampionOverview, type Counters } from "../api";
 import { BuildSuggestion } from "../BuildSuggestion";
 import { championIconUrl, champions, latestVersion, type Champion } from "../data/ddragon";
 import { POSITIONS } from "../labels";
+import { QUEUES, RANKED, winLabel } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { useAsync } from "../useAsync";
 
@@ -20,13 +21,16 @@ type Props = {
   championId: number;
   /** The role to open on; the most played one when null. */
   initialPosition?: string | null;
-  onOpenChampion: (championId: number, position?: string) => void;
+  initialQueue?: number;
+  onOpenChampion: (championId: number, position: string | null, queue: number) => void;
 };
 
-export function ChampionPage({ championId, initialPosition = null, onOpenChampion }: Props) {
+export function ChampionPage({ championId, initialPosition = null, initialQueue = RANKED, onOpenChampion }: Props) {
   const [position, setPosition] = useState<string | null>(initialPosition);
+  const [queue, setQueue] = useState(initialQueue);
   const [data] = useAsync("static", loadStatic);
-  const [state, retry] = useAsync(`${championId}:${position}`, () => getChampion(championId, position));
+  const [state, retry] = useAsync(`${queue}:${championId}:${position}`, () => getChampion(championId, position, queue));
+  const queueLabel = QUEUES.find((q) => q.id === queue)?.label ?? "";
   const champion = data.status === "done" ? data.value.champions.get(championId) : undefined;
   const version = data.status === "done" ? data.value.version : null;
 
@@ -38,11 +42,20 @@ export function ChampionPage({ championId, initialPosition = null, onOpenChampio
           <h1 className="champion__name">{champion?.name ?? "Şampiyon"}</h1>
           {state.status === "done" && state.value && (
             <p className="detail__meta">
-              Yama {state.value.patches[0]}, TR Emerald+ {POSITIONS[state.value.position ?? ""]?.toLocaleLowerCase("tr")}, {state.value.games} maç
+              Yama {state.value.patches[0]}, TR Emerald+{" "}
+              {queue === RANKED ? POSITIONS[state.value.position ?? ""]?.toLocaleLowerCase("tr") : queueLabel}, {state.value.games} maç
             </p>
           )}
         </div>
       </header>
+
+      <div className="tiers__tabs enter" role="tablist" aria-label="Oyun modu">
+        {QUEUES.map((q) => (
+          <button key={q.id} type="button" role="tab" aria-selected={q.id === queue} className="nav__item" onClick={() => setQueue(q.id)}>
+            {q.label}
+          </button>
+        ))}
+      </div>
 
       {state.status === "error" ? (
         <div role="alert">
@@ -56,7 +69,9 @@ export function ChampionPage({ championId, initialPosition = null, onOpenChampio
           Yükleniyor
         </p>
       ) : !state.value ? (
-        <p className="coach__note">{champion?.name ?? "Bu şampiyon"} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.</p>
+        <p className="coach__note">
+          {champion?.name ?? "Bu şampiyon"} için {queueLabel} modunda henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.
+        </p>
       ) : (
         <Overview
           overview={state.value}
@@ -64,6 +79,7 @@ export function ChampionPage({ championId, initialPosition = null, onOpenChampio
           championName={champion?.name ?? ""}
           champions={data.status === "done" ? data.value.champions : new Map()}
           version={version}
+          queue={queue}
           onPosition={setPosition}
           onOpenChampion={onOpenChampion}
         />
@@ -78,17 +94,19 @@ type OverviewProps = {
   championName: string;
   champions: Map<number, Champion>;
   version: string | null;
+  queue: number;
   onPosition: (position: string) => void;
-  onOpenChampion: (championId: number, position?: string) => void;
+  onOpenChampion: (championId: number, position: string | null, queue: number) => void;
 };
 
-function Overview({ overview, championId, championName, champions, version, onPosition, onOpenChampion }: OverviewProps) {
-  const position = overview.position!;
+function Overview({ overview, championId, championName, champions, version, queue, onPosition, onOpenChampion }: OverviewProps) {
+  const position = overview.position;
+  const ranked = queue === RANKED && position !== null;
   // A role with a handful of games is someone's troll pick, not a way to play the champion.
   const roles = overview.positions.filter((p) => p.games >= MIN_ROLE_GAMES || p.position === position);
   return (
     <>
-      {roles.length > 1 && (
+      {ranked && roles.length > 1 && (
         <div className="tiers__tabs enter" role="tablist" aria-label="Rol">
           {roles.map((p) => (
             <button
@@ -119,19 +137,25 @@ function Overview({ overview, championId, championName, champions, version, onPo
           </dd>
         </div>
         <div>
-          <dt>Kazanma</dt>
+          <dt>{winLabel(queue)}</dt>
           <dd>{percent(overview.winRate)}</dd>
         </div>
         <div>
           <dt>Geçen yamaya göre</dt>
-          <dd data-trend={overview.winRateChange === null ? undefined : overview.winRateChange >= 0 ? "up" : "down"}>
-            {overview.winRateChange === null ? "–" : `${signed(overview.winRateChange)} puan`}
+          <dd data-trend={overview.winRateChange == null ? undefined : overview.winRateChange >= 0 ? "up" : "down"}>
+            {overview.winRateChange == null ? "–" : `${signed(overview.winRateChange)} puan`}
           </dd>
         </div>
         <div>
           <dt>Seçilme</dt>
           <dd>{percent(overview.pickRate)}</dd>
         </div>
+        {overview.banRate != null && (
+          <div>
+            <dt>Yasaklanma</dt>
+            <dd>{percent(overview.banRate)}</dd>
+          </div>
+        )}
       </dl>
 
       <div className="champion__body">
@@ -145,15 +169,27 @@ function Overview({ overview, championId, championName, champions, version, onPo
             locked={false}
             vs={null}
             inDraft={false}
+            queue={queue}
           />
         </section>
-        <CounterLists
-          championId={championId}
-          position={position}
-          champions={champions}
-          version={version}
-          onOpenChampion={(id) => onOpenChampion(id, position)}
-        />
+        {ranked && (
+          <div>
+            <CounterLists
+              championId={championId}
+              position={position}
+              champions={champions}
+              version={version}
+              onOpenChampion={(id) => onOpenChampion(id, position, queue)}
+            />
+            <AllyList
+              championId={championId}
+              position={position}
+              champions={champions}
+              version={version}
+              onOpenChampion={(id, role) => onOpenChampion(id, role, queue)}
+            />
+          </div>
+        )}
       </div>
     </>
   );
@@ -224,4 +260,38 @@ function Matchups({ counters, champions, version, onOpenChampion }: { counters: 
       </ul>
     </div>
   ));
+}
+
+const SHOWN_ALLIES = 5;
+
+function AllyList({
+  championId,
+  position,
+  champions,
+  version,
+  onOpenChampion,
+}: Omit<CounterProps, "onOpenChampion"> & { onOpenChampion: (championId: number, position: string) => void }) {
+  const [state] = useAsync(`allies:${championId}:${position}`, () => getSynergies(championId, position));
+  if (state.status !== "done" || state.value.allies.length === 0) return null;
+  return (
+    <section className="matchups" aria-label="Takım arkadaşları">
+      <h2 className="draft__heading">En iyi anlaştığı takım arkadaşları</h2>
+      <ul className="matchups__list matchups__list--plain">
+        {state.value.allies.slice(0, SHOWN_ALLIES).map((a) => {
+          const ally = champions.get(a.championId);
+          return (
+            <li key={`${a.championId}-${a.position}`}>
+              <button type="button" className="matchups__open" onClick={() => onOpenChampion(a.championId, a.position)}>
+                {ally && version && <img src={championIconUrl(version, ally.id)} alt="" width={26} height={26} />}
+                <span className="matchups__name">{ally?.name ?? a.championId}</span>
+              </button>
+              <span className="matchups__games">{POSITIONS[a.position]?.toLocaleLowerCase("tr")}</span>
+              <span className="matchups__rate">{percent(a.winRate)}</span>
+              <span className="matchups__games">{a.games} maç</span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
 }

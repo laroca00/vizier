@@ -1513,3 +1513,25 @@
   font-weight: 500;
   --delay: 180ms;
 }
+
+.tiers__tabs--roles {
+  margin-top: -8px;
+}
+
+.tiers__body[data-solo] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tiers__change[data-trend="up"],
+.figures dd[data-trend="up"] {
+  color: #5fd3c8;
+}
+
+.tiers__change[data-trend="down"] {
+  color: #f08a7c;
+}
+
+.champion__body > div > .matchups + .matchups,
+.champion__body > div > section + section {
+  margin-top: 22px;
+}

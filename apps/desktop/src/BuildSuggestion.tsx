@@ -27,9 +27,9 @@ type Data = {
   items: Map<number, Item>;
 };
 
-async function load(championId: number, position: string | null, vs: number | null): Promise<Data> {
+async function load(championId: number, position: string | null, vs: number | null, queue: number): Promise<Data> {
   const [build, version, runeStyles, spells, itemList] = await Promise.all([
-    getBuild(championId, position, vs),
+    getBuild(championId, position, vs, queue),
     latestVersion(),
     runes(),
     summonerSpells(),
@@ -66,12 +66,13 @@ type Props = {
   vs: number | null;
   /** The client only takes summoner spells during champ select. */
   inDraft?: boolean;
+  queue?: number;
 };
 
 const SKILL_KEYS = ["", "Q", "W", "E", "R"];
 
-export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs, inDraft = true }: Props) {
-  const [state, retry] = useAsync(`${championId}:${position}:${vs}`, () => load(championId, position, vs));
+export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs, inDraft = true, queue = 420 }: Props) {
+  const [state, retry] = useAsync(`${queue}:${championId}:${position}:${vs}`, () => load(championId, position, vs, queue));
   const [runeImport, setRuneImport] = useState<ImportState>({ status: "idle" });
   const [spellImport, setSpellImport] = useState<ImportState>({ status: "idle" });
   const [itemImport, setItemImport] = useState<ImportState>({ status: "idle" });

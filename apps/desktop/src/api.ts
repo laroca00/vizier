@@ -89,8 +89,9 @@ export type Build = {
 };
 
 /** Null when Vizier has no games for the champion yet. */
-export async function getBuild(championId: number, position: string | null, vs: number | null = null): Promise<Build | null> {
+export async function getBuild(championId: number, position: string | null, vs: number | null = null, queue = 420): Promise<Build | null> {
   const params = new URLSearchParams();
+  if (queue !== 420) params.set("queue", String(queue));
   if (position) params.set("position", position.toUpperCase());
   if (vs) params.set("vs", String(vs));
   const query = params.size ? `?${params}` : "";
@@ -116,11 +117,12 @@ export function getCoaching(matchId: string, puuid: string) {
   });
 }
 
-export type TierEntry = { championId: number; games: number; winRate: number; pickRate: number; tier: string };
+export type TierEntry = { championId: number; games: number; winRate: number; pickRate: number; tier: string; winRateChange: number | null };
 export type TierList = { patches: string[]; games: number; champions: TierEntry[] };
 
-export function getTierList(position: string) {
-  return get<TierList>(`/v1/tierlist/${position}`);
+/** Queues without roles take position ALL. */
+export function getTierList(position: string, queue = 420) {
+  return get<TierList>(`/v1/tierlist/${position}${queue === 420 ? "" : `?queue=${queue}`}`);
 }
 
 export type ChampionOverview = {
@@ -132,17 +134,28 @@ export type ChampionOverview = {
   pickRate: number;
   tier: string | null;
   winRateChange: number | null;
+  /** Null outside ranked or before enough ranked games. */
+  banRate: number | null;
 };
 
 /** Null when Vizier has no games for the champion yet. */
-export async function getChampion(championId: number, position: string | null): Promise<ChampionOverview | null> {
-  const query = position ? `?position=${position}` : "";
+export async function getChampion(championId: number, position: string | null, queue = 420): Promise<ChampionOverview | null> {
+  const params = new URLSearchParams();
+  if (position && queue === 420) params.set("position", position);
+  if (queue !== 420) params.set("queue", String(queue));
+  const query = params.size ? `?${params}` : "";
   try {
     return await get<ChampionOverview>(`/v1/champions/${championId}${query}`);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
   }
+}
+
+export type Synergies = { patches: string[]; games: number; allies: { championId: number; position: string; games: number; winRate: number }[] };
+
+export function getSynergies(championId: number, position: string) {
+  return get<Synergies>(`/v1/champions/${championId}/synergies?position=${position}`);
 }
 
 export type Counters = { patches: string[]; games: number; matchups: { championId: number; games: number; winRate: number }[] };
