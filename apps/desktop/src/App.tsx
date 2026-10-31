@@ -4,11 +4,14 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { champSelectFixture } from "./dev/fixtures";
 import { useChampSelect, useLcuStatus } from "./lcu";
 import { About } from "./pages/About";
+import { ChampionPage } from "./pages/ChampionPage";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
+import { ProfilePage } from "./pages/ProfilePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TierListPage } from "./pages/TierListPage";
 import type { CoachTarget } from "./ProfileCard";
+import { SearchPalette, type RiotId } from "./SearchPalette";
 import { useSettings } from "./settings";
 import { LiquidGlass } from "./ui/LiquidGlass";
 import { ShaderGradient } from "./ui/ShaderGradient";
@@ -18,7 +21,7 @@ import "./App.css";
 // Night cobalt to turquoise across the plane, bright cobalt on the folds.
 const GRADIENT: [string, string, string] = ["#0b1846", "#1c9c92", "#2f55c8"];
 
-type View = "home" | "about" | "draft" | "settings" | "tiers";
+type View = "home" | "about" | "draft" | "settings" | "tiers" | "champion" | "profile";
 
 const fixture = champSelectFixture();
 const POST_GAME_PHASES = new Set(["PreEndOfGame", "EndOfGame"]);
@@ -38,6 +41,9 @@ function App() {
   const [view, setView] = useState<View>(draft ? "draft" : "home");
   const [navigated, setNavigated] = useState(false);
   const [coaching, setCoaching] = useState<CoachTarget | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [champion, setChampion] = useState<{ id: number; position: string | null } | null>(null);
+  const [riotId, setRiotId] = useState<RiotId | null>(null);
   const draftActive = useRef(draft !== null);
   const analysedGame = useRef<number | null>(null);
 
@@ -64,6 +70,29 @@ function App() {
     setCoaching({ matchId: `TR1_${lastGameId}`, puuid: summoner.puuid, championName: "Son", justFinished: true });
     setView("home");
   }, [phase, lastGameId, summoner, settings.openAnalysisAfterGame]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearching(true);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  function openChampion(id: number, position: string | null = null) {
+    setNavigated(true);
+    setChampion({ id, position });
+    setView("champion");
+  }
+
+  function openProfile(id: RiotId) {
+    setNavigated(true);
+    setRiotId(id);
+    setView("profile");
+  }
 
   const items: { id: View; label: string }[] = [
     { id: "home", label: "Ana sayfa" },
@@ -102,6 +131,11 @@ function App() {
             </button>
           ))}
         </LiquidGlass>
+        <LiquidGlass className="nav" shape="pill" blur={4}>
+          <button type="button" className="nav__item nav__search" aria-keyshortcuts="Control+K" onClick={() => setSearching(true)}>
+            Ara <kbd>Ctrl K</kbd>
+          </button>
+        </LiquidGlass>
         <UpdateNotice />
       </nav>
       <main className="shell__main" key={view}>
@@ -112,11 +146,21 @@ function App() {
         ) : view === "settings" ? (
           <SettingsPage />
         ) : view === "tiers" ? (
-          <TierListPage />
+          <TierListPage onOpenChampion={openChampion} />
+        ) : view === "champion" && champion ? (
+          <ChampionPage
+            key={`${champion.id}:${champion.position}`}
+            championId={champion.id}
+            initialPosition={champion.position}
+            onOpenChampion={openChampion}
+          />
+        ) : view === "profile" && riotId ? (
+          <ProfilePage key={`${riotId.gameName}#${riotId.tagLine}`} riotId={riotId} />
         ) : (
           <Home lcu={lcu} coaching={coaching} onCoach={setCoaching} />
         )}
       </main>
+      <SearchPalette open={searching} onClose={() => setSearching(false)} onChampion={(id) => openChampion(id)} onProfile={openProfile} />
     </div>
   );
 }

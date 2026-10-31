@@ -64,11 +64,13 @@ type Props = {
   locked: boolean;
   /** Lane opponent the player picked, if any. */
   vs: number | null;
+  /** The client only takes summoner spells during champ select. */
+  inDraft?: boolean;
 };
 
 const SKILL_KEYS = ["", "Q", "W", "E", "R"];
 
-export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs }: Props) {
+export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs, inDraft = true }: Props) {
   const [state, retry] = useAsync(`${championId}:${position}:${vs}`, () => load(championId, position, vs));
   const [runeImport, setRuneImport] = useState<ImportState>({ status: "idle" });
   const [spellImport, setSpellImport] = useState<ImportState>({ status: "idle" });
@@ -218,7 +220,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
             })}
             <span className="build__stat">{percent(spells.winRate)} kazanma</span>
           </div>
-          <ImportControls label="Büyüleri aktar" state={spellImport} disabled={!canImport} onImport={importSpells} />
+          {inDraft && <ImportControls label="Büyüleri aktar" state={spellImport} disabled={!canImport} onImport={importSpells} />}
         </section>
       )}
 

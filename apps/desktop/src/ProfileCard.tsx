@@ -32,7 +32,7 @@ export type CoachTarget = {
   justFinished?: boolean;
 };
 
-type ProfileProps = { summoner: Summoner; onCoach: (target: CoachTarget) => void; onOpenMatch: (matchId: string) => void };
+type ProfileProps = { summoner: Summoner; onCoach: (target: CoachTarget) => void; onOpenMatch: (matchId: string, puuid: string) => void };
 
 export function ProfileCard({ summoner, onCoach, onOpenMatch }: ProfileProps) {
   const [state, retry] = useAsync(`${summoner.gameName}#${summoner.tagLine}`, () => load(summoner));
@@ -139,7 +139,7 @@ function ProfileBody({ profile, matches, version, champions, onCoach, onOpenMatc
                     type="button"
                     className="matches__open"
                     aria-label={`${champion?.name ?? "Maç"} maçının detayını aç`}
-                    onClick={() => onOpenMatch(match.metadata.matchId)}
+                    onClick={() => onOpenMatch(match.metadata.matchId, puuid)}
                   />
                   {champion && (
                     <img src={championIconUrl(version, champion.id)} alt="" width={32} height={32} className="matches__icon" />

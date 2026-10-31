@@ -123,7 +123,35 @@ export function getTierList(position: string) {
   return get<TierList>(`/v1/tierlist/${position}`);
 }
 
-export type BanSuggestions = { patches: string[]; champions: { championId: number; games: number; winRate: number }[] };
+export type ChampionOverview = {
+  patches: string[];
+  positions: { position: string; games: number; share: number }[];
+  position: string | null;
+  games: number;
+  winRate: number;
+  pickRate: number;
+  tier: string | null;
+  winRateChange: number | null;
+};
+
+/** Null when Vizier has no games for the champion yet. */
+export async function getChampion(championId: number, position: string | null): Promise<ChampionOverview | null> {
+  const query = position ? `?position=${position}` : "";
+  try {
+    return await get<ChampionOverview>(`/v1/champions/${championId}${query}`);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+export type Counters = { patches: string[]; games: number; matchups: { championId: number; games: number; winRate: number }[] };
+
+export function getCounters(championId: number, position: string) {
+  return get<Counters>(`/v1/champions/${championId}/counters?position=${position}`);
+}
+
+export type BanSuggestions ={ patches: string[]; champions: { championId: number; games: number; winRate: number }[] };
 
 export function getBans() {
   return get<BanSuggestions>("/v1/bans");

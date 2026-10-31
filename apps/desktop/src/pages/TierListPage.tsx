@@ -13,7 +13,7 @@ async function load(position: string) {
   return { list, bans, version, champions: championList };
 }
 
-export function TierListPage() {
+export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: number, position: string) => void }) {
   const [position, setPosition] = useState("MIDDLE");
   const [state, retry] = useAsync(position, () => load(position));
 
@@ -70,9 +70,11 @@ export function TierListPage() {
                           {c.tier}
                         </span>
                       </td>
-                      <td className="tiers__champion">
-                        {champion && <img src={championIconUrl(state.value.version, champion.id)} alt="" width={26} height={26} />}
-                        {champion?.name ?? c.championId}
+                      <td>
+                        <button type="button" className="tiers__champion" onClick={() => onOpenChampion(c.championId, position)}>
+                          {champion && <img src={championIconUrl(state.value.version, champion.id)} alt="" width={26} height={26} />}
+                          {champion?.name ?? c.championId}
+                        </button>
                       </td>
                       <td>{percent(c.winRate)}</td>
                       <td>{percent(c.pickRate)}</td>
