@@ -15,9 +15,22 @@ export type LeagueEntry = {
 
 export type Participant = {
   puuid: string;
+  participantId?: number;
+  teamId?: number;
   championId: number;
   teamPosition: string;
   win: boolean;
+  deaths?: number;
+  totalMinionsKilled?: number;
+  neutralMinionsKilled?: number;
+  goldEarned?: number;
+  visionScore?: number;
+  challenges?: {
+    laneMinionsFirst10Minutes?: number;
+    jungleCsBefore10Minutes?: number;
+    killParticipation?: number;
+    teamDamagePercentage?: number;
+  };
   summoner1Id?: number;
   summoner2Id?: number;
   item0?: number;

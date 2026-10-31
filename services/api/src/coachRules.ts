@@ -1,4 +1,5 @@
 import type { Coaching, MatchSummary } from "./coach.ts";
+import { rankOf, type Benchmarks, type Distribution } from "./stats.ts";
 
 // Free, deterministic coaching: each rule reads the match summary and, when it
 // fires, returns a finding worded from the numbers it saw. Nothing here can
@@ -13,6 +14,25 @@ const EARLY_GAME_MINUTES = 14;
 // A death this soon before an enemy objective most likely gave it away.
 const OBJECTIVE_WINDOW_MINUTES = 1.5;
 const MAX_POINTS = 5;
+// Fewer benchmark games than this and the fixed targets above are used.
+const MIN_BENCHMARK_GAMES = 100;
+// Below this share of Emerald+ games, a number is worth a point.
+const LOW_RANK = 0.3;
+
+const ROLE_NAMES: Record<string, string> = {
+  TOP: "üst koridor",
+  JUNGLE: "orman",
+  MIDDLE: "orta koridor",
+  BOTTOM: "alt koridor",
+  UTILITY: "destek",
+};
+
+function usable(d: Distribution | undefined): d is Distribution {
+  return d !== undefined && d.games >= MIN_BENCHMARK_GAMES;
+}
+
+/** "%70'i senden fazla" from a rank. */
+const aheadShare = (rank: number) => Math.round((1 - rank) * 100);
 
 const OBJECTIVE_NAMES: Record<string, string> = {
   DRAGON: "ejderhayı",
@@ -64,11 +84,39 @@ function laneFindings(s: MatchSummary): Finding[] {
   return found;
 }
 
-function csFinding(s: MatchSummary): Finding[] {
-  const target = CS_TARGET[s.position];
+function csFinding(s: MatchSummary, bench?: Benchmarks): Finding[] {
   const cs = s.player.csPerMinute;
-  if (target === undefined || cs >= target - 1) return [];
+  const found: Finding[] = [];
+  const role = ROLE_NAMES[s.position] ?? "aynı rol";
+  const cs10Bench = bench?.metrics.cs10;
+  if (s.position !== "UTILITY" && s.player.cs10 !== undefined && usable(cs10Bench)) {
+    const rank = rankOf(cs10Bench, s.player.cs10);
+    if (rank < LOW_RANK) {
+      found.push({
+        score: (LOW_RANK - rank) * 30,
+        minute: 10,
+        title: "Koridor evresinde minyon kaçırdın",
+        detail: `İlk 10 dakikada ${Math.round(s.player.cs10)} minyon topladın; TR Emerald+ ${role} oyuncularının medyanı ${cs10Bench.quantiles[10]}. Rakibe vuruş yapacağın anları son vuruş sırasına göre seç.`,
+      });
+    }
+  }
+  const csBench = bench?.metrics.cs_pm;
+  if (s.position !== "UTILITY" && usable(csBench)) {
+    const rank = rankOf(csBench, cs);
+    if (rank < LOW_RANK) {
+      found.push({
+        score: (LOW_RANK - rank) * 30,
+        minute: null,
+        title: "Minyon toplaman düşük",
+        detail: `Dakikada ${cs} minyon topladın; TR Emerald+ ${role} oyuncularının %${aheadShare(rank)} kadarı bundan fazlasını topluyor, medyan ${csBench.quantiles[10]}. Maçın ortasında boş kalan koridorlardaki dalgaları toplamak bu farkı kapatır.`,
+      });
+    }
+    return found;
+  }
+  const target = CS_TARGET[s.position];
+  if (target === undefined || cs >= target - 1) return found;
   return [
+    ...found,
     {
       score: (target - cs) * 4,
       minute: null,
@@ -168,9 +216,25 @@ function objectiveFindings(s: MatchSummary): Finding[] {
   return found;
 }
 
-function visionFinding(s: MatchSummary): Finding[] {
-  const target = VISION_TARGET[s.position] ?? DEFAULT_VISION_TARGET;
+function visionFinding(s: MatchSummary, bench?: Benchmarks): Finding[] {
   const perMinute = Math.round((s.player.visionScore / s.durationMinutes) * 10) / 10;
+  const visionBench = bench?.metrics.vision_pm;
+  if (usable(visionBench)) {
+    const rank = rankOf(visionBench, perMinute);
+    if (rank >= LOW_RANK) return [];
+    const wardsKilled = s.player.wardsKilled ?? 0;
+    return [
+      {
+        score: (LOW_RANK - rank) * 25,
+        minute: null,
+        title: "Görüş skorun düşük",
+        detail:
+          `Dakikada ${perMinute} görüş skoru topladın; TR Emerald+ ${ROLE_NAMES[s.position] ?? "aynı rol"} oyuncularının medyanı ${visionBench.quantiles[10]}.` +
+          (wardsKilled === 0 ? " Hiç totem kırmadın; her üsse dönüşte bir kontrol totemi al." : ""),
+      },
+    ];
+  }
+  const target = VISION_TARGET[s.position] ?? DEFAULT_VISION_TARGET;
   if (perMinute >= target) return [];
   const wardsKilled = s.player.wardsKilled ?? 0;
   return [
@@ -185,13 +249,14 @@ function visionFinding(s: MatchSummary): Finding[] {
   ];
 }
 
-export function coachByRules(s: MatchSummary): Coaching {
+/** `bench` is the TR Emerald+ distribution for the player's role; without it fixed targets apply. */
+export function coachByRules(s: MatchSummary, bench?: Benchmarks): Coaching {
   const findings = [
     ...laneFindings(s),
-    ...csFinding(s),
+    ...csFinding(s, bench),
     ...deathFindings(s),
     ...objectiveFindings(s),
-    ...visionFinding(s),
+    ...visionFinding(s, bench),
   ]
     .sort((a, b) => b.score - a.score)
     .slice(0, MAX_POINTS);

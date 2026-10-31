@@ -1,4 +1,5 @@
 import type { RiotClient } from "./riot/client.ts";
+import { buildPaths, type BuildPath, type Timeline } from "./timeline.ts";
 import { patchOf, type LeagueEntryWithPuuid, type LeagueList, type Match, type Participant } from "./riot/types.ts";
 
 const RANKED_SOLO = 420;
@@ -9,6 +10,9 @@ const DAY = 86_400_000;
 // every 2 minutes stays under D1's 100k written rows a day.
 const PLAYERS_PER_RUN = 2;
 const MATCHES_PER_RUN = 8;
+// A timeline is ~1 MB of JSON; parsing more than a couple per run would push
+// past the free plan's CPU time.
+const TIMELINES_PER_RUN = 2;
 const RESEED_AFTER = DAY;
 const LOOKBACK = 3 * DAY;
 // Remakes end before five minutes and say nothing about a build.
@@ -61,9 +65,20 @@ export class Crawler {
     const seeded = await this.seedIfStale();
     const matchIds = await this.collectMatchIds();
     let matches = 0;
+    let timelines = 0;
     for (const id of matchIds) {
       const match = await this.riot.get<Match>("europe", "/lol/match/v5/matches", `/lol/match/v5/matches/${id}`);
-      if (match && (await this.save(match))) matches++;
+      if (!match) continue;
+      let timeline: Timeline | null = null;
+      if (timelines < TIMELINES_PER_RUN && match.info.queueId === RANKED_SOLO) {
+        timelines++;
+        timeline = await this.riot.get<Timeline>(
+          "europe",
+          "/lol/match/v5/matches/timeline",
+          `/lol/match/v5/matches/${id}/timeline`,
+        );
+      }
+      if (await this.save(match, timeline)) matches++;
     }
     return { seeded, matches };
   }
@@ -125,7 +140,7 @@ export class Crawler {
   }
 
   /** Returns false for games that carry no build signal. */
-  async save(match: Match): Promise<boolean> {
+  async save(match: Match, timeline: Timeline | null = null): Promise<boolean> {
     const { info } = match;
     const matchId = match.metadata.matchId;
     const patch = patchOf(info.gameVersion);
@@ -140,14 +155,47 @@ export class Crawler {
 
     const insert = this.db.prepare(
       `INSERT OR IGNORE INTO participant_stats
-        (match_id, patch, champion_id, team_position, win, runes, spells, items)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        (match_id, patch, champion_id, team_position, win, runes, spells, items,
+         opponent_champion_id, duration, deaths, cs10, cs_pm, gold_pm, vision_pm,
+         kill_participation, damage_share, start_items, skill_order, purchase_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
+    const paths = timeline ? buildPaths(timeline) : new Map<number, BuildPath>();
+    const minutes = info.gameDuration / 60;
+    const round = (n: number) => Math.round(n * 100) / 100;
     const rows = info.participants.flatMap((p) => {
       const runes = runeKey(p.perks);
       if (!runes || !p.teamPosition) return [];
       const spells = [p.summoner1Id ?? 0, p.summoner2Id ?? 0].sort((a, b) => a - b).join(",");
-      return [insert.bind(matchId, patch, p.championId, p.teamPosition, p.win ? 1 : 0, runes, spells, itemsOf(p))];
+      const opponent = info.participants.find((o) => o.teamId !== p.teamId && o.teamPosition === p.teamPosition);
+      const c = p.challenges ?? {};
+      const cs = (p.totalMinionsKilled ?? 0) + (p.neutralMinionsKilled ?? 0);
+      const cs10 = p.teamPosition === "JUNGLE" ? c.jungleCsBefore10Minutes : c.laneMinionsFirst10Minutes;
+      const path = p.participantId ? paths.get(p.participantId) : undefined;
+      return [
+        insert.bind(
+          matchId,
+          patch,
+          p.championId,
+          p.teamPosition,
+          p.win ? 1 : 0,
+          runes,
+          spells,
+          itemsOf(p),
+          opponent?.championId ?? null,
+          info.gameDuration,
+          p.deaths ?? null,
+          cs10 === undefined ? null : Math.round(cs10),
+          round(cs / minutes),
+          p.goldEarned === undefined ? null : round(p.goldEarned / minutes),
+          p.visionScore === undefined ? null : round(p.visionScore / minutes),
+          c.killParticipation === undefined ? null : round(c.killParticipation),
+          c.teamDamagePercentage === undefined ? null : round(c.teamDamagePercentage),
+          path ? path.startItems.join(",") : null,
+          path ? path.skillOrder.join("") : null,
+          path ? path.purchases.join(",") : null,
+        ),
+      ];
     });
     await this.db.batch([record, ...rows]);
     return true;

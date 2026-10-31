@@ -1,6 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
+import type { Timeline } from "./timeline.ts";
 
 // Post-game coaching: the match and its timeline are boiled down to a small
 // summary first, so the model sees only facts from the game and a request
@@ -26,6 +27,7 @@ export type CoachParticipant = {
   visionScore: number;
   wardsPlaced: number;
   wardsKilled: number;
+  challenges?: { laneMinionsFirst10Minutes?: number; jungleCsBefore10Minutes?: number };
 };
 
 export type CoachMatch = {
@@ -33,24 +35,7 @@ export type CoachMatch = {
   info: { gameDuration: number; queueId: number; participants: CoachParticipant[] };
 };
 
-type Frame = {
-  timestamp: number;
-  participantFrames: Record<string, { totalGold: number; xp: number; minionsKilled: number; jungleMinionsKilled: number; level: number }>;
-  events: {
-    type: string;
-    timestamp: number;
-    killerId?: number;
-    victimId?: number;
-    assistingParticipantIds?: number[];
-    position?: { x: number; y: number };
-    monsterType?: string;
-    buildingType?: string;
-    killerTeamId?: number;
-    teamId?: number;
-  }[];
-};
-
-export type Timeline = { info: { frames: Frame[] } };
+export type { Timeline } from "./timeline.ts";
 
 const minute = (ms: number) => Math.round(ms / 6000) / 10;
 
@@ -113,7 +98,12 @@ export function summarize(match: CoachMatch, timeline: Timeline, puuid: string) 
     durationMinutes: Math.round(minutes),
     result: me.win ? "win" : "loss",
     position: me.teamPosition,
-    player: { ...line(me), wardsPlaced: me.wardsPlaced, wardsKilled: me.wardsKilled },
+    player: {
+      ...line(me),
+      wardsPlaced: me.wardsPlaced,
+      wardsKilled: me.wardsKilled,
+      cs10: me.teamPosition === "JUNGLE" ? me.challenges?.jungleCsBefore10Minutes : me.challenges?.laneMinionsFirst10Minutes,
+    },
     laneOpponent: opponent ? line(opponent) : null,
     laneSnapshots: snapshots,
     deaths,

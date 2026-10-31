@@ -6,6 +6,9 @@ import { aggregateBuild, POSITIONS } from "./builds.ts";
 import { coach, summarize, type Coaching, type CoachMatch, type Timeline } from "./coach.ts";
 import { rewriteWithWorkersAi } from "./coachRewrite.ts";
 import { coachByRules } from "./coachRules.ts";
+import { banSuggestions, benchmarks, tierList, type Benchmarks } from "./stats.ts";
+import { goldGraph, type Timeline as FullTimeline } from "./timeline.ts";
+import { findHabits, gameNumbers } from "./trends.ts";
 import { RiotError, type RiotClient } from "./riot/client.ts";
 import type { Account, LeagueEntry, Match, Summoner } from "./riot/types.ts";
 import type { Store } from "./store.ts";
@@ -146,13 +149,97 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai 
     if (!Number.isInteger(championId) || championId <= 0) badRequest("Invalid champion id");
     const position = c.req.query("position")?.toUpperCase() ?? null;
     if (position !== null && !POSITIONS.has(position)) badRequest("Unsupported position");
+    const vsParam = c.req.query("vs");
+    const vs = vsParam === undefined ? null : Number(vsParam);
+    if (vs !== null && (!Number.isInteger(vs) || vs <= 0)) badRequest("Invalid opponent champion id");
     if (!statsDb) return c.json({ error: "Build stats are not available" }, 503);
 
-    const build = await cached(`build:${championId}:${position ?? "ANY"}`, 30 * MINUTE, () =>
-      aggregateBuild(statsDb, championId, position),
+    const build = await cached(`build:${championId}:${position ?? "ANY"}:${vs ?? "ANY"}`, 30 * MINUTE, () =>
+      aggregateBuild(statsDb, championId, position, vs),
     );
     if (!build) return c.json({ error: "No games for this champion yet" }, 404);
     return c.json(build);
+  });
+
+  const benchmarksFor = (position: string, championId: number | null = null) =>
+    statsDb
+      ? cached(`bench:${position}:${championId ?? "ANY"}`, 6 * 60 * MINUTE, () => benchmarks(statsDb, position, championId))
+      : Promise.resolve(undefined);
+
+  app.get("/v1/benchmarks/:position", async (c) => {
+    const position = c.req.param("position").toUpperCase();
+    if (!POSITIONS.has(position)) badRequest("Unsupported position");
+    const championParam = c.req.query("champion");
+    const championId = championParam === undefined ? null : Number(championParam);
+    if (championId !== null && (!Number.isInteger(championId) || championId <= 0)) badRequest("Invalid champion id");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json(await benchmarksFor(position, championId));
+  });
+
+  app.get("/v1/tierlist/:position", async (c) => {
+    const position = c.req.param("position").toUpperCase();
+    if (!POSITIONS.has(position)) badRequest("Unsupported position");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json(await cached(`tierlist:${position}`, 60 * MINUTE, () => tierList(statsDb, position)));
+  });
+
+  app.get("/v1/bans", async (c) => {
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json(await cached("bans", 60 * MINUTE, () => banSuggestions(statsDb)));
+  });
+
+  const matchById = async (matchId: string): Promise<Match | null> => {
+    const stored = await store.getMatch(matchId);
+    if (stored) return stored;
+    const match = await riot.get<Match>("europe", "/lol/match/v5/matches", `/lol/match/v5/matches/${matchId}`);
+    if (match) await store.putMatch(match);
+    return match;
+  };
+
+  app.get("/v1/players/:puuid/trends", async (c) => {
+    const { puuid } = c.req.param();
+    if (!PUUID.test(puuid)) badRequest("Invalid PUUID");
+    const trends = await cached(`trends:${puuid}`, 30 * MINUTE, async () => {
+      const ids =
+        (await riot.get<string[]>(
+          "europe",
+          "/lol/match/v5/matches/by-puuid/ids",
+          `/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&start=0&count=10`,
+        )) ?? [];
+      const games = [];
+      for (const id of ids) {
+        const match = await matchById(id);
+        const numbers = match && gameNumbers(match, puuid);
+        if (numbers) games.push(numbers);
+      }
+      const positions = [...new Set(games.map((g) => g.position))];
+      const benches = new Map<string, Benchmarks>();
+      for (const position of positions) {
+        const bench = await benchmarksFor(position);
+        if (bench) benches.set(position, bench);
+      }
+      return findHabits(games, benches);
+    });
+    return c.json(trends);
+  });
+
+  app.get("/v1/matches/:matchId/graph", async (c) => {
+    const { matchId } = c.req.param();
+    if (!MATCH_ID.test(matchId)) badRequest("Invalid match ID");
+    const match = await matchById(matchId);
+    if (!match) return c.json({ error: "Match not found" }, 404);
+    const graph = await cached(`graph:${matchId}`, Infinity, async () => {
+      const timeline = await riot.get<FullTimeline>(
+        "europe",
+        "/lol/match/v5/matches/timeline",
+        `/lol/match/v5/matches/${matchId}/timeline`,
+      );
+      if (!timeline) return null;
+      const teams = new Map(match.info.participants.map((p) => [p.participantId ?? 0, p.teamId ?? 0]));
+      return goldGraph(timeline, (id) => teams.get(id) ?? 0);
+    });
+    if (!graph) return c.json({ error: "Timeline not found" }, 404);
+    return c.json(graph);
   });
 
   app.post("/v1/coach/:matchId", async (c) => {
@@ -193,7 +280,7 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai 
       await store.putCached(counterKey, used + 1, 2 * 24 * 60 * MINUTE);
       result = { ...(await coach(claude!.client, summary)), source: "claude" };
     } else {
-      const rules = coachByRules(summary);
+      const rules = coachByRules(summary, await benchmarksFor(summary.position));
       let rewritten: Coaching | null = null;
       if (ai && used < FREE_REWRITES_PER_DAY && rules.points.length > 0) {
         await store.putCached(counterKey, used + 1, 2 * 24 * 60 * MINUTE);

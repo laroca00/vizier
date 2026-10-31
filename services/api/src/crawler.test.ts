@@ -82,7 +82,8 @@ describe("Crawler", () => {
 
     const result = await new Crawler(db, riot, () => now).run();
     expect(result).toEqual({ seeded: 2, matches: 1 });
-    expect(calls.filter((c) => c.includes("/matches/TR1_"))).toHaveLength(3);
+    expect(calls.filter((c) => c.includes("/matches/TR1_") && !c.endsWith("/timeline"))).toHaveLength(3);
+    expect(calls.filter((c) => c.endsWith("/timeline")).length).toBeLessThanOrEqual(2);
     expect(sqlite.prepare("SELECT COUNT(*) AS n FROM crawled_matches").get()).toEqual({ n: 3 });
     expect(sqlite.prepare("SELECT champion_id, team_position, win, spells, items FROM participant_stats ORDER BY champion_id").all()).toEqual([
       { champion_id: 64, team_position: "JUNGLE", win: 0, spells: "4,14", items: "3157,3020,3157" },
@@ -92,6 +93,23 @@ describe("Crawler", () => {
     // Same day: no reseed, and already crawled games are skipped.
     const second = await new Crawler(db, riot, () => now + 60_000).run();
     expect(second).toEqual({ seeded: 0, matches: 0 });
+  });
+});
+
+describe("buildPaths", () => {
+  it("reads starting items, skill order and purchases net of undos", async () => {
+    const { buildPaths } = await import("./timeline.ts");
+    const events = [
+      { type: "ITEM_PURCHASED", timestamp: 10_000, participantId: 1, itemId: 1056 },
+      { type: "ITEM_PURCHASED", timestamp: 12_000, participantId: 1, itemId: 2003 },
+      { type: "ITEM_PURCHASED", timestamp: 13_000, participantId: 1, itemId: 2003 },
+      { type: "ITEM_UNDO", timestamp: 14_000, participantId: 1, beforeId: 2003, afterId: 0 },
+      { type: "SKILL_LEVEL_UP", timestamp: 70_000, participantId: 1, skillSlot: 1, levelUpType: "NORMAL" },
+      { type: "SKILL_LEVEL_UP", timestamp: 200_000, participantId: 1, skillSlot: 3, levelUpType: "NORMAL" },
+      { type: "ITEM_PURCHASED", timestamp: 400_000, participantId: 1, itemId: 6655 },
+    ];
+    const paths = buildPaths({ info: { frames: [{ timestamp: 0, participantFrames: {}, events }] } });
+    expect(paths.get(1)).toEqual({ startItems: [1056, 2003], skillOrder: [1, 3], purchases: [1056, 2003, 6655] });
   });
 });
 

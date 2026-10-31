@@ -10,7 +10,7 @@ const summary: MatchSummary = {
   durationMinutes: 30,
   result: "loss",
   position: "MIDDLE",
-  player: { champion: "Ahri", kda: "3/6/4", csPerMinute: 5.2, gold: 10000, damageToChampions: 15000, visionScore: 12, wardsPlaced: 8, wardsKilled: 0 },
+  player: { champion: "Ahri", kda: "3/6/4", csPerMinute: 5.2, gold: 10000, damageToChampions: 15000, visionScore: 12, wardsPlaced: 8, wardsKilled: 0, cs10: 48 },
   laneOpponent: { champion: "Zed", kda: "8/2/3", csPerMinute: 7.4, gold: 13000, damageToChampions: 20000, visionScore: 15 },
   laneSnapshots: [{ minute: 10, cs: 70, goldDiff: -900, xpDiff: -300, csDiff: -12 }],
   deaths: [
