@@ -1,4 +1,5 @@
 import notices from "../../../../THIRD_PARTY_NOTICES.md?raw";
+import type { LcuStatus } from "../lcu";
 import { LiquidGlass } from "../ui/LiquidGlass";
 
 const CREDITS = [
@@ -8,7 +9,7 @@ const CREDITS = [
   { name: "Geologica", use: "yazı tipi", license: "SIL Open Font License 1.1" },
 ];
 
-export function About() {
+export function About(_props: { lcu: LcuStatus }) {
   return (
     <LiquidGlass className="panel about" radius={28} strength={2.5}>
       <h1 className="about__title enter">Hakkında</h1>

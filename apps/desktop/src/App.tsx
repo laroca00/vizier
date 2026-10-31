@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLcuStatus } from "./lcu";
 import { About } from "./pages/About";
 import { Home } from "./pages/Home";
 import { LiquidGlass } from "./ui/LiquidGlass";
@@ -16,6 +17,7 @@ const PAGES = [
 type PageId = (typeof PAGES)[number]["id"];
 
 function App() {
+  const lcu = useLcuStatus();
   const [pageId, setPageId] = useState<PageId>("home");
   const [navigated, setNavigated] = useState(false);
   const page = PAGES.find((p) => p.id === pageId)!;
@@ -45,7 +47,7 @@ function App() {
         </LiquidGlass>
       </nav>
       <main className="shell__main" key={page.id}>
-        <page.Component />
+        <page.Component lcu={lcu} />
       </main>
     </div>
   );

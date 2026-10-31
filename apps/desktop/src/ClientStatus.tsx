@@ -1,4 +1,4 @@
-import { phaseLabel, useLcuStatus, type LcuStatus } from "./lcu";
+import { phaseLabel, type LcuStatus } from "./lcu";
 import { LiquidGlass } from "./ui/LiquidGlass";
 
 function describe(status: LcuStatus): { title: string; detail: string | null } {
@@ -15,8 +15,7 @@ function describe(status: LcuStatus): { title: string; detail: string | null } {
   }
 }
 
-export function ClientStatus({ className }: { className?: string }) {
-  const status = useLcuStatus();
+export function ClientStatus({ status, className }: { status: LcuStatus; className?: string }) {
   const { title, detail } = describe(status);
 
   return (
