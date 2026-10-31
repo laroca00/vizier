@@ -37,7 +37,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
         <h1 className="draft__title">Tier listesi</h1>
         {state.status === "done" && state.value.list.patches.length > 0 && (
           <p className="draft__phase">
-            Yama {state.value.list.patches[0]}, TR Emerald+ oyuncularından {Math.round(state.value.list.games / playersPerGame(queue))} maç
+            Yama {state.value.list.patches[0]}, Emerald+ oyuncularından {Math.round(state.value.list.games / playersPerGame(queue))} maç
           </p>
         )}
       </header>

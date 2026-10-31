@@ -25,6 +25,7 @@ const POLL_INTERVAL: Duration = Duration::from_secs(2);
 const PHASE_PATH: &str = "/lol-gameflow/v1/gameflow-phase";
 const SUMMONER_PATH: &str = "/lol-summoner/v1/current-summoner";
 const SESSION_PATH: &str = "/lol-gameflow/v1/session";
+const REGION_PATH: &str = "/riotclient/region-locale";
 /// Phases in which the gameflow session names a game that was actually played.
 const GAME_PHASES: [&str; 4] = ["InProgress", "WaitingForStats", "PreEndOfGame", "EndOfGame"];
 
@@ -53,6 +54,14 @@ pub struct Summoner {
     pub puuid: String,
 }
 
+/// The account's server ("TR", "EUW") and the client's language ("tr_TR", "en_GB").
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RegionLocale {
+    pub region: String,
+    pub locale: String,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(tag = "state", rename_all = "camelCase")]
 pub enum LcuStatus {
@@ -64,6 +73,7 @@ pub enum LcuStatus {
         phase: Option<String>,
         /// The current or most recent game; match-v5 calls it `TR1_<gameId>`.
         last_game_id: Option<i64>,
+        region: Option<RegionLocale>,
     },
 }
 
@@ -155,12 +165,14 @@ async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credenti
     // Both 404 until the player has logged in; the events fill them in later.
     let mut phase: Option<String> = api.get(PHASE_PATH).await.ok();
     let mut summoner: Option<Summoner> = api.get(SUMMONER_PATH).await.ok();
+    // Fixed for the life of the client: a region change means a restart.
+    let region: Option<RegionLocale> = api.get(REGION_PATH).await.ok();
     let mut last_game_id = if phase.as_deref().is_some_and(|p| GAME_PHASES.contains(&p)) {
         current_game_id(&api).await
     } else {
         None
     };
-    publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone(), last_game_id });
+    publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone(), last_game_id, region: region.clone() });
     *app.state::<LcuApi>().0.lock().unwrap() = Some(api.clone());
     // 404 outside champ select. Vizier may also start in the middle of one.
     let session: Option<Value> = api.get(champ_select::SESSION_PATH).await.ok();
@@ -185,7 +197,7 @@ async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credenti
             }
             _ => continue,
         }
-        publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone(), last_game_id });
+        publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone(), last_game_id, region: region.clone() });
     }
     Ok(())
 }

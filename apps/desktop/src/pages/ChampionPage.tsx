@@ -43,7 +43,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           <h1 className="champion__name">{champion?.name ?? "Şampiyon"}</h1>
           {state.status === "done" && state.value && (
             <p className="detail__meta">
-              Yama {state.value.patches[0]}, TR Emerald+{" "}
+              Yama {state.value.patches[0]}, Emerald+{" "}
               {queue === RANKED ? POSITIONS[state.value.position ?? ""]?.toLocaleLowerCase("tr") : queueLabel}, {state.value.games} maç
             </p>
           )}

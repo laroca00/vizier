@@ -1,7 +1,7 @@
 import { getProfile, getRecentMatches, getTrends, type Match, type Profile } from "./api";
 import { championIconUrl, champions, latestVersion, profileIconUrl, type Champion } from "./data/ddragon";
 import { queueLabel, tierLabel, timeAgo } from "./labels";
-import type { Summoner } from "./lcu";
+import type { Platform, Summoner } from "./lcu";
 import { LiquidGlass } from "./ui/LiquidGlass";
 import { useAsync } from "./useAsync";
 
@@ -14,9 +14,9 @@ type Loaded = {
   champions: Map<number, Champion>;
 };
 
-async function load(summoner: Summoner): Promise<Loaded> {
+async function load(summoner: Summoner, platform: Platform): Promise<Loaded> {
   const [profile, version, championList] = await Promise.all([
-    getProfile(summoner.gameName, summoner.tagLine),
+    getProfile(summoner.gameName, summoner.tagLine, platform),
     latestVersion(),
     champions(),
   ]);
@@ -32,10 +32,10 @@ export type CoachTarget = {
   justFinished?: boolean;
 };
 
-type ProfileProps = { summoner: Summoner; onCoach: (target: CoachTarget) => void; onOpenMatch: (matchId: string, puuid: string) => void };
+type ProfileProps = { summoner: Summoner; platform: Platform; onCoach: (target: CoachTarget) => void; onOpenMatch: (matchId: string, puuid: string) => void };
 
-export function ProfileCard({ summoner, onCoach, onOpenMatch }: ProfileProps) {
-  const [state, retry] = useAsync(`${summoner.gameName}#${summoner.tagLine}`, () => load(summoner));
+export function ProfileCard({ summoner, platform, onCoach, onOpenMatch }: ProfileProps) {
+  const [state, retry] = useAsync(`${platform}:${summoner.gameName}#${summoner.tagLine}`, () => load(summoner, platform));
 
   return (
     <LiquidGlass className="panel profile" radius={28} strength={2.5}>
@@ -82,7 +82,7 @@ function Habits({ puuid }: { puuid: string }) {
   );
 }
 
-function ProfileBody({ profile, matches, version, champions, onCoach, onOpenMatch }: Loaded & Omit<ProfileProps, "summoner">) {
+function ProfileBody({ profile, matches, version, champions, onCoach, onOpenMatch }: Loaded & Omit<ProfileProps, "summoner" | "platform">) {
   const { account, summoner, ranks } = profile;
   const puuid = account.puuid;
 

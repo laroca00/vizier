@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { champSelectFixture } from "./dev/fixtures";
-import { useChampSelect, useLcuStatus } from "./lcu";
+import { matchIdFor, platformOf, useChampSelect, useLcuStatus } from "./lcu";
 import { About } from "./pages/About";
 import { ChampionPage } from "./pages/ChampionPage";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
@@ -51,6 +51,7 @@ function App() {
   const phase = lcu.state === "connected" ? lcu.phase : null;
   const summoner = lcu.state === "connected" ? lcu.summoner : null;
   const lastGameId = lcu.state === "connected" ? lcu.lastGameId : null;
+  const platform = platformOf(lcu.state === "connected" ? lcu.region : null);
 
   // Jump to the draft when it starts and leave it when it ends, but don't
   // pull the player back if they switched away during it.
@@ -68,9 +69,9 @@ function App() {
     if (!settings.openAnalysisAfterGame || !phase || !POST_GAME_PHASES.has(phase)) return;
     if (!lastGameId || !summoner || analysedGame.current === lastGameId) return;
     analysedGame.current = lastGameId;
-    setCoaching({ matchId: `TR1_${lastGameId}`, puuid: summoner.puuid, championName: "Son", justFinished: true });
+    setCoaching({ matchId: matchIdFor(platform, lastGameId), puuid: summoner.puuid, championName: "Son", justFinished: true });
     setView("home");
-  }, [phase, lastGameId, summoner, settings.openAnalysisAfterGame]);
+  }, [phase, lastGameId, summoner, platform, settings.openAnalysisAfterGame]);
 
   useEffect(() => {
     if (isTauri()) invoke("set_overlay_enabled", { enabled: settings.overlay }).catch(() => {});
@@ -164,12 +165,12 @@ function App() {
             onOpenChampion={openChampion}
           />
         ) : view === "profile" && riotId ? (
-          <ProfilePage key={`${riotId.gameName}#${riotId.tagLine}`} riotId={riotId} />
+          <ProfilePage key={`${riotId.platform}:${riotId.gameName}#${riotId.tagLine}`} riotId={riotId} />
         ) : (
           <Home lcu={lcu} coaching={coaching} onCoach={setCoaching} />
         )}
       </main>
-      <SearchPalette open={searching} onClose={() => setSearching(false)} onChampion={(id) => openChampion(id)} onProfile={openProfile} />
+      <SearchPalette open={searching} onClose={() => setSearching(false)} onChampion={(id) => openChampion(id)} onProfile={openProfile} home={platform} />
     </div>
   );
 }

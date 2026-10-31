@@ -2,18 +2,19 @@ import { useEffect, useState } from "react";
 import { getLiveGame, type LiveGameInfo, type LivePlayer } from "../api";
 import { championIconUrl, champions, latestVersion, type Champion } from "../data/ddragon";
 import { tierLabel } from "../labels";
+import type { Platform } from "../lcu";
 
 // Riot lists the game a little after the loading screen appears.
 const RETRY_MS = 4000;
 
-function useLiveGameInfo(puuid: string | null, fixture: LiveGameInfo | null) {
+function useLiveGameInfo(player: { puuid: string; platform: Platform } | null, fixture: LiveGameInfo | null) {
   const [info, setInfo] = useState<LiveGameInfo | null>(fixture);
   useEffect(() => {
-    if (!puuid || fixture) return;
+    if (!player || fixture) return;
     let stopped = false;
     let timer: ReturnType<typeof setTimeout>;
     const attempt = async () => {
-      const result = await getLiveGame(puuid).catch(() => null);
+      const result = await getLiveGame(player.puuid, player.platform).catch(() => null);
       if (stopped) return;
       if (result) setInfo(result);
       else timer = setTimeout(attempt, RETRY_MS);
@@ -23,14 +24,14 @@ function useLiveGameInfo(puuid: string | null, fixture: LiveGameInfo | null) {
       stopped = true;
       clearTimeout(timer);
     };
-  }, [puuid, fixture]);
+  }, [player?.puuid, player?.platform, fixture]);
   return info;
 }
 
 const thousands = (n: number) => (n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
 
-export function Scouting({ puuid, fixture }: { puuid: string | null; fixture: LiveGameInfo | null }) {
-  const info = useLiveGameInfo(puuid, fixture);
+export function Scouting({ player, fixture }: { player: { puuid: string; platform: Platform } | null; fixture: LiveGameInfo | null }) {
+  const info = useLiveGameInfo(player, fixture);
   const [data, setData] = useState<{ version: string; champions: Map<number, Champion> } | null>(null);
   useEffect(() => {
     Promise.all([latestVersion(), champions()]).then(([version, byKey]) => setData({ version, champions: byKey }), () => {});

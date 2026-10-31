@@ -4,10 +4,26 @@ import { listen } from "@tauri-apps/api/event";
 
 export type Summoner = { gameName: string; tagLine: string; puuid: string };
 
+/** The servers Vizier serves players on. */
+export type Platform = "tr1" | "euw1";
+
+/** The client's server ("TR", "EUW") and language ("tr_TR", "en_GB"). */
+export type RegionLocale = { region: string; locale: string };
+
 export type LcuStatus =
   | { state: "disconnected" }
   | { state: "connecting" }
-  | { state: "connected"; summoner: Summoner | null; phase: string | null; lastGameId: number | null };
+  | { state: "connected"; summoner: Summoner | null; phase: string | null; lastGameId: number | null; region: RegionLocale | null };
+
+/** TR when the client is on another server or unknown. */
+export function platformOf(region: RegionLocale | null | undefined): Platform {
+  return region?.region.toUpperCase() === "EUW" ? "euw1" : "tr1";
+}
+
+/** match-v5 ids start with the platform: "EUW1_123". */
+export function matchIdFor(platform: Platform, gameId: number) {
+  return `${platform.toUpperCase()}_${gameId}`;
+}
 
 const PHASE_LABELS: Record<string, string> = {
   Lobby: "Lobide",

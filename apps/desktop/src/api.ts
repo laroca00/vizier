@@ -1,3 +1,4 @@
+import type { Platform } from "./lcu";
 const API_URL = import.meta.env.VITE_API_URL ?? "https://vizier-api.vizier-api.workers.dev";
 
 export type Rank = {
@@ -63,8 +64,8 @@ async function get<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export function getProfile(gameName: string, tagLine: string) {
-  return get<Profile>(`/v1/profiles/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`);
+export function getProfile(gameName: string, tagLine: string, platform: Platform = "tr1") {
+  return get<Profile>(`/v1/profiles/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?platform=${platform}`);
 }
 
 export async function getRecentMatches(puuid: string, count: number): Promise<Match[]> {
@@ -190,9 +191,9 @@ export type LivePlayer = {
 export type LiveGameInfo = { gameId: number; queueId: number | null; players: LivePlayer[] };
 
 /** Null until Riot lists the game, which can take a few seconds into the loading screen. */
-export async function getLiveGame(puuid: string): Promise<LiveGameInfo | null> {
+export async function getLiveGame(puuid: string, platform: Platform): Promise<LiveGameInfo | null> {
   try {
-    return await get<LiveGameInfo>(`/v1/live/${puuid}`);
+    return await get<LiveGameInfo>(`/v1/live/${puuid}?platform=${platform}`);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;

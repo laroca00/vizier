@@ -1,10 +1,16 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { championIconUrl, champions, latestVersion, type Champion } from "./data/ddragon";
+import type { Platform } from "./lcu";
 import { useAsync } from "./useAsync";
 
-export type RiotId = { gameName: string; tagLine: string };
+export type RiotId = { gameName: string; tagLine: string; platform: Platform };
 
 type Result = { kind: "profile"; riotId: RiotId } | { kind: "champion"; champion: Champion };
+
+const SERVERS: { platform: Platform; label: string }[] = [
+  { platform: "euw1", label: "EUW" },
+  { platform: "tr1", label: "TR" },
+];
 
 const SHOWN = 8;
 // Same limits the API checks: 3-16 character names, 3-5 character tags.
@@ -20,13 +26,16 @@ export function fold(text: string) {
     .replace(/[^\p{L}\p{N}]/gu, "");
 }
 
-export function parseRiotId(query: string): RiotId | null {
+export function parseRiotId(query: string): Omit<RiotId, "platform"> | null {
   const match = RIOT_ID.exec(query.trim());
   return match ? { gameName: match[1].trim(), tagLine: match[2] } : null;
 }
 
-function search(query: string, list: Champion[]): Result[] {
-  const riotId = parseRiotId(query);
+/** A Riot ID is offered on both servers, the player's own first. */
+function search(query: string, list: Champion[], home: Platform): Result[] {
+  const parsed = parseRiotId(query);
+  const servers = [...SERVERS].sort((a, b) => Number(b.platform === home) - Number(a.platform === home));
+  const profiles = parsed ? servers.map(({ platform }) => ({ kind: "profile" as const, riotId: { ...parsed, platform } })) : [];
   const needle = fold(query);
   const matches = needle
     ? list
@@ -34,7 +43,7 @@ function search(query: string, list: Champion[]): Result[] {
         .sort((a, b) => Number(!fold(a.name).startsWith(needle)) - Number(!fold(b.name).startsWith(needle)) || a.name.localeCompare(b.name, "tr"))
         .slice(0, SHOWN)
     : [];
-  return [...(riotId ? [{ kind: "profile" as const, riotId }] : []), ...matches.map((champion) => ({ kind: "champion" as const, champion }))];
+  return [...profiles, ...matches.map((champion) => ({ kind: "champion" as const, champion }))];
 }
 
 async function loadStatic() {
@@ -47,9 +56,11 @@ type Props = {
   onClose: () => void;
   onChampion: (championId: number) => void;
   onProfile: (riotId: RiotId) => void;
+  /** The player's own server, offered first for a Riot ID. */
+  home: Platform;
 };
 
-export function SearchPalette({ open, onClose, onChampion, onProfile }: Props) {
+export function SearchPalette({ open, onClose, onChampion, onProfile, home }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -67,7 +78,7 @@ export function SearchPalette({ open, onClose, onChampion, onProfile }: Props) {
     if (!open && element.open) element.close();
   }, [open]);
 
-  const results = data.status === "done" ? search(query, data.value.list) : [];
+  const results = data.status === "done" ? search(query, data.value.list, home) : [];
   const version = data.status === "done" ? data.value.version : "";
 
   function choose(result: Result | undefined) {
@@ -130,7 +141,7 @@ export function SearchPalette({ open, onClose, onChampion, onProfile }: Props) {
             ) : (
               results.map((result, i) => (
                 <li
-                  key={result.kind === "profile" ? "profile" : result.champion.key}
+                  key={result.kind === "profile" ? result.riotId.platform : result.champion.key}
                   id={optionId(i)}
                   role="option"
                   aria-selected={i === active}
@@ -147,7 +158,7 @@ export function SearchPalette({ open, onClose, onChampion, onProfile }: Props) {
                         {result.riotId.gameName}
                         <span className="profile__tag">#{result.riotId.tagLine}</span>
                       </span>
-                      <span className="palette__kind">Oyuncu profili</span>
+                      <span className="palette__kind">{SERVERS.find((s) => s.platform === result.riotId.platform)?.label} profili</span>
                     </>
                   ) : (
                     <>

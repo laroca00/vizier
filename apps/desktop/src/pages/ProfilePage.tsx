@@ -26,7 +26,8 @@ export function ProfilePage({ riotId }: { riotId: RiotId }) {
   return (
     <div className="home">
       <ProfileCard
-        summoner={{ ...riotId, puuid: "" }}
+        summoner={{ gameName: riotId.gameName, tagLine: riotId.tagLine, puuid: "" }}
+        platform={riotId.platform}
         onCoach={setCoaching}
         onOpenMatch={(matchId, puuid) => setOpenMatch({ matchId, puuid })}
       />

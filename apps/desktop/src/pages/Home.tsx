@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ClientStatus } from "../ClientStatus";
 import { matchFixture } from "../dev/fixtures";
 import { CoachPanel } from "../CoachPanel";
-import type { LcuStatus } from "../lcu";
+import { platformOf, type LcuStatus } from "../lcu";
 import { MatchDetail } from "../MatchDetail";
 import { ProfileCard, type CoachTarget } from "../ProfileCard";
 import { LiquidGlass } from "../ui/LiquidGlass";
@@ -28,14 +28,21 @@ export function Home({ lcu, coaching, onCoach }: Props) {
       />
     );
   } else if (summoner) {
-    side = <ProfileCard summoner={summoner} onCoach={onCoach} onOpenMatch={setOpenMatch} />;
+    side = (
+      <ProfileCard
+        summoner={summoner}
+        platform={platformOf(lcu.state === "connected" ? lcu.region : null)}
+        onCoach={onCoach}
+        onOpenMatch={setOpenMatch}
+      />
+    );
   }
 
   return (
     <div className="home">
       <LiquidGlass className="panel welcome" radius={28} strength={2.5}>
         <h1 className="wordmark enter">Vizier</h1>
-        <p className="welcome__line enter">TR sunucusu için League of Legends yardımcısı.</p>
+        <p className="welcome__line enter">EUW ve TR oyuncuları için League of Legends yardımcısı.</p>
         <ClientStatus status={lcu} className="enter" />
       </LiquidGlass>
       {side}

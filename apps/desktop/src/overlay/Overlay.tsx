@@ -4,7 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { getBenchmarks, getBuild, getPace, type Benchmarks, type Build, type Pace } from "../api";
 import { champions, items } from "../data/ddragon";
 import { overlayFixture, scoutingFixture } from "../dev/fixtures";
-import type { LcuStatus } from "../lcu";
+import { platformOf, type LcuStatus, type Platform } from "../lcu";
 import { positionLabel } from "../labels";
 import { useSettings } from "../settings";
 import { useAsync } from "../useAsync";
@@ -38,16 +38,19 @@ function useLoading() {
   return loading;
 }
 
-function usePuuid(active: boolean) {
-  const [puuid, setPuuid] = useState<string | null>(null);
+function usePlayer(active: boolean) {
+  const [player, setPlayer] = useState<{ puuid: string; platform: Platform } | null>(null);
   useEffect(() => {
     if (!active || !isTauri()) return;
     invoke<LcuStatus>("lcu_status").then(
-      (status) => setPuuid(status.state === "connected" ? (status.summoner?.puuid ?? null) : null),
+      (status) =>
+        setPlayer(
+          status.state === "connected" && status.summoner ? { puuid: status.summoner.puuid, platform: platformOf(status.region) } : null,
+        ),
       () => {},
     );
   }, [active]);
-  return puuid;
+  return player;
 }
 
 function useHidden() {
@@ -111,7 +114,7 @@ const thousands = (gold: number) => `${gold > 0 ? "+" : gold < 0 ? "−" : ""}${
 export function Overlay() {
   const game = useLiveGame();
   const loading = useLoading();
-  const puuid = usePuuid(loading);
+  const player = usePlayer(loading);
   const hidden = useHidden();
   const settings = useSettings();
   const time = useGameClock(game);
@@ -126,7 +129,7 @@ export function Overlay() {
   if (loading) {
     return settings.overlayScouting ? (
       <div className="overlay" aria-hidden="true">
-        <Scouting puuid={puuid} fixture={scoutingFixture()} />
+        <Scouting player={player} fixture={scoutingFixture()} />
       </div>
     ) : null;
   }
