@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
-export type Summoner = { gameName: string; tagLine: string };
+export type Summoner = { gameName: string; tagLine: string; puuid: string };
 
 export type LcuStatus =
   | { state: "disconnected" }
   | { state: "connecting" }
-  | { state: "connected"; summoner: Summoner | null; phase: string | null };
+  | { state: "connected"; summoner: Summoner | null; phase: string | null; lastGameId: number | null };
 
 const PHASE_LABELS: Record<string, string> = {
   Lobby: "Lobide",

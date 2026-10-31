@@ -24,7 +24,13 @@ async function load(summoner: Summoner): Promise<Loaded> {
   return { profile, matches, version, champions: championList };
 }
 
-export type CoachTarget = { matchId: string; puuid: string; championName: string };
+export type CoachTarget = {
+  matchId: string;
+  puuid: string;
+  championName: string;
+  /** Opened right after a game, before Riot may have published the match. */
+  justFinished?: boolean;
+};
 
 export function ProfileCard({ summoner, onCoach }: { summoner: Summoner; onCoach: (target: CoachTarget) => void }) {
   const [state, retry] = useAsync(`${summoner.gameName}#${summoner.tagLine}`, () => load(summoner));

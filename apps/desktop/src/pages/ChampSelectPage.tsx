@@ -63,6 +63,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 championName={ready.champions.get(shownChampion(me))?.name ?? ""}
                 position={me.position || null}
                 currentSpells={me.spells as [number, number]}
+                locked={me.championId !== 0}
               />
             </>
           )}

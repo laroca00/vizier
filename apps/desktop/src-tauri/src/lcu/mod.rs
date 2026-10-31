@@ -24,12 +24,33 @@ const POLL_INTERVAL: Duration = Duration::from_secs(2);
 
 const PHASE_PATH: &str = "/lol-gameflow/v1/gameflow-phase";
 const SUMMONER_PATH: &str = "/lol-summoner/v1/current-summoner";
+const SESSION_PATH: &str = "/lol-gameflow/v1/session";
+/// Phases in which the gameflow session names a game that was actually played.
+const GAME_PHASES: [&str; 4] = ["InProgress", "WaitingForStats", "PreEndOfGame", "EndOfGame"];
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GameflowSession {
+    game_data: GameData,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GameData {
+    game_id: i64,
+}
+
+async fn current_game_id(api: &LcuClient) -> Option<i64> {
+    let session: GameflowSession = api.get(SESSION_PATH).await.ok()?;
+    (session.game_data.game_id > 0).then_some(session.game_data.game_id)
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Summoner {
     pub game_name: String,
     pub tag_line: String,
+    pub puuid: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -41,6 +62,8 @@ pub enum LcuStatus {
     Connected {
         summoner: Option<Summoner>,
         phase: Option<String>,
+        /// The current or most recent game; match-v5 calls it `TR1_<gameId>`.
+        last_game_id: Option<i64>,
     },
 }
 
@@ -132,7 +155,12 @@ async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credenti
     // Both 404 until the player has logged in; the events fill them in later.
     let mut phase: Option<String> = api.get(PHASE_PATH).await.ok();
     let mut summoner: Option<Summoner> = api.get(SUMMONER_PATH).await.ok();
-    publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone() });
+    let mut last_game_id = if phase.as_deref().is_some_and(|p| GAME_PHASES.contains(&p)) {
+        current_game_id(&api).await
+    } else {
+        None
+    };
+    publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone(), last_game_id });
     *app.state::<LcuApi>().0.lock().unwrap() = Some(api.clone());
     // 404 outside champ select. Vizier may also start in the middle of one.
     let session: Option<Value> = api.get(champ_select::SESSION_PATH).await.ok();
@@ -142,7 +170,13 @@ async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credenti
         let Message::Text(text) = message? else { continue };
         let Some(event) = parse_event(&text) else { continue };
         match event.uri.as_str() {
-            PHASE_PATH => phase = event.data.as_str().map(str::to_owned),
+            PHASE_PATH => {
+                phase = event.data.as_str().map(str::to_owned);
+                // Kept after the game ends so the app can open its analysis.
+                if phase.as_deref() == Some("InProgress") || (last_game_id.is_none() && phase.as_deref().is_some_and(|p| GAME_PHASES.contains(&p))) {
+                    last_game_id = current_game_id(&api).await.or(last_game_id);
+                }
+            }
             SUMMONER_PATH => summoner = serde_json::from_value(event.data).ok(),
             // A Delete event carries no data, which parses to None.
             champ_select::SESSION_PATH => {
@@ -151,7 +185,7 @@ async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credenti
             }
             _ => continue,
         }
-        publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone() });
+        publish(app, LcuStatus::Connected { summoner: summoner.clone(), phase: phase.clone(), last_game_id });
     }
     Ok(())
 }

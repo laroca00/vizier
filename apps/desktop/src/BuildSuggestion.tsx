@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getBuild, type Build } from "./api";
 import {
@@ -13,6 +13,7 @@ import {
   type RuneStyle,
   type SummonerSpell,
 } from "./data/ddragon";
+import { useSettings } from "./settings";
 import { useAsync } from "./useAsync";
 
 const FLASH = 4;
@@ -59,12 +60,27 @@ type Props = {
   championName: string;
   position: string | null;
   currentSpells: [number, number];
+  /** Auto-import waits for the pick to be locked. */
+  locked: boolean;
 };
 
-export function BuildSuggestion({ championId, championName, position, currentSpells }: Props) {
+export function BuildSuggestion({ championId, championName, position, currentSpells, locked }: Props) {
   const [state, retry] = useAsync(`${championId}:${position}`, () => load(championId, position));
   const [runeImport, setRuneImport] = useState<ImportState>({ status: "idle" });
   const [spellImport, setSpellImport] = useState<ImportState>({ status: "idle" });
+  const [itemImport, setItemImport] = useState<ImportState>({ status: "idle" });
+  const settings = useSettings();
+  const autoImported = useRef<number | null>(null);
+  const actions = useRef<{ runes?: () => void; spells?: () => void; items?: () => void }>({});
+
+  const ready = state.status === "done" && state.value.build !== null && state.value.build.runes.length > 0;
+  useEffect(() => {
+    if (!locked || !ready || !isTauri() || autoImported.current === championId) return;
+    autoImported.current = championId;
+    if (settings.autoImportRunes) actions.current.runes?.();
+    if (settings.autoImportSpells) actions.current.spells?.();
+    if (settings.autoImportItems) actions.current.items?.();
+  }, [locked, ready, championId, settings.autoImportRunes, settings.autoImportSpells, settings.autoImportItems]);
 
   if (state.status === "error") {
     return (
@@ -125,6 +141,21 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
     }
   }
 
+  async function importItems() {
+    setItemImport({ status: "working" });
+    try {
+      await invoke("import_item_set", {
+        championId,
+        title: `Vizier ${championName}`,
+        blocks: [{ title: "Vizier: sık alınan eşyalar", items: shownItems.map((i) => i.id) }],
+      });
+      setItemImport({ status: "done", message: "Eşya seti aktarıldı" });
+    } catch {
+      setItemImport({ status: "error", message: "Eşya seti aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene." });
+    }
+  }
+
+  actions.current = { runes: () => importRunes(), spells: spells ? importSpells : undefined, items: shownItems.length ? importItems : undefined };
   const canImport = isTauri();
 
   return (
@@ -190,6 +221,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
               );
             })}
           </div>
+          <ImportControls label="Eşya setini aktar" state={itemImport} disabled={!canImport} onImport={importItems} />
         </section>
       )}
     </div>

@@ -79,6 +79,7 @@ export async function getBuild(championId: number, position: string | null): Pro
 }
 
 export type Coaching = {
+  source?: "rules" | "workers-ai" | "claude";
   headline: string;
   points: { minute: number | null; title: string; detail: string }[];
 };

@@ -96,6 +96,59 @@ pub async fn import_runes(api: &LcuClient, page: &RunePage, replace: Option<i64>
     Ok(RuneImport::Imported)
 }
 
+#[derive(Deserialize, Clone, Debug)]
+pub struct ItemBlock {
+    pub title: String,
+    pub items: Vec<i64>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CurrentSummoner {
+    summoner_id: i64,
+}
+
+/// Replaces our set for `champion_id` inside the player's item set document
+/// and leaves every other set, including other apps', as it was.
+fn merge_item_set(mut document: serde_json::Value, champion_id: i64, title: &str, blocks: &[ItemBlock], uid: &str) -> serde_json::Value {
+    let ours = |set: &serde_json::Value| {
+        set["title"].as_str().is_some_and(|t| t.starts_with(PAGE_PREFIX))
+            && set["associatedChampions"].as_array().is_some_and(|c| c.iter().any(|id| id.as_i64() == Some(champion_id)))
+    };
+    let mut sets: Vec<serde_json::Value> = document["itemSets"].as_array().cloned().unwrap_or_default();
+    sets.retain(|set| !ours(set));
+    sets.push(json!({
+        "uid": uid,
+        "title": title,
+        "type": "custom",
+        "map": "any",
+        "mode": "any",
+        "associatedMaps": [11],
+        "associatedChampions": [champion_id],
+        "blocks": blocks.iter().map(|b| json!({
+            "type": b.title,
+            "items": b.items.iter().map(|id| json!({ "id": id.to_string(), "count": 1 })).collect::<Vec<_>>(),
+        })).collect::<Vec<_>>(),
+        "preferredItemSlots": [],
+        "sortrank": 0,
+        "startedFrom": "blank",
+    }));
+    document["itemSets"] = json!(sets);
+    document
+}
+
+pub async fn import_item_set(api: &LcuClient, champion_id: i64, title: &str, blocks: &[ItemBlock]) -> Result<(), String> {
+    if !title.starts_with(PAGE_PREFIX) {
+        return Err("item set title must start with Vizier".into());
+    }
+    let summoner: CurrentSummoner = api.get("/lol-summoner/v1/current-summoner").await.map_err(|e| e.to_string())?;
+    let path = format!("/lol-item-sets/v1/item-sets/{}/sets", summoner.summoner_id);
+    let document: serde_json::Value = api.get(&path).await.map_err(|e| e.to_string())?;
+    let uid = format!("vizier-{champion_id}");
+    let merged = merge_item_set(document, champion_id, title, blocks, &uid);
+    api.send(Method::PUT, &path, &merged).await.map_err(|e| e.to_string())
+}
+
 pub async fn import_spells(api: &LcuClient, spells: [i64; 2]) -> Result<(), String> {
     let body = json!({ "spell1Id": spells[0], "spell2Id": spells[1] });
     api.send(Method::PATCH, MY_SELECTION_PATH, &body).await.map_err(|e| e.to_string())
@@ -133,6 +186,26 @@ mod tests {
             Target::Ask(vec![PageChoice { id: 2, name: "My Ahri".into() }, PageChoice { id: 3, name: "Jungle".into() }])
         );
         assert_eq!(choose_target(&pages, 2, Some(3)), Target::Overwrite(3));
+    }
+
+    #[test]
+    fn item_sets_keep_other_sets() {
+        let document = json!({
+            "accountId": 1,
+            "timestamp": 5,
+            "itemSets": [
+                { "title": "Vizier Ahri", "associatedChampions": [103] },
+                { "title": "My Ahri", "associatedChampions": [103] },
+                { "title": "Vizier Zed", "associatedChampions": [238] },
+                { "title": "Other app", "associatedChampions": [] }
+            ]
+        });
+        let blocks = [ItemBlock { title: "Core".into(), items: vec![3157, 3020] }];
+        let merged = merge_item_set(document, 103, "Vizier Ahri", &blocks, "vizier-103");
+        let titles: Vec<&str> = merged["itemSets"].as_array().unwrap().iter().map(|s| s["title"].as_str().unwrap()).collect();
+        assert_eq!(titles, ["My Ahri", "Vizier Zed", "Other app", "Vizier Ahri"]);
+        assert_eq!(merged["accountId"], 1);
+        assert_eq!(merged["itemSets"][3]["blocks"][0]["items"][1]["id"], "3020");
     }
 
     #[test]

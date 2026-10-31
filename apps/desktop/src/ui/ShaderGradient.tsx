@@ -15,11 +15,13 @@ export type ShaderGradientProps = {
   reflection?: number;
   /** Canvas pixels per CSS pixel. */
   resolution?: number;
+  /** Holds the current frame, e.g. while a game is running. */
+  paused?: boolean;
   fps?: number;
   className?: string;
 };
 
-type Uniforms = Omit<ShaderGradientProps, "resolution" | "fps" | "className">;
+type Uniforms = Omit<ShaderGradientProps, "resolution" | "fps" | "className" | "paused">;
 
 const vertexSource = `
 attribute vec2 aPosition;
@@ -91,11 +93,14 @@ export function ShaderGradient({
   reflection = 0.1,
   resolution = 0.5,
   fps = 30,
+  paused = false,
   className,
 }: ShaderGradientProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const uniformsRef = useRef<Uniforms>({ colors });
   const redrawRef = useRef<(() => void) | null>(null);
+  const pausedRef = useRef(paused);
+  const restartRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     uniformsRef.current = { colors, density, strength, speed, rotation, offset, brightness, reflection };
@@ -173,7 +178,7 @@ export function ShaderGradient({
 
     function start() {
       cancelAnimationFrame(frame);
-      if (reducedMotion.matches) {
+      if (reducedMotion.matches || pausedRef.current) {
         redrawRef.current = () => draw(1);
         draw(1);
       } else {
@@ -202,6 +207,7 @@ export function ShaderGradient({
     if (!init()) return;
     observer.observe(canvas);
     start();
+    restartRef.current = start;
     reducedMotion.addEventListener("change", start);
     canvas.addEventListener("webglcontextlost", onContextLost);
     canvas.addEventListener("webglcontextrestored", onContextRestored);
@@ -213,12 +219,18 @@ export function ShaderGradient({
       canvas.removeEventListener("webglcontextlost", onContextLost);
       canvas.removeEventListener("webglcontextrestored", onContextRestored);
       redrawRef.current = null;
+      restartRef.current = null;
       if (gl && !gl.isContextLost()) {
         gl.deleteBuffer(buffer);
         gl.deleteProgram(program);
       }
     };
   }, [resolution, fps]);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+    restartRef.current?.();
+  }, [paused]);
 
   return (
     <canvas
