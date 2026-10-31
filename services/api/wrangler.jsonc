@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vizier-api",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  // Clears expired cache rows once a day.
+  "triggers": { "crons": ["0 4 * * *"] },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "vizier",
+      // Replaced with the real id after `wrangler d1 create vizier`.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

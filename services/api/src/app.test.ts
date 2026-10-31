@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createApp } from "./app.ts";
 import { RiotError, type RiotClient } from "./riot/client.ts";
+import { MemoryStore } from "./store.ts";
 
 const PUUID = "x".repeat(78);
 
@@ -14,7 +15,7 @@ function fakeRiot(routes: Record<string, unknown>) {
       return value ?? null;
     },
   } as unknown as RiotClient;
-  return { app: createApp(riot), calls };
+  return { app: createApp(riot, new MemoryStore()), calls };
 }
 
 describe("api", () => {
@@ -64,7 +65,7 @@ describe("api", () => {
   });
 
   it("caches match documents", async () => {
-    const match = { metadata: { matchId: "TR1_9", participants: [] }, info: {} };
+    const match = { metadata: { matchId: "TR1_9", participants: [] }, info: { participants: [] } };
     const { app, calls } = fakeRiot({ "/lol/match/v5/matches/TR1_9": match });
     await app.request("/v1/matches/TR1_9");
     const response = await app.request("/v1/matches/TR1_9");

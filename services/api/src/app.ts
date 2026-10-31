@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
-import { Cache } from "./cache.ts";
 import { RiotError, type RiotClient } from "./riot/client.ts";
 import type { Account, LeagueEntry, Match, Summoner } from "./riot/types.ts";
+import type { Store } from "./store.ts";
 
 const MINUTE = 60_000;
 const QUEUES = new Set([400, 420, 440, 450, 490, 1700]);
@@ -21,12 +21,25 @@ function badRequest(message: string): never {
   throw new HTTPException(400, { message });
 }
 
-export function createApp(riot: RiotClient) {
-  const accounts = new Cache<Account | null>(10_000);
-  const profiles = new Cache<unknown>(10_000);
-  const matchIds = new Cache<string[] | null>(10_000);
-  // Match documents never change once a game is over.
-  const matches = new Cache<Match | null>(5_000);
+export function createApp(riot: RiotClient, store: Store) {
+  // Concurrent misses for the same key share one Riot call.
+  const pending = new Map<string, Promise<unknown>>();
+
+  async function cached<T>(key: string, ttlMs: number, load: () => Promise<T>): Promise<T> {
+    const hit = await store.getCached<T>(key);
+    if (hit !== undefined) return hit;
+    let promise = pending.get(key) as Promise<T> | undefined;
+    if (!promise) {
+      promise = load()
+        .then(async (value) => {
+          await store.putCached(key, value, ttlMs);
+          return value;
+        })
+        .finally(() => pending.delete(key));
+      pending.set(key, promise);
+    }
+    return promise;
+  }
 
   const app = new Hono();
   app.use("/v1/*", cors({ origin: ORIGINS, allowMethods: ["GET"] }));
@@ -38,7 +51,7 @@ export function createApp(riot: RiotClient) {
     if (!GAME_NAME.test(gameName) || !TAG_LINE.test(tagLine)) badRequest("Invalid Riot ID");
 
     const key = `${gameName}#${tagLine}`.toLowerCase();
-    const account = await accounts.getOrLoad(key, 60 * MINUTE, () =>
+    const account = await cached(`account:${key}`, 60 * MINUTE, () =>
       riot.get<Account>(
         "europe",
         "/riot/account/v1/accounts/by-riot-id",
@@ -47,7 +60,7 @@ export function createApp(riot: RiotClient) {
     );
     if (!account) return c.json({ error: "Riot ID not found" }, 404);
 
-    const profile = await profiles.getOrLoad(account.puuid, 5 * MINUTE, async () => {
+    const profile = await cached(`profile:${account.puuid}`, 5 * MINUTE, async () => {
       const [summoner, ranks] = await Promise.all([
         riot.get<Summoner>("tr1", "/lol/summoner/v4/summoners/by-puuid", `/lol/summoner/v4/summoners/by-puuid/${account.puuid}`),
         riot.get<LeagueEntry[]>("tr1", "/lol/league/v4/entries/by-puuid", `/lol/league/v4/entries/by-puuid/${account.puuid}`),
@@ -79,7 +92,7 @@ export function createApp(riot: RiotClient) {
 
     const search = new URLSearchParams({ start: "0", count: String(count) });
     if (queue !== undefined) search.set("queue", String(queue));
-    const ids = await matchIds.getOrLoad(`${puuid}?${search}`, 2 * MINUTE, () =>
+    const ids = await cached(`match-ids:${puuid}?${search}`, 2 * MINUTE, () =>
       riot.get<string[]>(
         "europe",
         "/lol/match/v5/matches/by-puuid/ids",
@@ -92,10 +105,12 @@ export function createApp(riot: RiotClient) {
   app.get("/v1/matches/:matchId", async (c) => {
     const { matchId } = c.req.param();
     if (!MATCH_ID.test(matchId)) badRequest("Invalid match ID");
-    const match = await matches.getOrLoad(matchId, Infinity, () =>
-      riot.get<Match>("europe", "/lol/match/v5/matches", `/lol/match/v5/matches/${matchId}`),
-    );
+    // Match documents never change once a game is over.
+    const stored = await store.getMatch(matchId);
+    if (stored) return c.json(stored);
+    const match = await riot.get<Match>("europe", "/lol/match/v5/matches", `/lol/match/v5/matches/${matchId}`);
     if (!match) return c.json({ error: "Match not found" }, 404);
+    await store.putMatch(match);
     return c.json(match);
   });
 

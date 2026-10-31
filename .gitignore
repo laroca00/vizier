@@ -13,3 +13,6 @@ target/
 !.vscode/extensions.json
 .idea/
 .DS_Store
+
+.dev.vars
+.wrangler/

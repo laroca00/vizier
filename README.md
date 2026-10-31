@@ -26,11 +26,25 @@ pnpm dev
 
 ### API service
 
-`services/api` holds the Riot API key and is the only part of Vizier that talks to the Riot Web API. Copy `services/api/.env.example` to `services/api/.env`, add a key from the [Developer Portal](https://developer.riotgames.com), then:
+`services/api` holds the Riot API key and is the only part of Vizier that talks to the Riot Web API. It runs on Cloudflare Workers with a D1 database.
+
+Local run: copy `services/api/.dev.vars.example` to `services/api/.dev.vars` and add a key from the [Developer Portal](https://developer.riotgames.com).
 
 ```sh
-pnpm api   # http://localhost:8787
+pnpm --filter @vizier/api db:migrate   # local D1
+pnpm api                               # http://localhost:8787
 pnpm test
+```
+
+First deploy:
+
+```sh
+cd services/api
+npx wrangler login
+npx wrangler d1 create vizier          # put the printed database_id in wrangler.jsonc
+pnpm db:migrate:remote
+npx wrangler secret put RIOT_API_KEY
+pnpm deploy
 ```
 
 ## Legal

@@ -33,7 +33,8 @@ export class RiotClient {
 
   constructor(options: Options) {
     this.apiKey = options.apiKey;
-    this.fetch = options.fetch ?? fetch;
+    // Workers reject fetch called with any `this` other than the global scope.
+    this.fetch = options.fetch ?? fetch.bind(globalThis);
     this.clock = options.clock ?? systemClock;
     this.limiter = options.limiter ?? new RateLimiter({ clock: this.clock });
   }

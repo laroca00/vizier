@@ -29,23 +29,4 @@ export class Cache<T> {
       this.entries.delete(this.entries.keys().next().value!);
     }
   }
-
-  /** Concurrent misses for the same key share one load. */
-  private pending = new Map<string, Promise<T>>();
-
-  async getOrLoad(key: string, ttlMs: number, load: () => Promise<T>): Promise<T> {
-    const cached = this.get(key);
-    if (cached !== undefined) return cached;
-    let promise = this.pending.get(key);
-    if (!promise) {
-      promise = load()
-        .then((value) => {
-          this.set(key, value, ttlMs);
-          return value;
-        })
-        .finally(() => this.pending.delete(key));
-      this.pending.set(key, promise);
-    }
-    return promise;
-  }
 }
