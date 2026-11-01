@@ -1,28 +1,31 @@
-// Item data from Data Dragon, to tell finished items from components when
-// ordering builds. Fetched once per isolate.
+// Item and champion data from Data Dragon, to tell finished items from
+// components and to name builds and enemy teams.
+import { catalogFrom, type Catalog, type RawChampion, type RawItem } from "./archetypes.ts";
 
 const BASE = "https://ddragon.leagueoflegends.com";
+// The crawler runs for weeks, so a new patch's items must show up without a restart.
+const REFRESH_MS = 6 * 3_600_000;
 
-type RawItem = { into?: string[]; tags?: string[]; consumed?: boolean; gold: { total: number } };
+let cached: { at: number; catalog: Promise<Catalog> } | undefined;
 
-let completeItems: Promise<Set<number>> | undefined;
-
-export function finishedItems(fetcher: typeof fetch = fetch): Promise<Set<number>> {
-  completeItems ??= fetcher(`${BASE}/api/versions.json`)
+export function loadCatalog(fetcher: typeof fetch = fetch, now = Date.now()): Promise<Catalog> {
+  if (cached && now - cached.at < REFRESH_MS) return cached.catalog;
+  const previous = cached;
+  const catalog = fetcher(`${BASE}/api/versions.json`)
     .then((r) => r.json() as Promise<string[]>)
-    .then(([version]) => fetcher(`${BASE}/cdn/${version}/data/en_US/item.json`))
-    .then((r) => r.json() as Promise<{ data: Record<string, RawItem> }>)
-    .then(
-      ({ data }) =>
-        new Set(
-          Object.entries(data)
-            .filter(([, item]) => !item.into?.length && !item.consumed && !item.tags?.includes("Trinket") && item.gold.total >= 900)
-            .map(([id]) => Number(id)),
-        ),
+    .then(([version]) =>
+      Promise.all([
+        fetcher(`${BASE}/cdn/${version}/data/en_US/item.json`).then((r) => r.json() as Promise<{ data: Record<string, RawItem> }>),
+        fetcher(`${BASE}/cdn/${version}/data/en_US/champion.json`).then((r) => r.json() as Promise<{ data: Record<string, RawChampion> }>),
+      ] as const),
     )
+    .then(([items, champions]) => catalogFrom(items.data, champions.data))
     .catch((error) => {
-      completeItems = undefined;
+      // Keep serving the old patch's data rather than failing every rollup.
+      cached = previous;
+      if (previous) return previous.catalog;
       throw error;
     });
-  return completeItems;
+  cached = { at: now, catalog };
+  return catalog;
 }

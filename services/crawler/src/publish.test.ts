@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Crawler } from "../../api/src/crawler.ts";
 import type { RiotClient } from "../../api/src/riot/client.ts";
 import type { Match, Participant } from "../../api/src/riot/types.ts";
+import { emptyCatalog } from "../../api/src/archetypes.ts";
 import { rollup } from "../../api/src/rollup.ts";
 import { sqliteD1 } from "../../api/src/sqliteD1.ts";
 import { publish } from "./publish.ts";
@@ -28,7 +29,7 @@ async function seeded(from: number, count: number, db = sqliteD1()) {
     };
     await crawler.save(match);
   }
-  await rollup(db.db, async () => new Set());
+  await rollup(db.db, async () => emptyCatalog());
   return db;
 }
 

@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { ProCrawler, pruneOldProMatches } from "./pros.ts";
 import type { Hono } from "hono";
 import { createApp, type CoachConfig } from "./app.ts";
+import { loadCatalog } from "./ddragon.ts";
 import { pruneOldPatches } from "./crawler.ts";
 import { RiotClient } from "./riot/client.ts";
 import { D1Store } from "./store.ts";
@@ -62,8 +63,13 @@ export default {
     if (url.pathname.startsWith("/updates/")) return serveUpdate(env, url.pathname.slice("/updates/".length));
     const client = riotFor(env);
     if (!client) return Response.json({ error: "RIOT_API_KEY is not set" }, { status: 500 });
-    app ??= createApp(client, new D1Store(env.DB), { statsDb: env.DB, claude: coachFor(env), ai: env.AI, arenaAugments: env.ARENA_AUGMENTS === "approved",
+    app ??= createApp(client, new D1Store(env.DB), {
+      statsDb: env.DB,
+      claude: coachFor(env),
+      ai: env.AI,
+      arenaAugments: env.ARENA_AUGMENTS === "approved",
       mayhemAugments: env.MAYHEM_AUGMENTS === "on",
+      catalog: () => loadCatalog(),
     });
     return app.fetch(request, env, ctx);
   },

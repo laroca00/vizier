@@ -1,3 +1,4 @@
+import { buildStyle, type Catalog, type Style } from "./archetypes.ts";
 import { runeKey } from "./crawler.ts";
 import { PRO_PLAYERS, type ProGroup, type ProPlayer } from "./proPlayers.ts";
 import { regionOf, type Platform, type RiotClient } from "./riot/client.ts";
@@ -38,6 +39,8 @@ export type ProBuild = {
   /** Skill slots 1-4 in level-up order. */
   skillOrder: number[];
   purchases: number[];
+  /** What the finished items build towards (crit, AP...), when Data Dragon could be read. */
+  style: Style | null;
 };
 
 const ids = (csv: string | null) => (csv ? csv.split(",").filter(Boolean).map(Number) : []);
@@ -199,7 +202,11 @@ type Row = {
 export type ProFilter = { championId?: number; position?: string; team?: string; group?: ProGroup; limit?: number };
 
 /** Newest first. */
-export async function proBuilds(db: D1Database, { championId, position, team, group, limit = 30 }: ProFilter = {}): Promise<ProBuild[]> {
+export async function proBuilds(
+  db: D1Database,
+  { championId, position, team, group, limit = 30 }: ProFilter = {},
+  catalog: Catalog | null = null,
+): Promise<ProBuild[]> {
   const where = [
     championId ? "champion_id = ?" : "",
     position ? "team_position = ?" : "",
@@ -236,6 +243,7 @@ export async function proBuilds(db: D1Database, { championId, position, team, gr
     startItems: ids(r.start_items),
     skillOrder: r.skill_order ? [...r.skill_order].map(Number) : [],
     purchases: ids(r.purchase_order),
+    style: catalog ? buildStyle(ids(r.items), catalog) : null,
   }));
 }
 

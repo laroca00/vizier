@@ -1,5 +1,6 @@
+import { buildStyle, foeProfiles, type Catalog } from "./archetypes.ts";
 import { maxOrder } from "./builds.ts";
-import { finishedItems } from "./ddragon.ts";
+import { loadCatalog } from "./ddragon.ts";
 
 const RANKED_SOLO = 420;
 const CHUNK = 5000;
@@ -55,7 +56,7 @@ class Tally {
 const ids = (csv: string) => csv.split(",").filter(Boolean).map(Number);
 
 /** What a row adds to its champion's build, as [kind, value] pairs. */
-function buildChoices(row: Raw, finished: Set<number> | null): [string, string][] {
+function buildChoices(row: Raw, finished: Set<number>): [string, string][] {
   const choices: [string, string][] = [
     ["rune", row.runes],
     ["spell", row.spells],
@@ -66,7 +67,7 @@ function buildChoices(row: Raw, finished: Set<number> | null): [string, string][
   if (row.start_items) choices.push(["start", ids(row.start_items).sort((a, b) => a - b).join(",")]);
   choices.push(["skill", `${maxOrder(row.skill_order).join("")}|${row.skill_order.slice(0, 3)}`]);
   const core: number[] = [];
-  for (const id of ids(row.purchase_order ?? "")) if (finished?.has(id) && !core.includes(id) && core.length < CORE_ITEMS) core.push(id);
+  for (const id of ids(row.purchase_order ?? "")) if (finished.has(id) && !core.includes(id) && core.length < CORE_ITEMS) core.push(id);
   if (core.length === CORE_ITEMS) choices.push(["core", core.join(",")]);
   return choices;
 }
@@ -92,10 +93,10 @@ function upserts(db: D1Database, tally: Tally) {
  * Folds participant rows added since the last run into stat_counts. Each
  * chunk and its watermark commit together, so a crash never counts a row twice.
  */
-export async function rollup(db: D1Database, loadFinished: () => Promise<Set<number>> = finishedItems): Promise<number> {
+export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> = loadCatalog): Promise<number> {
   await rollupMatches(db);
   let rolled = 0;
-  let finished: Set<number> | null = null;
+  let catalog: Catalog | null = null;
   for (;;) {
     const from = await watermark(db, "rolled_participants");
     const { results } = await db
@@ -113,14 +114,20 @@ export async function rollup(db: D1Database, loadFinished: () => Promise<Set<num
       const last = results[results.length - 1].match_id;
       rows = results.filter((r) => r.match_id !== last);
     }
-    if (rows.some((r) => r.purchase_order)) finished ??= await loadFinished();
+    catalog ??= await catalogOf();
 
     const tally = new Tally();
     const teams = new Map<string, Raw[]>();
     for (const row of rows) {
       tally.add(row, "games", "", row.win);
-      const choices = buildChoices(row, finished);
+      const choices = buildChoices(row, catalog.finished);
       for (const [kind, value] of choices) tally.add(row, kind, value, row.win);
+      // Each build style gets its own runes, items and skills: AP Kai'Sa is not crit Kai'Sa.
+      const style = buildStyle(ids(row.items), catalog);
+      if (style) {
+        tally.add(row, "style", style, row.win);
+        for (const [kind, value] of choices) tally.add(row, `s-${kind}`, `${style}|${value}`, row.win);
+      }
       if (row.queue_id === RANKED_SOLO && row.opponent_champion_id) {
         const opponent = row.opponent_champion_id;
         tally.add(row, "opponent", String(opponent), row.win);
@@ -135,9 +142,17 @@ export async function rollup(db: D1Database, loadFinished: () => Promise<Set<num
         teams.set(team, [...(teams.get(team) ?? []), row]);
       }
     }
-    for (const team of teams.values()) {
+    for (const [key, team] of teams) {
+      const [match, side] = key.split(":");
+      const enemies = (teams.get(`${match}:${side === "100" ? 200 : 100}`) ?? []).map((r) => r.champion_id);
+      const foes = foeProfiles(enemies, catalog);
       for (const me of team) {
         for (const ally of team) if (ally !== me) tally.add(me, "ally", `${ally.champion_id}:${ally.team_position}`, me.win);
+        // Items bought against magic-heavy, physical-heavy or tanky teams, for situational picks.
+        for (const foe of foes) {
+          tally.add(me, "foe", foe, me.win);
+          for (const id of new Set(ids(me.items))) tally.add(me, "foe-item", `${foe}|${id}`, me.win);
+        }
       }
     }
     await db.batch([...upserts(db, tally), setWatermark(db, "rolled_participants", rows[rows.length - 1].rowid)]);

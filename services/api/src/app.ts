@@ -2,6 +2,7 @@ import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import type Anthropic from "@anthropic-ai/sdk";
+import type { Catalog } from "./archetypes.ts";
 import { POSITIONS, type Build } from "./builds.ts";
 import { coach, summarize, type Coaching, type CoachMatch, type Timeline } from "./coach.ts";
 import { rewriteWithWorkersAi } from "./coachRewrite.ts";
@@ -55,6 +56,8 @@ export type AppOptions = {
   arenaAugments?: boolean;
   /** ARAM Mayhem augment tiers; off until Riot confirms they may be shown. */
   mayhemAugments?: boolean;
+  /** Data Dragon items, to name pro builds' styles; without it they have none. */
+  catalog?: () => Promise<Catalog>;
 };
 
 export type CoachResult = Coaching & { source: "claude" | "workers-ai" | "rules" };
@@ -77,7 +80,7 @@ function queueOf(value: string | undefined): number {
   return queue;
 }
 
-export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai, arenaAugments = false, mayhemAugments = false }: AppOptions = {}) {
+export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai, arenaAugments = false, mayhemAugments = false, catalog }: AppOptions = {}) {
   // Concurrent misses for the same key share one Riot call.
   const pending = new Map<string, Promise<unknown>>();
 
@@ -231,9 +234,12 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
     const role = queue === 420 ? position : null;
     // A matchup without enough games gets the champion's overall build, as aggregateBuild does.
     const matchups = vs && role && queue === 420 ? await readDoc<Record<number, Build>>(statsDb, docKey.matchupBuilds(championId, role)) : null;
-    const build = matchups?.[vs!] ?? (await readDoc<Build>(statsDb, docKey.build(queue, championId, role)));
-    if (!build) return c.json({ error: "No games for this champion yet" }, 404);
-    return c.json(build);
+    const overall = await readDoc<Build>(statsDb, docKey.build(queue, championId, role));
+    const matchup = matchups?.[vs!];
+    if (!overall && !matchup) return c.json({ error: "No games for this champion yet" }, 404);
+    // Matchups are too thin to split by build style, so they borrow the champion's.
+    if (!matchup) return c.json(overall);
+    return c.json({ ...matchup, variants: overall?.variants ?? [], situational: overall?.situational ?? [] });
   });
 
   /** The champion's doc when it has enough games, else the role's, else an empty answer. */
@@ -344,7 +350,12 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     const key = `pro-builds:${championId ?? "ANY"}:${position ?? "ANY"}:${team ?? "ANY"}:${group ?? "ANY"}:${limit}`;
     // Pro games arrive every few minutes; a short cache keeps the list fresh.
-    return c.json({ builds: await cached(key, 5 * MINUTE, () => proBuilds(statsDb, { championId, position, team, group, limit })) });
+    const load = async () => {
+      // A Data Dragon outage costs the style labels, not the list.
+      const items = catalog ? await catalog().catch(() => null) : null;
+      return proBuilds(statsDb, { championId, position, team, group, limit }, items);
+    };
+    return c.json({ builds: await cached(key, 5 * MINUTE, load) });
   });
 
   app.get("/v1/pros/teams", async (c) => {

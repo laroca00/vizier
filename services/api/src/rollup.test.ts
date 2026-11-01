@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { emptyCatalog } from "./archetypes.ts";
 import { createApp } from "./app.ts";
 import { aggregateBuild } from "./builds.ts";
 import { Crawler } from "./crawler.ts";
@@ -12,7 +13,7 @@ import { fakeD1 } from "./test/fakeD1.ts";
 
 const DAY = 86_400_000;
 const noRiot = { get: async () => null } as unknown as RiotClient;
-const noFinishedItems = async () => new Set<number>();
+const noCatalog = async () => emptyCatalog();
 
 const perks = {
   statPerks: { offense: 5008, flex: 5008, defense: 5011 },
@@ -45,10 +46,10 @@ describe("rollup", () => {
   it("counts each row once, however often it runs", async () => {
     const { db } = fakeD1();
     await seed(db, 1, 12);
-    expect(await rollup(db, noFinishedItems)).toBe(24);
-    expect(await rollup(db, noFinishedItems)).toBe(0);
+    expect(await rollup(db, noCatalog)).toBe(24);
+    expect(await rollup(db, noCatalog)).toBe(0);
     await seed(db, 13, 4);
-    await rollup(db, noFinishedItems);
+    await rollup(db, noCatalog);
 
     const tiers = await tierList(db, "MIDDLE");
     expect(tiers.champions.find((c) => c.championId === 103)).toMatchObject({ games: 16, winRate: 0.75 });
@@ -60,7 +61,7 @@ describe("rollup", () => {
     const now = 10 * DAY;
     await seed(db, 1, 12, now - 5 * DAY);
     await seed(db, 13, 12, now - DAY);
-    await rollup(db, noFinishedItems);
+    await rollup(db, noCatalog);
     await pruneRaw(db, now);
 
     const left = sqlite.prepare("SELECT COUNT(DISTINCT match_id) AS n FROM participant_stats").get();
@@ -73,7 +74,7 @@ describe("stat docs", () => {
   it("publishes what the API serves, and the API reads it back", async () => {
     const { db } = fakeD1();
     await seed(db, 1, 20);
-    await rollup(db, noFinishedItems);
+    await rollup(db, noCatalog);
 
     const insert = db.prepare("INSERT INTO stat_docs (key, body, updated_at) VALUES (?, ?, 0)");
     const keys: string[] = [];

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { emptyCatalog } from "./archetypes.ts";
 import { aggregateBuild, maxOrder } from "./builds.ts";
 import type { MatchSummary } from "./coach.ts";
 import { coachByRules } from "./coachRules.ts";
@@ -10,7 +11,7 @@ import { banSuggestions, benchmarks, championOverview, counters, mayhemAugments,
 import { fakeD1 } from "./test/fakeD1.ts";
 import { findHabits, type GameNumbers } from "./trends.ts";
 
-const noFinishedItems = async () => new Set<number>();
+const noCatalog = async () => emptyCatalog();
 
 const perks = {
   statPerks: { offense: 5008, flex: 5008, defense: 5011 },
@@ -41,7 +42,7 @@ async function seed(games: { me: number; them: number; win: boolean; version?: s
     };
     await crawler.save(match);
   }
-  await rollup(db, noFinishedItems);
+  await rollup(db, noCatalog);
   return db;
 }
 
@@ -138,7 +139,7 @@ describe("pace", () => {
       const timeline = { info: { frames: [0, 1, 2].map((m) => frame(m, m * perMinute)) } };
       await crawler.save(match, timeline);
     }
-    await rollup(db, noFinishedItems);
+    await rollup(db, noCatalog);
     const result = await pace(db, "MIDDLE");
     // Both seeded players are mid: minute 1 has 3, 4, 5, 6, 8 and 10 CS.
     expect(result).toMatchObject({ games: 6, championId: null, median: [5.5, 11] });
@@ -194,7 +195,7 @@ describe("synergies and queues", () => {
       };
       await crawler.save(match);
     }
-    await rollup(db, noFinishedItems);
+    await rollup(db, noCatalog);
     const result = await synergies(db, 103, "MIDDLE");
     expect(result.allies).toEqual([
       { championId: 64, position: "JUNGLE", games: 10, winRate: 0.8 },
@@ -212,7 +213,7 @@ describe("synergies and queues", () => {
       };
       await crawler.save(match);
     }
-    await rollup(db, noFinishedItems);
+    await rollup(db, noCatalog);
     expect((await tierList(db, "MIDDLE")).champions).toEqual([]);
     expect(await aggregateBuild(db, 103, null, null)).toBeNull();
     const aram = await tierList(db, "", 450);
@@ -239,7 +240,7 @@ describe("ARAM Mayhem augments", () => {
       };
       await crawler.save(match);
     }
-    await rollup(db, noFinishedItems);
+    await rollup(db, noCatalog);
     const result = await mayhemAugments(db);
     expect(result.games).toBe(24);
     expect(result.augments).toEqual([

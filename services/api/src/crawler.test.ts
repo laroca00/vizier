@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { emptyCatalog } from "./archetypes.ts";
 import { aggregateBuild, parseRuneKey } from "./builds.ts";
 import { Crawler, pruneOldPatches, runeKey } from "./crawler.ts";
 import type { RiotClient } from "./riot/client.ts";
@@ -148,7 +149,7 @@ describe("aggregateBuild", () => {
     await crawler.save(match("TR1_1", [participant(103, true)]));
     await crawler.save(match("TR1_2", [participant(103, true)]));
     await crawler.save(match("TR1_3", [participant(103, false, { perks: perks(8128), item1: 6655 })]));
-    await rollup(db, async () => new Set());
+    await rollup(db, async () => emptyCatalog());
 
     const build = await aggregateBuild(db, 103, "MIDDLE");
     expect(build).toMatchObject({ patches: ["16.21"], games: 3, winRate: 0.667 });
