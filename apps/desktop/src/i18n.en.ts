@@ -190,6 +190,7 @@ export const EN: Record<string, string> = {
   "LCK takımları ve BrokenBlade": "LCK teams and BrokenBlade",
   "Türk oyuncular": "Turkish players",
   "TCL'de oynayan ve oynamış Türk oyuncular": "Turkish players, current and former TCL",
+  "KR, EUW ve TR'de en yüksek LP'li oyuncular, her gün güncellenir": "The highest LP players in KR, EUW and TR, updated daily",
   "Pro maçları": "Pro games",
   "Pro'lar bu şampiyonu nasıl oynadı": "How pros played this champion",
   "Worlds oyuncularının bu şampiyonla son 30 günde solo kuyruk maçı yok.": "No Worlds player has a solo queue game on this champion in the last 30 days.",

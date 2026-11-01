@@ -239,7 +239,7 @@ export type ProBuild = {
   /** Missing from answers cached before styles existed. */
   style?: BuildStyle | null;
 };
-export type ProGroup = "worlds" | "turkey";
+export type ProGroup = "worlds" | "turkey" | "challenger";
 export type ProFilter = { championId?: number; position?: string; team?: string; group?: ProGroup; limit?: number };
 
 export async function getProBuilds(filter: ProFilter): Promise<ProBuild[]> {

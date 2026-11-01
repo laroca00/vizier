@@ -11,6 +11,7 @@ const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
 const GROUPS: { id: ProGroup; label: string; note: string }[] = [
   { id: "worlds", label: "Worlds 2026", note: "LCK takımları ve BrokenBlade" },
   { id: "turkey", label: "Türk oyuncular", note: "TCL'de oynayan ve oynamış Türk oyuncular" },
+  { id: "challenger", label: "Challenger", note: "KR, EUW ve TR'de en yüksek LP'li oyuncular, her gün güncellenir" },
 ];
 
 export function ProsPage() {
