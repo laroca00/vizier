@@ -1,6 +1,6 @@
 [package]
 name = "vizier"
-version = "0.3.0"
+version = "0.4.0"
 description = "League of Legends companion app"
 authors = ["Tuğberk Akkurt"]
 edition = "2024"
