@@ -41,6 +41,15 @@ describe("RateLimiter", () => {
     expect(clock.slept).toEqual([1000]);
   });
 
+  it("keeps the rest of the key's limit for others with a share", async () => {
+    const clock = fakeClock();
+    const limiter = new RateLimiter({ appLimits: "10:1", appShare: 0.5, clock });
+    for (let i = 0; i < 5; i++) await limiter.acquire("europe", "m");
+    expect(clock.slept).toEqual([]);
+    await limiter.acquire("europe", "m");
+    expect(clock.slept).toEqual([1000]);
+  });
+
   it("counts routing values separately", async () => {
     const clock = fakeClock();
     const limiter = new RateLimiter({ appLimits: "1:1", clock });

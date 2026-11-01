@@ -3,11 +3,14 @@ import { aggregateBuild, maxOrder } from "./builds.ts";
 import type { MatchSummary } from "./coach.ts";
 import { coachByRules } from "./coachRules.ts";
 import { Crawler } from "./crawler.ts";
+import { rollup } from "./rollup.ts";
 import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { banSuggestions, benchmarks, championOverview, counters, mayhemAugments, pace, quantiles, rankOf, synergies, tierList } from "./stats.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 import { findHabits, type GameNumbers } from "./trends.ts";
+
+const noFinishedItems = async () => new Set<number>();
 
 const perks = {
   statPerks: { offense: 5008, flex: 5008, defense: 5011 },
@@ -38,6 +41,7 @@ async function seed(games: { me: number; them: number; win: boolean; version?: s
     };
     await crawler.save(match);
   }
+  await rollup(db, noFinishedItems);
   return db;
 }
 
@@ -80,9 +84,9 @@ describe("benchmarks, tiers and bans", () => {
       ...Array.from({ length: 20 }, () => ({ me: 103, them: 238, win: true })),
       ...Array.from({ length: 3 }, () => ({ me: 103, them: 84, win: false })),
     ]);
-    const vsZed = await aggregateBuild(db, 103, "MIDDLE", 238, async () => new Set());
+    const vsZed = await aggregateBuild(db, 103, "MIDDLE", 238);
     expect(vsZed).toMatchObject({ vs: 238, games: 20, winRate: 1 });
-    const vsAkali = await aggregateBuild(db, 103, "MIDDLE", 84, async () => new Set());
+    const vsAkali = await aggregateBuild(db, 103, "MIDDLE", 84);
     expect(vsAkali).toMatchObject({ vs: null, games: 23 });
   });
 });
@@ -134,6 +138,7 @@ describe("pace", () => {
       const timeline = { info: { frames: [0, 1, 2].map((m) => frame(m, m * perMinute)) } };
       await crawler.save(match, timeline);
     }
+    await rollup(db, noFinishedItems);
     const result = await pace(db, "MIDDLE");
     // Both seeded players are mid: minute 1 has 3, 4, 5, 6, 8 and 10 CS.
     expect(result).toMatchObject({ games: 6, championId: null, median: [5.5, 11] });
@@ -189,6 +194,7 @@ describe("synergies and queues", () => {
       };
       await crawler.save(match);
     }
+    await rollup(db, noFinishedItems);
     const result = await synergies(db, 103, "MIDDLE");
     expect(result.allies).toEqual([
       { championId: 64, position: "JUNGLE", games: 10, winRate: 0.8 },
@@ -206,8 +212,9 @@ describe("synergies and queues", () => {
       };
       await crawler.save(match);
     }
+    await rollup(db, noFinishedItems);
     expect((await tierList(db, "MIDDLE")).champions).toEqual([]);
-    expect(await aggregateBuild(db, 103, null, null, async () => new Set())).toBeNull();
+    expect(await aggregateBuild(db, 103, null, null)).toBeNull();
     const aram = await tierList(db, "", 450);
     expect(aram.champions.map((c) => [c.championId, c.tier])).toEqual([[103, "S"], [238, "D"]]);
     expect((await championOverview(db, 103, null, 450))?.games).toBe(12);
@@ -232,6 +239,7 @@ describe("ARAM Mayhem augments", () => {
       };
       await crawler.save(match);
     }
+    await rollup(db, noFinishedItems);
     const result = await mayhemAugments(db);
     expect(result.games).toBe(24);
     expect(result.augments).toEqual([

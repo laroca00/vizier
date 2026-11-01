@@ -12,9 +12,11 @@ export function parseLimits(header: string | null): { value: number; seconds: nu
 class Bucket {
   windows: Window[] = [];
   blockedUntil = 0;
+  /** Fraction of each limit this bucket may use. */
+  share = 1;
 
   setLimits(header: string | null, counts: string | null, now: number) {
-    const limits = parseLimits(header);
+    const limits = parseLimits(header).map(({ value, seconds }) => ({ value: Math.max(1, Math.floor(value * this.share)), seconds }));
     if (limits.length === 0) return;
     const used = new Map(parseLimits(counts).map((c) => [c.seconds, c.value]));
     this.windows = limits.map(({ value, seconds }) => {
@@ -62,18 +64,27 @@ export class RateLimiter {
   private buckets = new Map<string, Bucket>();
   private clock: Clock;
   private defaultAppLimits: string;
+  private appShare: number;
 
-  constructor(options: { appLimits?: string; clock?: Clock } = {}) {
+  /**
+   * `appShare` below 1 leaves the rest of the key's app limit to other users
+   * of the same key; Riot's counts include their requests, so the share holds.
+   */
+  constructor(options: { appLimits?: string; appShare?: number; clock?: Clock } = {}) {
     this.clock = options.clock ?? systemClock;
     // Development key limits, used until Riot's headers report the real ones.
     this.defaultAppLimits = options.appLimits ?? "20:1,100:120";
+    this.appShare = options.appShare ?? 1;
   }
 
   private bucket(key: string): Bucket {
     let bucket = this.buckets.get(key);
     if (!bucket) {
       bucket = new Bucket();
-      if (key.startsWith("app:")) bucket.setLimits(this.defaultAppLimits, null, this.clock.now());
+      if (key.startsWith("app:")) {
+        bucket.share = this.appShare;
+        bucket.setLimits(this.defaultAppLimits, null, this.clock.now());
+      }
       this.buckets.set(key, bucket);
     }
     return bucket;

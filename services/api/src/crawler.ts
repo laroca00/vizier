@@ -1,4 +1,4 @@
-import type { RiotClient } from "./riot/client.ts";
+import type { Platform, Region, RiotClient } from "./riot/client.ts";
 import { buildPaths, csByMinute, type BuildPath, type Timeline } from "./timeline.ts";
 import { patchOf, type LeagueEntryWithPuuid, type LeagueList, type Match, type Participant } from "./riot/types.ts";
 
@@ -12,21 +12,7 @@ const URF = [900, 1900];
 export const STORED_QUEUES = new Set([RANKED_SOLO, ARAM, MAYHEM, ARENA, ...URF]);
 // Asked for in turns, one per run, from one of that run's players.
 const EXTRA_QUEUES = [ARAM, MAYHEM, ARENA, ...URF];
-// EUW and TR Emerald+ players share one pool; both live on the Europe region,
-// so their games come from the same match-v5 host.
-const SEED_PLATFORMS = ["tr1", "euw1"] as const;
-// Arena writes 16 rows a game; this keeps a run near 100 written rows.
-const EXTRA_MATCHES_PER_RUN = 2;
 const DAY = 86_400_000;
-
-// Sized for the free plans: about 10 Riot calls per run keeps room in a
-// development key's 100 per 2 minutes for app traffic, and 8 matches x 11 rows
-// every 2 minutes stays under D1's 100k written rows a day.
-const PLAYERS_PER_RUN = 2;
-const MATCHES_PER_RUN = 6;
-// A timeline is ~1 MB of JSON; parsing more than a couple per run would push
-// past the free plan's CPU time.
-const TIMELINES_PER_RUN = 2;
 const RESEED_AFTER = DAY;
 const LOOKBACK = 3 * DAY;
 // Remakes end before five minutes and say nothing about a build.
@@ -44,6 +30,33 @@ const DIVISION_PAGES = [
 ] as const;
 
 export type CrawlResult = { seeded: number; matches: number };
+
+export type CrawlOptions = {
+  /** match-v5 host the players' games live on. */
+  region: Region;
+  /** Where the seed players come from; all must belong to `region`. */
+  platforms: Platform[];
+  /** Challenger only, every apex league, or apex plus the top Diamond and Emerald pages. */
+  leagues: "challenger" | "apex" | "emerald+";
+  playersPerRun: number;
+  matchesPerRun: number;
+  /** Games from the other stored queues, on top of ranked. */
+  extraMatchesPerRun: number;
+  timelinesPerRun: number;
+};
+
+// EUW and TR Emerald+ players share one pool; both live on the Europe region.
+// Sized for a Worker on the free plan: about 10 Riot calls a run, and a
+// timeline is ~1 MB of JSON to parse.
+export const EUROPE: CrawlOptions = {
+  region: "europe",
+  platforms: ["tr1", "euw1"],
+  leagues: "emerald+",
+  playersPerRun: 2,
+  matchesPerRun: 6,
+  extraMatchesPerRun: 2,
+  timelinesPerRun: 2,
+};
 
 /** `primary:sub:p1,p2,p3,p4:s1,s2:offense,flex,defense`, or null if incomplete. */
 export function runeKey(perks: Participant["perks"]): string | null {
@@ -68,11 +81,13 @@ export class Crawler {
   private db: D1Database;
   private riot: RiotClient;
   private now: () => number;
+  private options: CrawlOptions;
 
-  constructor(db: D1Database, riot: RiotClient, now: () => number = Date.now) {
+  constructor(db: D1Database, riot: RiotClient, now: () => number = Date.now, options: CrawlOptions = EUROPE) {
     this.db = db;
     this.riot = riot;
     this.now = now;
+    this.options = options;
   }
 
   async run(): Promise<CrawlResult> {
@@ -80,14 +95,15 @@ export class Crawler {
     const matchIds = await this.collectMatchIds();
     let matches = 0;
     let timelines = 0;
+    const { region } = this.options;
     for (const id of matchIds) {
-      const match = await this.riot.get<Match>("europe", "/lol/match/v5/matches", `/lol/match/v5/matches/${id}`);
+      const match = await this.riot.get<Match>(region, "/lol/match/v5/matches", `/lol/match/v5/matches/${id}`);
       if (!match) continue;
       let timeline: Timeline | null = null;
-      if (timelines < TIMELINES_PER_RUN && match.info.queueId === RANKED_SOLO) {
+      if (timelines < this.options.timelinesPerRun && match.info.queueId === RANKED_SOLO) {
         timelines++;
         timeline = await this.riot.get<Timeline>(
-          "europe",
+          region,
           "/lol/match/v5/matches/timeline",
           `/lol/match/v5/matches/${id}/timeline`,
         );
@@ -98,42 +114,48 @@ export class Crawler {
   }
 
   private async seedIfStale(): Promise<number> {
-    const row = await this.db.prepare("SELECT value FROM crawl_state WHERE key = 'seeded_at'").first<{ value: string }>();
+    const { region, platforms, leagues } = this.options;
+    // Europe keeps the key it had before other regions were crawled.
+    const stateKey = region === "europe" ? "seeded_at" : `seeded_at:${region}`;
+    const row = await this.db.prepare("SELECT value FROM crawl_state WHERE key = ?").bind(stateKey).first<{ value: string }>();
     if (row && this.now() - Number(row.value) < RESEED_AFTER) return 0;
 
     const players: { puuid: string; tier: string }[] = [];
-    for (const platform of SEED_PLATFORMS) {
-      for (const [tier, path] of APEX_LEAGUES) {
+    const apex = leagues === "challenger" ? APEX_LEAGUES.slice(0, 1) : APEX_LEAGUES;
+    for (const platform of platforms) {
+      for (const [tier, path] of apex) {
         const league = await this.riot.get<LeagueList>(platform, path, path);
         for (const entry of league?.entries ?? []) players.push({ puuid: entry.puuid, tier });
       }
+      if (leagues !== "emerald+") continue;
       for (const [tier, path] of DIVISION_PAGES) {
         const page = await this.riot.get<LeagueEntryWithPuuid[]>(platform, "/lol/league/v4/entries", path);
         for (const entry of page ?? []) players.push({ puuid: entry.puuid, tier });
       }
     }
 
-    const insert = this.db.prepare("INSERT OR IGNORE INTO crawl_players (puuid, tier) VALUES (?, ?)");
-    const statements = players.filter((p) => p.puuid).map((p) => insert.bind(p.puuid, p.tier));
+    const insert = this.db.prepare("INSERT OR IGNORE INTO crawl_players (puuid, tier, region) VALUES (?, ?, ?)");
+    const statements = players.filter((p) => p.puuid).map((p) => insert.bind(p.puuid, p.tier, region));
     // D1 caps a batch's size; chunk to stay well inside it.
     for (let i = 0; i < statements.length; i += 100) await this.db.batch(statements.slice(i, i + 100));
     await this.db
-      .prepare("INSERT OR REPLACE INTO crawl_state (key, value) VALUES ('seeded_at', ?)")
-      .bind(String(this.now()))
+      .prepare("INSERT OR REPLACE INTO crawl_state (key, value) VALUES (?, ?)")
+      .bind(stateKey, String(this.now()))
       .run();
     return players.length;
   }
 
   private async collectMatchIds(): Promise<string[]> {
+    const { region, playersPerRun, matchesPerRun, extraMatchesPerRun } = this.options;
     const { results: due } = await this.db
-      .prepare("SELECT puuid FROM crawl_players ORDER BY last_crawled_at LIMIT ?")
-      .bind(PLAYERS_PER_RUN)
+      .prepare("SELECT puuid FROM crawl_players WHERE region = ? ORDER BY last_crawled_at LIMIT ?")
+      .bind(region, playersPerRun)
       .all<{ puuid: string }>();
 
     const startTime = Math.floor((this.now() - LOOKBACK) / 1000);
     const ids = (puuid: string, queue: number, count: number) =>
       this.riot.get<string[]>(
-        "europe",
+        region,
         "/lol/match/v5/matches/by-puuid/ids",
         `/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=${queue}&startTime=${startTime}&start=0&count=${count}`,
       );
@@ -161,7 +183,7 @@ export class Crawler {
     const seen = new Set(known.map((k) => k.match_id));
     const fresh = (set: Set<string>, limit: number) => [...set].filter((id) => !seen.has(id)).slice(0, limit);
     for (const id of candidates) extras.delete(id);
-    return [...fresh(candidates, MATCHES_PER_RUN), ...fresh(extras, EXTRA_MATCHES_PER_RUN)];
+    return [...fresh(candidates, matchesPerRun), ...fresh(extras, extraMatchesPerRun)];
   }
 
   /** Returns false for games that carry no build signal. */

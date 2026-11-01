@@ -4,7 +4,7 @@
   "main": "src/worker.ts",
   "compatibility_date": "2026-10-01",
   "observability": { "enabled": true },
-  // Every 2 minutes: crawl ranked games. 04:00 UTC: clear expired cache rows and old patches.
+  // Every 2 minutes: crawl pro players' games. 04:00 UTC: clear expired cache rows and old patches.
   "triggers": { "crons": ["*/2 * * * *", "0 4 * * *"] },
   // Free coach wording; see src/coachRewrite.ts.
   "ai": { "binding": "AI" },

@@ -3,6 +3,7 @@ import { aggregateBuild, parseRuneKey } from "./builds.ts";
 import { Crawler, pruneOldPatches, runeKey } from "./crawler.ts";
 import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
+import { rollup } from "./rollup.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
 const DAY = 86_400_000;
@@ -102,6 +103,27 @@ describe("Crawler", () => {
   });
 });
 
+describe("Crawler in another region", () => {
+  it("seeds KR Challenger only and asks the Asia host for games", async () => {
+    const { db, sqlite } = fakeD1();
+    const routings: string[] = [];
+    const riot = {
+      get: async (routing: string, _method: string, path: string) => {
+        routings.push(`${routing} ${path.split("?")[0]}`);
+        if (path.includes("challengerleagues")) return { entries: [{ puuid: "k" }] };
+        if (path.includes("/ids?")) return path.includes("queue=420") ? ["KR_1"] : [];
+        if (path.endsWith("KR_1")) return match("KR_1", [participant(103, true)]);
+        return null;
+      },
+    } as unknown as RiotClient;
+    const options = { region: "asia", platforms: ["kr"], leagues: "challenger", playersPerRun: 5, matchesPerRun: 5, extraMatchesPerRun: 0, timelinesPerRun: 0 } as const;
+    expect(await new Crawler(db, riot, () => DAY, { ...options, platforms: [...options.platforms] }).run()).toEqual({ seeded: 1, matches: 1 });
+    expect(routings.filter((r) => r.includes("league"))).toEqual(["kr /lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5"]);
+    expect(routings.filter((r) => r.includes("/match/")).every((r) => r.startsWith("asia "))).toBe(true);
+    expect(sqlite.prepare("SELECT puuid, region FROM crawl_players").all()).toEqual([{ puuid: "k", region: "asia" }]);
+  });
+});
+
 describe("buildPaths", () => {
   it("reads starting items, skill order and purchases net of undos", async () => {
     const { buildPaths } = await import("./timeline.ts");
@@ -126,6 +148,7 @@ describe("aggregateBuild", () => {
     await crawler.save(match("TR1_1", [participant(103, true)]));
     await crawler.save(match("TR1_2", [participant(103, true)]));
     await crawler.save(match("TR1_3", [participant(103, false, { perks: perks(8128), item1: 6655 })]));
+    await rollup(db, async () => new Set());
 
     const build = await aggregateBuild(db, 103, "MIDDLE");
     expect(build).toMatchObject({ patches: ["16.21"], games: 3, winRate: 0.667 });

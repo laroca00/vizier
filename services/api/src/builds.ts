@@ -1,5 +1,3 @@
-import { finishedItems } from "./ddragon.ts";
-
 // Below this many games a newest patch is too thin, so older stored patches join in.
 const MIN_GAMES_FOR_PATCH = 30;
 // Below this many games a matchup says more about luck than the matchup.
@@ -7,7 +5,6 @@ const MIN_MATCHUP_GAMES = 15;
 const TOP_RUNES = 3;
 const TOP_SPELLS = 2;
 const TOP_ITEMS = 15;
-const CORE_ITEMS = 3;
 
 export const POSITIONS = new Set(["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"]);
 
@@ -56,111 +53,95 @@ export function maxOrder(skillOrder: string): number[] {
 
 const rate = (wins: number, games: number) => (games ? Math.round((wins / games) * 1000) / 1000 : 0);
 
-type Row = {
-  win: number;
-  runes: string;
-  spells: string;
-  items: string;
-  start_items: string | null;
-  skill_order: string | null;
-  purchase_order: string | null;
-};
-
-function tally(rows: Row[], key: (row: Row) => string[]) {
-  const counts = new Map<string, { games: number; wins: number }>();
-  for (const row of rows) {
-    for (const k of key(row)) {
-      const c = counts.get(k) ?? { games: 0, wins: 0 };
-      c.games++;
-      c.wins += row.win;
-      counts.set(k, c);
-    }
-  }
-  return [...counts.entries()].sort((a, b) => b[1].games - a[1].games);
-}
-
 const ids = (csv: string) => csv.split(",").filter(Boolean).map(Number);
 
+type Count = { kind: string; value: string; games: number; wins: number };
+
+/**
+ * The most picked runes, spells and items for a champion, from rolled-up
+ * counts. Starting items, core items and skills come from the games that had
+ * a timeline. With `vs`, the numbers are for that lane matchup when it has
+ * enough games.
+ */
 export async function aggregateBuild(
   db: D1Database,
   championId: number,
   position: string | null,
   vs: number | null = null,
-  loadFinished: () => Promise<Set<number>> = finishedItems,
   queue = 420,
 ): Promise<Build | null> {
   const { results: patchRows } = await db
-    .prepare("SELECT patch FROM crawled_matches GROUP BY patch ORDER BY MAX(game_start) DESC")
+    .prepare("SELECT patch FROM stat_matches GROUP BY patch ORDER BY MAX(last_start) DESC")
     .all<{ patch: string }>();
   if (patchRows.length === 0) return null;
 
-  const query = (patches: string[], opponent: number | null) => {
-    const filters = ["AND queue_id = ?", position ? "AND team_position = ?" : "", opponent ? "AND opponent_champion_id = ?" : ""].join(" ");
-    return db
+  const query = (patches: string[], kinds: string, extra: string, binds: unknown[]) =>
+    db
       .prepare(
-        `SELECT win, runes, spells, items, start_items, skill_order, purchase_order FROM participant_stats
-          WHERE patch IN (${patches.map(() => "?").join(",")}) AND champion_id = ? ${filters}`,
+        `SELECT kind, value, SUM(games) AS games, SUM(wins) AS wins FROM stat_counts
+          WHERE patch IN (${patches.map(() => "?").join(",")}) AND queue_id = ? AND champion_id = ?
+            ${position ? "AND team_position = ?" : ""} AND kind IN (${kinds}) ${extra}
+          GROUP BY kind, value ORDER BY games DESC, value`,
       )
-      .bind(...patches, championId, queue, ...(position ? [position] : []), ...(opponent ? [opponent] : []))
-      .all<Row>();
+      .bind(...patches, queue, championId, ...(position ? [position] : []), ...binds)
+      .all<Count>();
+
+  const gamesIn = async (patches: string[], opponent: number | null) => {
+    const { results } = opponent
+      ? await query(patches, "'opponent'", "AND value = ?", [String(opponent)])
+      : await query(patches, "'games'", "", []);
+    return results.reduce((sum, r) => ({ games: sum.games + r.games, wins: sum.wins + r.wins }), { games: 0, wins: 0 });
   };
 
   const load = async (opponent: number | null) => {
     let patches = [patchRows[0].patch];
-    let { results } = await query(patches, opponent);
-    if (results.length < MIN_GAMES_FOR_PATCH && patchRows.length > 1) {
+    let total = await gamesIn(patches, opponent);
+    if (total.games < MIN_GAMES_FOR_PATCH && patchRows.length > 1) {
       patches = patchRows.map((p) => p.patch);
-      ({ results } = await query(patches, opponent));
+      total = await gamesIn(patches, opponent);
     }
-    return { patches, rows: results };
+    return { patches, total };
   };
 
   let used: number | null = vs;
-  let { patches, rows } = await load(vs);
-  if (vs && rows.length < MIN_MATCHUP_GAMES) {
+  let { patches, total } = await load(vs);
+  if (vs && total.games < MIN_MATCHUP_GAMES) {
     used = null;
-    ({ patches, rows } = await load(null));
+    ({ patches, total } = await load(null));
   }
-  if (rows.length === 0) return null;
+  if (total.games === 0) return null;
 
-  const choice = <T>(top: [string, { games: number; wins: number }] | undefined, shape: (key: string) => T) =>
-    top ? { ...shape(top[0]), games: top[1].games, winRate: rate(top[1].wins, top[1].games) } : null;
+  // Matchup counts carry the opponent in front of the value: "238|8112:8000:...".
+  const kinds = ["rune", "spell", "item", "start", "core", "skill"];
+  const { results } = used
+    ? await query(patches, kinds.map((k) => `'vs-${k}'`).join(","), "AND value >= ? AND value < ?", [`${used}|`, `${used}}`])
+    : await query(patches, kinds.map((k) => `'${k}'`).join(","), "", []);
+  const top = (kind: string) =>
+    results
+      .filter((r) => r.kind === (used ? `vs-${kind}` : kind))
+      .map((r) => ({ ...r, value: used ? r.value.slice(r.value.indexOf("|") + 1) : r.value }));
+  const choice = <T>(row: Count | undefined, shape: (value: string) => T) =>
+    row ? { ...shape(row.value), games: row.games, winRate: rate(row.wins, row.games) } : null;
 
-  const withPath = rows.filter((r) => r.skill_order);
-  const finished = withPath.length > 0 ? await loadFinished().catch(() => null) : null;
-  const core = (purchases: string) => {
-    const seen: number[] = [];
-    for (const id of ids(purchases)) if (finished?.has(id) && !seen.includes(id) && seen.length < CORE_ITEMS) seen.push(id);
-    return seen.length === CORE_ITEMS ? [seen.join(",")] : [];
-  };
-
-  const wins = rows.reduce((sum, r) => sum + r.win, 0);
   return {
     patches,
-    games: rows.length,
-    winRate: rate(wins, rows.length),
+    games: total.games,
+    winRate: rate(total.wins, total.games),
     vs: used,
-    runes: tally(rows, (r) => [r.runes])
+    runes: top("rune")
       .slice(0, TOP_RUNES)
-      .map(([key, c]) => ({ ...parseRuneKey(key), games: c.games, winRate: rate(c.wins, c.games) })),
-    spells: tally(rows, (r) => [r.spells])
+      .map((r) => ({ ...parseRuneKey(r.value), games: r.games, winRate: rate(r.wins, r.games) })),
+    spells: top("spell")
       .slice(0, TOP_SPELLS)
-      .map(([key, c]) => ({ ids: ids(key), games: c.games, winRate: rate(c.wins, c.games) })),
-    // An item counts once per game even when bought twice.
-    items: tally(rows, (r) => [...new Set(r.items.split(",").filter(Boolean))])
+      .map((r) => ({ ids: ids(r.value), games: r.games, winRate: rate(r.wins, r.games) })),
+    items: top("item")
       .slice(0, TOP_ITEMS)
-      .map(([id, c]) => ({ id: Number(id), games: c.games, winRate: rate(c.wins, c.games) })),
-    startItems: choice(
-      tally(withPath, (r) => (r.start_items ? [ids(r.start_items).sort((a, b) => a - b).join(",")] : []))[0],
-      (key) => ({ ids: ids(key) }),
-    ),
-    coreItems: finished ? choice(tally(withPath, (r) => core(r.purchase_order ?? ""))[0], (key) => ({ ids: ids(key) })) : null,
-    skills: choice(
-      tally(withPath, (r) => [`${maxOrder(r.skill_order!).join("")}|${r.skill_order!.slice(0, 3)}`])[0],
-      (key) => {
-        const [order, first] = key.split("|");
-        return { maxOrder: [...order].map(Number), firstLevels: [...first].map(Number) };
-      },
-    ),
+      .map((r) => ({ id: Number(r.value), games: r.games, winRate: rate(r.wins, r.games) })),
+    startItems: choice(top("start")[0], (value) => ({ ids: ids(value) })),
+    coreItems: choice(top("core")[0], (value) => ({ ids: ids(value) })),
+    skills: choice(top("skill")[0], (value) => {
+      const [order, first] = value.split("|");
+      return { maxOrder: [...order].map(Number), firstLevels: [...first].map(Number) };
+    }),
   };
 }

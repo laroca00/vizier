@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { ProCrawler, pruneOldProMatches } from "./pros.ts";
 import type { Hono } from "hono";
 import { createApp, type CoachConfig } from "./app.ts";
-import { Crawler, pruneOldPatches } from "./crawler.ts";
+import { pruneOldPatches } from "./crawler.ts";
 import { RiotClient } from "./riot/client.ts";
 import { D1Store } from "./store.ts";
 
@@ -79,8 +79,8 @@ export default {
       return;
     }
     if (!client) return;
-    const result = await new Crawler(env.DB, client).run();
+    // Ranked games are crawled by services/crawler, which publishes stat_docs.
     const pros = await new ProCrawler(env.DB, client).run();
-    console.log(`crawl: seeded ${result.seeded}, saved ${result.matches} matches and ${pros} pro games`);
+    console.log(`crawl: saved ${pros} pro games`);
   },
 } satisfies ExportedHandler<Env>;
