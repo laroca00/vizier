@@ -81,7 +81,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
               />
               <h2 className="draft__heading draft__heading--spaced">Pro'lar</h2>
               <ProBuildList
-                filter={{ championId: shownChampion(me), limit: 3 }}
+                filter={{ championId: shownChampion(me), position: me.position ? me.position.toUpperCase() : undefined, limit: 3 }}
                 compact
                 emptyText={t("Worlds oyuncularının bu şampiyonla son maçı yok.")}
               />

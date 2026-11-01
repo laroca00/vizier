@@ -372,4 +372,5 @@ export const EN: Record<string, string> = {
   "Tab'a basılıyken her oyuncunun karşısındakine göre eşya altını farkı, tablonun ortasında.": "While Tab is held, each player's item gold against the player across, in the middle of the scoreboard.",
   "Seçtiğin build türünde henüz almadığın ilk eşya ve ona kalan altın.": "The first item of your chosen build style you don't own yet, and the gold it still needs.",
   "Son maçlarında koçun bulduğu zayıf nokta, bu maçta canlı takip edilir.": "The weak spot the coach found in your recent games, tracked live in this one.",
+  "{games} maçtan, henüz güvenilir değil": "From {games} games, not reliable yet",
 };

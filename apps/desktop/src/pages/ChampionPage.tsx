@@ -160,7 +160,11 @@ function Overview({ overview, championId, championName, champions, version, queu
         </div>
         <div>
           <dt>{t(winLabel(queue))}</dt>
-          <dd>{percent(overview.winRate)}</dd>
+          <dd>
+            {percent(overview.winRate)}
+            {/* The API ranks a champion from 100 games; below that the rate is shown but flagged. */}
+            {overview.games < 100 && <span className="champion__thin">{t("{games} maçtan, henüz güvenilir değil", { games: overview.games })}</span>}
+          </dd>
         </div>
         <div>
           <dt>{t("Geçen yamaya göre")}</dt>
@@ -198,7 +202,7 @@ function Overview({ overview, championId, championName, champions, version, queu
           <section className="enter champion__pros" aria-label={t("Pro maçları")}>
             <h2 className="draft__heading">{t("Pro'lar bu şampiyonu nasıl oynadı")}</h2>
             <ProBuildList
-              filter={{ championId, limit: 6 }}
+              filter={{ championId, position: position ?? undefined, limit: 6 }}
               compact
               emptyText={t("Worlds oyuncularının bu şampiyonla son 30 günde solo kuyruk maçı yok.")}
             />
