@@ -73,7 +73,8 @@ const RULES: HabitRule[] = [
   },
 ];
 
-export type Habit = { title: string; detail: string };
+/** `target` is the Emerald+ median the habit misses, so the overlay can track it live. */
+export type Habit = { title: string; detail: string; metric: Metric; target: number };
 
 export type Trends = {
   games: number;
@@ -100,7 +101,7 @@ export function findHabits(games: GameNumbers[], benchmarksByPosition: Map<strin
     }
     if (considered >= MIN_GAMES && bad / considered >= HABIT_SHARE) {
       const median = Math.round((medians.reduce((a, b) => a + b, 0) / medians.length) * 100) / 100;
-      habits.push({ title: rule.title, detail: rule.detail(bad, considered, median) });
+      habits.push({ title: rule.title, detail: rule.detail(bad, considered, median), metric: rule.metric, target: median });
     }
   }
   return { games: games.length, wins: games.filter((g) => g.win).length, habits, perGame: games };

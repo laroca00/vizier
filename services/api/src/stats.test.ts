@@ -173,7 +173,7 @@ describe("findHabits", () => {
     const trends = findHabits(games, new Map([["MIDDLE", bench]]));
     expect(trends).toMatchObject({ games: 10, wins: 4 });
     expect(trends.habits).toEqual([
-      { title: "Maç boyunca minyon toplaman düşük", detail: "Son 10 maçın 8 tanesinde dakika başına minyonun Emerald+ medyanı olan 7 değerinin altındaydı." },
+      { title: "Maç boyunca minyon toplaman düşük", detail: "Son 10 maçın 8 tanesinde dakika başına minyonun Emerald+ medyanı olan 7 değerinin altındaydı.", metric: "cs_pm", target: 7 },
     ]);
   });
 });
