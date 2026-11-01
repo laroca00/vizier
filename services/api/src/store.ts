@@ -29,6 +29,18 @@ export class MemoryStore implements Store {
   }
 }
 
+/**
+ * Cache and match writes only save work later. When D1 refuses them (the
+ * free plan's daily write limit, say) the answer still goes out.
+ */
+async function bestEffort(write: Promise<unknown>) {
+  try {
+    await write;
+  } catch (error) {
+    console.error(`store write skipped: ${error instanceof Error ? error.message : error}`);
+  }
+}
+
 export class D1Store implements Store {
   private db: D1Database;
   private now: () => number;
@@ -49,10 +61,9 @@ export class D1Store implements Store {
   async putCached(key: string, value: unknown, ttlMs: number) {
     // D1 stores Infinity as NULL, which the NOT NULL column rejects.
     const expiresAt = Number.isFinite(ttlMs) ? this.now() + ttlMs : Number.MAX_SAFE_INTEGER;
-    await this.db
-      .prepare("INSERT OR REPLACE INTO cache (key, value, expires_at) VALUES (?, ?, ?)")
-      .bind(key, JSON.stringify(value), expiresAt)
-      .run();
+    await bestEffort(
+      this.db.prepare("INSERT OR REPLACE INTO cache (key, value, expires_at) VALUES (?, ?, ?)").bind(key, JSON.stringify(value), expiresAt).run(),
+    );
   }
 
   async getMatch(matchId: string) {
@@ -69,7 +80,7 @@ export class D1Store implements Store {
     const participant = this.db.prepare(
       "INSERT OR IGNORE INTO match_participants (match_id, puuid, champion_id, team_position, win) VALUES (?, ?, ?, ?, ?)",
     );
-    await this.db.batch([
+    await bestEffort(this.db.batch([
       this.db
         .prepare(
           "INSERT OR IGNORE INTO matches (match_id, patch, queue_id, game_start, data, fetched_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -78,7 +89,7 @@ export class D1Store implements Store {
       ...info.participants.map((p) =>
         participant.bind(matchId, p.puuid, p.championId, p.teamPosition, p.win ? 1 : 0),
       ),
-    ]);
+    ]));
   }
 
   /** Expired cache rows are only skipped on read; this clears them out. */

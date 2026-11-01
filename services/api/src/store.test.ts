@@ -58,3 +58,16 @@ describe("D1Store", () => {
     expect(await store.getCached("missing")).toBeNull();
   });
 });
+
+describe("D1Store writes", () => {
+  it("answers even when D1 refuses the cache write", async () => {
+    const refusing = {
+      prepare: () => ({
+        bind: () => ({ run: () => Promise.reject(new Error("D1_ERROR: daily row write limit")) }),
+      }),
+      batch: () => Promise.reject(new Error("D1_ERROR: daily row write limit")),
+    } as unknown as D1Database;
+    const store = new D1Store(refusing);
+    await expect(store.putCached("k", { a: 1 }, 1000)).resolves.toBeUndefined();
+  });
+});
