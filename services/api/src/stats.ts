@@ -13,8 +13,15 @@ export type Benchmarks = { position: string; championId: number | null; patches:
 // Below this many games a champion-specific benchmark is noise; the role's is used instead.
 const MIN_CHAMPION_GAMES = 50;
 // Shrinks small samples towards 50% so a 3-0 champion doesn't top the list.
-const PRIOR_GAMES = 50;
-const MIN_TIER_GAMES = 10;
+export const sampleLimits = {
+  // Win rates are pulled towards 50% as if every champion had this many more
+  // games at even odds, so 17 games at 76% can't outrank 400 at 54%.
+  priorGames: 200,
+  // A champion is ranked in a role only from this many games; below it the rate is mostly luck.
+  tierGames: 100,
+  // Matchups, duos and augments split a champion's games further, so they get a lower bar.
+  pairGames: 30,
+};
 
 export async function latestPatches(db: D1Database, count = 2): Promise<string[]> {
   const { results } = await db
@@ -92,7 +99,7 @@ export type TierEntry = {
   winRateChange: number | null;
 };
 
-const smoothed = (wins: number, games: number) => (wins + PRIOR_GAMES / 2) / (games + PRIOR_GAMES);
+const smoothed = (wins: number, games: number) => (wins + sampleLimits.priorGames / 2) / (games + sampleLimits.priorGames);
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 // Cut-offs on the smoothed win rate, so a tier means the same however many
@@ -130,7 +137,7 @@ export async function tierList(
   }
   const total = [...byChampion.values()].reduce((sum, c) => sum + c.games, 0);
   const entries = [...byChampion.entries()]
-    .filter(([, c]) => c.games >= MIN_TIER_GAMES)
+    .filter(([, c]) => c.games >= sampleLimits.tierGames)
     .map(([championId, c]) => ({
       championId,
       games: c.games,
@@ -144,7 +151,7 @@ export async function tierList(
 
 function patchChange(patches: string[], byPatch: Map<string, { games: number; wins: number }>): number | null {
   const [newest, previous] = patches.map((p) => byPatch.get(p));
-  return newest && previous && newest.games >= MIN_TIER_GAMES && previous.games >= MIN_TIER_GAMES
+  return newest && previous && newest.games >= sampleLimits.tierGames && previous.games >= sampleLimits.tierGames
     ? round3(newest.wins / newest.games - previous.wins / previous.games)
     : null;
 }
@@ -228,7 +235,7 @@ async function banRate(db: D1Database, patches: string[], championId: number): P
       .first<{ games: number | null }>(),
   ]);
   const games = matches?.games ?? 0;
-  if (games < MIN_TIER_GAMES) return null;
+  if (games < sampleLimits.tierGames) return null;
   return round3((banned?.games ?? 0) / games);
 }
 
@@ -252,7 +259,7 @@ export async function counters(
     .bind(...patches, championId, position)
     .all<{ opponent: number; games: number; wins: number }>();
   const matchups = results
-    .filter((r) => r.games >= MIN_TIER_GAMES)
+    .filter((r) => r.games >= sampleLimits.pairGames)
     .map((r) => ({ championId: r.opponent, games: r.games, winRate: round3(r.wins / r.games), score: smoothed(r.wins, r.games) }))
     .sort((a, b) => a.score - b.score)
     .map(({ score: _, ...m }) => m);
@@ -275,7 +282,7 @@ export async function banSuggestions(db: D1Database, limit = 5): Promise<{ patch
   // Each game has ten participants, so this is the share of games a champion appears in.
   const matches = results.reduce((sum, r) => sum + r.games, 0) / 10;
   const champions = results
-    .filter((r) => r.games >= MIN_TIER_GAMES)
+    .filter((r) => r.games >= sampleLimits.tierGames)
     .map((r) => ({
       championId: r.champion_id,
       games: r.games,
@@ -340,7 +347,7 @@ export async function synergies(
     .bind(...patches, championId, position)
     .all<{ value: string; games: number; wins: number }>();
   const allies = results
-    .filter((r) => r.games >= MIN_TIER_GAMES)
+    .filter((r) => r.games >= sampleLimits.pairGames)
     .map((r) => {
       const [ally, allyPosition] = r.value.split(":");
       return { championId: Number(ally), position: allyPosition, games: r.games, winRate: round3(r.wins / r.games), score: smoothed(r.wins, r.games) };
@@ -379,7 +386,7 @@ export async function mayhemAugments(db: D1Database): Promise<{ patches: string[
   if (patches.length === 0) return { patches, games: 0, augments: [] };
   const { games, augments: counts } = await augmentCounts(db, patches, 2400, null);
   const augments = counts
-    .filter((c) => c.games >= MIN_TIER_GAMES)
+    .filter((c) => c.games >= sampleLimits.pairGames)
     .map((c) => ({
       augmentId: c.augmentId,
       games: c.games,
@@ -401,7 +408,7 @@ export async function arenaAugments(db: D1Database, championId: number): Promise
   if (patches.length === 0) return { patches, games: 0, augments: [] };
   const { games, augments: counts } = await augmentCounts(db, patches, 1700, championId);
   const augments = counts
-    .filter((c) => c.games >= MIN_TIER_GAMES)
+    .filter((c) => c.games >= sampleLimits.pairGames)
     .map((c) => ({ augmentId: c.augmentId, games: c.games, topFourRate: round3(c.wins / c.games) }))
     .sort((a, b) => b.topFourRate - a.topFourRate);
   return { patches, games, augments };

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { emptyCatalog } from "./archetypes.ts";
 import { createApp } from "./app.ts";
 import { aggregateBuild } from "./builds.ts";
@@ -7,7 +7,7 @@ import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { pruneRaw, rollup } from "./rollup.ts";
 import { docKey, statDocs } from "./statDocs.ts";
-import { tierList } from "./stats.ts";
+import { sampleLimits, tierList } from "./stats.ts";
 import { MemoryStore } from "./store.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
@@ -41,6 +41,9 @@ async function seed(db: D1Database, from: number, count: number, start?: number)
   const crawler = new Crawler(db, noRiot);
   for (let n = from; n < from + count; n++) await crawler.save(game(n, n % 4 !== 0, start));
 }
+
+// The fixtures hold a handful of games, so they use the small sample limits these tests were written for.
+beforeAll(() => Object.assign(sampleLimits, { priorGames: 50, tierGames: 10, pairGames: 10 }));
 
 describe("rollup", () => {
   it("counts each row once, however often it runs", async () => {

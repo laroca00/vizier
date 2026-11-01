@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { emptyCatalog } from "./archetypes.ts";
 import { aggregateBuild, maxOrder } from "./builds.ts";
 import type { MatchSummary } from "./coach.ts";
@@ -7,7 +7,7 @@ import { Crawler } from "./crawler.ts";
 import { rollup } from "./rollup.ts";
 import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
-import { banSuggestions, benchmarks, championOverview, counters, mayhemAugments, pace, quantiles, rankOf, synergies, tierList } from "./stats.ts";
+import { banSuggestions, benchmarks, sampleLimits, championOverview, counters, mayhemAugments, pace, quantiles, rankOf, synergies, tierList } from "./stats.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 import { findHabits, type GameNumbers } from "./trends.ts";
 
@@ -45,6 +45,9 @@ async function seed(games: { me: number; them: number; win: boolean; version?: s
   await rollup(db, noCatalog);
   return db;
 }
+
+// The fixtures hold a handful of games, so they use the small sample limits these tests were written for.
+beforeAll(() => Object.assign(sampleLimits, { priorGames: 50, tierGames: 10, pairGames: 10 }));
 
 describe("quantiles and rankOf", () => {
   it("place a value within the distribution", () => {
