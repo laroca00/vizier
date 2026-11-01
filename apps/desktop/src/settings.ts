@@ -15,6 +15,9 @@ export type Settings = {
   overlayItems: boolean;
   overlayPace: boolean;
   overlayScouting: boolean;
+  overlayNextItem: boolean;
+  overlayGoal: boolean;
+  overlayScoreboard: boolean;
   /** "auto" follows the League client's language. */
   language: LanguageSetting;
 };
@@ -33,6 +36,9 @@ const DEFAULTS: Settings = {
   overlayItems: true,
   overlayPace: true,
   overlayScouting: true,
+  overlayNextItem: true,
+  overlayGoal: true,
+  overlayScoreboard: true,
   language: "auto",
 };
 

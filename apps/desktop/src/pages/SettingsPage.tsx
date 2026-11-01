@@ -30,6 +30,9 @@ const OVERLAY_TOGGLES: { key: Toggle; label: string; hint: string }[] = [
   { key: "overlayBenchmarks", label: "Emerald+ karşılaştırması", hint: "Dakika başına minyonun ve skora katkın, aynı roldeki Emerald+ medyanıyla." },
   { key: "overlayPace", label: "Tempo", hint: "Toplam minyon ve kamp sayın, aynı şampiyonu oynayan Emerald+ oyuncuların o dakikadaki medyanıyla. İlk 15 dakika." },
   { key: "overlayItems", label: "Eşya altını farkı", hint: "Koridor rakibine ve rakip takıma göre eşyalarına harcanan altın." },
+  { key: "overlayScoreboard", label: "Skor tablosunda eşya farkı", hint: "Tab'a basılıyken her oyuncunun karşısındakine göre eşya altını farkı, tablonun ortasında." },
+  { key: "overlayNextItem", label: "Sıradaki eşya", hint: "Seçtiğin build türünde henüz almadığın ilk eşya ve ona kalan altın." },
+  { key: "overlayGoal", label: "Koçun hedefi", hint: "Son maçlarında koçun bulduğu zayıf nokta, bu maçta canlı takip edilir." },
 ];
 
 function useAutostart() {
@@ -98,7 +101,7 @@ export function SettingsPage() {
             <span className="toggle__text">
               <span className="toggle__label">{t("Oyun içi paneli göster")}</span>
               <span className="toggle__hint">
-                {t("Sol üst köşede durur, tıklamaları oyuna geçirir. Oyun ayarlarında Kenarlıksız pencere seçili olmalı. Ctrl+Shift+O ile oyun sırasında gizleyip açabilirsin.")}
+                {t("Tıklamaları oyuna geçirir. Ctrl+Shift+L ile kutuları sürükleyip yerleştirebilir, Ctrl+Shift+O ile gizleyip açabilirsin. Tam ekranda görünmezse oyun ayarlarından Kenarlıksız pencereyi seç.")}
               </span>
             </span>
           </label>

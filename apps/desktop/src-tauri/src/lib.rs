@@ -41,6 +41,17 @@ fn set_overlay_enabled(app: tauri::AppHandle, state: tauri::State<'_, OverlaySta
     state.set_enabled(&app, enabled);
 }
 
+#[tauri::command]
+fn overlay_editing(state: tauri::State<'_, OverlayState>) -> bool {
+    state.editing.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// The overlay's own "Done" button ends editing without the shortcut.
+#[tauri::command]
+fn set_overlay_editing(app: tauri::AppHandle, editing: bool) {
+    live::set_editing(&app, editing);
+}
+
 const NOT_CONNECTED: &str = "not connected to the League client";
 
 #[tauri::command]
@@ -73,6 +84,11 @@ async fn import_item_set(
 /// Ctrl+Shift+O hides and shows the overlay during a game.
 fn overlay_shortcut() -> Shortcut {
     Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyO)
+}
+
+/// Ctrl+Shift+L lets the player drag the overlay's boxes into place.
+fn edit_shortcut() -> Shortcut {
+    Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyL)
 }
 
 /// Passed by the autostart entry so a login start stays in the tray.
@@ -124,8 +140,13 @@ pub fn run() {
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
-                    if event.state == ShortcutState::Pressed && *shortcut == overlay_shortcut() {
+                    if event.state != ShortcutState::Pressed {
+                        return;
+                    }
+                    if *shortcut == overlay_shortcut() {
                         live::toggle_hidden(app);
+                    } else if *shortcut == edit_shortcut() {
+                        live::toggle_editing(app);
                     }
                 })
                 .build(),
@@ -141,7 +162,9 @@ pub fn run() {
             live_game,
             live_loading,
             overlay_hidden,
-            set_overlay_enabled
+            set_overlay_enabled,
+            overlay_editing,
+            set_overlay_editing
         ])
         .setup(|app| {
             setup_tray(app)?;
@@ -154,8 +177,10 @@ pub fn run() {
             live::create_overlay(app.handle())?;
             live::spawn(app.handle().clone());
             // Another app may own the combination; the overlay still works without it.
-            if let Err(error) = app.global_shortcut().register(overlay_shortcut()) {
-                eprintln!("overlay shortcut: {error}");
+            for shortcut in [overlay_shortcut(), edit_shortcut()] {
+                if let Err(error) = app.global_shortcut().register(shortcut) {
+                    eprintln!("overlay shortcut: {error}");
+                }
             }
             Ok(())
         })

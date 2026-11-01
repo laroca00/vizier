@@ -1,4 +1,5 @@
 import type { ChampSelect } from "../lcu";
+import { sampleGame } from "../overlay/sample";
 import type { LiveGameInfo } from "../api";
 import type { LiveGame } from "../overlay/live";
 
@@ -38,32 +39,7 @@ export function matchFixture(): { matchId: string; puuid: string } | null {
 /** Dev only: `?fixture=overlay` renders the in-game overlay mid-game without the game. */
 export function overlayFixture(): LiveGame | null {
   if (!import.meta.env.DEV || new URLSearchParams(location.search).get("fixture") !== "overlay") return null;
-  const player = (riotId: string, champion: string, team: string, position: string, items: number[], kills: number, cs: number) => ({
-    riotId,
-    rawChampionName: `game_character_displayname_${champion}`,
-    team,
-    position,
-    level: 9,
-    items: items.map((itemId) => ({ itemId, count: 1 })),
-    scores: { kills, deaths: 2, assists: 4, creepScore: cs },
-  });
-  return {
-    gameTime: 842,
-    gameMode: "CLASSIC",
-    me: "Vizier#TR1",
-    level: 9,
-    skills: [4, 1, 2, 1],
-    players: [
-      player("Vizier#TR1", "Ahri", "ORDER", "MIDDLE", [6655, 1056, 3020], 4, 101),
-      player("Ally#TR1", "LeeSin", "ORDER", "JUNGLE", [3071], 8, 70),
-      player("Enemy#TR1", "Zed", "CHAOS", "MIDDLE", [3142, 1036, 3158], 3, 110),
-      player("Other#TR1", "Vi", "CHAOS", "JUNGLE", [6692], 2, 80),
-    ],
-    events: [
-      { name: "DragonKill", time: 700, dragonType: "Fire", inhibKilled: null, killerName: "Ally" },
-      { name: "InhibKilled", time: 760, dragonType: null, inhibKilled: "Barracks_T2_C1", killerName: "Vizier" },
-    ],
-  };
+  return sampleGame();
 }
 
 /** Dev only: `?fixture=scouting` renders the loading screen panel. */

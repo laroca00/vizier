@@ -8,7 +8,7 @@ export type LivePlayer = {
   position: string;
   level: number;
   items: { itemId: number; count: number }[];
-  scores: { kills: number; deaths: number; assists: number; creepScore: number };
+  scores: { kills: number; deaths: number; assists: number; creepScore: number; wardScore?: number };
 };
 
 export type LiveEvent = {
@@ -24,6 +24,8 @@ export type LiveGame = {
   gameMode: string;
   me: string;
   level: number;
+  /** Unspent gold; missing from builds of the app before it was sent. */
+  gold?: number;
   /** Ranks of Q, W, E and R. */
   skills: [number, number, number, number];
   players: LivePlayer[];
@@ -148,4 +150,66 @@ export function paceAt(median: number[], minutes: number): number | null {
   const before = median[whole - 1];
   const after = median[whole] ?? before;
   return before + (after - before) * (minutes - whole);
+}
+
+const ROLE_ORDER = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
+
+export type ScoreboardRow = { ally: LivePlayer; enemy: LivePlayer | undefined; diff: number | null };
+
+/**
+ * Item gold of each ally against the enemy in the same role, top to support,
+ * the order the scoreboard lists them in. Without roles (ARAM, Arena) the
+ * game's own order pairs them.
+ */
+export function scoreboardRows(game: LiveGame, gold: (itemId: number) => number): ScoreboardRow[] {
+  const me = findMe(game);
+  if (!me) return [];
+  const allies = game.players.filter((p) => p.team === me.team);
+  const enemies = game.players.filter((p) => p.team !== me.team);
+  const byRole = allies.every((p) => ROLE_ORDER.includes(p.position));
+  const ordered = byRole ? [...allies].sort((a, b) => ROLE_ORDER.indexOf(a.position) - ROLE_ORDER.indexOf(b.position)) : allies;
+  return ordered.map((ally, i) => {
+    const enemy = byRole ? enemies.find((e) => e.position === ally.position) : enemies[i];
+    return { ally, enemy, diff: enemy ? itemValue(ally, gold) - itemValue(enemy, gold) : null };
+  });
+}
+
+/** The first item of the build the player doesn't own yet. */
+export function nextItem(owned: number[], build: number[]): number | null {
+  const have = new Set(owned);
+  return build.find((id) => !have.has(id)) ?? null;
+}
+
+export type GoalMetric = "cs10" | "cs_pm" | "vision_pm" | "kill_participation" | "deaths";
+export const GOAL_METRICS: GoalMetric[] = ["cs10", "cs_pm", "vision_pm", "kill_participation", "deaths"];
+
+/**
+ * Where the player stands on a habit the coach found in their recent games.
+ * `onTrack` compares with the target scaled to the minute where that makes
+ * sense; null while it is too early to say.
+ */
+export function goalProgress(metric: GoalMetric, target: number, game: LiveGame): { value: number; onTrack: boolean | null } | null {
+  const me = findMe(game);
+  if (!me) return null;
+  const minutes = game.gameTime / 60;
+  switch (metric) {
+    case "cs10": {
+      // The ten minute mark is the whole goal; after it the card has said what it can.
+      if (minutes > 11) return null;
+      const expected = target * Math.min(1, minutes / 10);
+      return { value: me.scores.creepScore, onTrack: minutes < 2 ? null : me.scores.creepScore >= expected };
+    }
+    case "cs_pm":
+      return minutes < 2 ? { value: 0, onTrack: null } : { value: me.scores.creepScore / minutes, onTrack: me.scores.creepScore / minutes >= target };
+    case "vision_pm": {
+      const ward = me.scores.wardScore ?? 0;
+      return minutes < 5 ? { value: ward, onTrack: null } : { value: ward / minutes, onTrack: ward / minutes >= target };
+    }
+    case "kill_participation": {
+      const kp = myNumbers(game)?.killParticipation ?? null;
+      return kp === null ? { value: 0, onTrack: null } : { value: kp, onTrack: kp >= target };
+    }
+    case "deaths":
+      return { value: me.scores.deaths, onTrack: me.scores.deaths < target };
+  }
 }

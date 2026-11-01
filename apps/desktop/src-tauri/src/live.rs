@@ -12,6 +12,8 @@ use crate::lcu::tls_config;
 pub const LIVE_EVENT: &str = "live-game";
 pub const TOGGLE_EVENT: &str = "overlay-toggle";
 pub const LOADING_EVENT: &str = "live-loading";
+pub const EDIT_EVENT: &str = "overlay-edit";
+pub const SCOREBOARD_EVENT: &str = "overlay-scoreboard";
 pub const OVERLAY_LABEL: &str = "overlay";
 const URL: &str = "https://127.0.0.1:2999/liveclientdata/allgamedata";
 const IN_GAME_INTERVAL: Duration = Duration::from_secs(1);
@@ -33,6 +35,8 @@ struct ActivePlayer {
     riot_id: String,
     #[serde(default)]
     level: u32,
+    #[serde(default)]
+    current_gold: f64,
     #[serde(default)]
     abilities: Option<Abilities>,
 }
@@ -86,6 +90,8 @@ pub struct Scores {
     pub deaths: u32,
     pub assists: u32,
     pub creep_score: u32,
+    #[serde(default)]
+    pub ward_score: f64,
 }
 
 #[derive(Deserialize)]
@@ -135,6 +141,8 @@ pub struct LiveGame {
     pub game_mode: String,
     pub me: String,
     pub level: u32,
+    /// Unspent gold of the player.
+    pub gold: f64,
     /// Ranks of Q, W, E and R.
     pub skills: [u32; 4],
     pub players: Vec<Player>,
@@ -153,6 +161,8 @@ pub fn parse(json: &str) -> Result<LiveGame, serde_json::Error> {
         game_mode: data.game_data.game_mode,
         me: data.active_player.riot_id,
         level: data.active_player.level,
+        // Whole gold is enough, and it keeps the once-a-second diff from firing on every tick of passive income.
+        gold: data.active_player.current_gold.floor(),
         skills,
         players: data.all_players,
         events: data
@@ -178,14 +188,20 @@ pub struct OverlayState {
     pub hidden: AtomicBool,
     /// The game process answers but the match hasn't started: the loading screen.
     pub loading: AtomicBool,
+    /// The player is moving the overlay's boxes; it takes the mouse meanwhile.
+    pub editing: AtomicBool,
     last: Mutex<Option<LiveGame>>,
 }
 
 impl OverlayState {
     pub fn set_enabled(&self, app: &AppHandle, enabled: bool) {
         self.enabled.store(enabled, Ordering::Relaxed);
-        let active = self.last.lock().unwrap().is_some() || self.loading.load(Ordering::Relaxed);
-        set_visible(app, enabled && active);
+        set_visible(app, self.should_show());
+    }
+
+    fn should_show(&self) -> bool {
+        let active = self.last.lock().unwrap().is_some() || self.loading.load(Ordering::Relaxed) || self.editing.load(Ordering::Relaxed);
+        self.enabled.load(Ordering::Relaxed) && active
     }
 
     pub fn current(&self) -> Option<LiveGame> {
@@ -226,6 +242,67 @@ fn set_visible(app: &AppHandle, visible: bool) {
     let _ = if visible { window.show() } else { window.hide() };
 }
 
+/// Ctrl+Shift+L: lets the overlay take the mouse so its boxes can be dragged, and back.
+pub fn set_editing(app: &AppHandle, editing: bool) {
+    let state = app.state::<OverlayState>();
+    state.editing.store(editing, Ordering::Relaxed);
+    if let Some(window) = app.get_webview_window(OVERLAY_LABEL) {
+        let _ = window.set_ignore_cursor_events(!editing);
+    }
+    set_visible(app, state.should_show());
+    let _ = app.emit_to(OVERLAY_LABEL, EDIT_EVENT, editing);
+}
+
+pub fn toggle_editing(app: &AppHandle) {
+    let editing = !app.state::<OverlayState>().editing.load(Ordering::Relaxed);
+    set_editing(app, editing);
+}
+
+/// Windows only lets a topmost window stay above a fullscreen game while it
+/// keeps asking; once a second is enough.
+fn keep_on_top(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window(OVERLAY_LABEL) {
+        let _ = window.set_always_on_top(true);
+    }
+}
+
+/// Whether Tab is held down while the game has focus, so the scoreboard is open.
+#[cfg(windows)]
+fn scoreboard_open() -> bool {
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_TAB};
+    use windows_sys::Win32::UI::WindowsAndMessaging::{GetClassNameW, GetForegroundWindow};
+    // SAFETY: plain Win32 queries with a buffer sized for them.
+    unsafe {
+        if GetAsyncKeyState(VK_TAB as i32) as u16 & 0x8000 == 0 {
+            return false;
+        }
+        let mut class = [0u16; 64];
+        let len = GetClassNameW(GetForegroundWindow(), class.as_mut_ptr(), class.len() as i32);
+        String::from_utf16_lossy(&class[..len.max(0) as usize]) == "RiotWindowClass"
+    }
+}
+
+#[cfg(not(windows))]
+fn scoreboard_open() -> bool {
+    false
+}
+
+/// Watches the Tab key during a game; reading the keyboard state doesn't touch the game.
+fn spawn_scoreboard_watch(app: AppHandle) {
+    std::thread::spawn(move || {
+        let mut open = false;
+        loop {
+            let in_game = app.state::<OverlayState>().last.lock().unwrap().is_some();
+            let now = in_game && scoreboard_open();
+            if now != open {
+                open = now;
+                let _ = app.emit_to(OVERLAY_LABEL, SCOREBOARD_EVENT, open);
+            }
+            std::thread::sleep(if in_game { Duration::from_millis(40) } else { Duration::from_secs(1) });
+        }
+    });
+}
+
 pub fn toggle_hidden(app: &AppHandle) {
     let state = app.state::<OverlayState>();
     let hidden = !state.hidden.load(Ordering::Relaxed);
@@ -234,6 +311,7 @@ pub fn toggle_hidden(app: &AppHandle) {
 }
 
 pub fn spawn(app: AppHandle) {
+    spawn_scoreboard_watch(app.clone());
     tauri::async_runtime::spawn(async move {
         let http = match tls_config()
             .map_err(|e| e.to_string())
@@ -266,7 +344,10 @@ pub fn spawn(app: AppHandle) {
             if changed {
                 let _ = app.emit_to(OVERLAY_LABEL, LIVE_EVENT, game);
             }
-            set_visible(&app, (in_game || loading) && state.enabled.load(Ordering::Relaxed));
+            set_visible(&app, state.should_show());
+            if in_game {
+                keep_on_top(&app);
+            }
             tokio::time::sleep(if in_game || loading { IN_GAME_INTERVAL } else { IDLE_INTERVAL }).await;
         }
     });
@@ -303,6 +384,7 @@ mod tests {
         let game = parse(SAMPLE).unwrap();
         assert_eq!(game.me, "Vizier#TR1");
         assert_eq!(game.skills, [3, 1, 2, 1]);
+        assert_eq!(game.gold, 812.0);
         assert_eq!(game.players[0].items, vec![Item { item_id: 1056, count: 1 }]);
         assert_eq!(game.players[0].scores.creep_score, 64);
         let names: Vec<_> = game.events.iter().map(|e| e.name.as_str()).collect();

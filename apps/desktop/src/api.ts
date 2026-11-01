@@ -294,7 +294,10 @@ export function getBans() {
   return get<BanSuggestions>("/v1/bans");
 }
 
-export type Trends = { games: number; wins: number; habits: { title: string; detail: string }[] };
+export type HabitMetric = "cs10" | "cs_pm" | "vision_pm" | "kill_participation" | "deaths";
+/** `metric` and `target` are missing from answers cached before they existed. */
+export type Habit = { title: string; detail: string; metric?: HabitMetric | string; target?: number };
+export type Trends = { games: number; wins: number; habits: Habit[] };
 
 export function getTrends(puuid: string) {
   return get<Trends>(`/v1/players/${puuid}/trends`);

@@ -2,7 +2,7 @@ import { formatPercent, useLang, useT, type Lang } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getBuild, type Build, type BuildStyle, type Foe, type Picks } from "./api";
-import { STYLE_NAMES } from "./buildStyles";
+import { readChosenStyle, saveChosenStyle, STYLE_NAMES } from "./buildStyles";
 import {
   champions,
   itemIconUrl,
@@ -103,7 +103,8 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   const [runeImport, setRuneImport] = useState<ImportState>({ status: "idle" });
   const [spellImport, setSpellImport] = useState<ImportState>({ status: "idle" });
   const [itemImport, setItemImport] = useState<ImportState>({ status: "idle" });
-  const [chosenStyle, setChosenStyle] = useState<BuildStyle | null>(null);
+  const [chosenStyle, setChosenStyle] = useState<BuildStyle | null>(() => readChosenStyle(championId, position));
+  useEffect(() => setChosenStyle(readChosenStyle(championId, position)), [championId, position]);
   const settings = useSettings();
   const autoImported = useRef<number | null>(null);
   const actions = useRef<{ runes?: () => void; spells?: () => void; items?: () => void }>({});
@@ -144,6 +145,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
 
   function chooseStyle(style: BuildStyle) {
     setChosenStyle(style);
+    saveChosenStyle(championId, position, style);
     setRuneImport({ status: "idle" });
     setSpellImport({ status: "idle" });
     setItemImport({ status: "idle" });
