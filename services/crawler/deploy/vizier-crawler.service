@@ -1,0 +1,15 @@
+[Unit]
+Description=Vizier crawler
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=vizier
+WorkingDirectory=/opt/vizier/services/crawler
+EnvironmentFile=/etc/vizier/crawler.env
+ExecStart=/usr/bin/node src/main.ts
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
