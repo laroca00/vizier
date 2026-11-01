@@ -1,6 +1,7 @@
 import type { Platform } from "./riot/client.ts";
 
-export type ProGroup = "worlds" | "turkey";
+/** Worlds and Turkish pros from the list below; the challenger group is the top of each ladder, refreshed daily. */
+export type ProGroup = "worlds" | "turkey" | "challenger";
 
 export type ProPlayer = {
   name: string;

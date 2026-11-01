@@ -3,12 +3,14 @@
 // the Worker's free plan caps requests, CPU time and writes per run.
 import { readFileSync } from "node:fs";
 import { Crawler, type CrawlOptions } from "../../api/src/crawler.ts";
+import { ProCrawler, syncChallengers } from "../../api/src/pros.ts";
 import { RiotClient, RiotError } from "../../api/src/riot/client.ts";
 import { RateLimiter } from "../../api/src/riot/rateLimiter.ts";
 import { pruneRaw, rollup } from "../../api/src/rollup.ts";
 import { sqliteD1 } from "../../api/src/sqliteD1.ts";
 import { D1Http } from "./d1Http.ts";
 import { publish } from "./publish.ts";
+import { publishPros } from "./publishPros.ts";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -21,6 +23,10 @@ const IDLE_WAIT = 5 * MINUTE;
 const ERROR_WAIT = MINUTE;
 // A development key expires daily; checked again after this.
 const BAD_KEY_WAIT = 10 * MINUTE;
+// One pro or challenger account per run, up to five calls; ~300 accounts come round every couple of hours.
+const PRO_WAIT = 20_000;
+const PRO_PUBLISH_EVERY = 10 * MINUTE;
+const DAY = 24 * HOUR;
 
 // About 70 Riot calls a run. The share of the key below paces that to
 // roughly one run per two minutes per region on a development key.
@@ -76,6 +82,18 @@ async function crawl(options: CrawlOptions) {
   }
 }
 
+async function crawlPros() {
+  for (;;) {
+    try {
+      const saved = await new ProCrawler(db, riotClient()).run();
+      if (saved > 0) log(`pros: saved ${saved} games`);
+    } catch (error) {
+      log(`pros: ${error instanceof Error ? error.message : error}`);
+    }
+    await sleep(PRO_WAIT);
+  }
+}
+
 /** Runs `task` now and then every `ms`, logging failures instead of stopping. */
 function every(ms: number, name: string, task: () => Promise<string>) {
   const run = () =>
@@ -89,12 +107,23 @@ function every(ms: number, name: string, task: () => Promise<string>) {
 
 if (!remote) log("CLOUDFLARE_* is not set; stats are computed but not published");
 for (const options of REGIONS) void crawl(options);
+void crawlPros();
+// Pros change accounts and the ladders move, so both lists are re-read daily.
+every(DAY, "pro accounts", async () => {
+  const pros = await new ProCrawler(db, riotClient()).syncAccounts();
+  const challengers = await syncChallengers(db, riotClient());
+  return `${pros} pro accounts, ${challengers} challengers`;
+});
 every(ROLLUP_EVERY, "rollup", async () => `${await rollup(db)} rows`);
 every(PRUNE_EVERY, "prune", async () => {
   await pruneRaw(db);
   return "done";
 });
 if (remote) {
+  every(PRO_PUBLISH_EVERY, "pro publish", async () => {
+    const { games, accounts } = await publishPros(sqlite, remote);
+    return `${games} games${accounts ? `, ${accounts} accounts` : ""}`;
+  });
   // The first publish waits for a rollup so it isn't empty after a fresh start.
   setTimeout(
     () =>

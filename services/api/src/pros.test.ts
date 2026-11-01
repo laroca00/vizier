@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ProCrawler, proBuilds, proTeams } from "./pros.ts";
+import { ProCrawler, proBuilds, proTeams, syncChallengers } from "./pros.ts";
 import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
@@ -76,5 +76,36 @@ describe("ProCrawler", () => {
     expect(await proBuilds(db, { championId: 238 })).toEqual([]);
     expect(await proTeams(db)).toEqual([{ team: "T1", group: "worlds", players: ["Faker"] }]);
     expect(await proBuilds(db, { group: "turkey" })).toEqual([]);
+  });
+});
+
+describe("syncChallengers", () => {
+  it("lists the top of each ladder and drops players who fell off it", async () => {
+    const { db } = fakeD1();
+    let ladder = [
+      { puuid: "a", leaguePoints: 1500 },
+      { puuid: "b", leaguePoints: 1800 },
+      { puuid: "c", leaguePoints: 900 },
+    ];
+    const lookups: string[] = [];
+    const riot = {
+      get: async (_routing: string, _method: string, path: string) => {
+        if (path.includes("challengerleagues")) return { entries: ladder };
+        const puuid = path.split("/").pop()!;
+        lookups.push(puuid);
+        return { puuid, gameName: `Player ${puuid}`, tagLine: "KR1" };
+      },
+    } as unknown as RiotClient;
+    const ladders = [{ platform: "kr" as const, top: 2, label: "KR Challenger" }];
+
+    expect(await syncChallengers(db, riot, ladders)).toBe(2);
+    const teams = await proTeams(db);
+    expect(teams).toEqual([{ team: "KR Challenger", group: "challenger", players: ["Player a", "Player b"] }]);
+
+    ladder = [{ puuid: "c", leaguePoints: 2000 }, { puuid: "b", leaguePoints: 1900 }];
+    expect(await syncChallengers(db, riot, ladders)).toBe(2);
+    expect((await proTeams(db))[0].players).toEqual(["Player b", "Player c"]);
+    // b was already known, so only new players cost an account lookup.
+    expect(lookups).toEqual(["b", "a", "c"]);
   });
 });

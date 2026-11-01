@@ -4,8 +4,8 @@
   "main": "src/worker.ts",
   "compatibility_date": "2026-10-01",
   "observability": { "enabled": true },
-  // Every 2 minutes: crawl pro players' games. 04:00 UTC: clear expired cache rows and old patches.
-  "triggers": { "crons": ["*/2 * * * *", "0 4 * * *"] },
+  // 04:00 UTC: clear expired cache rows, old patches and old pro games. Crawling runs in services/crawler.
+  "triggers": { "crons": ["0 4 * * *"] },
   // Free coach wording; see src/coachRewrite.ts.
   "ai": { "binding": "AI" },
   // Desktop app updates: latest.json and the signed installers, written by scripts/release.mjs.

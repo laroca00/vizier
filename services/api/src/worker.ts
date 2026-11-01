@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { ProCrawler, pruneOldProMatches } from "./pros.ts";
+import { pruneOldProMatches } from "./pros.ts";
 import type { Hono } from "hono";
 import { createApp, type CoachConfig } from "./app.ts";
 import { loadCatalog } from "./ddragon.ts";
@@ -74,19 +74,12 @@ export default {
     return app.fetch(request, env, ctx);
   },
 
+  // Ranked and pro games are crawled by services/crawler, which publishes
+  // stat_docs and pro_matches here; the Worker only tidies up.
   async scheduled(controller, env) {
-    const client = riotFor(env);
-    if (controller.cron === DAILY_CRON) {
-      await new D1Store(env.DB).purgeExpired();
-      await pruneOldPatches(env.DB);
-      await pruneOldProMatches(env.DB);
-      // Pros change accounts; the list in proPlayers.ts is re-resolved daily.
-      if (client) await new ProCrawler(env.DB, client).syncAccounts();
-      return;
-    }
-    if (!client) return;
-    // Ranked games are crawled by services/crawler, which publishes stat_docs.
-    const pros = await new ProCrawler(env.DB, client).run();
-    console.log(`crawl: saved ${pros} pro games`);
+    if (controller.cron !== DAILY_CRON) return;
+    await new D1Store(env.DB).purgeExpired();
+    await pruneOldPatches(env.DB);
+    await pruneOldProMatches(env.DB);
   },
 } satisfies ExportedHandler<Env>;

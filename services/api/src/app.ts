@@ -344,7 +344,7 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
     const team = c.req.query("team");
     if (team !== undefined && !/^[\w .-]{1,40}$/.test(team)) badRequest("Invalid team");
     const group = c.req.query("group");
-    if (group !== undefined && group !== "worlds" && group !== "turkey") badRequest("Unsupported group");
+    if (group !== undefined && group !== "worlds" && group !== "turkey" && group !== "challenger") badRequest("Unsupported group");
     const limit = Number(c.req.query("limit") ?? 30);
     if (!Number.isInteger(limit) || limit < 1 || limit > 100) badRequest("limit must be 1-100");
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);

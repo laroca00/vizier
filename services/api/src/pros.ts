@@ -13,6 +13,57 @@ const LOOKBACK = 7 * DAY;
 const MATCHES_PER_RUN = 2;
 const MIN_DURATION_SECONDS = 300;
 
+// The top of each ladder by LP, shown next to the pros the way probuilds sites do.
+export const CHALLENGER_LADDERS: { platform: Platform; top: number; label: string }[] = [
+  { platform: "kr", top: 50, label: "KR Challenger" },
+  { platform: "euw1", top: 50, label: "EUW Challenger" },
+  { platform: "tr1", top: 30, label: "TR Challenger" },
+];
+
+type LadderEntry = { puuid: string; leaguePoints: number };
+
+/**
+ * Replaces the challenger group with the current top of each ladder. Riot
+ * IDs are looked up only for players new to the list. Returns how many are listed.
+ */
+export async function syncChallengers(db: D1Database, riot: RiotClient, ladders = CHALLENGER_LADDERS): Promise<number> {
+  const listed: string[] = [];
+  for (const { platform, top, label } of ladders) {
+    const league = await riot.get<{ entries: LadderEntry[] }>(
+      platform,
+      "/lol/league/v4/challengerleagues/by-queue",
+      "/lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5",
+    );
+    // A failed ladder keeps yesterday's players rather than dropping them.
+    if (!league) {
+      const { results } = await db.prepare("SELECT puuid FROM pro_accounts WHERE grp = 'challenger' AND team = ?").bind(label).all<{ puuid: string }>();
+      listed.push(...results.map((r) => r.puuid));
+      continue;
+    }
+    const best = [...league.entries].sort((a, b) => b.leaguePoints - a.leaguePoints).slice(0, top);
+    for (const { puuid } of best) {
+      listed.push(puuid);
+      const known = await db.prepare("SELECT 1 AS found FROM pro_accounts WHERE puuid = ?").bind(puuid).first();
+      if (known) continue;
+      const account = await riot.get<Account>(regionOf(platform), "/riot/account/v1/accounts/by-puuid", `/riot/account/v1/accounts/by-puuid/${puuid}`);
+      if (!account?.gameName) continue;
+      // A pro who is also on the ladder stays in their own group.
+      await db
+        .prepare(
+          `INSERT OR IGNORE INTO pro_accounts (puuid, player, team, role, platform, riot_id, grp)
+            VALUES (?, ?, ?, '', ?, ?, 'challenger')`,
+        )
+        .bind(puuid, account.gameName, label, platform, `${account.gameName}#${account.tagLine}`)
+        .run();
+    }
+  }
+  const { results } = await db.prepare("SELECT puuid FROM pro_accounts WHERE grp = 'challenger'").all<{ puuid: string }>();
+  const keep = new Set(listed);
+  const gone = results.filter((r) => !keep.has(r.puuid));
+  if (gone.length > 0) await db.batch(gone.map((r) => db.prepare("DELETE FROM pro_accounts WHERE puuid = ?").bind(r.puuid)));
+  return results.length - gone.length;
+}
+
 export type ProBuild = {
   matchId: string;
   player: string;
