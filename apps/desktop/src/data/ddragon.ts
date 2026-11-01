@@ -1,6 +1,13 @@
 const BASE = "https://ddragon.leagueoflegends.com";
 
-export type Champion = { id: string; key: number; name: string };
+export type Champion = {
+  id: string;
+  key: number;
+  name: string;
+  /** Deals mostly magic damage, by Data Dragon's ratings; the API reads enemy teams the same way. */
+  magic: boolean;
+  tank: boolean;
+};
 
 let version: Promise<string> | undefined;
 let championsByKey: Promise<Map<number, Champion>> | undefined;
@@ -17,8 +24,21 @@ export function latestVersion(): Promise<string> {
 export function champions(): Promise<Map<number, Champion>> {
   championsByKey ??= latestVersion()
     .then((v) => fetch(`${BASE}/cdn/${v}/data/tr_TR/champion.json`))
-    .then((response) => response.json() as Promise<{ data: Record<string, { id: string; key: string; name: string }> }>)
-    .then(({ data }) => new Map(Object.values(data).map((c) => [Number(c.key), { id: c.id, key: Number(c.key), name: c.name }])));
+    .then(
+      (response) =>
+        response.json() as Promise<{
+          data: Record<string, { id: string; key: string; name: string; tags: string[]; info: { attack: number; magic: number } }>;
+        }>,
+    )
+    .then(
+      ({ data }) =>
+        new Map(
+          Object.values(data).map((c) => [
+            Number(c.key),
+            { id: c.id, key: Number(c.key), name: c.name, magic: c.info.magic > c.info.attack, tank: c.tags[0] === "Tank" },
+          ]),
+        ),
+    );
   return championsByKey;
 }
 

@@ -2,6 +2,7 @@ import { useLang, useT, type Params } from "./i18n";
 import { useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getProBuilds, type ProBuild, type ProFilter } from "./api";
+import { STYLE_NAMES } from "./buildStyles";
 import {
   championIconUrl,
   champions,
@@ -38,7 +39,7 @@ export function parseRunes(key: string) {
 type ImportState = { status: "idle" | "working" } | { status: "done" | "error"; message: string };
 
 async function importBuild(build: ProBuild, championName: string, finished: (id: number) => boolean, t: (text: string, params?: Params) => string): Promise<string> {
-  const name = `Vizier ${build.player} ${championName}`;
+  const name = ["Vizier", build.player, championName, build.style ? t(STYLE_NAMES[build.style]) : ""].filter(Boolean).join(" ");
   const runeResult = await invoke<{ status: "imported" } | { status: "needsSlot" }>("import_runes", {
     page: { name, ...parseRunes(build.runes) },
     replacePageId: null,
@@ -111,7 +112,10 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: Static; compa
     <li className="pros__row" data-result={build.win ? "win" : "loss"}>
       <span className="pros__who">
         <span className="pros__player">{build.player}</span>
-        <span className="pros__team">{build.team || t("Takımsız")}</span>
+        <span className="pros__team">
+          {build.team || t("Takımsız")}
+          {build.style && <span className="pros__style">{t(STYLE_NAMES[build.style])}</span>}
+        </span>
       </span>
       <span className="pros__matchup">
         {champion && <img src={championIconUrl(data.version, champion.id)} alt={champion.name} title={champion.name} width={30} height={30} />}

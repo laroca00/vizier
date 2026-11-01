@@ -77,6 +77,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 currentSpells={me.spells as [number, number]}
                 locked={me.championId !== 0}
                 vs={vs}
+                enemies={enemyPicks}
               />
               <h2 className="draft__heading draft__heading--spaced">Pro'lar</h2>
               <ProBuildList

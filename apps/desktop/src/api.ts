@@ -75,18 +75,31 @@ export async function getRecentMatches(puuid: string, count: number): Promise<Ma
 
 export type Choice<T> = T & { games: number; winRate: number };
 
-export type Build = {
-  patches: string[];
-  games: number;
-  winRate: number;
+export type BuildStyle = "crit" | "onhit" | "hybrid" | "ap" | "lethality" | "bruiser" | "tank" | "enchanter" | "ad";
+export type Foe = "ap" | "ad" | "tank";
+
+export type Picks = {
   runes: Choice<{ primaryStyle: number; subStyle: number; perks: number[] }>[];
   spells: Choice<{ ids: number[] }>[];
   items: Choice<{ id: number }>[];
-  /** The opponent the numbers are for, or null when they cover every matchup. */
-  vs: number | null;
   startItems: Choice<{ ids: number[] }> | null;
   coreItems: Choice<{ ids: number[] }> | null;
   skills: Choice<{ maxOrder: number[]; firstLevels: number[] }> | null;
+};
+
+/** The games built one way, say AP or crit, with their own runes and items. */
+export type Variant = Picks & { style: BuildStyle; games: number; winRate: number; share: number };
+
+export type Build = Picks & {
+  patches: string[];
+  games: number;
+  winRate: number;
+  /** The opponent the numbers are for, or null when they cover every matchup. */
+  vs: number | null;
+  /** Build styles with enough games, most played first. Missing from docs published before they existed. */
+  variants?: Variant[];
+  /** Items bought more often against magic-heavy, physical-heavy or tanky teams. */
+  situational?: { vs: Foe; games: number; items: Choice<{ id: number }>[] }[];
 };
 
 /** Null when Vizier has no games for the champion yet. */
@@ -223,6 +236,8 @@ export type ProBuild = {
   startItems: number[];
   skillOrder: number[];
   purchases: number[];
+  /** Missing from answers cached before styles existed. */
+  style?: BuildStyle | null;
 };
 export type ProGroup = "worlds" | "turkey";
 export type ProFilter = { championId?: number; position?: string; team?: string; group?: ProGroup; limit?: number };

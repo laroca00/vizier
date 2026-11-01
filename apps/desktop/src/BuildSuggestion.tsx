@@ -1,8 +1,10 @@
 import { formatPercent, useLang, useT, type Lang } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import { getBuild, type Build } from "./api";
+import { getBuild, type Build, type BuildStyle, type Foe, type Picks } from "./api";
+import { STYLE_NAMES } from "./buildStyles";
 import {
+  champions,
   itemIconUrl,
   items,
   latestVersion,
@@ -10,6 +12,7 @@ import {
   runes,
   spellIconUrl,
   summonerSpells,
+  type Champion,
   type Item,
   type RuneStyle,
   type SummonerSpell,
@@ -26,17 +29,36 @@ type Data = {
   runes: Map<number, RuneStyle>;
   spells: Map<number, SummonerSpell>;
   items: Map<number, Item>;
+  champions: Map<number, Champion>;
 };
 
 async function load(championId: number, position: string | null, vs: number | null, queue: number): Promise<Data> {
-  const [build, version, runeStyles, spells, itemList] = await Promise.all([
+  const [build, version, runeStyles, spells, itemList, championList] = await Promise.all([
     getBuild(championId, position, vs, queue),
     latestVersion(),
     runes(),
     summonerSpells(),
     items(),
+    champions(),
   ]);
-  return { build, version, runes: runeStyles, spells, items: itemList };
+  return { build, version, runes: runeStyles, spells, items: itemList, champions: championList };
+}
+
+const FOE_LABELS: Record<Foe, string> = {
+  ap: "Büyü hasarı ağırlıklı takıma karşı",
+  ad: "Fiziksel hasar ağırlıklı takıma karşı",
+  tank: "Tank ağırlıklı takıma karşı",
+};
+
+/** Reads the enemy picks seen so far the way the API reads finished games' teams. */
+export function foesOf(enemies: number[], champs: Map<number, Pick<Champion, "magic" | "tank">>): Set<Foe> {
+  const known = enemies.map((id) => champs.get(id)).filter((c) => c !== undefined);
+  const magic = known.filter((c) => c.magic).length;
+  const foes = new Set<Foe>();
+  if (magic >= 3) foes.add("ap");
+  if (known.length - magic >= 4) foes.add("ad");
+  if (known.filter((c) => c.tank).length >= 2) foes.add("tank");
+  return foes;
 }
 
 /** Keeps Flash on the key the player already has it on. */
@@ -68,17 +90,20 @@ type Props = {
   /** The client only takes summoner spells during champ select. */
   inDraft?: boolean;
   queue?: number;
+  /** Enemy champions picked so far, for situational items. */
+  enemies?: number[];
 };
 
 const SKILL_KEYS = ["", "Q", "W", "E", "R"];
 
-export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs, inDraft = true, queue = 420 }: Props) {
+export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs, inDraft = true, queue = 420, enemies = [] }: Props) {
   const percent = percentIn(useLang());
   const t = useT();
   const [state, retry] = useAsync(`${queue}:${championId}:${position}:${vs}`, () => load(championId, position, vs, queue));
   const [runeImport, setRuneImport] = useState<ImportState>({ status: "idle" });
   const [spellImport, setSpellImport] = useState<ImportState>({ status: "idle" });
   const [itemImport, setItemImport] = useState<ImportState>({ status: "idle" });
+  const [chosenStyle, setChosenStyle] = useState<BuildStyle | null>(null);
   const settings = useSettings();
   const autoImported = useRef<number | null>(null);
   const actions = useRef<{ runes?: () => void; spells?: () => void; items?: () => void }>({});
@@ -109,12 +134,27 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
     return <p className="build__note">{t("{champion} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.", { champion: championName })}</p>;
   }
 
-  const page = build.runes[0];
+  const variants = build.variants ?? [];
+  // One style alone is the overall build under another name.
+  const variant = variants.length >= 2 ? (variants.find((v) => v.style === chosenStyle) ?? variants[0]) : null;
+  const picks: Picks = variant ?? build;
+  const setName = variant ? `Vizier ${championName} ${t(STYLE_NAMES[variant.style])}` : `Vizier ${championName}`;
+  const foes = foesOf(enemies, state.value.champions);
+  const situational = [...(build.situational ?? [])].sort((a, b) => Number(foes.has(b.vs)) - Number(foes.has(a.vs)));
+
+  function chooseStyle(style: BuildStyle) {
+    setChosenStyle(style);
+    setRuneImport({ status: "idle" });
+    setSpellImport({ status: "idle" });
+    setItemImport({ status: "idle" });
+  }
+
+  const page = picks.runes[0];
   const primary = state.value.runes.get(page.primaryStyle);
   const sub = state.value.runes.get(page.subStyle);
   const runeById = new Map([...state.value.runes.values()].flatMap((s) => s.slots.flat().map((r) => [r.id, r] as const)));
-  const spells = build.spells[0];
-  const shownItems = build.items.filter((i) => state.value.items.get(i.id)?.complete).slice(0, SHOWN_ITEMS);
+  const spells = picks.spells[0];
+  const shownItems = picks.items.filter((i) => state.value.items.get(i.id)?.complete).slice(0, SHOWN_ITEMS);
 
   async function importRunes(replacePageId?: number) {
     setRuneImport({ status: "working" });
@@ -123,7 +163,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
         "import_runes",
         {
           page: {
-            name: `Vizier ${championName}`,
+            name: setName,
             primaryStyleId: page.primaryStyle,
             subStyleId: page.subStyle,
             selectedPerkIds: page.perks,
@@ -156,11 +196,12 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
     try {
       await invoke("import_item_set", {
         championId,
-        title: `Vizier ${championName}`,
+        title: setName,
         blocks: [
-          ...(build!.startItems ? [{ title: t("Başlangıç"), items: build!.startItems.ids }] : []),
-          ...(build!.coreItems ? [{ title: t("Ana eşyalar, bu sırayla"), items: build!.coreItems.ids }] : []),
+          ...(picks.startItems ? [{ title: t("Başlangıç"), items: picks.startItems.ids }] : []),
+          ...(picks.coreItems ? [{ title: t("Ana eşyalar, bu sırayla"), items: picks.coreItems.ids }] : []),
           { title: t("Sık alınan eşyalar"), items: shownItems.map((i) => i.id) },
+          ...situational.map((s) => ({ title: t(FOE_LABELS[s.vs]), items: s.items.map((i) => i.id) })),
         ],
       });
       setItemImport({ status: "done", message: t("Eşya seti aktarıldı") });
@@ -179,12 +220,23 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
         {vs && build.vs === null ? `. ${t("Bu eşleşme için yeterli maç yok; genel öneri gösteriliyor")}` : ""}
       </p>
 
-      {build.skills && (
+      {variant && (
+        <div className="build__styles" role="group" aria-label={t("Build türü")}>
+          {variants.map((v) => (
+            <button key={v.style} type="button" className="build__style-tab" aria-pressed={v === variant} onClick={() => chooseStyle(v.style)}>
+              <span className="build__style-name">{t(STYLE_NAMES[v.style])}</span>
+              <span className="build__style-meta">{t("{share} maç, {rate} kazanma", { share: percent(v.share), rate: percent(v.winRate) })}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {picks.skills && (
         <section className="build__block" aria-label={t("Yetenek sırası")}>
           <p className="build__stat">
             {t("Yetenek sırası: önce {first}, en çok {max}", {
-              first: build.skills.firstLevels.map((s) => SKILL_KEYS[s]).join(", "),
-              max: build.skills.maxOrder.map((s) => SKILL_KEYS[s]).join(" > "),
+              first: picks.skills.firstLevels.map((s) => SKILL_KEYS[s]).join(", "),
+              max: picks.skills.maxOrder.map((s) => SKILL_KEYS[s]).join(" > "),
             })}
           </p>
         </section>
@@ -230,9 +282,9 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
         </section>
       )}
 
-      {(build.startItems || build.coreItems) && (
+      {(picks.startItems || picks.coreItems) && (
         <section className="build__block" aria-label={t("Başlangıç ve ana eşyalar")}>
-          {[build.startItems && { label: t("Başlangıç"), ids: build.startItems.ids }, build.coreItems && { label: t("Ana eşyalar"), ids: build.coreItems.ids }]
+          {[picks.startItems && { label: t("Başlangıç"), ids: picks.startItems.ids }, picks.coreItems && { label: t("Ana eşyalar"), ids: picks.coreItems.ids }]
             .filter((row): row is { label: string; ids: number[] } => !!row)
             .map((row) => (
               <div className="build__row" key={row.label}>
@@ -256,7 +308,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
                   key={item.id}
                   src={itemIconUrl(version, item.id)}
                   alt={info?.name ?? ""}
-                  title={t("{item}: {share} maçta alındı", { item: info?.name ?? "", share: percent(item.games / build.games) })}
+                  title={t("{item}: {share} maçta alındı", { item: info?.name ?? "", share: percent(item.games / (variant ?? build).games) })}
                   width={30}
                   height={30}
                 />
@@ -264,6 +316,32 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
             })}
           </div>
           <ImportControls label={t("Eşya setini aktar")} state={itemImport} disabled={!canImport} onImport={importItems} />
+        </section>
+      )}
+
+      {situational.length > 0 && (
+        <section className="build__block" aria-label={t("Duruma göre eşyalar")}>
+          {situational.map((s) => (
+            <div className="build__row build__situational" key={s.vs} data-active={foes.has(s.vs) || undefined}>
+              <span className="build__stat build__row-label">
+                {t(FOE_LABELS[s.vs])}
+                {foes.has(s.vs) && <span className="build__match-tag">{t("Bu maç")}</span>}
+              </span>
+              {s.items.map((item) => {
+                const info = state.value.items.get(item.id);
+                return (
+                  <img
+                    key={item.id}
+                    src={itemIconUrl(version, item.id)}
+                    alt={info?.name ?? ""}
+                    title={t("{item}: bu takımlara karşı {rate} kazanma", { item: info?.name ?? "", rate: percent(item.winRate) })}
+                    width={28}
+                    height={28}
+                  />
+                );
+              })}
+            </div>
+          ))}
         </section>
       )}
     </div>
