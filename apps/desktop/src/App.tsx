@@ -17,6 +17,7 @@ import { setClientLocale, useT } from "./i18n";
 import { useSettings } from "./settings";
 import { LiquidGlass } from "./ui/LiquidGlass";
 import { ShaderGradient } from "./ui/ShaderGradient";
+import { SplashBackdrop, SplashProvider } from "./ui/Splash";
 import { UpdateNotice } from "./UpdateNotice";
 import "./App.css";
 
@@ -47,6 +48,7 @@ function App() {
   const [searching, setSearching] = useState(false);
   const [champion, setChampion] = useState<{ id: number; position: string | null; queue: number } | null>(null);
   const [riotId, setRiotId] = useState<RiotId | null>(null);
+  const [splash, setSplash] = useState<number | null>(null);
   const draftActive = useRef(draft !== null);
   const analysedGame = useRef<number | null>(null);
 
@@ -129,6 +131,7 @@ function App() {
         reflection={0.18}
         paused={settings.pauseBackgroundInGame && phase === "InProgress"}
       />
+      <SplashBackdrop championId={splash} />
       <nav className="shell__nav" aria-label={t("Ana menü")}>
         <LiquidGlass className="nav" shape="pill" blur={4}>
           {items.map((item) => (
@@ -150,31 +153,33 @@ function App() {
         </LiquidGlass>
         <UpdateNotice />
       </nav>
-      <main className="shell__main" key={view}>
-        {view === "draft" && draft ? (
-          <ChampSelectPage draft={draft} />
-        ) : view === "about" ? (
-          <About />
-        ) : view === "settings" ? (
-          <SettingsPage />
-        ) : view === "tiers" ? (
-          <TierListPage onOpenChampion={openChampion} />
-        ) : view === "pros" ? (
-          <ProsPage />
-        ) : view === "champion" && champion ? (
-          <ChampionPage
-            key={`${champion.id}:${champion.position}:${champion.queue}`}
-            championId={champion.id}
-            initialPosition={champion.position}
-            initialQueue={champion.queue}
-            onOpenChampion={openChampion}
-          />
-        ) : view === "profile" && riotId ? (
-          <ProfilePage key={`${riotId.platform}:${riotId.gameName}#${riotId.tagLine}`} riotId={riotId} />
-        ) : (
-          <Home lcu={lcu} coaching={coaching} onCoach={setCoaching} />
-        )}
-      </main>
+      <SplashProvider value={setSplash}>
+        <main className="shell__main" key={view}>
+          {view === "draft" && draft ? (
+            <ChampSelectPage draft={draft} />
+          ) : view === "about" ? (
+            <About />
+          ) : view === "settings" ? (
+            <SettingsPage />
+          ) : view === "tiers" ? (
+            <TierListPage onOpenChampion={openChampion} />
+          ) : view === "pros" ? (
+            <ProsPage />
+          ) : view === "champion" && champion ? (
+            <ChampionPage
+              key={`${champion.id}:${champion.position}:${champion.queue}`}
+              championId={champion.id}
+              initialPosition={champion.position}
+              initialQueue={champion.queue}
+              onOpenChampion={openChampion}
+            />
+          ) : view === "profile" && riotId ? (
+            <ProfilePage key={`${riotId.platform}:${riotId.gameName}#${riotId.tagLine}`} riotId={riotId} />
+          ) : (
+            <Home lcu={lcu} coaching={coaching} onCoach={setCoaching} onOpenChampion={openChampion} />
+          )}
+        </main>
+      </SplashProvider>
       <SearchPalette open={searching} onClose={() => setSearching(false)} onChampion={(id) => openChampion(id)} onProfile={openProfile} home={platform} />
     </div>
   );

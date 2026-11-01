@@ -7,6 +7,8 @@
   --glaze-muted: rgb(238 242 236 / 0.74);
   --glaze-faint: rgb(238 242 236 / 0.6);
   --bole: #d2412f;
+  /* Tezhip gilding; frames champion art the way the client's gold borders do. */
+  --gilt: #d6b46a;
 
   /* Motion: one premium curve family, three durations. */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);

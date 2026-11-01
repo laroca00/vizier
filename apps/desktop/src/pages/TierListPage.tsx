@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { getBans, getTierList } from "../api";
-import { championIconUrl, champions, latestVersion } from "../data/ddragon";
+import { championIconUrl, champions, latestVersion, roleIconUrl } from "../data/ddragon";
 import { POSITIONS } from "../labels";
 import { ARENA, QUEUES, RANKED, winLabel } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
@@ -60,6 +60,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
         <div className="tiers__tabs tiers__tabs--roles" role="tablist" aria-label={t("Rol")}>
           {ORDER.map((p) => (
             <button key={p} type="button" role="tab" aria-selected={p === position} className="nav__item" onClick={() => setPosition(p)}>
+              <img className="role-icon" src={roleIconUrl(p)} alt="" width={16} height={16} />
               {t(POSITIONS[p])}
             </button>
           ))}

@@ -1,6 +1,7 @@
 import { useT } from "../i18n";
 import { useState } from "react";
 import { getProTeams, type ProGroup } from "../api";
+import { roleIconUrl } from "../data/ddragon";
 import { POSITIONS } from "../labels";
 import { ProBuildList } from "../ProBuildList";
 import { LiquidGlass } from "../ui/LiquidGlass";
@@ -50,6 +51,7 @@ export function ProsPage() {
         </button>
         {ROLES.map((p) => (
           <button key={p} type="button" role="tab" aria-selected={p === position} className="nav__item" onClick={() => setPosition(p)}>
+            <img className="role-icon" src={roleIconUrl(p)} alt="" width={16} height={16} />
             {t(POSITIONS[p])}
           </button>
         ))}

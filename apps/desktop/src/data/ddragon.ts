@@ -96,3 +96,18 @@ export function items(): Promise<Map<number, Item>> {
 export function itemIconUrl(version: string, itemId: number) {
   return `${BASE}/cdn/${version}/img/item/${itemId}.png`;
 }
+
+export function splashUrl(championId: string) {
+  return `${BASE}/cdn/img/champion/splash/${championId}_0.jpg`;
+}
+
+export function loadingArtUrl(championId: string) {
+  return `${BASE}/cdn/img/champion/loading/${championId}_0.jpg`;
+}
+
+const ROLE_ICONS: Record<string, string> = { TOP: "top", JUNGLE: "jungle", MIDDLE: "middle", BOTTOM: "bottom", UTILITY: "utility" };
+
+export function roleIconUrl(position: string) {
+  const role = ROLE_ICONS[position.toUpperCase()] ?? "fill";
+  return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-${role}.png`;
+}

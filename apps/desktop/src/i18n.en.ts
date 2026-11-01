@@ -12,6 +12,9 @@ export const EN: Record<string, string> = {
   Hakkında: "About",
   Ara: "Search",
   "EUW ve TR oyuncuları için League of Legends yardımcısı.": "A League of Legends companion for EUW and TR players.",
+  "Yama {patch}, koridorların en güçlüleri": "Patch {patch}, strongest in each lane",
+  "Koridorların en güçlüleri": "Strongest in each lane",
+  "Son pro build'ler": "Latest pro builds",
 
   // Client status
   "League istemcisine bağlı değil": "Not connected to the League client",

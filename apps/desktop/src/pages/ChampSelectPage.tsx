@@ -15,6 +15,7 @@ import { ProBuildList } from "../ProBuildList";
 import { draftPhaseLabel, positionLabel } from "../labels";
 import type { ChampSelect, DraftMember } from "../lcu";
 import { LiquidGlass } from "../ui/LiquidGlass";
+import { useSplash } from "../ui/Splash";
 import { useAsync } from "../useAsync";
 
 type StaticData = { version: string; champions: Map<number, Champion>; spells: Map<number, SummonerSpell> };
@@ -49,6 +50,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const seconds = useSecondsLeft(draft.phaseEndsAt);
   const me = draft.myTeam.find((m) => m.isLocal);
   const ready = data.status === "done" ? data.value : null;
+  useSplash(me ? shownChampion(me) : null);
 
   return (
     <LiquidGlass className="panel draft" radius={28} strength={2.5}>

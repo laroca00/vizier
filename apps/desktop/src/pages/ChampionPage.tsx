@@ -3,10 +3,11 @@ import { useState } from "react";
 import { getChampion, getCounters, getSynergies, type ChampionOverview, type Counters } from "../api";
 import { BuildSuggestion } from "../BuildSuggestion";
 import { ProBuildList } from "../ProBuildList";
-import { championIconUrl, champions, latestVersion, type Champion } from "../data/ddragon";
+import { championIconUrl, champions, latestVersion, roleIconUrl, splashUrl, type Champion } from "../data/ddragon";
 import { POSITIONS } from "../labels";
 import { QUEUES, RANKED, winLabel } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
+import { useSplash } from "../ui/Splash";
 import { useAsync } from "../useAsync";
 
 const SHOWN_MATCHUPS = 5;
@@ -37,9 +38,15 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
   const queueLabel = t(QUEUES.find((q) => q.id === queue)?.label ?? "");
   const champion = data.status === "done" ? data.value.champions.get(championId) : undefined;
   const version = data.status === "done" ? data.value.version : null;
+  useSplash(championId);
 
   return (
     <LiquidGlass className="panel champion" radius={28} strength={2.5}>
+      {champion && (
+        <div className="champion__banner" aria-hidden="true">
+          <img src={splashUrl(champion.id)} alt="" />
+        </div>
+      )}
       <header className="champion__header enter">
         {champion && version && <img className="champion__portrait" src={championIconUrl(version, champion.id)} alt="" width={64} height={64} />}
         <div>
@@ -129,6 +136,7 @@ function Overview({ overview, championId, championName, champions, version, queu
               className="nav__item"
               onClick={() => onPosition(p.position)}
             >
+              <img className="role-icon" src={roleIconUrl(p.position)} alt="" width={16} height={16} />
               {t(POSITIONS[p.position])} <span className="champion__share">{percent(p.share).replace(/\.0(?=%|$)/, "")}</span>
             </button>
           ))}
