@@ -182,7 +182,6 @@
   width: min(420px, 100%);
   max-height: 100%;
   padding: 28px 30px;
-  overflow-y: auto;
   --delay: 320ms;
 }
 
@@ -336,7 +335,6 @@
   width: min(520px, 100%);
   max-height: 100%;
   padding: 28px 30px;
-  overflow-y: auto;
   --delay: 0ms;
 }
 
@@ -410,7 +408,6 @@
   width: min(1040px, 100%);
   max-height: 100%;
   padding: 28px 32px 30px;
-  overflow-y: auto;
   --delay: 0ms;
 }
 
@@ -679,7 +676,6 @@
   width: min(600px, 100%);
   max-height: 100%;
   padding: 32px 36px;
-  overflow-y: auto;
   --delay: 0ms;
 }
 
@@ -799,7 +795,6 @@
   width: min(560px, 100%);
   max-height: 100%;
   padding: 32px 36px;
-  overflow-y: auto;
   --delay: 0ms;
 }
 
@@ -881,7 +876,6 @@
   width: min(720px, 100%);
   max-height: 100%;
   padding: 28px 30px;
-  overflow-y: auto;
   --delay: 0ms;
 }
 
@@ -1309,7 +1303,6 @@
   width: min(1080px, 100%);
   max-height: 100%;
   padding: 28px 32px 30px;
-  overflow-y: auto;
   --delay: 0ms;
 }
 
@@ -1917,6 +1910,7 @@
   inset: 0;
   overflow: hidden;
   pointer-events: none;
+  --layer-opacity: 0.55;
 }
 
 .splash img {
@@ -1927,18 +1921,31 @@
   height: 100%;
   object-fit: cover;
   object-position: 60% 20%;
-  opacity: 0;
-  transform: scale(1.04);
   mask-image: linear-gradient(90deg, transparent, #000 50%), linear-gradient(0deg, transparent, #000 40%);
   mask-composite: intersect;
+}
+
+.splash img,
+.champion__banner img {
+  opacity: 0;
+  transform: scale(1.04);
   transition:
-    opacity var(--duration-slow) var(--ease),
+    opacity calc(var(--duration-slow) * 1.5) var(--ease),
     transform calc(var(--duration-slow) * 2) var(--ease-enter);
 }
 
-.splash img[data-current][data-loaded] {
-  opacity: 0.55;
+.splash img[data-loaded],
+.champion__banner img[data-loaded] {
+  opacity: var(--layer-opacity);
   transform: none;
+}
+
+/* The outgoing image fades only once the incoming one is there to take its place. */
+.splash:has(> img[data-current][data-loaded]) > img:not([data-current]),
+.champion__banner:has(> img[data-current][data-loaded]) > img:not([data-current]),
+.splash[data-empty] > img,
+.champion__banner[data-empty] > img {
+  opacity: 0;
 }
 
 .home__hero {
@@ -1956,7 +1963,6 @@
   width: min(440px, 100%);
   max-height: 100%;
   padding: 26px 24px;
-  overflow-y: auto;
   --delay: 320ms;
 }
 
@@ -2106,28 +2112,18 @@
   overflow: hidden;
   border-radius: inherit;
   pointer-events: none;
+  --layer-opacity: 0.5;
 }
 
 .champion__banner img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: 50% 22%;
-  opacity: 0.5;
   mask-image: linear-gradient(180deg, #000 20%, transparent), linear-gradient(90deg, transparent 10%, #000 70%);
   mask-composite: intersect;
-  animation: banner var(--duration-slow) var(--ease) both;
-}
-
-@keyframes banner {
-  from {
-    opacity: 0;
-    transform: scale(1.04);
-  }
-}
-
-.champion > :not(.champion__banner, .glass__defs) {
-  position: relative;
 }
 
 .champion__portrait {
@@ -2183,6 +2179,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .splash img,
+  .champion__banner img,
   .meta__card,
   .meta__art {
     transition-property: opacity;
@@ -2195,8 +2192,7 @@
     transform: none;
   }
 
-  .meta__card--loading,
-  .champion__banner img {
+  .meta__card--loading {
     animation: none;
   }
 }

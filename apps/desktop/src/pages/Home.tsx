@@ -49,7 +49,7 @@ export function Home({ lcu, coaching, onCoach, onOpenChampion }: Props) {
 
   // Without a summoner the side shows what the pros are building instead of an empty space.
   side ??= (
-    <LiquidGlass className="panel home__pros" radius={28} strength={2.5}>
+    <LiquidGlass className="panel home__pros" radius={28} strength={2.5} scroll>
       <h2 className="draft__heading">{t("Son pro build'ler")}</h2>
       <ProBuildList
         filter={{ limit: 6 }}

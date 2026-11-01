@@ -29,3 +29,71 @@
   overflow: hidden;
   pointer-events: none;
 }
+
+.glass--scroll {
+  display: flex;
+  flex-direction: column;
+}
+
+@property --fade-top {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-bottom {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+/* Content scrolls inside the panel's padding, so the glass edge never cuts a row in half. */
+.glass__scroll {
+  position: relative;
+  display: inherit;
+  flex-direction: inherit;
+  gap: inherit;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Room for focus rings, and the scrollbar moves out into the panel's right padding. */
+  margin: -6px -22px -6px -6px;
+  padding: 6px 22px 6px 6px;
+  /* Rows fade out at whichever edge has more to scroll to. */
+  mask-image: linear-gradient(
+    180deg,
+    transparent,
+    #000 var(--fade-top),
+    #000 calc(100% - var(--fade-bottom)),
+    transparent
+  );
+  animation:
+    fade-top linear both,
+    fade-bottom linear both;
+  animation-timeline: scroll(self), scroll(self);
+}
+
+.glass__scroll::-webkit-scrollbar-track {
+  margin-block: 6px;
+}
+
+@keyframes fade-top {
+  0% {
+    --fade-top: 0px;
+  }
+  6%,
+  100% {
+    --fade-top: 28px;
+  }
+}
+
+@keyframes fade-bottom {
+  0%,
+  94% {
+    --fade-bottom: 28px;
+  }
+  100% {
+    --fade-bottom: 0px;
+  }
+}

@@ -53,7 +53,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   useSplash(me ? shownChampion(me) : null);
 
   return (
-    <LiquidGlass className="panel draft" radius={28} strength={2.5}>
+    <LiquidGlass className="panel draft" radius={28} strength={2.5} scroll>
       <header className="draft__header enter">
         <h1 className="draft__title">{t("Şampiyon seçimi")}</h1>
         <p className="draft__phase">

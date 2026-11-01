@@ -97,8 +97,25 @@ export function itemIconUrl(version: string, itemId: number) {
   return `${BASE}/cdn/${version}/img/item/${itemId}.png`;
 }
 
-export function splashUrl(championId: string) {
-  return `${BASE}/cdn/img/champion/splash/${championId}_0.jpg`;
+export function splashUrl(championId: string, skin = 0) {
+  return `${BASE}/cdn/img/champion/splash/${championId}_${skin}.jpg`;
+}
+
+export type Skin = { num: number; name: string };
+
+const skinsById = new Map<string, Promise<Skin[]>>();
+
+/** The champion's skins with their own splash; chromas share their parent's art. */
+export function skins(championId: string): Promise<Skin[]> {
+  let list = skinsById.get(championId);
+  if (!list) {
+    list = latestVersion()
+      .then((v) => fetch(`${BASE}/cdn/${v}/data/tr_TR/champion/${championId}.json`))
+      .then((response) => response.json() as Promise<{ data: Record<string, { skins: (Skin & { parentSkin?: number })[] }> }>)
+      .then(({ data }) => data[championId].skins.filter((skin) => skin.parentSkin === undefined));
+    skinsById.set(championId, list);
+  }
+  return list;
 }
 
 export function loadingArtUrl(championId: string) {

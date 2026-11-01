@@ -17,7 +17,7 @@ import { setClientLocale, useT } from "./i18n";
 import { useSettings } from "./settings";
 import { LiquidGlass } from "./ui/LiquidGlass";
 import { ShaderGradient } from "./ui/ShaderGradient";
-import { SplashBackdrop, SplashProvider } from "./ui/Splash";
+import { SplashLayers, SplashProvider } from "./ui/Splash";
 import { UpdateNotice } from "./UpdateNotice";
 import "./App.css";
 
@@ -48,7 +48,7 @@ function App() {
   const [searching, setSearching] = useState(false);
   const [champion, setChampion] = useState<{ id: number; position: string | null; queue: number } | null>(null);
   const [riotId, setRiotId] = useState<RiotId | null>(null);
-  const [splash, setSplash] = useState<number | null>(null);
+  const [splash, setSplash] = useState<string | null>(null);
   const draftActive = useRef(draft !== null);
   const analysedGame = useRef<number | null>(null);
 
@@ -131,7 +131,7 @@ function App() {
         reflection={0.18}
         paused={settings.pauseBackgroundInGame && phase === "InProgress"}
       />
-      <SplashBackdrop championId={splash} />
+      <SplashLayers className="splash" url={splash} />
       <nav className="shell__nav" aria-label={t("Ana menü")}>
         <LiquidGlass className="nav" shape="pill" blur={4}>
           {items.map((item) => (

@@ -42,7 +42,7 @@ export function CoachPanel({ matchId, puuid, championName, justFinished, onClose
   const title = justFinished ? t("Son maçının analizi") : t("{champion} maçının analizi", { champion: championName });
 
   return (
-    <LiquidGlass className="panel coach" radius={28} strength={2.5}>
+    <LiquidGlass className="panel coach" radius={28} strength={2.5} scroll>
       <header className="coach__header">
         <h2 className="coach__title">{title}</h2>
         <button type="button" className="button" onClick={onClose}>

@@ -41,7 +41,7 @@ export function ProfileCard({ summoner, platform, onCoach, onOpenMatch }: Profil
   const [state, retry] = useAsync(`${platform}:${summoner.gameName}#${summoner.tagLine}`, () => load(summoner, platform));
 
   return (
-    <LiquidGlass className="panel profile" radius={28} strength={2.5}>
+    <LiquidGlass className="panel profile" radius={28} strength={2.5} scroll>
       {state.status === "done" ? (
         <ProfileBody {...state.value} onCoach={onCoach} onOpenMatch={onOpenMatch} />
       ) : state.status === "error" ? (

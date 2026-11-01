@@ -32,7 +32,7 @@ export function MatchDetail({ matchId, puuid, onClose, onCoach }: Props) {
   const [state, retry] = useAsync(`${matchId}:${puuid}`, () => load(matchId, puuid));
 
   return (
-    <LiquidGlass className="panel detail" radius={28} strength={2.5}>
+    <LiquidGlass className="panel detail" radius={28} strength={2.5} scroll>
       <header className="coach__header">
         <h2 className="coach__title">{t("Maç detayı")}</h2>
         <div className="detail__actions">

@@ -12,7 +12,7 @@ const CREDITS = [
 export function About() {
   const t = useT();
   return (
-    <LiquidGlass className="panel about" radius={28} strength={2.5}>
+    <LiquidGlass className="panel about" radius={28} strength={2.5} scroll>
       <h1 className="about__title enter">{t("Hakkında")}</h1>
       <p className="about__version enter">{t("Sürüm {version}", { version: __APP_VERSION__ })}</p>
 

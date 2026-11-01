@@ -14,6 +14,10 @@ type LiquidGlassProps = {
   role?: string;
   className?: string;
   style?: CSSProperties;
+  /** Scrolls the children inside the padding instead of scrolling the glass itself. */
+  scroll?: boolean;
+  /** Drawn behind the scrolling content and stays put while it scrolls. */
+  backdrop?: ReactNode;
   children?: ReactNode;
 };
 
@@ -31,6 +35,8 @@ export function LiquidGlass({
   role,
   className,
   style,
+  scroll = false,
+  backdrop,
   children,
 }: LiquidGlassProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -64,7 +70,7 @@ export function LiquidGlass({
   }, [size, cornerRadius, strength]);
 
   const ready = map !== null && size !== null;
-  const classes = ["glass", `glass--${shape}`, className].filter(Boolean).join(" ");
+  const classes = ["glass", `glass--${shape}`, scroll && "glass--scroll", className].filter(Boolean).join(" ");
 
   return (
     <div
@@ -105,7 +111,8 @@ export function LiquidGlass({
           </filter>
         </svg>
       )}
-      {children}
+      {backdrop}
+      {scroll ? <div className="glass__scroll">{children}</div> : children}
     </div>
   );
 }

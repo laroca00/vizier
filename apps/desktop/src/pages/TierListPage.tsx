@@ -35,7 +35,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
   const ranked = queue === RANKED;
 
   return (
-    <LiquidGlass className="panel tiers" radius={28} strength={2.5}>
+    <LiquidGlass className="panel tiers" radius={28} strength={2.5} scroll>
       <header className="draft__header">
         <h1 className="draft__title">{t("Tier listesi")}</h1>
         {state.status === "done" && state.value.list.patches.length > 0 && (

@@ -21,7 +21,7 @@ export function ProsPage() {
   const [teams] = useAsync("pro-teams", getProTeams);
 
   return (
-    <LiquidGlass className="panel tiers" radius={28} strength={2.5}>
+    <LiquidGlass className="panel tiers" radius={28} strength={2.5} scroll>
       <header className="draft__header">
         <h1 className="draft__title">{t("Pro build'ler")}</h1>
         <p className="draft__phase">{t("{who}, solo kuyruk maçları", { who: t(GROUPS.find((g) => g.id === group)?.note ?? "") })}</p>

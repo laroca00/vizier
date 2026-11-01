@@ -51,7 +51,7 @@ export function SettingsPage() {
   const [autostart, setAutostart] = useAutostart();
 
   return (
-    <LiquidGlass className="panel settings" radius={28} strength={2.5}>
+    <LiquidGlass className="panel settings" radius={28} strength={2.5} scroll>
       <h1 className="about__title enter">{t("Ayarlar")}</h1>
       <label className="settings__language enter">
         <span className="toggle__label">{t("Dil")}</span>
