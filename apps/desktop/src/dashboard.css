@@ -198,11 +198,11 @@
 }
 
 .wall li[data-result="win"] {
-  --glaze-color: var(--turquoise);
+  --glaze-color: var(--data-win);
 }
 
 .wall li[data-result="loss"] {
-  --glaze-color: var(--bole);
+  --glaze-color: var(--data-loss);
 }
 
 .wall img {
@@ -227,12 +227,8 @@
 
 .netwins__line {
   fill: none;
-  stroke: #5fd3c8;
+  stroke: var(--data-series);
   stroke-width: 2;
-}
-
-.netwins__line[data-ahead="false"] {
-  stroke: #f08a7c;
 }
 
 .tilt {
@@ -297,7 +293,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--turquoise);
+  background: var(--data-series);
 }
 
 .roles__rate {
@@ -369,11 +365,11 @@
 }
 
 .goals__dots li[data-met="true"] {
-  background: var(--turquoise);
+  background: var(--data-win);
 }
 
 .goals__dots li[data-met="false"] {
-  background: var(--bole);
+  background: var(--data-loss);
 }
 
 .goals__suggest {
@@ -531,12 +527,16 @@ button.pool__open:hover .pool__name {
   background: rgb(255 255 255 / 0.08);
 }
 
+.comp__damage {
+  gap: 2px;
+}
+
 .comp__damage span:first-child {
-  background: var(--cobalt);
+  background: var(--data-magic);
 }
 
 .comp__damage span:last-child {
-  background: var(--bole);
+  background: var(--data-physical);
 }
 
 .comp__legend {
@@ -956,4 +956,52 @@ button.pool__open:hover .pool__name {
 .pool--drops li {
   grid-template-columns: minmax(0, 1fr) auto auto;
   white-space: nowrap;
+}
+
+.tile--chart {
+  grid-column: span 4;
+  --delay: 180ms;
+}
+
+@media (max-width: 1360px) {
+  .tile--chart {
+    grid-column: span 6;
+  }
+}
+
+.chart__game {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart__game img {
+  border-radius: 5px;
+}
+
+.chart__legend {
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--glaze-muted);
+}
+
+.chart__legend span::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 3px;
+  vertical-align: -1px;
+  background: var(--data-win);
+}
+
+.chart__legend [data-result="loss"]::before {
+  background: var(--data-loss);
+}
+
+.tile--roles .segbar {
+  margin-bottom: 4px;
 }

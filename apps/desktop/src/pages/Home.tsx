@@ -43,8 +43,7 @@ export function Home({ lcu, coaching, onCoach, onOpenChampion }: Props) {
     return (
       <div className="home home--dash">
         <header className="dash__bar enter">
-          <h1 className="wordmark wordmark--small">Vizier</h1>
-          <ClientStatus status={lcu} />
+          <h1 className="page__title">{t("Merhaba, {name}", { name: summoner.gameName })}</h1>
         </header>
         <Dashboard
           summoner={summoner}

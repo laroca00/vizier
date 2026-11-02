@@ -12,6 +12,7 @@ import { QUEUES, RANKED, winLabel } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { SplashLayers, useSkinSplash, useSplashUrl } from "../ui/Splash";
 import { useAsync } from "../useAsync";
+import { SegmentBar } from "../charts";
 
 const SHOWN_MATCHUPS = 5;
 const MIN_ROLE_GAMES = 10;
@@ -170,6 +171,14 @@ function Overview({ overview, championId, championName, champions, version, queu
             </button>
           ))}
         </div>
+      )}
+
+      {ranked && roles.length > 1 && (
+        <SegmentBar
+          label={t("Rollere göre oynanma")}
+          segments={roles.slice(0, 5).map((p) => ({ key: p.position, label: t(POSITIONS[p.position]), value: p.share, icon: roleIconUrl(p.position) }))}
+          format={(n) => percent(n).replace(/\.0(?=%|$)/, "")}
+        />
       )}
 
       <dl className="figures enter">

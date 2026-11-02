@@ -10,6 +10,15 @@
   /* Tezhip gilding; frames champion art the way the client's gold borders do. */
   --gilt: #d6b46a;
 
+  /* Chart marks, checked with the dataviz validator on --ink (lightness band,
+     colour-blind separation and contrast all pass). Text never uses them. */
+  --data-series: #5b7fe6;
+  --data-win: #14a594;
+  --data-loss: #e45a48;
+  --data-grid: rgb(238 242 236 / 0.12);
+  --data-magic: #5b7fe6;
+  --data-physical: #c27c2a;
+
   /* Motion: one premium curve family, three durations. */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);

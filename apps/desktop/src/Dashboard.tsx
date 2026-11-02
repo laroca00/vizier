@@ -26,6 +26,7 @@ import { LpHistory } from "./ProfileExtras";
 import { ProBuildList } from "./ProBuildList";
 import type { CoachTarget } from "./ProfileCard";
 import { MetaPicks } from "./MetaPicks";
+import { GameBars, HBars, SegmentBar, TrendLine } from "./charts";
 import { useSettings } from "./settings";
 import { useAsync } from "./useAsync";
 
@@ -87,6 +88,7 @@ function Body({ profile, version, champions, refreshKey, onCoach, onOpenMatch, o
       </RankTile>
       <FormTile games={games} version={version} champions={champions} failed={log.status === "error"} />
       <SessionTile games={games} />
+      {games && games.length > 1 && <ChartTiles games={games} version={version} champions={champions} />}
       <RolesTile games={games} />
       <GoalsTile games={games} puuid={puuid} />
       <PoolTile games={games} version={version} champions={champions} onOpenChampion={onOpenChampion} />
@@ -318,6 +320,13 @@ function RolesTile({ games }: { games: GameRow[] | null }) {
   return (
     <section className="tile tile--roles" aria-label={t("Rollerin")}>
       <h2 className="tile__title">{t("Rollerin")}</h2>
+      {roles.length > 1 && (
+        <SegmentBar
+          label={t("Rollere göre maç dağılımı")}
+          segments={roles.slice(0, 5).map((r) => ({ key: r.position, label: t(POSITIONS[r.position] ?? r.position), value: r.games, icon: roleIconUrl(r.position) }))}
+          format={(n) => formatPercent(n, lang)}
+        />
+      )}
       {roles.length === 0 ? (
         <p className="tile__meta">{games ? t("Rol bilgisi olan maç yok.") : t("Yükleniyor")}</p>
       ) : (
@@ -637,5 +646,129 @@ function MatchesTile({
         </ul>
       )}
     </section>
+  );
+}
+
+function ChartTiles({ games, version, champions }: { games: GameRow[]; version: string; champions: Map<number, Champion> }) {
+  const t = useT();
+  const lang = useLang();
+  const { goals } = usePersonal();
+  const oldestFirst = [...games].reverse();
+  const describe = (g: GameRow) => {
+    const champion = champions.get(g.championId);
+    return (
+      <span className="chart__game">
+        {champion && <img src={championIconUrl(version, champion.id)} alt="" width={18} height={18} />}
+        {champion?.name}, {g.win ? t("Galibiyet") : t("Mağlubiyet")}, {g.kills}/{g.deaths}/{g.assists}
+      </span>
+    );
+  };
+  const csGoal = goals.find((g) => g.metric === "cs_pm")?.target ?? null;
+  const champs = byChampion(games)
+    .filter((c) => c.games >= 2)
+    .sort((a, b) => b.wins / b.games - a.wins / a.games || b.games - a.games)
+    .slice(0, 6);
+  return (
+    <>
+      <section className="tile tile--chart" aria-label={t("Maç maç KDA")}>
+        <div className="tile__head">
+          <h2 className="tile__title">{t("Maç maç KDA")}</h2>
+          <p className="tile__meta">{t("Eskiden yeniye")}</p>
+        </div>
+        <GameBars
+          label={t("Son {games} maçta KDA", { games: games.length })}
+          bars={oldestFirst.map((g) => ({ value: kdaOf(g), win: g.win, label: describe(g) }))}
+          format={(n) => `${n.toFixed(1)} KDA`}
+        />
+        <p className="chart__legend">
+          <span data-result="win">{t("Galibiyet")}</span>
+          <span data-result="loss">{t("Mağlubiyet")}</span>
+        </p>
+      </section>
+      <section className="tile tile--chart" aria-label={t("Dakikada minyon")}>
+        <div className="tile__head">
+          <h2 className="tile__title">{t("Dakikada minyon")}</h2>
+          <p className="tile__meta">
+            {t("ortalama {value}", { value: (oldestFirst.reduce((s, g) => s + g.cs / Math.max(1, g.minutes), 0) / oldestFirst.length).toFixed(1) })}
+          </p>
+        </div>
+        <TrendLine
+          label={t("Maç maç dakikada minyon")}
+          values={oldestFirst.map((g) => g.cs / Math.max(1, g.minutes))}
+          target={csGoal}
+          format={(n) => n.toFixed(1)}
+          pointLabel={(i) => describe(oldestFirst[i])}
+        />
+        {csGoal === null && <p className="tile__meta">{t("Hedeflerine dakikada minyon eklersen çizgisi burada görünür.")}</p>}
+      </section>
+      <section className="tile tile--chart" aria-label={t("Şampiyonlarına göre kazanma")}>
+        <h2 className="tile__title">{t("Şampiyonlarına göre kazanma")}</h2>
+        {champs.length === 0 ? (
+          <p className="tile__meta">{t("En az iki maç oynadığın şampiyon olunca burada sıralanır.")}</p>
+        ) : (
+          <HBars
+            max={1}
+            format={(n) => formatPercent(n, lang)}
+            bars={champs.map((c, i) => {
+              const champion = champions.get(c.championId);
+              return {
+                key: c.championId,
+                emphasis: i === 0,
+                value: c.wins / c.games,
+                label: (
+                  <>
+                    {champion && <img src={championIconUrl(version, champion.id)} alt="" width={20} height={20} />}
+                    {champion?.name}
+                  </>
+                ),
+                note: t("{games} maç, {kda} KDA", { games: c.games, kda: c.kda.toFixed(1) }),
+              };
+            })}
+          />
+        )}
+      </section>
+    </>
+  );
+}
+
+/** Someone else's profile from search: the same tiles, without the personal ones. */
+export function PublicDashboard({
+  summoner,
+  platform,
+  onCoach,
+  onOpenMatch,
+  onOpenChampion,
+}: Omit<Props, "refreshKey" | "onOpenMatch"> & { onOpenMatch: (matchId: string, puuid: string) => void }) {
+  const t = useT();
+  const [state, retry] = useAsync(`public:${platform}:${summoner.gameName}#${summoner.tagLine}`, () => load(summoner, platform));
+  const puuid = state.status === "done" ? state.value.profile.account.puuid : null;
+  const [log] = useAsync(puuid ? `log:${puuid}` : null, () => getGameLog(puuid!));
+  const [lp] = useAsync(puuid ? `lp:${puuid}` : null, () => getLpHistory(puuid!));
+  if (state.status === "error")
+    return (
+      <div className="dash">
+        <section className="tile tile--wide" role="alert">
+          <p className="profile__message">{t("Profil alınamadı. Vizier sunucusuna şu an ulaşılamıyor.")}</p>
+          <button type="button" className="button" onClick={retry}>
+            {t("Tekrar dene")}
+          </button>
+        </section>
+      </div>
+    );
+  if (state.status !== "done") return <div className="dash" aria-busy="true"><div className="tile tile--rank tile--loading" /></div>;
+  const { profile, version, champions } = state.value;
+  const games = log.status === "done" ? log.value : null;
+  const snapshots = lp.status === "done" ? lp.value : [];
+  return (
+    <div className="dash">
+      <RankTile profile={profile} version={version} lpToday={lpSince(snapshots, startOfDay())} lpWeek={lpSince(snapshots, startOfWeek())}>
+        <LpHistory puuid={profile.account.puuid} />
+      </RankTile>
+      <FormTile games={games} version={version} champions={champions} failed={log.status === "error"} />
+      <RolesTile games={games} />
+      {games && games.length > 1 && <ChartTiles games={games} version={version} champions={champions} />}
+      <PoolTile games={games} version={version} champions={champions} onOpenChampion={onOpenChampion} />
+      <MatchesTile games={games} version={version} champions={champions} puuid={profile.account.puuid} onCoach={onCoach} onOpenMatch={(id) => onOpenMatch(id, profile.account.puuid)} />
+    </div>
   );
 }

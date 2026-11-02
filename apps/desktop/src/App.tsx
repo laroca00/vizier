@@ -22,6 +22,9 @@ import { SplashLayers, SplashProvider } from "./ui/Splash";
 import { UpdateNotice } from "./UpdateNotice";
 import "./App.css";
 import "./dashboard.css";
+import "./shell.css";
+import { ClientStatus } from "./ClientStatus";
+import { NavIcon, type IconName } from "./ui/NavIcon";
 
 // Night cobalt to turquoise across the plane, bright cobalt on the folds.
 const GRADIENT: [string, string, string] = ["#0b1846", "#1c9c92", "#2f55c8"];
@@ -142,15 +145,30 @@ function App() {
     setView("profile");
   }
 
-  const items: { id: View; label: string }[] = [
-    { id: "home", label: "Ana sayfa" },
-    ...(inQueue && summoner ? [{ id: "queue" as const, label: "Sıra" }] : []),
-    ...(draft ? [{ id: "draft" as const, label: "Şampiyon seçimi" }] : []),
-    { id: "tiers", label: "Tier listesi" },
-    { id: "pros", label: "Pro'lar" },
-    { id: "settings", label: "Ayarlar" },
-    { id: "about", label: "Hakkında" },
+  const items: { id: View; label: string; icon: IconName; live?: boolean }[] = [
+    { id: "home", label: "Panel", icon: "home" },
+    ...(inQueue && summoner ? [{ id: "queue" as const, label: "Sıra", icon: "queue" as const, live: true }] : []),
+    ...(draft ? [{ id: "draft" as const, label: "Şampiyon seçimi", icon: "draft" as const, live: true }] : []),
+    { id: "tiers", label: "Tier listesi", icon: "tiers" },
+    { id: "pros", label: "Pro'lar", icon: "pros" },
   ];
+  const footItems: { id: View; label: string; icon: IconName }[] = [
+    { id: "settings", label: "Ayarlar", icon: "settings" },
+    { id: "about", label: "Hakkında", icon: "about" },
+  ];
+  const navButton = (item: { id: View; label: string; icon: IconName; live?: boolean }) => (
+    <button
+      key={item.id}
+      type="button"
+      className="side__item"
+      aria-current={item.id === view ? "page" : undefined}
+      data-live={item.live || undefined}
+      onClick={() => open(item.id)}
+    >
+      <NavIcon name={item.icon} />
+      <span>{t(item.label)}</span>
+    </button>
+  );
 
   function open(id: View) {
     if (id === view) return;
@@ -168,27 +186,24 @@ function App() {
         paused={(settings.pauseBackgroundInGame && phase === "InProgress") || (settings.pauseBackgroundUnfocused && !windowActive)}
       />
       <SplashLayers className="splash" url={splash} />
-      <nav className="shell__nav" aria-label={t("Ana menü")}>
-        <LiquidGlass className="nav" shape="pill" blur={4}>
-          {items.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className="nav__item"
-              aria-current={item.id === view ? "page" : undefined}
-              onClick={() => open(item.id)}
-            >
-              {t(item.label)}
-            </button>
-          ))}
+      <aside className="shell__side">
+        <LiquidGlass className="side" radius={26} blur={4}>
+          <p className="side__brand">Vizier</p>
+          <nav className="side__nav" aria-label={t("Ana menü")}>
+            {items.map(navButton)}
+          </nav>
+          <div className="side__foot">{footItems.map(navButton)}</div>
         </LiquidGlass>
+      </aside>
+      <header className="shell__top">
+        <UpdateNotice />
+        <ClientStatus status={lcu} />
         <LiquidGlass className="nav" shape="pill" blur={4}>
           <button type="button" className="nav__item nav__search" aria-keyshortcuts="Control+K" onClick={() => setSearching(true)}>
             {t("Ara")} <kbd>Ctrl K</kbd>
           </button>
         </LiquidGlass>
-        <UpdateNotice />
-      </nav>
+      </header>
       <SplashProvider value={setSplash}>
         <main className="shell__main" key={view}>
           {view === "draft" && draft ? (
@@ -212,7 +227,7 @@ function App() {
               onOpenChampion={openChampion}
             />
           ) : view === "profile" && riotId ? (
-            <ProfilePage key={`${riotId.platform}:${riotId.gameName}#${riotId.tagLine}`} riotId={riotId} />
+            <ProfilePage key={`${riotId.platform}:${riotId.gameName}#${riotId.tagLine}`} riotId={riotId} onOpenChampion={openChampion} />
           ) : (
             <Home lcu={lcu} coaching={coaching} onCoach={setCoaching} onOpenChampion={openChampion} />
           )}

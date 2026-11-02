@@ -6,6 +6,10 @@ import { POSITIONS } from "../labels";
 import { ARENA, QUEUES, RANKED, winLabel } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { useAsync } from "../useAsync";
+import { Scatter } from "../charts";
+
+// The most picked champions only; past this the plot turns into a pile of icons.
+const PLOTTED = 40;
 
 const ORDER = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
 const percentIn = (lang: Lang) => (n: number) => formatPercent(n, lang, 1);
@@ -78,6 +82,37 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
         <p className="coach__note">{t("Yükleniyor")}</p>
       ) : (
         <div className="tiers__body" data-solo={!state.value.bans || undefined}>
+          {state.value.list.champions.length > 4 && (
+            <section className="tiers__map" aria-label={t("Kazanma ve seçilme haritası")}>
+              <h2 className="draft__heading">{t("Kazanma ve seçilme haritası")}</h2>
+              <p className="build__note">{t("Sağ üstte sık seçilip sık kazananlar. Kesikli çizgiler %50 kazanmayı ve ortanca seçilmeyi gösterir.")}</p>
+              <Scatter
+                label={t("Kazanma ve seçilme haritası")}
+                xLabel={t("Seçilme")}
+                yLabel={t(winLabel(queue))}
+                formatX={percent}
+                formatY={percent}
+                points={[...state.value.list.champions]
+                  .sort((a, b) => b.pickRate - a.pickRate)
+                  .slice(0, PLOTTED)
+                  .flatMap((c) => {
+                    const champion = state.value.champions.get(c.championId);
+                    if (!champion) return [];
+                    return [
+                      {
+                        key: c.championId,
+                        x: c.pickRate,
+                        y: c.winRate,
+                        name: champion.name,
+                        icon: championIconUrl(state.value.version, champion.id),
+                        detail: <span>{t("{tier} tier, {games} maç", { tier: c.tier, games: c.games })}</span>,
+                        onOpen: () => onOpenChampion(c.championId, ranked ? position : null, queue),
+                      },
+                    ];
+                  })}
+              />
+            </section>
+          )}
           {state.value.list.champions.length === 0 ? (
             <p className="coach__note">
               {t("{what} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.", {

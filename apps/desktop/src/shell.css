@@ -1,0 +1,213 @@
+/* Dashboard shell: a glass side rail, a slim top bar and a full-height work
+   area. Loaded after App.css, so these rules replace the old top-nav layout. */
+
+.shell {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  --gutter: clamp(20px, 2.6vw, 40px);
+}
+
+.shell__side {
+  position: relative;
+  grid-row: 1 / -1;
+  display: flex;
+  padding: 18px 0 18px 18px;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 216px;
+  padding: 18px 10px 12px;
+  --glass-tint: linear-gradient(180deg, rgb(11 24 70 / 0.42), rgb(6 14 44 / 0.58));
+  --glass-shadow: inset 0 1px 0 rgb(255 255 255 / 0.26), inset 0 0 0 1px rgb(255 255 255 / 0.09), 0 24px 50px rgb(3 8 30 / 0.35);
+  animation: rise var(--enter-duration) var(--ease-enter) both;
+}
+
+.side__brand {
+  margin: 0 0 18px 12px;
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variation-settings: "SHRP" 100;
+}
+
+.side__nav,
+.side__foot {
+  display: grid;
+  gap: 2px;
+}
+
+.side__foot {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.side__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  color: var(--glaze-muted);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-quick) var(--ease),
+    color var(--duration-quick) var(--ease);
+}
+
+.side__item:hover {
+  color: var(--glaze);
+  background: rgb(255 255 255 / 0.06);
+}
+
+.side__item[aria-current="page"] {
+  color: var(--glaze);
+  background: rgb(255 255 255 / 0.13);
+}
+
+/* The gilt edge marks the page you're on, like the client's selected tab. */
+.side__item[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 9999px;
+  background: var(--gilt);
+}
+
+/* Queue and champ select only exist while they're happening. */
+.side__item[data-live]::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--turquoise);
+  animation: breathe 2000ms ease-in-out infinite;
+}
+
+.side__icon {
+  flex: none;
+}
+
+.side__item span {
+  white-space: nowrap;
+}
+
+.shell__top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 18px var(--gutter) 0;
+}
+
+.shell__top .update {
+  margin-right: auto;
+}
+
+.shell__main {
+  align-items: stretch;
+  padding: 16px var(--gutter) 22px;
+}
+
+/* Pages fill the work area instead of floating at the bottom. */
+.shell__main > .panel,
+.shell__main > .home,
+.shell__main > .queue {
+  width: 100%;
+  max-height: 100%;
+}
+
+.shell__main > .settings,
+.shell__main > .about {
+  width: min(640px, 100%);
+}
+
+.home:not(.home--dash) {
+  align-items: stretch;
+}
+
+.page__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+
+.dash__bar {
+  justify-content: flex-start;
+}
+
+@media (max-width: 1180px) {
+  .side {
+    width: 64px;
+    padding-inline: 8px;
+  }
+
+  .side__brand {
+    margin-left: 6px;
+    font-size: 0;
+  }
+
+  .side__brand::first-letter {
+    font-size: 30px;
+  }
+
+  .side__item span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .side__item[data-live]::after {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side__item[data-live]::after {
+    animation: none;
+  }
+}
+
+.tiers__map {
+  grid-column: 1 / -1;
+  padding: 18px 20px 10px;
+  border-radius: 20px;
+  background: rgb(255 255 255 / 0.04);
+}
+
+/* The champion's headline numbers read as stat tiles. */
+.champion .figures {
+  gap: 10px;
+}
+
+.champion .figures > div {
+  min-width: 128px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgb(255 255 255 / 0.05);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
+.champion .segbar {
+  max-width: 560px;
+}
