@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { lcuFixture } from "./dev/fixtures";
 import { translate, type Lang } from "./i18n";
 
 export type Summoner = { gameName: string; tagLine: string; puuid: string };
@@ -88,7 +89,7 @@ function useBackendState<T>(event: string, command: string, initial: T): T {
 }
 
 export function useLcuStatus(): LcuStatus {
-  return useBackendState<LcuStatus>("lcu-status", "lcu_status", { state: "disconnected" });
+  return useBackendState<LcuStatus>("lcu-status", "lcu_status", lcuFixture() ?? { state: "disconnected" });
 }
 
 export function useChampSelect(): ChampSelect | null {

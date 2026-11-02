@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { ClientStatus } from "../ClientStatus";
-import { matchFixture } from "../dev/fixtures";
 import { CoachPanel } from "../CoachPanel";
+import { Dashboard } from "../Dashboard";
+import { matchFixture } from "../dev/fixtures";
 import { platformOf, type LcuStatus } from "../lcu";
 import { MatchDetail } from "../MatchDetail";
 import { MetaPicks } from "../MetaPicks";
 import { ProBuildList } from "../ProBuildList";
-import { ProfileCard, type CoachTarget } from "../ProfileCard";
+import type { CoachTarget } from "../ProfileCard";
 import { useT } from "../i18n";
 import { LiquidGlass } from "../ui/LiquidGlass";
 
@@ -20,35 +21,46 @@ type Props = {
 export function Home({ lcu, coaching, onCoach, onOpenChampion }: Props) {
   const t = useT();
   const fixture = matchFixture();
-  const summoner =
-    lcu.state === "connected" ? lcu.summoner : fixture ? { gameName: "", tagLine: "", puuid: fixture.puuid } : null;
+  const summoner = lcu.state === "connected" ? lcu.summoner : null;
+  const puuid = summoner?.puuid ?? fixture?.puuid ?? null;
   const [openMatch, setOpenMatch] = useState<string | null>(fixture?.matchId ?? null);
 
-  let side = null;
+  let drawer = null;
   if (coaching) {
-    side = <CoachPanel {...coaching} onClose={() => onCoach(null)} />;
-  } else if (openMatch && summoner) {
-    side = (
+    drawer = <CoachPanel {...coaching} onClose={() => onCoach(null)} />;
+  } else if (openMatch && puuid) {
+    drawer = (
       <MatchDetail
         matchId={openMatch}
-        puuid={summoner.puuid}
+        puuid={puuid}
         onClose={() => setOpenMatch(null)}
-        onCoach={() => onCoach({ matchId: openMatch, puuid: summoner.puuid, championName: "Bu" })}
-      />
-    );
-  } else if (summoner) {
-    side = (
-      <ProfileCard
-        summoner={summoner}
-        platform={platformOf(lcu.state === "connected" ? lcu.region : null)}
-        onCoach={onCoach}
-        onOpenMatch={setOpenMatch}
+        onCoach={() => onCoach({ matchId: openMatch, puuid, championName: "Bu" })}
       />
     );
   }
 
+  if (summoner) {
+    return (
+      <div className="home home--dash">
+        <header className="dash__bar enter">
+          <h1 className="wordmark wordmark--small">Vizier</h1>
+          <ClientStatus status={lcu} />
+        </header>
+        <Dashboard
+          summoner={summoner}
+          platform={platformOf(lcu.state === "connected" ? lcu.region : null)}
+          refreshKey={lcu.state === "connected" ? lcu.lastGameId : null}
+          onCoach={onCoach}
+          onOpenMatch={setOpenMatch}
+          onOpenChampion={onOpenChampion}
+        />
+        {drawer && <div className="dash__drawer">{drawer}</div>}
+      </div>
+    );
+  }
+
   // Without a summoner the side shows what the pros are building instead of an empty space.
-  side ??= (
+  const side = drawer ?? (
     <LiquidGlass className="panel home__pros" radius={28} strength={2.5} scroll>
       <h2 className="draft__heading">{t("Son pro build'ler")}</h2>
       <ProBuildList

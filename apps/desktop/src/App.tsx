@@ -9,6 +9,7 @@ import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { ProfilePage } from "./pages/ProfilePage";
 import { ProsPage } from "./pages/ProsPage";
+import { QueuePage } from "./pages/QueuePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TierListPage } from "./pages/TierListPage";
 import type { CoachTarget } from "./ProfileCard";
@@ -20,14 +21,33 @@ import { ShaderGradient } from "./ui/ShaderGradient";
 import { SplashLayers, SplashProvider } from "./ui/Splash";
 import { UpdateNotice } from "./UpdateNotice";
 import "./App.css";
+import "./dashboard.css";
 
 // Night cobalt to turquoise across the plane, bright cobalt on the folds.
 const GRADIENT: [string, string, string] = ["#0b1846", "#1c9c92", "#2f55c8"];
 
-type View = "home" | "about" | "draft" | "settings" | "tiers" | "pros" | "champion" | "profile";
+type View = "home" | "about" | "draft" | "queue" | "settings" | "tiers" | "pros" | "champion" | "profile";
 
 const fixture = champSelectFixture();
 const POST_GAME_PHASES = new Set(["PreEndOfGame", "EndOfGame"]);
+const QUEUE_PHASES = new Set(["Matchmaking", "ReadyCheck"]);
+
+/** False while the window is hidden, minimised or behind another app. */
+function useWindowActive() {
+  const [active, setActive] = useState(() => !document.hidden && document.hasFocus());
+  useEffect(() => {
+    const update = () => setActive(!document.hidden && document.hasFocus());
+    window.addEventListener("focus", update);
+    window.addEventListener("blur", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      window.removeEventListener("focus", update);
+      window.removeEventListener("blur", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, []);
+  return active;
+}
 
 async function bringToFront() {
   if (!isTauri()) return;
@@ -50,6 +70,9 @@ function App() {
   const [riotId, setRiotId] = useState<RiotId | null>(null);
   const [splash, setSplash] = useState<string | null>(null);
   const draftActive = useRef(draft !== null);
+  const queueActive = useRef(false);
+  const [queuedAt, setQueuedAt] = useState(Date.now);
+  const windowActive = useWindowActive();
   const analysedGame = useRef<number | null>(null);
 
   const phase = lcu.state === "connected" ? lcu.phase : null;
@@ -71,6 +94,18 @@ function App() {
     if (!active && draftActive.current) setView((v) => (v === "draft" ? "home" : v));
     draftActive.current = active;
   }, [draft, settings.showOnChampSelect]);
+
+  // The queue screen comes up while matchmaking, without taking focus, and
+  // gives way to champ select or home afterwards.
+  const inQueue = phase !== null && QUEUE_PHASES.has(phase);
+  useEffect(() => {
+    if (inQueue && !queueActive.current) {
+      setQueuedAt(Date.now());
+      if (settings.queueCompanion && summoner) setView((v) => (v === "home" ? "queue" : v));
+    }
+    if (!inQueue && queueActive.current) setView((v) => (v === "queue" ? "home" : v));
+    queueActive.current = inQueue;
+  }, [inQueue, settings.queueCompanion, summoner]);
 
   useEffect(() => {
     if (!settings.openAnalysisAfterGame || !phase || !POST_GAME_PHASES.has(phase)) return;
@@ -109,6 +144,7 @@ function App() {
 
   const items: { id: View; label: string }[] = [
     { id: "home", label: "Ana sayfa" },
+    ...(inQueue && summoner ? [{ id: "queue" as const, label: "Sıra" }] : []),
     ...(draft ? [{ id: "draft" as const, label: "Şampiyon seçimi" }] : []),
     { id: "tiers", label: "Tier listesi" },
     { id: "pros", label: "Pro'lar" },
@@ -129,7 +165,7 @@ function App() {
         colors={GRADIENT}
         strength={3}
         reflection={0.18}
-        paused={settings.pauseBackgroundInGame && phase === "InProgress"}
+        paused={(settings.pauseBackgroundInGame && phase === "InProgress") || (settings.pauseBackgroundUnfocused && !windowActive)}
       />
       <SplashLayers className="splash" url={splash} />
       <nav className="shell__nav" aria-label={t("Ana menü")}>
@@ -156,7 +192,9 @@ function App() {
       <SplashProvider value={setSplash}>
         <main className="shell__main" key={view}>
           {view === "draft" && draft ? (
-            <ChampSelectPage draft={draft} />
+            <ChampSelectPage draft={draft} puuid={summoner?.puuid ?? null} />
+          ) : view === "queue" && summoner ? (
+            <QueuePage summoner={summoner} platform={platform} since={queuedAt} onOpenChampion={openChampion} />
           ) : view === "about" ? (
             <About />
           ) : view === "settings" ? (
