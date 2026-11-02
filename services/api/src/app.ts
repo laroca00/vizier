@@ -13,7 +13,7 @@ import { STORED_QUEUES } from "./crawler.ts";
 import { proBuilds, proTeams } from "./pros.ts";
 import { csByMinute, goldGraph, type Timeline as FullTimeline } from "./timeline.ts";
 import { scoreGame, weakestMinutes } from "./report.ts";
-import { championPool, lpHistory, recordLp } from "./profileStats.ts";
+import { championPool, gameLog, lpHistory, recordLp } from "./profileStats.ts";
 import { findHabits, gameNumbers } from "./trends.ts";
 import { MATCH_ID, RiotError, regionOfMatch, type Platform, type RiotClient } from "./riot/client.ts";
 import type { Account, ActiveGame, ChampionMastery, LeagueEntry, Match, Summoner } from "./riot/types.ts";
@@ -395,6 +395,27 @@ export function createApp(riot: RiotClient, store: Store, { statsDb, claude, ai,
       return { games: matches.length, champions: championPool(matches, puuid) };
     });
     return c.json(pool);
+  });
+
+  // Shares the champion pool's 20 match ids, so it fetches no new match documents.
+  app.get("/v1/players/:puuid/games", async (c) => {
+    const { puuid } = c.req.param();
+    if (!PUUID.test(puuid)) badRequest("Invalid PUUID");
+    const log = await cached(`game-log:${puuid}`, 3 * MINUTE, async () => {
+      const ids =
+        (await riot.get<string[]>(
+          "europe",
+          "/lol/match/v5/matches/by-puuid/ids",
+          `/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&start=0&count=20`,
+        )) ?? [];
+      const matches: Match[] = [];
+      for (const id of ids) {
+        const match = await matchById(id);
+        if (match) matches.push(match);
+      }
+      return { games: gameLog(matches, puuid) };
+    });
+    return c.json(log);
   });
 
   app.get("/v1/players/:puuid/lp", async (c) => {

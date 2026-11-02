@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { championPool, ladderPoints, lpHistory, recordLp } from "./profileStats.ts";
+import { championPool, gameLog, ladderPoints, lpHistory, recordLp } from "./profileStats.ts";
 import type { Match } from "./riot/types.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
@@ -18,6 +18,17 @@ describe("championPool", () => {
       { championId: 103, games: 2, wins: 1, kills: 8, deaths: 4, assists: 8 },
       { championId: 238, games: 1, wins: 0, kills: 1, deaths: 2, assists: 4 },
     ]);
+  });
+});
+
+describe("gameLog", () => {
+  it("keeps one row per game, newest first", () => {
+    const older = game(103, true, 5);
+    const newer = { ...game(238, false, 1), info: { ...game(238, false, 1).info, gameStartTimestamp: 10_000 } };
+    const rows = gameLog([older, newer], "me");
+    expect(rows.map((r) => r.championId)).toEqual([238, 103]);
+    expect(rows[1]).toMatchObject({ minutes: 30, win: true, kills: 5, deaths: 2, assists: 4, cs: 0, killParticipation: null });
+    expect(rows[1].at).toBe(1 + 1800 * 1000);
   });
 });
 

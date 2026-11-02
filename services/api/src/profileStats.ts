@@ -58,3 +58,46 @@ export async function lpHistory(db: D1Database, puuid: string, queue: string): P
     .all<LpSnapshot>();
   return results.map((s) => ({ ...s, points: ladderPoints(s.tier, s.rank, s.lp) }));
 }
+
+export type GameRow = {
+  matchId: string;
+  at: number;
+  minutes: number;
+  championId: number;
+  position: string;
+  win: boolean;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  vision: number;
+  /** Missing when Riot left the challenge numbers out of the match. */
+  killParticipation: number | null;
+  damageShare: number | null;
+};
+
+/** One compact row per game, newest first, for charts and streaks on the desktop app. */
+export function gameLog(matches: Match[], puuid: string): GameRow[] {
+  const rows: GameRow[] = [];
+  for (const match of matches) {
+    const p = match.info.participants.find((x) => x.puuid === puuid);
+    if (!p) continue;
+    const minutes = Math.round((match.info.gameDuration / 60) * 10) / 10;
+    rows.push({
+      matchId: match.metadata.matchId,
+      at: match.info.gameStartTimestamp + match.info.gameDuration * 1000,
+      minutes,
+      championId: p.championId,
+      position: p.teamPosition,
+      win: p.win,
+      kills: p.kills ?? 0,
+      deaths: p.deaths ?? 0,
+      assists: p.assists ?? 0,
+      cs: (p.totalMinionsKilled ?? 0) + (p.neutralMinionsKilled ?? 0),
+      vision: p.visionScore ?? 0,
+      killParticipation: p.challenges?.killParticipation ?? null,
+      damageShare: p.challenges?.teamDamagePercentage ?? null,
+    });
+  }
+  return rows.sort((a, b) => b.at - a.at);
+}
