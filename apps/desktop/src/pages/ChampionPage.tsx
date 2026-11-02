@@ -2,6 +2,9 @@ import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { useState } from "react";
 import { getChampion, getCounters, getSynergies, type ChampionOverview, type Counters } from "../api";
 import { BuildSuggestion } from "../BuildSuggestion";
+import { Abilities, StrengthsWeaknesses } from "../ChampionGuide";
+import { JournalNote, MatchupNotes } from "../Journal";
+import { championNoteKey, inPool, togglePool, usePersonal } from "../personal";
 import { ProBuildList } from "../ProBuildList";
 import { championIconUrl, champions, latestVersion, roleIconUrl, type Champion } from "../data/ddragon";
 import { POSITIONS } from "../labels";
@@ -40,6 +43,8 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
   const version = data.status === "done" ? data.value.version : null;
   const splash = useSkinSplash(champion?.id);
   useSplashUrl(splash);
+  const personal = usePersonal();
+  const pooled = inPool(personal, championId);
 
   return (
     <LiquidGlass
@@ -63,6 +68,14 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
             </p>
           )}
         </div>
+        <button
+          type="button"
+          className="star champion__star"
+          aria-pressed={pooled}
+          onClick={() => togglePool(championId, state.status === "done" ? (state.value?.position ?? position) : position)}
+        >
+          {pooled ? t("Havuzunda") : t("Havuzuna ekle")}
+        </button>
       </header>
 
       <div className="tiers__tabs enter" role="tablist" aria-label={t("Oyun modu")}>
@@ -102,6 +115,20 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           onPosition={setPosition}
           onOpenChampion={onOpenChampion}
         />
+      )}
+
+      {champion && version && (
+        <div className="champion__body champion__reference">
+          <section className="enter" aria-label={t("Yetenekler")}>
+            <h2 className="draft__heading">{t("Yetenekler")}</h2>
+            <Abilities champion={champion} version={version} />
+          </section>
+          <div>
+            <StrengthsWeaknesses champion={champion} />
+            <JournalNote noteKey={championNoteKey(championId)} label={t("{champion} notların", { champion: champion.name })} />
+            {data.status === "done" && <MatchupNotes championId={championId} champions={data.value.champions} version={version} />}
+          </div>
+        </div>
       )}
     </LiquidGlass>
   );

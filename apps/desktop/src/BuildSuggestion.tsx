@@ -2,6 +2,7 @@ import { formatPercent, useLang, useT, type Lang } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getBuild, type Build, type BuildStyle, type Foe, type Picks } from "./api";
+import { BuildCompare } from "./BuildCompare";
 import { readChosenStyle, saveChosenStyle, STYLE_NAMES } from "./buildStyles";
 import {
   champions,
@@ -18,6 +19,7 @@ import {
   type SummonerSpell,
 } from "./data/ddragon";
 import { useSettings } from "./settings";
+import { SkillGrid } from "./SkillGrid";
 import { useAsync } from "./useAsync";
 
 const FLASH = 4;
@@ -108,6 +110,8 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   const settings = useSettings();
   const autoImported = useRef<number | null>(null);
   const actions = useRef<{ runes?: () => void; spells?: () => void; items?: () => void }>({});
+  // The page being imported, so picking a page to overwrite keeps an alternative's runes.
+  const pendingPage = useRef<number>(0);
 
   const ready = state.status === "done" && state.value.build !== null && state.value.build.runes.length > 0;
   useEffect(() => {
@@ -158,7 +162,9 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   const spells = picks.spells[0];
   const shownItems = picks.items.filter((i) => state.value.items.get(i.id)?.complete).slice(0, SHOWN_ITEMS);
 
-  async function importRunes(replacePageId?: number) {
+  async function importRunes(replacePageId?: number, index = pendingPage.current) {
+    pendingPage.current = index;
+    const chosen = picks.runes[index] ?? page;
     setRuneImport({ status: "working" });
     try {
       const result = await invoke<{ status: "imported" } | { status: "needsSlot"; pages: { id: number; name: string }[] }>(
@@ -166,9 +172,9 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
         {
           page: {
             name: setName,
-            primaryStyleId: page.primaryStyle,
-            subStyleId: page.subStyle,
-            selectedPerkIds: page.perks,
+            primaryStyleId: chosen.primaryStyle,
+            subStyleId: chosen.subStyle,
+            selectedPerkIds: chosen.perks,
           },
           replacePageId: replacePageId ?? null,
         },
@@ -212,7 +218,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
     }
   }
 
-  actions.current = { runes: () => importRunes(), spells: spells ? importSpells : undefined, items: shownItems.length ? importItems : undefined };
+  actions.current = { runes: () => importRunes(undefined, 0), spells: spells ? importSpells : undefined, items: shownItems.length ? importItems : undefined };
   const canImport = isTauri();
 
   return (
@@ -241,6 +247,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
               max: picks.skills.maxOrder.map((s) => SKILL_KEYS[s]).join(" > "),
             })}
           </p>
+          <SkillGrid skills={picks.skills} />
         </section>
       )}
 
@@ -266,9 +273,34 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           label={t("Rünleri aktar")}
           state={runeImport}
           disabled={!canImport}
-          onImport={() => importRunes()}
+          onImport={() => importRunes(undefined, 0)}
           onChoose={(id) => importRunes(id)}
         />
+        {picks.runes.length > 1 && (
+          <div className="build__alternatives">
+            <p className="build__stat">{t("Alternatif rün dizilimleri")}</p>
+            {picks.runes.slice(1, 3).map((alt, i) => {
+              const keystone = runeById.get(alt.perks[0]);
+              const altSub = state.value.runes.get(alt.subStyle);
+              return (
+                <div className="build__row" key={alt.perks.join("-")}>
+                  {keystone && <img src={runeIconUrl(keystone.icon)} alt="" width={26} height={26} />}
+                  {alt.perks.slice(1, 4).map((id) => {
+                    const rune = runeById.get(id);
+                    return rune ? <img key={id} src={runeIconUrl(rune.icon)} alt={rune.name} title={rune.name} width={20} height={20} /> : null;
+                  })}
+                  {altSub && <img src={runeIconUrl(altSub.icon)} alt={altSub.name} title={altSub.name} width={18} height={18} className="build__style" />}
+                  <span className="build__stat">
+                    {keystone?.name}, {t("{games} maçta, {rate} kazanma", { games: alt.games, rate: percent(alt.winRate) })}
+                  </span>
+                  <button type="button" className="button button--small" disabled={!canImport || runeImport.status === "working"} onClick={() => importRunes(undefined, i + 1)}>
+                    {t("Bunu aktar")}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {spells && (
@@ -346,6 +378,8 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           ))}
         </section>
       )}
+
+      <BuildCompare build={build} picks={picks} version={version} runes={state.value.runes} items={state.value.items} />
     </div>
   );
 }

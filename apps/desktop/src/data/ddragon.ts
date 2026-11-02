@@ -7,6 +7,10 @@ export type Champion = {
   /** Deals mostly magic damage, by Data Dragon's ratings; the API reads enemy teams the same way. */
   magic: boolean;
   tank: boolean;
+  /** Data Dragon's classes, main one first: "Fighter", "Mage", ... */
+  tags: string[];
+  /** Data Dragon's 0-10 ratings. */
+  info: { attack: number; defense: number; magic: number; difficulty: number };
 };
 
 let version: Promise<string> | undefined;
@@ -27,7 +31,7 @@ export function champions(): Promise<Map<number, Champion>> {
     .then(
       (response) =>
         response.json() as Promise<{
-          data: Record<string, { id: string; key: string; name: string; tags: string[]; info: { attack: number; magic: number } }>;
+          data: Record<string, { id: string; key: string; name: string; tags: string[]; info: Champion["info"] }>;
         }>,
     )
     .then(
@@ -35,7 +39,15 @@ export function champions(): Promise<Map<number, Champion>> {
         new Map(
           Object.values(data).map((c) => [
             Number(c.key),
-            { id: c.id, key: Number(c.key), name: c.name, magic: c.info.magic > c.info.attack, tank: c.tags[0] === "Tank" },
+            {
+              id: c.id,
+              key: Number(c.key),
+              name: c.name,
+              magic: c.info.magic > c.info.attack,
+              tank: c.tags[0] === "Tank",
+              tags: c.tags,
+              info: c.info,
+            },
           ]),
         ),
     );
@@ -136,6 +148,65 @@ export function skins(championId: string): Promise<Skin[]> {
     skinsById.set(championId, list);
   }
   return list;
+}
+
+export type Ability = {
+  key: "P" | "Q" | "W" | "E" | "R";
+  name: string;
+  /** Plain text; Data Dragon's markup is stripped. */
+  description: string;
+  /** Seconds per rank; empty for the passive. */
+  cooldowns: number[];
+  image: string;
+};
+
+export type ChampionDetail = { title: string; abilities: Ability[]; allyTips: string[]; enemyTips: string[] };
+
+const detailsByKey = new Map<string, Promise<ChampionDetail>>();
+
+const plain = (html: string) =>
+  html
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+type RawSpell = { name: string; description: string; cooldown?: number[]; image: { full: string } };
+
+/** Abilities and Riot's own tips in the UI language; tips are empty for some newer champions. */
+export function championDetail(championId: string, lang: "tr" | "en"): Promise<ChampionDetail> {
+  const key = `${lang}:${championId}`;
+  let detail = detailsByKey.get(key);
+  if (!detail) {
+    detail = latestVersion()
+      .then((v) => fetch(`${BASE}/cdn/${v}/data/${lang === "tr" ? "tr_TR" : "en_GB"}/champion/${championId}.json`))
+      .then(
+        (response) =>
+          response.json() as Promise<{
+            data: Record<string, { title: string; passive: RawSpell; spells: RawSpell[]; allytips: string[]; enemytips: string[] }>;
+          }>,
+      )
+      .then(({ data }) => {
+        const c = data[championId];
+        const keys = ["Q", "W", "E", "R"] as const;
+        return {
+          title: c.title,
+          abilities: [
+            { key: "P" as const, name: c.passive.name, description: plain(c.passive.description), cooldowns: [], image: `passive/${c.passive.image.full}` },
+            ...c.spells.map((s, i) => ({ key: keys[i], name: s.name, description: plain(s.description), cooldowns: s.cooldown ?? [], image: `spell/${s.image.full}` })),
+          ],
+          allyTips: c.allytips.map(plain),
+          enemyTips: c.enemytips.map(plain),
+        };
+      });
+    detailsByKey.set(key, detail);
+    detail.catch(() => detailsByKey.delete(key));
+  }
+  return detail;
+}
+
+export function abilityIconUrl(version: string, image: string) {
+  return `${BASE}/cdn/${version}/img/${image}`;
 }
 
 export function loadingArtUrl(championId: string) {

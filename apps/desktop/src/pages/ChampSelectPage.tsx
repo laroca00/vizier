@@ -1,6 +1,12 @@
 import { useLang, useT } from "../i18n";
 import { useEffect, useState } from "react";
-import { getBans } from "../api";
+import { getBans, getChampion, getCounters, getGameLog, type GameRow } from "../api";
+import { CompAnalysis } from "../CompAnalysis";
+import { EnemyTips } from "../ChampionGuide";
+import { byChampion } from "../games";
+import { JournalNote } from "../Journal";
+import { championNoteKey, matchupNoteKey, usePersonal } from "../personal";
+import { formatPercent } from "../i18n";
 import {
   championIconUrl,
   champions,
@@ -38,7 +44,7 @@ function shownChampion(member: DraftMember) {
   return member.championId || member.pickIntent;
 }
 
-export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
+export function ChampSelectPage({ draft, puuid = null }: { draft: ChampSelect; puuid?: string | null }) {
   const t = useT();
   const lang = useLang();
   const [data] = useAsync("static", loadStatic);
@@ -51,6 +57,9 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const me = draft.myTeam.find((m) => m.isLocal);
   const ready = data.status === "done" ? data.value : null;
   useSplash(me ? shownChampion(me) : null);
+  const [log] = useAsync(puuid ? `log:${puuid}` : null, () => getGameLog(puuid!));
+  const games = log.status === "done" ? log.value : null;
+  const allyIds = draft.myTeam.map(shownChampion).filter((id) => id > 0);
 
   return (
     <LiquidGlass className="panel draft" radius={28} strength={2.5} scroll>
@@ -79,6 +88,16 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 vs={vs}
                 enemies={enemyPicks}
               />
+              <MyRecord championId={shownChampion(me)} games={games} />
+              <DraftMatchups championId={shownChampion(me)} position={me.position} data={ready} />
+              <JournalNote noteKey={championNoteKey(shownChampion(me))} label={t("{champion} notların", { champion: ready.champions.get(shownChampion(me))?.name ?? "" })} />
+              {vs && (
+                <JournalNote
+                  noteKey={matchupNoteKey(shownChampion(me), vs)}
+                  label={t("{opponent} eşleşmesi notların", { opponent: ready.champions.get(vs)?.name ?? "" })}
+                  placeholder={t("Bu rakibe karşı ne işe yaradı?")}
+                />
+              )}
               <h2 className="draft__heading draft__heading--spaced">Pro'lar</h2>
               <ProBuildList
                 filter={{ championId: shownChampion(me), position: me.position ? me.position.toUpperCase() : undefined, limit: 3 }}
@@ -123,6 +142,10 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
               </ul>
             </>
           )}
+
+          {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} />}
+          {ready && <EnemyTips enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c) => c !== undefined)} />}
+          {ready && me && <PoolStrip position={me.position} games={games} data={ready} />}
 
           {draft.phase !== "FINALIZATION" && bans.status === "done" && bans.value.champions.length > 0 && (
             <>
@@ -185,7 +208,7 @@ function TeamRow({ member, data }: { member: DraftMember; data: StaticData | nul
         <span className="team__icon team__icon--empty" />
       )}
       <span className="team__name">{champion?.name ?? t("Seçim bekleniyor")}</span>
-      {member.isLocal && <span className="team__you">{t("Sen")}</span>}
+      {member.isLocal ? <span className="team__you">{t("Sen")}</span> : champion && <AllyRate championId={champion.key} position={member.position} />}
     </li>
   );
 }
@@ -216,5 +239,105 @@ function ChampionStrip({
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * The champion's own win rate in that role across Emerald+ games. Teammates
+ * are anonymous in ranked champ select, so this never looks at the player.
+ */
+function AllyRate({ championId, position }: { championId: number; position: string }) {
+  const t = useT();
+  const lang = useLang();
+  const role = position ? position.toUpperCase() : null;
+  const [state] = useAsync(`ally:${championId}:${role}`, () => getChampion(championId, role));
+  if (state.status !== "done" || !state.value) return null;
+  const { winRate, games, tier } = state.value;
+  return (
+    <span className="team__stat" title={t("{games} maç", { games })} data-thin={games < 100 || undefined}>
+      {tier ? `${tier}, ` : ""}
+      {formatPercent(winRate, lang, 1)}
+    </span>
+  );
+}
+
+function MyRecord({ championId, games }: { championId: number; games: GameRow[] | null }) {
+  const t = useT();
+  const lang = useLang();
+  if (!games) return null;
+  const line = byChampion(games).find((c) => c.championId === championId);
+  return (
+    <p className="build__summary draft__record">
+      {line
+        ? t("Son {total} dereceli maçında bu şampiyonla {games} maç, {rate} kazanma, {kda} KDA.", {
+            total: games.length,
+            games: line.games,
+            rate: formatPercent(line.wins / line.games, lang),
+            kda: line.kda.toFixed(1),
+          })
+        : t("Son {total} dereceli maçında bu şampiyonu oynamadın.", { total: games.length })}
+    </p>
+  );
+}
+
+const DRAFT_MATCHUPS = 3;
+
+function DraftMatchups({ championId, position, data }: { championId: number; position: string; data: StaticData }) {
+  const t = useT();
+  const lang = useLang();
+  const role = position ? position.toUpperCase() : null;
+  const [state] = useAsync(role ? `counters:${championId}:${role}` : null, () => getCounters(championId, role!));
+  if (state.status !== "done" || state.value.matchups.length < DRAFT_MATCHUPS * 2) return null;
+  const all = state.value.matchups;
+  const rows = [
+    { title: "Zorlandığı rakipler", list: all.slice(0, DRAFT_MATCHUPS) },
+    { title: "Rahat ettiği rakipler", list: all.slice(-DRAFT_MATCHUPS).reverse() },
+  ];
+  return (
+    <div className="draft__matchups">
+      {rows.map((row) => (
+        <div key={row.title}>
+          <h2 className="draft__heading">{t(row.title)}</h2>
+          <ul className="strip">
+            {row.list.map((m) => {
+              const champion = data.champions.get(m.championId);
+              return (
+                <li key={m.championId} title={`${champion?.name ?? ""}, ${formatPercent(m.winRate, lang, 1)}, ${t("{games} maç", { games: m.games })}`}>
+                  {champion && <img src={championIconUrl(data.version, champion.id)} alt={champion.name} width={32} height={32} />}
+                  <span className="strip__rate">{formatPercent(m.winRate, lang)}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PoolStrip({ position, games, data }: { position: string; games: GameRow[] | null; data: StaticData }) {
+  const t = useT();
+  const lang = useLang();
+  const { pool } = usePersonal();
+  const role = position ? position.toUpperCase() : null;
+  const shown = pool.filter((p) => !p.position || !role || p.position === role);
+  if (shown.length === 0) return null;
+  const mine = games ? byChampion(games) : [];
+  return (
+    <>
+      <h2 className="draft__heading">{t("Havuzun")}</h2>
+      <ul className="strip">
+        {shown.map((p) => {
+          const champion = data.champions.get(p.championId);
+          const line = mine.find((c) => c.championId === p.championId);
+          return (
+            <li key={p.championId} title={champion?.name}>
+              {champion && <img src={championIconUrl(data.version, champion.id)} alt={champion.name} width={32} height={32} />}
+              <span className="strip__rate">{line ? formatPercent(line.wins / line.games, lang) : "–"}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </>
   );
 }

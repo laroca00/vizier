@@ -1,3 +1,4 @@
+import { apiFixture } from "./dev/fixtures";
 import type { Platform } from "./lcu";
 const API_URL = import.meta.env.VITE_API_URL ?? "https://vizier-api.vizier-api.workers.dev";
 
@@ -56,6 +57,10 @@ export class ApiError extends Error {
 }
 
 async function get<T>(path: string, init?: RequestInit): Promise<T> {
+  if (import.meta.env.DEV) {
+    const fixture = apiFixture(path);
+    if (fixture) return fixture as T;
+  }
   const response = await fetch(`${API_URL}${path}`, init);
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -311,4 +316,25 @@ export function getGoldGraph(matchId: string) {
 
 export function getMatch(matchId: string) {
   return get<Match>(`/v1/matches/${matchId}`);
+}
+
+export type GameRow = {
+  matchId: string;
+  at: number;
+  minutes: number;
+  championId: number;
+  position: string;
+  win: boolean;
+  kills: number;
+  deaths: number;
+  assists: number;
+  cs: number;
+  vision: number;
+  killParticipation: number | null;
+  damageShare: number | null;
+};
+
+/** The player's last 20 ranked solo games, newest first. */
+export async function getGameLog(puuid: string): Promise<GameRow[]> {
+  return (await get<{ games: GameRow[] }>(`/v1/players/${puuid}/games`)).games;
 }

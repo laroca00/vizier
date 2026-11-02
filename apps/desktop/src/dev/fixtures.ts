@@ -1,6 +1,6 @@
-import type { ChampSelect } from "../lcu";
+import type { ChampSelect, LcuStatus } from "../lcu";
 import { sampleGame } from "../overlay/sample";
-import type { LiveGameInfo } from "../api";
+import type { GameRow, LiveGameInfo } from "../api";
 import type { LiveGame } from "../overlay/live";
 
 /** Dev only: `?fixture=champ-select` renders the draft page without a client. */
@@ -58,4 +58,77 @@ export function scoutingFixture(): LiveGameInfo | null {
       { riotId: "Destek#TR1", championId: 412, teamId: 200, you: false, solo: solo("PLATINUM", "I", 12, 9), mastery: mastery(9_400) },
     ],
   };
+}
+
+/** Dev only: `?fixture=dashboard` or `?fixture=queue` show a connected player without a client or the API. */
+export function lcuFixture(): LcuStatus | null {
+  const fixture = import.meta.env.DEV ? new URLSearchParams(location.search).get("fixture") : null;
+  if (fixture !== "dashboard" && fixture !== "queue") return null;
+  return {
+    state: "connected",
+    summoner: { gameName: "Vizier", tagLine: "TR1", puuid: "p".repeat(78) },
+    phase: fixture === "queue" ? "Matchmaking" : "Lobby",
+    lastGameId: 1,
+    region: { region: "TR", locale: "tr_TR" },
+  };
+}
+
+const HOUR = 3_600_000;
+
+function sampleRows(): GameRow[] {
+  const champs = [103, 103, 238, 84, 103, 134, 238, 103, 84, 7, 103, 238, 134, 103, 84, 103, 238, 7, 103, 134];
+  const wins = [false, false, false, true, true, true, false, true, true, false, true, true, false, true, false, true, true, true, false, true];
+  return champs.map((championId, i) => ({
+    matchId: `TR1_${100 + i}`,
+    at: Date.now() - (i * 0.7 + 0.3) * HOUR - (i > 5 ? 20 * HOUR : 0) - (i > 12 ? 50 * HOUR : 0),
+    minutes: 26 + (i % 7) * 2,
+    championId,
+    position: i % 6 === 5 ? "TOP" : "MIDDLE",
+    win: wins[i],
+    kills: wins[i] ? 7 + (i % 4) : 2 + (i % 3),
+    deaths: wins[i] ? 2 + (i % 3) : 6 + (i % 3),
+    assists: 6 + (i % 5),
+    cs: 190 + i * 3,
+    vision: 18 + (i % 6) * 2,
+    killParticipation: 0.42 + (i % 5) * 0.05,
+    damageShare: 0.25,
+  }));
+}
+
+/** Stands in for the API while a dashboard fixture is open; null lets the request through. */
+export function apiFixture(path: string): unknown {
+  if (!lcuFixture()) return null;
+  if (path.startsWith("/v1/profiles/"))
+    return {
+      account: { puuid: "p".repeat(78), gameName: "Vizier", tagLine: "TR1" },
+      summoner: { profileIconId: 29, summonerLevel: 214 },
+      ranks: [
+        { queueType: "RANKED_SOLO_5x5", tier: "EMERALD", rank: "II", leaguePoints: 47, wins: 88, losses: 79 },
+        { queueType: "RANKED_FLEX_SR", tier: "PLATINUM", rank: "I", leaguePoints: 12, wins: 14, losses: 10 },
+      ],
+    };
+  if (path.endsWith("/games")) return { games: sampleRows() };
+  if (path.includes("/lp")) {
+    const now = Date.now();
+    const points = [2230, 2251, 2270, 2249, 2268, 2290, 2272, 2252, 2233];
+    return {
+      snapshots: points.map((p, i) => ({
+        queue: "RANKED_SOLO_5x5",
+        tier: "EMERALD",
+        rank: p >= 2300 ? "I" : "II",
+        lp: p % 100,
+        wins: 80 + i,
+        losses: 75 + i,
+        at: now - (points.length - i) * 5 * HOUR,
+        points: p,
+      })),
+    };
+  }
+  if (path.includes("/trends"))
+    return {
+      games: 10,
+      wins: 5,
+      habits: [{ title: "Çok sık ölüyorsun", detail: "", metric: "deaths", target: 5 }],
+    };
+  return null;
 }
