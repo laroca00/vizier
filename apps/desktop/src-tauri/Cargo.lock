@@ -4746,6 +4746,8 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "tokio-tungstenite",
+ "webview2-com",
+ "windows-core",
  "windows-sys 0.59.0",
 ]
 

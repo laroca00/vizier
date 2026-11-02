@@ -33,6 +33,9 @@ tauri-plugin-global-shortcut = "2"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging"] }
+# Same versions Tauri's WebView2 runtime already pulls in.
+webview2-com = "0.39"
+windows-core = "0.62"
 
 [profile.release]
 codegen-units = 1

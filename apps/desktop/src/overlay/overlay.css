@@ -288,3 +288,33 @@ html:has(.overlay) body {
   font-size: 12px;
   color: var(--glaze-faint);
 }
+
+/* A timer coming up in the next 30 seconds, then up now. */
+.overlay__row[data-alert="soon"] .overlay__value {
+  color: var(--gilt);
+}
+
+.overlay__row[data-alert="now"] {
+  animation: overlay-alert 1s var(--ease) 3;
+}
+
+.overlay__row[data-alert="now"] .overlay__value {
+  color: #5fd3c8;
+}
+
+.overlay__row[data-running] .overlay__value {
+  color: #5fd3c8;
+}
+
+@keyframes overlay-alert {
+  50% {
+    background: rgb(214 180 106 / 0.28);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay__row[data-alert="now"] {
+    animation: none;
+    background: rgb(214 180 106 / 0.2);
+  }
+}

@@ -30,6 +30,7 @@ import {
 import { ROW_GAP, SCOREBOARD_SPOT, useLayout, type Spot, type WidgetId } from "./layout";
 import { sampleGame } from "./sample";
 import { Scouting } from "./Scouting";
+import { TimerCard } from "./Timers";
 import "./overlay.css";
 
 /** Subscribes to a value the Rust side reports through an event, and a getter command for its current value. */
@@ -209,20 +210,12 @@ export function Overlay() {
     });
   }
   if (habit) boxes.push({ id: "goal", name: t("Koçun hedefi"), node: <GoalCard habit={habit} game={game} /> });
-  if (timers.length > 0)
+  // The card hides itself when it has nothing to count; manual timers live inside it.
+  if (timers.length > 0 || settings.overlayTimers)
     boxes.push({
       id: "timers",
       name: t("Süreler"),
-      node: (
-        <section className="overlay__card">
-          {timers.map((timer) => (
-            <p key={timer.id} className="overlay__row" data-ours={timer.ours ?? undefined}>
-              <span>{timerLabel(timer, t)}</span>
-              <span className="overlay__value">{clock(timer.at - time)}</span>
-            </p>
-          ))}
-        </section>
-      ),
+      node: <TimerCard objectives={timers} objectiveLabel={(timer) => timerLabel(timer, t)} game={game} time={time} />,
     });
   if (numbers && (numbers.csPerMinute !== null || numbers.killParticipation !== null))
     boxes.push({

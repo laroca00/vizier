@@ -12,7 +12,7 @@ const LANGUAGES: { id: LanguageSetting; label: string }[] = [
 ];
 
 /** The on/off settings; language is a choice, not a toggle. */
-type Toggle = Exclude<keyof Settings, "language">;
+type Toggle = Exclude<keyof Settings, "language" | "customTimerSeconds">;
 
 const TOGGLES: { key: Toggle; label: string; hint: string }[] = [
   { key: "autoImportRunes", label: "Rünleri kendiliğinden aktar", hint: "Şampiyonunu kilitlediğinde önerilen rün sayfası Vizier sayfasına yazılır." },
@@ -21,6 +21,9 @@ const TOGGLES: { key: Toggle; label: string; hint: string }[] = [
   { key: "showOnChampSelect", label: "Şampiyon seçiminde Vizier'i öne getir", hint: "Tepsideyken bile seçim başlayınca pencere açılır." },
   { key: "openAnalysisAfterGame", label: "Maç bitince analizi aç", hint: "Riot maçı yayınlar yayınlamaz analiz ekrana gelir." },
   { key: "pauseBackgroundInGame", label: "Oyundayken arka plan animasyonunu durdur", hint: "Oyun sırasında ekran kartına yük bindirmez." },
+  { key: "pauseBackgroundUnfocused", label: "Pencere arkadayken animasyonu durdur", hint: "Başka bir pencereye geçtiğinde arka plan donar, işlemci ve ekran kartı boşa çalışmaz." },
+  { key: "queueCompanion", label: "Sıra beklerken sıra ekranını aç", hint: "Maç aranırken formun, hedeflerin ve oynayacağın şampiyonların notları. Pencereyi öne getirmez." },
+  { key: "tiltWarnings", label: "Tilt uyarısı", hint: "Üst üste kayıplarda ve belirgin bir düşüşte ana sayfada ve sıra ekranında mola önerir." },
 ];
 
 const OVERLAY_TOGGLES: { key: Toggle; label: string; hint: string }[] = [
@@ -33,6 +36,23 @@ const OVERLAY_TOGGLES: { key: Toggle; label: string; hint: string }[] = [
   { key: "overlayScoreboard", label: "Skor tablosunda eşya farkı", hint: "Tab'a basılıyken her oyuncunun karşısındakine göre eşya altını farkı, tablonun ortasında." },
   { key: "overlayNextItem", label: "Sıradaki eşya", hint: "Seçtiğin build türünde henüz almadığın ilk eşya ve ona kalan altın." },
   { key: "overlayGoal", label: "Koçun hedefi", hint: "Son maçlarında koçun bulduğu zayıf nokta, bu maçta canlı takip edilir." },
+  { key: "overlayTimers", label: "Elle başlatılan zamanlayıcılar", hint: "Kamp, ejder ve Baron zamanlayıcıları, kronometre ve ilk doğuş hatırlatıcıları. Kısayollar aşağıda." },
+  { key: "timerSound", label: "Zamanlayıcı sesi", hint: "Bir süre dolmadan 30 saniye önce ve dolunca kısa bir ses çalar." },
+];
+
+const SHORTCUTS: [string, string][] = [
+  ["Ctrl+Shift+1", "Mavi"],
+  ["Ctrl+Shift+2", "Kırmızı"],
+  ["Ctrl+Shift+3", "Gromp"],
+  ["Ctrl+Shift+4", "Kurtlar"],
+  ["Ctrl+Shift+5", "Kuşlar"],
+  ["Ctrl+Shift+6", "Golemler"],
+  ["Ctrl+Shift+7", "Yengeç"],
+  ["Ctrl+Shift+D", "Ejder"],
+  ["Ctrl+Shift+B", "Baron"],
+  ["Ctrl+Shift+T", "Özel zamanlayıcı"],
+  ["Ctrl+Shift+S", "Kronometreyi başlat ya da durdur"],
+  ["Ctrl+Shift+X", "Hepsini temizle"],
 ];
 
 function useAutostart() {
@@ -123,6 +143,35 @@ export function SettingsPage() {
           </li>
         ))}
       </ul>
+      <label className="settings__language enter">
+        <span className="toggle__label">{t("Özel zamanlayıcının süresi, saniye")}</span>
+        <input
+          type="number"
+          min={10}
+          max={1800}
+          step={5}
+          value={settings.customTimerSeconds}
+          disabled={!settings.overlay || !settings.overlayTimers}
+          onChange={(e) => {
+            const seconds = Math.round(Number(e.target.value));
+            if (seconds >= 10 && seconds <= 1800) updateSettings({ customTimerSeconds: seconds });
+          }}
+        />
+      </label>
+      <div className="enter">
+        <h2 className="settings__heading">{t("Zamanlayıcı kısayolları")}</h2>
+        <p className="settings__note">{t("Yalnızca maç sırasında çalışır; geri kalan zamanda bu tuşlar diğer uygulamalara aittir.")}</p>
+        <dl className="shortcuts">
+          {SHORTCUTS.map(([keys, label]) => (
+            <div key={keys}>
+              <dt>
+                <kbd>{keys}</kbd>
+              </dt>
+              <dd>{t(label)}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
       <p className="settings__note">
         {t("Pencereyi kapattığında Vizier sistem tepsisinde çalışmaya devam eder. Tamamen kapatmak için tepsi simgesine sağ tıklayıp Çıkış'ı seç.")}
       </p>

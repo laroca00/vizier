@@ -18,6 +18,16 @@ export type Settings = {
   overlayNextItem: boolean;
   overlayGoal: boolean;
   overlayScoreboard: boolean;
+  overlayTimers: boolean;
+  /** A short tone when a manual timer or an objective is about to come up. */
+  timerSound: boolean;
+  /** Length of the Ctrl+Shift+T timer. */
+  customTimerSeconds: number;
+  tiltWarnings: boolean;
+  /** Switch to the queue screen when matchmaking starts. */
+  queueCompanion: boolean;
+  /** Pause the background animation while the window doesn't have focus. */
+  pauseBackgroundUnfocused: boolean;
   /** "auto" follows the League client's language. */
   language: LanguageSetting;
 };
@@ -39,6 +49,12 @@ const DEFAULTS: Settings = {
   overlayNextItem: true,
   overlayGoal: true,
   overlayScoreboard: true,
+  overlayTimers: true,
+  timerSound: true,
+  customTimerSeconds: 90,
+  tiltWarnings: true,
+  queueCompanion: true,
+  pauseBackgroundUnfocused: true,
   language: "auto",
 };
 

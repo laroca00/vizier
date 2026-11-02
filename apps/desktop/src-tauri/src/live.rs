@@ -2,7 +2,7 @@
 
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder};
@@ -14,10 +14,18 @@ pub const TOGGLE_EVENT: &str = "overlay-toggle";
 pub const LOADING_EVENT: &str = "live-loading";
 pub const EDIT_EVENT: &str = "overlay-edit";
 pub const SCOREBOARD_EVENT: &str = "overlay-scoreboard";
+pub const TIMER_EVENT: &str = "overlay-timer";
 pub const OVERLAY_LABEL: &str = "overlay";
 const URL: &str = "https://127.0.0.1:2999/liveclientdata/allgamedata";
 const IN_GAME_INTERVAL: Duration = Duration::from_secs(1);
 const IDLE_INTERVAL: Duration = Duration::from_secs(3);
+/// A hidden overlay is closed after this, so a short gap between the loading
+/// screen and the game doesn't rebuild it.
+const CLOSE_AFTER: Duration = Duration::from_secs(30);
+/// Must match the main window's in tauri.conf.json, or WebView2 refuses to
+/// share one browser process between them. Autoplay lets timer alerts sound
+/// in a window that is never clicked.
+const BROWSER_ARGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required";
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -190,7 +198,10 @@ pub struct OverlayState {
     pub loading: AtomicBool,
     /// The player is moving the overlay's boxes; it takes the mouse meanwhile.
     pub editing: AtomicBool,
+    /// Whether the manual timer shortcuts are registered, i.e. a game was running last poll.
+    timer_keys: AtomicBool,
     last: Mutex<Option<LiveGame>>,
+    hidden_since: Mutex<Option<Instant>>,
 }
 
 impl OverlayState {
@@ -210,8 +221,9 @@ impl OverlayState {
 }
 
 /// The overlay can never be clicked or focused, so showing it doesn't pull
-/// the game out of the foreground.
-pub fn create_overlay(app: &AppHandle) -> tauri::Result<()> {
+/// the game out of the foreground. It only exists while there is something
+/// to show: a WebView2 renderer costs tens of megabytes even when hidden.
+fn create_overlay(app: &AppHandle) -> tauri::Result<()> {
     let window = WebviewWindowBuilder::new(app, OVERLAY_LABEL, WebviewUrl::App("index.html".into()))
         .title("Vizier overlay")
         .transparent(true)
@@ -223,6 +235,7 @@ pub fn create_overlay(app: &AppHandle) -> tauri::Result<()> {
         .focused(false)
         .focusable(false)
         .visible(false)
+        .additional_browser_args(BROWSER_ARGS)
         .build()?;
     if let Some(monitor) = window.primary_monitor()? {
         let position = monitor.position();
@@ -230,16 +243,45 @@ pub fn create_overlay(app: &AppHandle) -> tauri::Result<()> {
         window.set_position(PhysicalPosition::new(position.x, position.y))?;
         window.set_size(PhysicalSize::new(size.width, size.height))?;
     }
-    window.set_ignore_cursor_events(true)?;
+    let editing = app.state::<OverlayState>().editing.load(Ordering::Relaxed);
+    window.set_ignore_cursor_events(!editing)?;
     Ok(())
 }
 
 fn set_visible(app: &AppHandle, visible: bool) {
-    let Some(window) = app.get_webview_window(OVERLAY_LABEL) else { return };
-    if window.is_visible().unwrap_or(false) == visible {
-        return;
+    let state = app.state::<OverlayState>();
+    let mut hidden_since = state.hidden_since.lock().unwrap();
+    match app.get_webview_window(OVERLAY_LABEL) {
+        Some(window) if visible => {
+            *hidden_since = None;
+            if !window.is_visible().unwrap_or(false) {
+                let _ = window.show();
+            }
+        }
+        Some(window) => match *hidden_since {
+            None => {
+                *hidden_since = Some(Instant::now());
+                let _ = window.hide();
+            }
+            Some(at) if at.elapsed() >= CLOSE_AFTER => {
+                *hidden_since = None;
+                let _ = window.destroy();
+            }
+            Some(_) => {}
+        },
+        None if visible => {
+            *hidden_since = None;
+            drop(hidden_since);
+            if let Err(error) = create_overlay(app) {
+                eprintln!("overlay: {error}");
+                return;
+            }
+            if let Some(window) = app.get_webview_window(OVERLAY_LABEL) {
+                let _ = window.show();
+            }
+        }
+        None => {}
     }
-    let _ = if visible { window.show() } else { window.hide() };
 }
 
 /// Ctrl+Shift+L: lets the overlay take the mouse so its boxes can be dragged, and back.
@@ -303,6 +345,10 @@ fn spawn_scoreboard_watch(app: AppHandle) {
     });
 }
 
+pub fn timer_pressed(app: &AppHandle, timer: &str) {
+    let _ = app.emit_to(OVERLAY_LABEL, TIMER_EVENT, timer);
+}
+
 pub fn toggle_hidden(app: &AppHandle) {
     let state = app.state::<OverlayState>();
     let hidden = !state.hidden.load(Ordering::Relaxed);
@@ -332,6 +378,9 @@ pub fn spawn(app: AppHandle) {
             };
             let in_game = game.is_some();
             let state = app.state::<OverlayState>();
+            if state.timer_keys.swap(in_game, Ordering::Relaxed) != in_game {
+                crate::set_timer_shortcuts(&app, in_game);
+            }
             if state.loading.swap(loading, Ordering::Relaxed) != loading {
                 let _ = app.emit_to(OVERLAY_LABEL, LOADING_EVENT, loading);
             }

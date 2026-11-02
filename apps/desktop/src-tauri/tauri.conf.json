@@ -18,7 +18,8 @@
         "height": 800,
         "minWidth": 1024,
         "minHeight": 640,
-        "center": true
+        "center": true,
+        "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required"
       }
     ],
     "security": {
