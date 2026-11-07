@@ -140,16 +140,17 @@ function assignTiers(entries: Unranked[]): TierEntry[] {
 
 /** Pool matches in ranked and how often each champion was banned in them. */
 async function poolBans(db: D1Database, patches: string[]): Promise<{ matches: number; bans: Map<number, number> }> {
-  const { results } = await db
-    .prepare(
-      `SELECT champion_id, kind, SUM(games) AS games FROM stat_counts
-        WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ${RANKED} AND kind IN ('pool-ban', 'pool-games')
-        GROUP BY champion_id, kind`,
-    )
-    .bind(...patches)
-    .all<{ champion_id: number; kind: string; games: number }>();
-  const matches = results.find((r) => r.kind === "pool-games")?.games ?? 0;
-  return { matches, bans: new Map(results.filter((r) => r.kind === "pool-ban").map((r) => [r.champion_id, r.games])) };
+  // One query per kind: an IN over two kinds makes SQLite skip stat_counts_by_kind and scan every count.
+  const byKind = (kind: string) =>
+    db
+      .prepare(
+        `SELECT champion_id, SUM(games) AS games FROM stat_counts
+          WHERE kind = ? AND queue_id = ${RANKED} AND patch IN (${placeholders(patches.length)}) GROUP BY champion_id`,
+      )
+      .bind(kind, ...patches)
+      .all<{ champion_id: number; games: number }>();
+  const [{ results: matches }, { results: bans }] = await Promise.all([byKind("pool-games"), byKind("pool-ban")]);
+  return { matches: matches[0]?.games ?? 0, bans: new Map(bans.map((r) => [r.champion_id, r.games])) };
 }
 
 const banRateOf = (data: { matches: number; bans: Map<number, number> }, championId: number) =>
