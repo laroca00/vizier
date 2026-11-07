@@ -290,7 +290,8 @@ export const EN: Record<string, string> = {
   "Rahat ettiği rakipler": "Easiest matchups",
 
   // Tier list
-  "Yama {patch}, Emerald+ oyuncularından {games} maç": "Patch {patch}, {games} games from Emerald+ players",
+  "Yama {patch}, TR ve EUW Emerald+ oyuncularından {games} maç": "Patch {patch}, {games} games from TR and EUW Emerald+ players",
+  "%{rate} yasaklanma": "{rate}% banned",
   "Tier listesi alınamadı.": "Couldn't load the tier list.",
   "{what} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.": "Not enough games for {what} yet. Vizier collects more every day.",
   "Bu rol": "this role",

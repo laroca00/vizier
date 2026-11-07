@@ -45,7 +45,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
         <h1 className="draft__title">{t("Tier listesi")}</h1>
         {state.status === "done" && state.value.list.patches.length > 0 && (
           <p className="draft__phase">
-            {t("Yama {patch}, Emerald+ oyuncularından {games} maç", {
+            {t("Yama {patch}, TR ve EUW Emerald+ oyuncularından {games} maç", {
               patch: state.value.list.patches[0],
               games: Math.round(state.value.list.games / playersPerGame(queue)),
             })}
@@ -125,6 +125,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
                             <span className="tier" data-tier={c.tier}>
                               {c.tier}
                             </span>
+                            {c.banRate != null && <span>{t("%{rate} yasaklanma", { rate: (c.banRate * 100).toFixed(1) })}</span>}
                             {t("{games} maç", { games: c.games.toLocaleString() })}
                           </span>
                         ),
@@ -150,6 +151,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
                   <th scope="col">{t(winLabel(queue))}</th>
                   <th scope="col">{t("Değişim")}</th>
                   <th scope="col">{t("Seçilme")}</th>
+                  {ranked && <th scope="col">{t("Yasaklanma")}</th>}
                   <th scope="col">{t("Maç")}</th>
                 </tr>
               </thead>
@@ -178,7 +180,8 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
                         {c.winRateChange == null ? "–" : signed(c.winRateChange)}
                       </td>
                       <td>{percent(c.pickRate)}</td>
-                      <td>{c.games}</td>
+                      {ranked && <td>{c.banRate == null ? "–" : percent(c.banRate)}</td>}
+                      <td>{c.games.toLocaleString()}</td>
                     </tr>
                   );
                 })}

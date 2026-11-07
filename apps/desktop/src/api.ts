@@ -136,7 +136,17 @@ export function getCoaching(matchId: string, puuid: string) {
   });
 }
 
-export type TierEntry = { championId: number; games: number; winRate: number; pickRate: number; tier: string; winRateChange: number | null };
+export type TierEntry = {
+  championId: number;
+  games: number;
+  winRate: number;
+  /** Share of matches the champion was picked in, in this role. */
+  pickRate: number;
+  /** Share of ranked matches it was banned in; null outside ranked and from servers that predate it. */
+  banRate?: number | null;
+  tier: string;
+  winRateChange: number | null;
+};
 export type TierList = { patches: string[]; games: number; champions: TierEntry[] };
 
 /** Queues without roles take position ALL. */
