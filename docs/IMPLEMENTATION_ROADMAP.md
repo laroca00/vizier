@@ -18,13 +18,13 @@ The plan for turning Vizier into a preparation and reference app: prepare, explo
 |---|---|
 | 0. Audit, policy review, roadmap | Done (this document) |
 | 1. Removal and cleanup | Code done; deploy steps open (see below) |
-| 2. Design system components | Not started |
-| 3. Navigation and Home | Not started |
+| 2. Design system components | Done, except splitting `App.css` per page |
+| 3. Navigation and Home | Done for the sections that exist |
 | 4. Champion Select 2.0 | Not started |
 | 5. Build Library | Not started |
 | 6. Champions and champion pool | Not started |
 | 7. Pro Builds | Not started |
-| 8. Draft Simulator | Not started |
+| 8. Draft Simulator | On hold until the owner and I agree on its design |
 | 9. Patch Tracker | Not started |
 | 10. Overlay 2.0 | Owner's design, not in this plan |
 | 11. Polish and release | Not started |
@@ -74,10 +74,12 @@ Acceptance:
 
 ## Phase 2: design system components
 
+Done (`60082f2`, `7c36ae8`): the components below exist in `src/ui` (BuildCard waits for Phase 5, which defines what a build card shows), the tier list, pro builds, champion page and build comparison use them, and `ui/ui.css` holds their styles. `App.css` is not split per page yet.
+
 Work:
 - Components in `src/ui/`: Button (primary, secondary, ghost, danger), IconButton, Tabs, Dropdown, SearchInput, FilterChips, Modal, ConfirmDialog, Toast, Tooltip, EmptyState, ErrorState, Skeleton, and Champion, Item, Rune and Build cards.
 - A `Page` layout with header, toolbar and content, and an error boundary per page.
-- Replace `LiquidGlass` panels with a plain `Surface`. Split `App.css` per area and delete dead rules.
+- Keep `LiquidGlass` for panels (owner's decision, 2026-11-07); it stays flat in the main window through `FlatGlass`. Split `App.css` per area and delete dead rules.
 - Type scale tokens next to the colour and motion tokens in `styles.css`.
 
 Dependencies: Phase 1, so no time goes into components that are about to be deleted.
@@ -86,10 +88,15 @@ Risks: restyling every page at once. Swap components page by page.
 
 Acceptance:
 - Every new component has keyboard focus, hover and disabled states and respects reduced motion.
-- No page imports `LiquidGlass`.
 - `App.css` keeps only rules that are in use.
 
 ## Phase 3: navigation and Home
+
+Done (`fa4ff00`):
+- Typed routes with history in `router.ts`, error boundaries, the new Home and an Overlay section split out of Settings.
+- Settings has a data section to export, import and clear local data.
+- The menu lists only sections that exist: Home, Champ select (live), Tier list, Pro builds, Overlay, Settings and About. Build Library, Champions and Patch Tracker join the menu in their own phases. The Draft Simulator waits for the design talk.
+- The tier list stays as its own entry under Explore.
 
 Work:
 - Typed route state (section, detail id, filters) instead of the `view` string, with back and forward through mouse buttons and Alt+Left and Alt+Right.
