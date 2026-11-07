@@ -19,21 +19,14 @@ const TOGGLES: { key: Toggle; label: string; hint: string }[] = [
   { key: "autoImportSpells", label: "Büyüleri kendiliğinden aktar", hint: "Flash kullandığın tuşta kalır." },
   { key: "autoImportItems", label: "Eşya setini kendiliğinden aktar", hint: "Önerilen eşyalar oyun içi mağazada Vizier seti olarak görünür." },
   { key: "showOnChampSelect", label: "Şampiyon seçiminde Vizier'i öne getir", hint: "Tepsideyken bile seçim başlayınca pencere açılır." },
-  { key: "openAnalysisAfterGame", label: "Maç bitince analizi aç", hint: "Riot maçı yayınlar yayınlamaz analiz ekrana gelir." },
-  { key: "queueCompanion", label: "Sıra beklerken sıra ekranını aç", hint: "Maç aranırken formun, hedeflerin ve oynayacağın şampiyonların notları. Pencereyi öne getirmez." },
-  { key: "tiltWarnings", label: "Tilt uyarısı", hint: "Üst üste kayıplarda ve belirgin bir düşüşte ana sayfada ve sıra ekranında mola önerir." },
 ];
 
 const OVERLAY_TOGGLES: { key: Toggle; label: string; hint: string }[] = [
-  { key: "overlayScouting", label: "Yükleme ekranında oyuncular", hint: "Herkesin dereceli sırası, sezon kazanma oranı ve şampiyonundaki ustalığı." },
   { key: "overlaySkills", label: "Yetenek önerisi", hint: "Yetenek puanın olduğunda hangisini yükselteceğini gösterir." },
   { key: "overlayObjectives", label: "Ejder, Baron ve inhibitör süreleri", hint: "Kesildiklerinde yeniden doğmalarına kalan süre." },
-  { key: "overlayBenchmarks", label: "Emerald+ karşılaştırması", hint: "Dakika başına minyonun ve skora katkın, aynı roldeki Emerald+ medyanıyla." },
-  { key: "overlayPace", label: "Tempo", hint: "Toplam minyon ve kamp sayın, aynı şampiyonu oynayan Emerald+ oyuncuların o dakikadaki medyanıyla. İlk 15 dakika." },
   { key: "overlayItems", label: "Eşya altını farkı", hint: "Koridor rakibine ve rakip takıma göre eşyalarına harcanan altın." },
   { key: "overlayScoreboard", label: "Skor tablosunda eşya farkı", hint: "Tab'a basılıyken her oyuncunun karşısındakine göre eşya altını farkı, tablonun ortasında." },
   { key: "overlayNextItem", label: "Sıradaki eşya", hint: "Seçtiğin build türünde henüz almadığın ilk eşya ve ona kalan altın." },
-  { key: "overlayGoal", label: "Koçun hedefi", hint: "Son maçlarında koçun bulduğu zayıf nokta, bu maçta canlı takip edilir." },
   { key: "overlayTimers", label: "Elle başlatılan zamanlayıcılar", hint: "Kamp, ejder ve Baron zamanlayıcıları, kronometre ve ilk doğuş hatırlatıcıları. Kısayollar aşağıda." },
   { key: "timerSound", label: "Zamanlayıcı sesi", hint: "Bir süre dolmadan 30 saniye önce ve dolunca kısa bir ses çalar." },
 ];

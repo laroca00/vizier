@@ -130,28 +130,6 @@ export function itemDifference(game: LiveGame, gold: (itemId: number) => number)
   };
 }
 
-export function myNumbers(game: LiveGame) {
-  const me = findMe(game);
-  if (!me) return null;
-  const minutes = game.gameTime / 60;
-  const teamKills = game.players.filter((p) => p.team === me.team).reduce((sum, p) => sum + p.scores.kills, 0);
-  const { kills, deaths, assists, creepScore } = me.scores;
-  return {
-    csPerMinute: minutes >= 2 ? creepScore / minutes : null,
-    killParticipation: teamKills > 0 ? (kills + assists) / teamKills : null,
-    kda: (kills + assists) / Math.max(1, deaths),
-  };
-}
-
-/** The median CS at `minutes` into the game, read off a per-minute curve that starts at minute 1. */
-export function paceAt(median: number[], minutes: number): number | null {
-  if (minutes < 1 || minutes > median.length) return null;
-  const whole = Math.floor(minutes);
-  const before = median[whole - 1];
-  const after = median[whole] ?? before;
-  return before + (after - before) * (minutes - whole);
-}
-
 const ROLE_ORDER = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
 
 export type ScoreboardRow = { ally: LivePlayer; enemy: LivePlayer | undefined; diff: number | null };
@@ -178,38 +156,4 @@ export function scoreboardRows(game: LiveGame, gold: (itemId: number) => number)
 export function nextItem(owned: number[], build: number[]): number | null {
   const have = new Set(owned);
   return build.find((id) => !have.has(id)) ?? null;
-}
-
-export type GoalMetric = "cs10" | "cs_pm" | "vision_pm" | "kill_participation" | "deaths";
-export const GOAL_METRICS: GoalMetric[] = ["cs10", "cs_pm", "vision_pm", "kill_participation", "deaths"];
-
-/**
- * Where the player stands on a habit the coach found in their recent games.
- * `onTrack` compares with the target scaled to the minute where that makes
- * sense; null while it is too early to say.
- */
-export function goalProgress(metric: GoalMetric, target: number, game: LiveGame): { value: number; onTrack: boolean | null } | null {
-  const me = findMe(game);
-  if (!me) return null;
-  const minutes = game.gameTime / 60;
-  switch (metric) {
-    case "cs10": {
-      // The ten minute mark is the whole goal; after it the card has said what it can.
-      if (minutes > 11) return null;
-      const expected = target * Math.min(1, minutes / 10);
-      return { value: me.scores.creepScore, onTrack: minutes < 2 ? null : me.scores.creepScore >= expected };
-    }
-    case "cs_pm":
-      return minutes < 2 ? { value: 0, onTrack: null } : { value: me.scores.creepScore / minutes, onTrack: me.scores.creepScore / minutes >= target };
-    case "vision_pm": {
-      const ward = me.scores.wardScore ?? 0;
-      return minutes < 5 ? { value: ward, onTrack: null } : { value: ward / minutes, onTrack: ward / minutes >= target };
-    }
-    case "kill_participation": {
-      const kp = myNumbers(game)?.killParticipation ?? null;
-      return kp === null ? { value: 0, onTrack: null } : { value: kp, onTrack: kp >= target };
-    }
-    case "deaths":
-      return { value: me.scores.deaths, onTrack: me.scores.deaths < target };
-  }
 }

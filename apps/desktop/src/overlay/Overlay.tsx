@@ -1,35 +1,28 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type WheelEvent } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { getBenchmarks, getBuild, getPace, getTrends, type Benchmarks, type Build, type Habit, type Pace, type Picks } from "../api";
+import { getBuild, type Build, type Picks } from "../api";
 import { readChosenStyle } from "../buildStyles";
 import { champions, itemIconUrl, items, latestVersion, type Item } from "../data/ddragon";
-import { overlayFixture, scoutingFixture } from "../dev/fixtures";
-import { platformOf, type LcuStatus, type Platform } from "../lcu";
-import { formatPercent, setClientLocale, useLang, useT, type Params } from "../i18n";
-import { positionLabel } from "../labels";
+import { overlayFixture } from "../dev/fixtures";
+import type { LcuStatus } from "../lcu";
+import { setClientLocale, useT, type Params } from "../i18n";
 import { useSettings } from "../settings";
 import { useAsync } from "../useAsync";
 import {
   championKey,
-  clock,
+
   findMe,
-  GOAL_METRICS,
-  goalProgress,
   itemDifference,
-  myNumbers,
   nextItem,
   nextSkill,
   objectiveTimers,
-  paceAt,
   scoreboardRows,
-  type GoalMetric,
   type LiveGame,
   type Timer,
 } from "./live";
 import { ROW_GAP, SCOREBOARD_SPOT, useLayout, type Spot, type WidgetId } from "./layout";
 import { sampleGame } from "./sample";
-import { Scouting } from "./Scouting";
 import { TimerCard } from "./Timers";
 import "./overlay.css";
 
@@ -55,21 +48,6 @@ function useClientLocale() {
       () => {},
     );
   }, []);
-}
-
-function usePlayer(active: boolean) {
-  const [player, setPlayer] = useState<{ puuid: string; platform: Platform } | null>(null);
-  useEffect(() => {
-    if (!active || !isTauri()) return;
-    invoke<LcuStatus>("lcu_status").then(
-      (status) =>
-        setPlayer(
-          status.state === "connected" && status.summoner ? { puuid: status.summoner.puuid, platform: platformOf(status.region) } : null,
-        ),
-      () => {},
-    );
-  }, [active]);
-  return player;
 }
 
 /**
@@ -100,19 +78,8 @@ async function loadStatic(): Promise<Static> {
   return { version, championIds: new Map([...byKey.values()].map((c) => [c.id, c.key])), items: itemList };
 }
 
-type Helpers = { build: Build | null; benchmarks: Benchmarks | null; pace: Pace | null };
-
-async function loadHelpers(championId: number, position: string): Promise<Helpers> {
-  // Either can be missing for a rare pick; the panels that need it just stay hidden.
-  const [build, benchmarks, pace] = await Promise.all([
-    getBuild(championId, position).catch(() => null),
-    getBenchmarks(position, championId).catch(() => null),
-    getPace(position, championId).catch(() => null),
-  ]);
-  return { build, benchmarks, pace };
-}
-
-const median = (benchmarks: Benchmarks | null, metric: string) => benchmarks?.metrics[metric]?.quantiles[10] ?? null;
+// A rare pick can have no build; the panels that need it just stay hidden.
+const loadBuild = (championId: number, position: string) => getBuild(championId, position).catch(() => null);
 const thousands = (gold: number) => `${gold > 0 ? "+" : gold < 0 ? "−" : ""}${(Math.abs(gold) / 1000).toFixed(1)}k`;
 
 /** The build the player picked on the build page, else the most played style. */
@@ -123,60 +90,40 @@ function picksFor(build: Build | null, championId: number, position: string): Pi
   return variants.find((v) => v.style === chosen) ?? (variants.length >= 2 ? variants[0] : build);
 }
 
-const GOAL_LABELS: Record<GoalMetric, string> = {
-  cs10: "10. dakikada {target} minyon",
-  cs_pm: "Dakikada {target} minyon",
-  vision_pm: "Dakikada {target} görüş skoru",
-  kill_participation: "Skora katkı en az {target}",
-  deaths: "En fazla {target} ölüm",
-};
-
 export function Overlay() {
   useClientLocale();
   const t = useT();
-  const lang = useLang();
   const liveGame = useBackendFlag<LiveGame | null>("live_game", "live-game", overlayFixture());
-  const loading = useBackendFlag("live_loading", "live-loading", scoutingFixture() !== null);
+  const loading = useBackendFlag("live_loading", "live-loading", false);
   const hidden = useBackendFlag("overlay_hidden", "overlay-toggle", false);
   const editing = useBackendFlag("overlay_editing", "overlay-edit", new URLSearchParams(location.search).has("edit"));
   const tabHeld = useBackendFlag(null, "overlay-scoreboard", false);
   const { layout, preview, save, reset } = useLayout();
   // Arranging the boxes before a game uses a made-up one.
   const game = liveGame ?? (editing ? sampleGame() : null);
-  const player = usePlayer(loading || liveGame !== null);
   const settings = useSettings();
   const time = useGameClock(game);
   const [data] = useAsync(game ? "static" : null, loadStatic);
   const me = game ? findMe(game) : undefined;
   const championId = me && data.status === "done" ? (data.value.championIds.get(championKey(me)) ?? null) : null;
-  // Positions are empty outside Summoner's Rift; builds and benchmarks are per role.
+  // Positions are empty outside Summoner's Rift; builds are per role.
   const position = me?.position || null;
-  const [helpers] = useAsync(championId && position ? `${championId}:${position}` : null, () => loadHelpers(championId!, position!));
-  const [trends] = useAsync(player && settings.overlayGoal ? `trends:${player.puuid}` : null, () => getTrends(player!.puuid));
+  const [build] = useAsync(championId && position ? `${championId}:${position}` : null, () => loadBuild(championId!, position!));
 
-  if (hidden || !settings.overlay) return null;
-  if (loading && !editing) {
-    return settings.overlayScouting ? (
-      <div className="overlay" aria-hidden="true">
-        <Scouting player={player} fixture={scoutingFixture()} />
-      </div>
-    ) : null;
-  }
+  // The loading screen gets nothing; the overlay starts with the game.
+  if (hidden || !settings.overlay || (loading && !editing)) return null;
   if (!game || !me) return null;
-  const extra = helpers.status === "done" ? helpers.value : { build: null, benchmarks: null, pace: null };
+  const extra = { build: build.status === "done" ? build.value : null };
   const itemInfo = data.status === "done" ? data.value.items : null;
   const gold = (id: number) => itemInfo?.get(id)?.gold ?? 0;
   const picks = championId && position ? picksFor(extra.build, championId, position) : null;
 
   const skill = settings.overlaySkills ? nextSkill(game.level, game.skills, picks?.skills ?? null) : null;
   const timers = settings.overlayObjectives ? objectiveTimers(game, me.team) : [];
-  const numbers = settings.overlayBenchmarks && position ? myNumbers(game) : null;
-  const paceTarget = settings.overlayPace && extra.pace ? paceAt(extra.pace.median, time / 60) : null;
   const itemGold = settings.overlayItems && itemInfo ? itemDifference(game, gold) : null;
 
   const buildItems = picks ? [...new Set([...(picks.coreItems?.ids ?? []), ...picks.items.map((i) => i.id)])].filter((id) => itemInfo?.get(id)?.complete) : [];
   const next = settings.overlayNextItem && itemInfo ? nextItem(me.items.map((i) => i.itemId), buildItems) : null;
-  const habit = settings.overlayGoal && trends.status === "done" ? firstTrackable(trends.value.habits, game) : null;
   const rows = settings.overlayScoreboard && itemInfo && (tabHeld || editing) ? scoreboardRows(game, gold) : [];
 
   const boxes: { id: WidgetId; name: string; node: ReactNode }[] = [];
@@ -209,56 +156,12 @@ export function Overlay() {
       ),
     });
   }
-  if (habit) boxes.push({ id: "goal", name: t("Koçun hedefi"), node: <GoalCard habit={habit} game={game} /> });
   // The card hides itself when it has nothing to count; manual timers live inside it.
   if (timers.length > 0 || settings.overlayTimers)
     boxes.push({
       id: "timers",
       name: t("Süreler"),
       node: <TimerCard objectives={timers} objectiveLabel={(timer) => timerLabel(timer, t)} game={game} time={time} />,
-    });
-  if (numbers && (numbers.csPerMinute !== null || numbers.killParticipation !== null))
-    boxes.push({
-      id: "benchmarks",
-      name: t("Emerald+ karşılaştırması"),
-      node: (
-        <section className="overlay__card">
-          <p className="overlay__caption">{t("Emerald+ {role} medyanına göre", { role: positionLabel(position!, lang)?.toLocaleLowerCase(lang) ?? "" })}</p>
-          {numbers.csPerMinute !== null && (
-            <Benchmark label="CS/dk" value={numbers.csPerMinute.toFixed(1)} target={median(extra.benchmarks, "cs_pm")} raw={numbers.csPerMinute} />
-          )}
-          {numbers.killParticipation !== null && (
-            <Benchmark
-              label={t("Skora katkı")}
-              value={formatPercent(numbers.killParticipation, lang)}
-              target={median(extra.benchmarks, "kill_participation")}
-              raw={numbers.killParticipation}
-              percent
-            />
-          )}
-          <p className="overlay__row">
-            <span>KDA</span>
-            <span className="overlay__value">{numbers.kda.toFixed(1)}</span>
-          </p>
-        </section>
-      ),
-    });
-  if (paceTarget !== null)
-    boxes.push({
-      id: "pace",
-      name: t("Tempo"),
-      node: (
-        <section className="overlay__card">
-          <p className="overlay__caption">{t("Tempo, {time} itibarıyla", { time: clock(time) })}</p>
-          <p className="overlay__row" data-ahead={me.scores.creepScore >= paceTarget}>
-            <span>{t("Minyon ve kamp")}</span>
-            <span className="overlay__value">
-              {me.scores.creepScore}
-              <span className="overlay__target"> / {Math.round(paceTarget)}</span>
-            </span>
-          </p>
-        </section>
-      ),
     });
   if (itemGold)
     boxes.push({
@@ -316,33 +219,6 @@ export function Overlay() {
 
       {editing && <EditBar onReset={reset} />}
     </div>
-  );
-}
-
-function firstTrackable(habits: Habit[], game: LiveGame): (Habit & { metric: GoalMetric; target: number }) | null {
-  for (const habit of habits) {
-    if (!GOAL_METRICS.includes(habit.metric as GoalMetric) || habit.target === undefined) continue;
-    if (goalProgress(habit.metric as GoalMetric, habit.target, game)) return habit as Habit & { metric: GoalMetric; target: number };
-  }
-  return null;
-}
-
-function GoalCard({ habit, game }: { habit: Habit & { metric: GoalMetric; target: number }; game: LiveGame }) {
-  const t = useT();
-  const lang = useLang();
-  const progress = goalProgress(habit.metric, habit.target, game);
-  if (!progress) return null;
-  const percent = habit.metric === "kill_participation";
-  const show = (n: number) => (percent ? formatPercent(n, lang) : Number.isInteger(n) ? String(n) : n.toFixed(1));
-  return (
-    <section className="overlay__card overlay__goal">
-      <p className="overlay__caption">{t("Koçun hedefi")}</p>
-      <p className="overlay__row" data-ahead={progress.onTrack ?? undefined}>
-        <span>{t(GOAL_LABELS[habit.metric], { target: show(habit.target) })}</span>
-        <span className="overlay__value">{show(progress.value)}</span>
-      </p>
-      <p className="overlay__goal-why">{t(habit.title)}</p>
-    </section>
   );
 }
 
@@ -415,19 +291,6 @@ function EditBar({ onReset }: { onReset: () => void }) {
         {t("Bitti")}
       </button>
     </div>
-  );
-}
-
-function Benchmark({ label, value, target, raw, percent }: { label: string; value: string; target: number | null; raw: number; percent?: boolean }) {
-  const lang = useLang();
-  return (
-    <p className="overlay__row" data-ahead={target === null ? undefined : raw >= target}>
-      <span>{label}</span>
-      <span className="overlay__value">
-        {value}
-        {target !== null && <span className="overlay__target"> / {percent ? formatPercent(target, lang) : target.toFixed(1)}</span>}
-      </span>
-    </p>
   );
 }
 

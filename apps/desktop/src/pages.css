@@ -1,0 +1,432 @@
+
+
+/* Champ select, champion page, tier list and the other pages' own parts.
+   Split per page in roadmap phase 2. */
+
+.roles {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.roles li {
+  display: grid;
+  grid-template-columns: 18px 104px 1fr 44px;
+  align-items: center;
+  gap: 2px 10px;
+}
+
+.goals {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goals li {
+  display: grid;
+  gap: 6px;
+}
+
+.goals__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.goals__form select,
+.goals__form input,
+.journal textarea {
+  min-width: 0;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--glaze);
+  background: rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+}
+
+.goals__form select {
+  flex: 1 1 100%;
+}
+
+.goals__form input {
+  flex: 1;
+  width: 64px;
+}
+
+.goals__form select option {
+  color: var(--glaze);
+  background: var(--ink);
+}
+
+/* Shared by champ select, the champion page and the queue screen. */
+.comp {
+  display: grid;
+  gap: 10px;
+}
+
+.comp__damage {
+  display: flex;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.08);
+}
+
+.comp__damage {
+  gap: 2px;
+}
+
+.comp__damage span:first-child {
+  background: var(--data-magic);
+}
+
+.comp__damage span:last-child {
+  background: var(--data-physical);
+}
+
+.comp__legend {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  font-size: 12px;
+  color: var(--glaze-muted);
+}
+
+.comp__traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comp__traits li {
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  background: rgb(255 255 255 / 0.08);
+  font-variant-numeric: tabular-nums;
+}
+
+.comp__traits li[data-strong] {
+  background: rgb(28 156 146 / 0.32);
+}
+
+.comp__traits li[data-none] {
+  color: var(--glaze-faint);
+}
+
+.comp__weak {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: #f2b0a6;
+}
+
+.advice {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.advice li {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.05);
+}
+
+.advice p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 350;
+  color: var(--glaze-muted);
+}
+
+.advice p:first-child {
+  margin-bottom: 2px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--glaze);
+}
+
+.journal {
+  display: grid;
+  gap: 6px;
+}
+
+.journal textarea {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.journal__saved {
+  min-height: 1lh;
+  margin: 0;
+  font-size: 12px;
+  color: var(--glaze-faint);
+}
+
+.skillgrid {
+  display: grid;
+  grid-template-columns: 22px repeat(18, minmax(0, 1fr));
+  gap: 3px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.skillgrid span {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 5px;
+  background: rgb(255 255 255 / 0.05);
+}
+
+.skillgrid .skillgrid__key {
+  font-weight: 600;
+  background: none;
+}
+
+.skillgrid span[data-on] {
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--glaze);
+}
+
+.skillgrid span[data-on][data-ult] {
+  background: var(--gilt);
+}
+
+.compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.compare th {
+  padding: 4px 6px;
+  font-weight: 400;
+  text-align: left;
+  color: var(--glaze-faint);
+}
+
+.compare td {
+  padding: 4px 6px;
+  border-top: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.compare td img {
+  display: block;
+  border-radius: 6px;
+}
+
+.compare td[data-thin] {
+  color: var(--gilt);
+}
+
+.compare__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.abilities {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.abilities li {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 2px 12px;
+}
+
+.abilities img {
+  grid-row: span 2;
+  border-radius: 8px;
+}
+
+.abilities__name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.abilities__key {
+  margin-right: 6px;
+  color: var(--gilt);
+}
+
+.abilities__text {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 350;
+  color: var(--glaze-muted);
+}
+
+.star {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 9999px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--glaze);
+  background: rgb(255 255 255 / 0.1);
+  cursor: pointer;
+}
+
+.star[aria-pressed="true"] {
+  color: var(--ink);
+  background: var(--gilt);
+}
+
+.allies {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--glaze-muted);
+}
+
+.queue {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.build__alternatives {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.build__alternatives img {
+  border-radius: 50%;
+}
+
+.button--small {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.build__compare {
+  display: grid;
+  gap: 10px;
+}
+
+.build__compare summary {
+  cursor: pointer;
+}
+
+.build__compare[open] summary {
+  margin-bottom: 4px;
+  color: var(--glaze);
+}
+
+.team__stat {
+  font-size: 12px;
+  color: var(--glaze-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.team__stat[data-thin] {
+  color: var(--gilt);
+}
+
+.strip__rate {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  text-align: center;
+  color: var(--glaze-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.draft__matchups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.draft .journal {
+  margin-top: 14px;
+}
+
+.champion__star {
+  margin-left: auto;
+  align-self: center;
+}
+
+.champion__reference {
+  margin-top: 28px;
+}
+
+.champion__reference .journal {
+  margin-top: 18px;
+}
+
+.champion__guide .draft__heading:not(:first-child) {
+  margin-top: 18px;
+}
+
+.shortcuts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 18px;
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+
+.shortcuts div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shortcuts dd {
+  margin: 0;
+  color: var(--glaze-muted);
+}
+
+.shortcuts kbd,
+.settings__language input {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--glaze);
+  background: rgb(255 255 255 / 0.1);
+  border: 0;
+}
+
+.settings__language input {
+  width: 90px;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+

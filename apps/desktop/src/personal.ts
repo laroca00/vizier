@@ -1,11 +1,7 @@
 import { useSyncExternalStore } from "react";
 
-// What the player keeps for themselves: their champion pool, notes and goals.
+// What the player keeps for themselves: their champion pool and notes.
 // It stays on this computer, like the settings.
-
-export type GoalMetric = "cs_pm" | "deaths" | "vision_pm" | "kill_participation" | "kda";
-
-export type Goal = { id: string; metric: GoalMetric; target: number };
 
 export type PoolPick = { championId: number; position: string | null };
 
@@ -13,16 +9,17 @@ export type Personal = {
   pool: PoolPick[];
   /** "c:103" for a champion, "m:103:238" for Ahri against Zed. */
   notes: Record<string, string>;
-  goals: Goal[];
 };
 
-const DEFAULTS: Personal = { pool: [], notes: {}, goals: [] };
+const DEFAULTS: Personal = { pool: [], notes: {} };
 const KEY = "vizier.personal";
 const listeners = new Set<() => void>();
 
 function read(): Personal {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") };
+    // Older versions also kept goals here; they are dropped on the next write.
+    const { pool, notes } = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") } as Personal;
+    return { pool, notes };
   } catch {
     return DEFAULTS;
   }
@@ -30,7 +27,7 @@ function read(): Personal {
 
 let current = read();
 
-// The overlay window reads the same notes and goals.
+// The overlay window reads the same notes.
 window.addEventListener("storage", (event) => {
   if (event.key !== KEY) return;
   current = read();
@@ -83,12 +80,4 @@ export function notedMatchups(p: Personal, championId: number): number[] {
   return Object.keys(p.notes)
     .filter((k) => k.startsWith(prefix))
     .map((k) => Number(k.slice(prefix.length)));
-}
-
-export function addGoal(metric: GoalMetric, target: number) {
-  update((p) => ({ goals: [...p.goals.filter((g) => g.metric !== metric), { id: `${metric}:${Date.now()}`, metric, target }] }));
-}
-
-export function removeGoal(id: string) {
-  update((p) => ({ goals: p.goals.filter((g) => g.id !== id) }));
 }

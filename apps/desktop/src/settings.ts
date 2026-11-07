@@ -6,25 +6,17 @@ export type Settings = {
   autoImportSpells: boolean;
   autoImportItems: boolean;
   showOnChampSelect: boolean;
-  openAnalysisAfterGame: boolean;
   overlay: boolean;
   overlaySkills: boolean;
   overlayObjectives: boolean;
-  overlayBenchmarks: boolean;
   overlayItems: boolean;
-  overlayPace: boolean;
-  overlayScouting: boolean;
   overlayNextItem: boolean;
-  overlayGoal: boolean;
   overlayScoreboard: boolean;
   overlayTimers: boolean;
   /** A short tone when a manual timer or an objective is about to come up. */
   timerSound: boolean;
   /** Length of the Ctrl+Shift+T timer. */
   customTimerSeconds: number;
-  tiltWarnings: boolean;
-  /** Switch to the queue screen when matchmaking starts. */
-  queueCompanion: boolean;
   /** The side menu shrinks to an icon rail. */
   sidebarCollapsed: boolean;
   /** "auto" follows the League client's language. */
@@ -36,22 +28,15 @@ const DEFAULTS: Settings = {
   autoImportSpells: false,
   autoImportItems: true,
   showOnChampSelect: true,
-  openAnalysisAfterGame: true,
   overlay: true,
   overlaySkills: true,
   overlayObjectives: true,
-  overlayBenchmarks: true,
   overlayItems: true,
-  overlayPace: true,
-  overlayScouting: true,
   overlayNextItem: true,
-  overlayGoal: true,
   overlayScoreboard: true,
   overlayTimers: true,
   timerSound: true,
   customTimerSeconds: 90,
-  tiltWarnings: true,
-  queueCompanion: true,
   sidebarCollapsed: false,
   language: "auto",
 };

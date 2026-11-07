@@ -2,42 +2,37 @@ import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { champSelectFixture } from "./dev/fixtures";
-import { matchIdFor, platformOf, useChampSelect, useLcuStatus } from "./lcu";
+import { useChampSelect, useLcuStatus } from "./lcu";
 import { About } from "./pages/About";
 import { ChampionPage } from "./pages/ChampionPage";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
-import { ProfilePage } from "./pages/ProfilePage";
 import { ProsPage } from "./pages/ProsPage";
-import { QueuePage } from "./pages/QueuePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TierListPage } from "./pages/TierListPage";
-import type { CoachTarget } from "./ProfileCard";
-import { SearchPalette, type RiotId } from "./SearchPalette";
+import { SearchPalette } from "./SearchPalette";
 import { setClientLocale, useT } from "./i18n";
 import { updateSettings, useSettings } from "./settings";
 import { FlatGlass } from "./ui/LiquidGlass";
 import { SplashLayers, SplashProvider } from "./ui/Splash";
 import { UpdateNotice } from "./UpdateNotice";
 import "./App.css";
-import "./dashboard.css";
+import "./pages.css";
 import "./shell.css";
 import { champions } from "./data/ddragon";
 import { Sidebar, type NavGroup, type NavItem } from "./Sidebar";
 import { NavIcon } from "./ui/NavIcon";
 
-type View = "home" | "about" | "draft" | "queue" | "settings" | "tiers" | "pros" | "champion" | "profile";
+type View = "home" | "about" | "draft" | "settings" | "tiers" | "pros" | "champion";
 
 const LABELS: Record<View, string> = {
   home: "Panel",
   about: "Hakkında",
   draft: "Şampiyon seçimi",
-  queue: "Sıra",
   settings: "Ayarlar",
   tiers: "Tier listesi",
   pros: "Pro'lar",
   champion: "Tier listesi",
-  profile: "Profil",
 };
 
 function useChampionName(id: number | null) {
@@ -61,8 +56,6 @@ function devView(): View | null {
   const view = new URLSearchParams(location.search).get("view");
   return view && view in LABELS ? (view as View) : null;
 }
-const POST_GAME_PHASES = new Set(["PreEndOfGame", "EndOfGame"]);
-const QUEUE_PHASES = new Set(["Matchmaking", "ReadyCheck"]);
 
 /** False while the window is hidden, minimised or behind another app. */
 function useWindowActive() {
@@ -96,20 +89,12 @@ function App() {
   const draft = useChampSelect() ?? fixture;
   const [view, setView] = useState<View>(() => devView() ?? (draft ? "draft" : "home"));
   const [navigated, setNavigated] = useState(false);
-  const [coaching, setCoaching] = useState<CoachTarget | null>(null);
   const [searching, setSearching] = useState(false);
   const [champion, setChampion] = useState<{ id: number; position: string | null; queue: number } | null>(null);
-  const [riotId, setRiotId] = useState<RiotId | null>(null);
   const [splash, setSplash] = useState<string | null>(null);
   const draftActive = useRef(draft !== null);
-  const queueActive = useRef(false);
-  const [queuedAt, setQueuedAt] = useState(Date.now);
-  const analysedGame = useRef<number | null>(null);
 
   const phase = lcu.state === "connected" ? lcu.phase : null;
-  const summoner = lcu.state === "connected" ? lcu.summoner : null;
-  const lastGameId = lcu.state === "connected" ? lcu.lastGameId : null;
-  const platform = platformOf(lcu.state === "connected" ? lcu.region : null);
   const clientLocale = lcu.state === "connected" ? (lcu.region?.locale ?? null) : null;
 
   useEffect(() => setClientLocale(clientLocale), [clientLocale]);
@@ -134,26 +119,6 @@ function App() {
     draftActive.current = active;
   }, [draft, settings.showOnChampSelect]);
 
-  // The queue screen comes up while matchmaking, without taking focus, and
-  // gives way to champ select or home afterwards.
-  const inQueue = phase !== null && QUEUE_PHASES.has(phase);
-  useEffect(() => {
-    if (inQueue && !queueActive.current) {
-      setQueuedAt(Date.now());
-      if (settings.queueCompanion && summoner) setView((v) => (v === "home" ? "queue" : v));
-    }
-    if (!inQueue && queueActive.current) setView((v) => (v === "queue" ? "home" : v));
-    queueActive.current = inQueue;
-  }, [inQueue, settings.queueCompanion, summoner]);
-
-  useEffect(() => {
-    if (!settings.openAnalysisAfterGame || !phase || !POST_GAME_PHASES.has(phase)) return;
-    if (!lastGameId || !summoner || analysedGame.current === lastGameId) return;
-    analysedGame.current = lastGameId;
-    setCoaching({ matchId: matchIdFor(platform, lastGameId), puuid: summoner.puuid, championName: "Son", justFinished: true });
-    setView("home");
-  }, [phase, lastGameId, summoner, platform, settings.openAnalysisAfterGame]);
-
   useEffect(() => {
     if (isTauri()) invoke("set_overlay_enabled", { enabled: settings.overlay }).catch(() => {});
   }, [settings.overlay]);
@@ -175,20 +140,11 @@ function App() {
     setView("champion");
   }
 
-  function openProfile(id: RiotId) {
-    setNavigated(true);
-    setRiotId(id);
-    setView("profile");
-  }
-
   const groups: NavGroup<View>[] = [
     { items: [{ id: "home", label: "Panel", icon: "home" }] },
     {
       heading: "Şu an",
-      items: [
-        ...(inQueue && summoner ? [{ id: "queue" as const, label: "Sıra", icon: "queue" as const, live: true }] : []),
-        ...(draft ? [{ id: "draft" as const, label: "Şampiyon seçimi", icon: "draft" as const, live: true }] : []),
-      ],
+      items: draft ? [{ id: "draft", label: "Şampiyon seçimi", icon: "draft", live: true }] : [],
     },
     {
       heading: "Keşfet",
@@ -206,11 +162,7 @@ function App() {
 
   // Where the page sits, read left to right in the top bar.
   const crumbs: string[] =
-    view === "champion"
-      ? [t("Tier listesi"), championName ?? ""]
-      : view === "profile" && riotId
-        ? [t("Profil"), `${riotId.gameName}#${riotId.tagLine}`]
-        : [t(LABELS[view])];
+    view === "champion" ? [t("Tier listesi"), championName ?? ""] : [t(LABELS[view])];
 
   function open(id: View) {
     if (id === view) return;
@@ -229,7 +181,6 @@ function App() {
         collapsed={settings.sidebarCollapsed}
         onOpen={open}
         onSearch={() => setSearching(true)}
-        onOpenOwnProfile={summoner ? () => openProfile({ gameName: summoner.gameName, tagLine: summoner.tagLine, platform }) : null}
       />
       <header className="top" data-tauri-drag-region>
         <button
@@ -252,7 +203,7 @@ function App() {
         <UpdateNotice />
         <button type="button" className="top__search" aria-keyshortcuts="Control+K" onClick={() => setSearching(true)}>
           <NavIcon name="search" size={16} className="top__icon" />
-          <span>{t("Şampiyon ya da oyuncu ara")}</span>
+          <span>{t("Şampiyon ara")}</span>
           <kbd>Ctrl K</kbd>
         </button>
       </header>
@@ -262,9 +213,7 @@ function App() {
         </div>
         <main className="shell__main" key={view}>
           {view === "draft" && draft ? (
-            <ChampSelectPage draft={draft} puuid={summoner?.puuid ?? null} />
-          ) : view === "queue" && summoner ? (
-            <QueuePage summoner={summoner} platform={platform} since={queuedAt} onOpenChampion={openChampion} />
+            <ChampSelectPage draft={draft} />
           ) : view === "about" ? (
             <About />
           ) : view === "settings" ? (
@@ -281,14 +230,12 @@ function App() {
               initialQueue={champion.queue}
               onOpenChampion={openChampion}
             />
-          ) : view === "profile" && riotId ? (
-            <ProfilePage key={`${riotId.platform}:${riotId.gameName}#${riotId.tagLine}`} riotId={riotId} onOpenChampion={openChampion} />
           ) : (
-            <Home lcu={lcu} coaching={coaching} onCoach={setCoaching} onOpenChampion={openChampion} />
+            <Home lcu={lcu} onOpenChampion={openChampion} />
           )}
         </main>
       </SplashProvider>
-      <SearchPalette open={searching} onClose={() => setSearching(false)} onChampion={(id) => openChampion(id)} onProfile={openProfile} home={platform} />
+      <SearchPalette open={searching} onClose={() => setSearching(false)} onChampion={(id) => openChampion(id)} />
     </div>
     </FlatGlass.Provider>
   );

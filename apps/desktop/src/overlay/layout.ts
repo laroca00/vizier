@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 // resolution change keeps the arrangement. Boxes never moved stay in the
 // default column at the top left.
 
-export type WidgetId = "skill" | "next" | "goal" | "timers" | "benchmarks" | "pace" | "items" | "scoreboard";
+export type WidgetId = "skill" | "next" | "timers" | "items" | "scoreboard";
 export type Spot = { x: number; y: number };
 export type Layout = Partial<Record<WidgetId, Spot>> & {
   /** Distance between scoreboard rows, as a share of the screen height. */

@@ -24,11 +24,6 @@ function detected(): Lang {
   return locale.toLowerCase().startsWith("tr") ? "tr" : "en";
 }
 
-export function resolveLang(setting: LanguageSetting, locale: string | null = clientLocale): Lang {
-  if (setting !== "auto") return setting;
-  return (locale ?? (typeof navigator === "undefined" ? "tr" : navigator.language)).toLowerCase().startsWith("tr") ? "tr" : "en";
-}
-
 export type Params = Record<string, string | number>;
 
 export function translate(lang: Lang, text: string, params?: Params): string {

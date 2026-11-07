@@ -54,10 +54,6 @@ export function champions(): Promise<Map<number, Champion>> {
   return championsByKey;
 }
 
-export function profileIconUrl(version: string, iconId: number) {
-  return `${BASE}/cdn/${version}/img/profileicon/${iconId}.png`;
-}
-
 export function championIconUrl(version: string, championId: string) {
   return `${BASE}/cdn/${version}/img/champion/${championId}.png`;
 }

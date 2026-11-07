@@ -1,52 +1,4 @@
-import { apiFixture } from "./dev/fixtures";
-import type { Platform } from "./lcu";
 const API_URL = import.meta.env.VITE_API_URL ?? "https://vizier-api.vizier-api.workers.dev";
-
-export type Rank = {
-  queueType: string;
-  tier: string;
-  rank: string;
-  leaguePoints: number;
-  wins: number;
-  losses: number;
-};
-
-export type Profile = {
-  account: { puuid: string; gameName: string; tagLine: string };
-  summoner: { profileIconId: number; summonerLevel: number } | null;
-  ranks: Rank[];
-};
-
-export type MatchParticipant = {
-  puuid: string;
-  participantId: number;
-  teamId: number;
-  riotIdGameName?: string;
-  riotIdTagline?: string;
-  championId: number;
-  champLevel: number;
-  teamPosition: string;
-  kills: number;
-  deaths: number;
-  assists: number;
-  totalMinionsKilled: number;
-  neutralMinionsKilled: number;
-  goldEarned: number;
-  totalDamageDealtToChampions: number;
-  item0: number;
-  item1: number;
-  item2: number;
-  item3: number;
-  item4: number;
-  item5: number;
-  item6: number;
-  win: boolean;
-};
-
-export type Match = {
-  metadata: { matchId: string };
-  info: { gameEndTimestamp: number; gameDuration: number; queueId: number; participants: MatchParticipant[] };
-};
 
 export class ApiError extends Error {
   readonly status: number;
@@ -57,25 +9,12 @@ export class ApiError extends Error {
 }
 
 async function get<T>(path: string, init?: RequestInit): Promise<T> {
-  if (import.meta.env.DEV) {
-    const fixture = apiFixture(path);
-    if (fixture) return fixture as T;
-  }
   const response = await fetch(`${API_URL}${path}`, init);
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as { error?: string } | null;
     throw new ApiError(response.status, body?.error ?? response.statusText);
   }
   return response.json() as Promise<T>;
-}
-
-export function getProfile(gameName: string, tagLine: string, platform: Platform = "tr1") {
-  return get<Profile>(`/v1/profiles/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?platform=${platform}`);
-}
-
-export async function getRecentMatches(puuid: string, count: number): Promise<Match[]> {
-  const { matchIds } = await get<{ matchIds: string[] }>(`/v1/players/${puuid}/matches?count=${count}`);
-  return Promise.all(matchIds.map((id) => get<Match>(`/v1/matches/${id}`)));
 }
 
 export type Choice<T> = T & { games: number; winRate: number };
@@ -120,20 +59,6 @@ export async function getBuild(championId: number, position: string | null, vs: 
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
   }
-}
-
-export type Coaching = {
-  source?: "rules" | "workers-ai" | "claude";
-  headline: string;
-  points: { minute: number | null; title: string; detail: string }[];
-};
-
-export function getCoaching(matchId: string, puuid: string) {
-  return get<Coaching>(`/v1/coach/${matchId}`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ puuid }),
-  });
 }
 
 export type TierEntry = {
@@ -193,41 +118,6 @@ export function getCounters(championId: number, position: string) {
   return get<Counters>(`/v1/champions/${championId}/counters?position=${position}`);
 }
 
-export type Distribution = { games: number; quantiles: number[] };
-export type Benchmarks = { position: string; championId: number | null; patches: string[]; metrics: Partial<Record<string, Distribution>> };
-
-export function getBenchmarks(position: string, championId: number | null) {
-  return get<Benchmarks>(`/v1/benchmarks/${position}${championId ? `?champion=${championId}` : ""}`);
-}
-
-export type Pace = { position: string; championId: number | null; patches: string[]; games: number; median: number[] };
-
-export function getPace(position: string, championId: number | null) {
-  return get<Pace>(`/v1/pace/${position}${championId ? `?champion=${championId}` : ""}`);
-}
-
-export type LivePlayer = {
-  riotId: string | null;
-  championId: number;
-  teamId: number;
-  /** The player Vizier asked for, i.e. the one at this computer. */
-  you: boolean;
-  solo: { tier: string; rank: string; leaguePoints: number; wins: number; losses: number } | null;
-  /** Null when the player has never played the champion. */
-  mastery: { level: number; points: number; lastPlayTime: number } | null;
-};
-export type LiveGameInfo = { gameId: number; queueId: number | null; players: LivePlayer[] };
-
-/** Null until Riot lists the game, which can take a few seconds into the loading screen. */
-export async function getLiveGame(puuid: string, platform: Platform): Promise<LiveGameInfo | null> {
-  try {
-    return await get<LiveGameInfo>(`/v1/live/${puuid}?platform=${platform}`);
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) return null;
-    throw error;
-  }
-}
-
 export type ProBuild = {
   matchId: string;
   player: string;
@@ -271,80 +161,8 @@ export async function getProTeams() {
   return (await get<{ teams: { team: string; group: ProGroup; players: string[] }[] }>("/v1/pros/teams")).teams;
 }
 
-export type GameReport = {
-  position: string;
-  championId: number;
-  comparedTo: "champion" | "role";
-  overall: number | null;
-  scores: { category: string; score: number; metrics: { metric: string; value: number; median: number; score: number }[] }[];
-  cs: { mine: number[]; median: number[]; weakest: number[] };
-};
-
-/** Null when the game has no role to compare (ARAM, Arena) or isn't published yet. */
-export async function getReport(matchId: string, puuid: string): Promise<GameReport | null> {
-  try {
-    return await get<GameReport>(`/v1/matches/${matchId}/report?puuid=${puuid}`);
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) return null;
-    throw error;
-  }
-}
-
-export type ChampionPool = { games: number; champions: { championId: number; games: number; wins: number; kills: number; deaths: number; assists: number }[] };
-
-export function getChampionPool(puuid: string) {
-  return get<ChampionPool>(`/v1/players/${puuid}/champions`);
-}
-
-export type LpSnapshot = { queue: string; tier: string; rank: string; lp: number; wins: number; losses: number; at: number; points: number };
-
-/** Empty until Vizier has seen the player's rank change at least once. */
-export async function getLpHistory(puuid: string, queue = "RANKED_SOLO_5x5"): Promise<LpSnapshot[]> {
-  return (await get<{ snapshots: LpSnapshot[] }>(`/v1/players/${puuid}/lp?queue=${queue}`)).snapshots;
-}
-
 export type BanSuggestions = { patches: string[]; champions: { championId: number; games: number; winRate: number }[] };
 
 export function getBans() {
   return get<BanSuggestions>("/v1/bans");
-}
-
-export type HabitMetric = "cs10" | "cs_pm" | "vision_pm" | "kill_participation" | "deaths";
-/** `metric` and `target` are missing from answers cached before they existed. */
-export type Habit = { title: string; detail: string; metric?: HabitMetric | string; target?: number };
-export type Trends = { games: number; wins: number; habits: Habit[] };
-
-export function getTrends(puuid: string) {
-  return get<Trends>(`/v1/players/${puuid}/trends`);
-}
-
-export type GoldGraph = { goldDiff: number[]; objectives: { minute: number; teamId: number; type: string }[] };
-
-export function getGoldGraph(matchId: string) {
-  return get<GoldGraph>(`/v1/matches/${matchId}/graph`);
-}
-
-export function getMatch(matchId: string) {
-  return get<Match>(`/v1/matches/${matchId}`);
-}
-
-export type GameRow = {
-  matchId: string;
-  at: number;
-  minutes: number;
-  championId: number;
-  position: string;
-  win: boolean;
-  kills: number;
-  deaths: number;
-  assists: number;
-  cs: number;
-  vision: number;
-  killParticipation: number | null;
-  damageShare: number | null;
-};
-
-/** The player's last 20 ranked solo games, newest first. */
-export async function getGameLog(puuid: string): Promise<GameRow[]> {
-  return (await get<{ games: GameRow[] }>(`/v1/players/${puuid}/games`)).games;
 }

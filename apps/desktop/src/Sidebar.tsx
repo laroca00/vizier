@@ -23,10 +23,9 @@ type Props<V extends string> = {
   collapsed: boolean;
   onOpen: (id: V) => void;
   onSearch: () => void;
-  onOpenOwnProfile: (() => void) | null;
 };
 
-export function Sidebar<V extends string>({ lcu, groups, foot, current, collapsed, onOpen, onSearch, onOpenOwnProfile }: Props<V>) {
+export function Sidebar<V extends string>({ lcu, groups, foot, current, collapsed, onOpen, onSearch }: Props<V>) {
   const t = useT();
 
   const item = (entry: NavItem<V>) => (
@@ -50,7 +49,7 @@ export function Sidebar<V extends string>({ lcu, groups, foot, current, collapse
       <div className="side__frame" data-tauri-drag-region>
         <WindowControls />
       </div>
-      <Account lcu={lcu} collapsed={collapsed} onOpenOwnProfile={onOpenOwnProfile} onOpenSettings={() => onOpen("settings" as V)} />
+      <Account lcu={lcu} collapsed={collapsed} onOpenSettings={() => onOpen("settings" as V)} />
 
       <button type="button" className="side__item side__search" aria-keyshortcuts="Control+K" title={collapsed ? t("Ara") : undefined} onClick={onSearch}>
         <NavIcon name="search" />
@@ -79,12 +78,10 @@ export function Sidebar<V extends string>({ lcu, groups, foot, current, collapse
 function Account({
   lcu,
   collapsed,
-  onOpenOwnProfile,
   onOpenSettings,
 }: {
   lcu: LcuStatus;
   collapsed: boolean;
-  onOpenOwnProfile: (() => void) | null;
   onOpenSettings: () => void;
 }) {
   const t = useT();
@@ -144,12 +141,6 @@ function Account({
 
       {open && (
         <div className="account__menu" role="menu">
-          {onOpenOwnProfile && (
-            <button type="button" role="menuitem" className="account__option" onClick={() => choose(onOpenOwnProfile)}>
-              <NavIcon name="profile" size={16} className="account__option-icon" />
-              {t("Profilimi aç")}
-            </button>
-          )}
           <button type="button" role="menuitem" className="account__option" onClick={() => choose(onOpenSettings)}>
             <NavIcon name="settings" size={16} className="account__option-icon" />
             {t("Ayarlar")}
