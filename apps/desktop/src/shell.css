@@ -477,6 +477,46 @@
   text-overflow: ellipsis;
 }
 
+/* Window frame. The system title bar is off, so the top bar doubles as it:
+   empty space drags the window and the controls sit flush in the corner. */
+
+.top:has(.window) {
+  padding-right: 0;
+}
+
+.window {
+  display: flex;
+  align-self: stretch;
+  margin-left: 8px;
+}
+
+.window__button {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  border: 0;
+  color: var(--glaze-muted);
+  background: transparent;
+  cursor: default;
+  transition:
+    background-color var(--duration-quick) var(--ease),
+    color var(--duration-quick) var(--ease);
+}
+
+.window__button:hover {
+  color: var(--glaze);
+  background: var(--hover);
+}
+
+.window__button--close:hover {
+  color: #fff;
+  background: var(--bole);
+}
+
+.window__button:focus-visible {
+  outline-offset: -3px;
+}
+
 /* Work area */
 
 /* Champion art sits faintly behind the work area's top right, under the bar. */

@@ -19,6 +19,7 @@ import { updateSettings, useSettings } from "./settings";
 import { FlatGlass } from "./ui/LiquidGlass";
 import { SplashLayers, SplashProvider } from "./ui/Splash";
 import { UpdateNotice } from "./UpdateNotice";
+import { WindowControls } from "./WindowControls";
 import "./App.css";
 import "./dashboard.css";
 import "./shell.css";
@@ -54,6 +55,13 @@ function useChampionName(id: number | null) {
 }
 
 const fixture = champSelectFixture();
+
+/** Dev only: `?view=tiers` opens a page directly, for screenshots without clicking. */
+function devView(): View | null {
+  if (!import.meta.env.DEV) return null;
+  const view = new URLSearchParams(location.search).get("view");
+  return view && view in LABELS ? (view as View) : null;
+}
 const POST_GAME_PHASES = new Set(["PreEndOfGame", "EndOfGame"]);
 const QUEUE_PHASES = new Set(["Matchmaking", "ReadyCheck"]);
 
@@ -87,7 +95,7 @@ function App() {
   const settings = useSettings();
   const t = useT();
   const draft = useChampSelect() ?? fixture;
-  const [view, setView] = useState<View>(draft ? "draft" : "home");
+  const [view, setView] = useState<View>(() => devView() ?? (draft ? "draft" : "home"));
   const [navigated, setNavigated] = useState(false);
   const [coaching, setCoaching] = useState<CoachTarget | null>(null);
   const [searching, setSearching] = useState(false);
@@ -224,7 +232,7 @@ function App() {
         onSearch={() => setSearching(true)}
         onOpenOwnProfile={summoner ? () => openProfile({ gameName: summoner.gameName, tagLine: summoner.tagLine, platform }) : null}
       />
-      <header className="top">
+      <header className="top" data-tauri-drag-region>
         <button
           type="button"
           className="top__toggle"
@@ -234,10 +242,10 @@ function App() {
         >
           <NavIcon name="sidebar" size={18} className="top__icon" />
         </button>
-        <ol className="top__crumbs" aria-label={t("Konum")}>
-          <li>Vizier</li>
+        <ol className="top__crumbs" aria-label={t("Konum")} data-tauri-drag-region>
+          <li data-tauri-drag-region>Vizier</li>
           {crumbs.filter(Boolean).map((crumb, i, all) => (
-            <li key={i} aria-current={i === all.length - 1 ? "page" : undefined}>
+            <li key={i} data-tauri-drag-region aria-current={i === all.length - 1 ? "page" : undefined}>
               {crumb}
             </li>
           ))}
@@ -248,6 +256,7 @@ function App() {
           <span>{t("Şampiyon ya da oyuncu ara")}</span>
           <kbd>Ctrl K</kbd>
         </button>
+        <WindowControls />
       </header>
       <SplashProvider value={setSplash}>
         <div className="shell__stage">
