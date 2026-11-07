@@ -125,6 +125,39 @@ describe("Crawler in another region", () => {
   });
 });
 
+describe("Emerald+ seeding", () => {
+  it("samples the apex leagues, asks every Emerald and Diamond division and replaces the old list", async () => {
+    const { db, sqlite } = fakeD1();
+    sqlite.prepare("INSERT INTO crawl_players (puuid, tier, region) VALUES ('old', 'MASTER', 'europe'), ('k', 'CHALLENGER', 'asia')").run();
+    const leaguePaths: string[] = [];
+    const riot = {
+      get: async (routing: string, _method: string, path: string) => {
+        if (!path.includes("/league/")) return null;
+        leaguePaths.push(`${routing} ${path}`);
+        if (path.includes("/masterleagues")) return { entries: Array.from({ length: 1000 }, (_, i) => ({ puuid: `${routing}-m${i}` })) };
+        if (path.includes("leagues/by-queue")) return { entries: [] };
+        return [{ puuid: `${routing}-${path.split("RANKED_SOLO_5x5/")[1]}` }];
+      },
+    } as unknown as RiotClient;
+    await new Crawler(db, riot, () => DAY).run();
+
+    const divisions = leaguePaths.filter((p) => p.startsWith("tr1 ") && p.includes("/entries/"));
+    expect(divisions).toHaveLength(20);
+    for (const division of ["I", "II", "III", "IV"]) {
+      expect(divisions.filter((p) => p.includes(`EMERALD/${division}?`))).toHaveLength(3);
+      expect(divisions.filter((p) => p.includes(`DIAMOND/${division}?`))).toHaveLength(2);
+    }
+    const tiers = sqlite.prepare("SELECT tier, COUNT(*) AS n FROM crawl_players WHERE region = 'europe' GROUP BY tier ORDER BY tier").all();
+    // 600 of each platform's 1,000 Masters; one player per division page.
+    expect(tiers).toEqual([
+      { tier: "DIAMOND", n: 16 },
+      { tier: "EMERALD", n: 24 },
+      { tier: "MASTER", n: 1200 },
+    ]);
+    expect(sqlite.prepare("SELECT puuid FROM crawl_players WHERE puuid IN ('old', 'k')").all()).toEqual([{ puuid: "k" }]);
+  });
+});
+
 describe("buildPaths", () => {
   it("reads starting items, skill order and purchases net of undos", async () => {
     const { buildPaths } = await import("./timeline.ts");

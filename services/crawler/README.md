@@ -5,6 +5,8 @@ Crawls ranked games without stopping, rolls them up into counts and publishes th
 It runs on its own server because a Worker on the free plan gets 50 requests, 10 ms of CPU and a share of 100k D1 writes per run, which holds the crawl to a few thousand games a day. Here the only limit is the Riot key.
 
 - TR and EUW Emerald+ players on the Europe host, KR Challenger on the Asia host. Riot counts limits per host, so the two run side by side.
+- The Emerald+ seed follows the ladder: three pages of each Emerald division, two of each Diamond division and a random 600 of Master and above per platform. It is replaced daily.
+- Tier lists, pick rates and ban rates count only TR and EUW games (`pool` kinds in `stat_counts`, told apart by the match id prefix). KR Challenger games feed builds, matchups and the rest.
 - Raw games stay three days for benchmarks and the CS curve. Everything else comes from `stat_counts`, which keeps the two newest patches.
 - The code is the API's own (`services/api/src`). Node 24 runs the TypeScript directly, so there is nothing to build or install.
 

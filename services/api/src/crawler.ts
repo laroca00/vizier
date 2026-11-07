@@ -24,10 +24,30 @@ const APEX_LEAGUES = [
   ["MASTER", "/lol/league/v4/masterleagues/by-queue/RANKED_SOLO_5x5"],
 ] as const;
 
+// Emerald+ should look like the ladder, not its top: every division of
+// Emerald and Diamond (a page holds 205 players), and a capped sample of
+// Master and above, which as whole leagues would outnumber the rest.
+// Roughly 2,500 Emerald, 1,600 Diamond and 600 apex players per platform.
 const DIVISION_PAGES = [
-  ["DIAMOND", "/lol/league/v4/entries/RANKED_SOLO_5x5/DIAMOND/I?page=1"],
-  ["EMERALD", "/lol/league/v4/entries/RANKED_SOLO_5x5/EMERALD/I?page=1"],
+  ...divisionPages("EMERALD", 3),
+  ...divisionPages("DIAMOND", 2),
 ] as const;
+const APEX_SAMPLE = 600;
+
+function divisionPages(tier: string, pages: number): [string, string][] {
+  return ["I", "II", "III", "IV"].flatMap((division) =>
+    Array.from({ length: pages }, (_, i): [string, string] => [tier, `/lol/league/v4/entries/RANKED_SOLO_5x5/${tier}/${division}?page=${i + 1}`]),
+  );
+}
+
+function sample<T>(items: T[], size: number): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, size);
+}
 
 export type CrawlResult = { seeded: number; matches: number };
 
@@ -123,11 +143,16 @@ export class Crawler {
     const players: { puuid: string; tier: string }[] = [];
     const apex = leagues === "challenger" ? APEX_LEAGUES.slice(0, 1) : APEX_LEAGUES;
     for (const platform of platforms) {
+      const top: { puuid: string; tier: string }[] = [];
       for (const [tier, path] of apex) {
         const league = await this.riot.get<LeagueList>(platform, path, path);
-        for (const entry of league?.entries ?? []) players.push({ puuid: entry.puuid, tier });
+        for (const entry of league?.entries ?? []) top.push({ puuid: entry.puuid, tier });
       }
-      if (leagues !== "emerald+") continue;
+      if (leagues !== "emerald+") {
+        players.push(...top);
+        continue;
+      }
+      players.push(...sample(top, APEX_SAMPLE));
       for (const [tier, path] of DIVISION_PAGES) {
         const page = await this.riot.get<LeagueEntryWithPuuid[]>(platform, "/lol/league/v4/entries", path);
         for (const entry of page ?? []) players.push({ puuid: entry.puuid, tier });
@@ -136,6 +161,10 @@ export class Crawler {
 
     const insert = this.db.prepare("INSERT OR IGNORE INTO crawl_players (puuid, tier, region) VALUES (?, ?, ?)");
     const statements = players.filter((p) => p.puuid).map((p) => insert.bind(p.puuid, p.tier, region));
+    // The list is replaced, not added to, so the mix follows the seed above
+    // instead of growing towards whoever was seeded before. A failed seed
+    // (the key expired, say) keeps the old list.
+    if (statements.length > 0) statements.unshift(this.db.prepare("DELETE FROM crawl_players WHERE region = ?").bind(region));
     // D1 caps a batch's size; chunk to stay well inside it.
     for (let i = 0; i < statements.length; i += 100) await this.db.batch(statements.slice(i, i + 100));
     await this.db
