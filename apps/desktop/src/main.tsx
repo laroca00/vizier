@@ -4,6 +4,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import "@fontsource-variable/geologica/shrp.css";
 import "./styles.css";
+import "./ui/ui.css";
 import App from "./App";
 import { Overlay } from "./overlay/Overlay";
 

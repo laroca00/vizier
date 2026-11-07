@@ -10,7 +10,9 @@ export type IconName =
   | "sidebar"
   | "chevron"
   | "profile"
-  | "refresh";
+  | "refresh"
+  | "close"
+  | "overlay";
 
 // Drawn for Vizier on a 20px grid with a 1.6 stroke, so they sit with the
 // Geologica text at the same weight.
@@ -27,6 +29,8 @@ const PATHS: Record<IconName, string> = {
   chevron: "M8 5.5 12.5 10 8 14.5",
   profile: "M10 3.8a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM4.5 16.2c.8-2.6 3-4 5.5-4s4.7 1.4 5.5 4",
   refresh: "M15.5 10a5.5 5.5 0 1 1-1.6-3.9M15.5 3.8v2.8h-2.8",
+  close: "M5.5 5.5l9 9M14.5 5.5l-9 9",
+  overlay: "M3.5 4.5h13v9h-13zM7 16.5h6M10 13.5v3M6.5 7.5h3v2.5h-3z",
 };
 
 export function NavIcon({ name, className = "side__icon", size = 20 }: { name: IconName; className?: string; size?: number }) {

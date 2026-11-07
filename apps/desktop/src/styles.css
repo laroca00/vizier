@@ -32,7 +32,28 @@
   --data-magic: #5b7fe6;
   --data-physical: #c27c2a;
 
-  /* Motion: one premium curve family, three durations. */
+  /* Type scale: a 1.2 ratio on 14px for app text, larger steps only for page
+     titles. Numbers use tabular figures wherever they line up in columns. */
+  --text-meta: 12px;
+  --text-small: 13px;
+  --text-body: 14px;
+  --text-lead: 16px;
+  --text-section: 18px;
+  --text-title: 28px;
+  --text-display: 40px;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-title: 350;
+
+  /* Spacing steps; components use these instead of one-off values. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+    /* Motion: one premium curve family, three durations. */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
   --duration-quick: 120ms;
