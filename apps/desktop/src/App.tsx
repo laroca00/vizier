@@ -7,9 +7,12 @@ import { About } from "./pages/About";
 import { ChampionPage } from "./pages/ChampionPage";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
+import { OverlayPage } from "./pages/OverlayPage";
 import { ProsPage } from "./pages/ProsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TierListPage } from "./pages/TierListPage";
+import { noteRecent } from "./personal";
+import { useNavigation, type Page, type Route } from "./router";
 import { SearchPalette } from "./SearchPalette";
 import { setClientLocale, useT } from "./i18n";
 import { updateSettings, useSettings } from "./settings";
@@ -21,19 +24,24 @@ import "./pages.css";
 import "./shell.css";
 import { champions } from "./data/ddragon";
 import { Sidebar, type NavGroup, type NavItem } from "./Sidebar";
+import { IconButton } from "./ui/Button";
 import { NavIcon } from "./ui/NavIcon";
+import { ErrorBoundary, PageCrashed } from "./ui/States";
+import { ToastProvider } from "./ui/Toast";
 
-type View = "home" | "about" | "draft" | "settings" | "tiers" | "pros" | "champion";
-
-const LABELS: Record<View, string> = {
-  home: "Panel",
-  about: "Hakkında",
+const LABELS: Record<Page, string> = {
+  home: "Ana sayfa",
   draft: "Şampiyon seçimi",
-  settings: "Ayarlar",
   tiers: "Tier listesi",
-  pros: "Pro'lar",
+  pros: "Pro build'ler",
   champion: "Tier listesi",
+  overlay: "Overlay",
+  settings: "Ayarlar",
+  about: "Hakkında",
 };
+
+/** The menu entry a page belongs to; a champion page sits under the tier list. */
+const SECTION: Record<Page, Page> = { ...Object.fromEntries(Object.keys(LABELS).map((p) => [p, p])), champion: "tiers" } as Record<Page, Page>;
 
 function useChampionName(id: number | null) {
   const [name, setName] = useState<string | null>(null);
@@ -51,10 +59,10 @@ function useChampionName(id: number | null) {
 const fixture = champSelectFixture();
 
 /** Dev only: `?view=tiers` opens a page directly, for screenshots without clicking. */
-function devView(): View | null {
+function devRoute(): Route | null {
   if (!import.meta.env.DEV) return null;
   const view = new URLSearchParams(location.search).get("view");
-  return view && view in LABELS ? (view as View) : null;
+  return view && view in LABELS && view !== "champion" ? ({ page: view } as Route) : null;
 }
 
 /** False while the window is hidden, minimised or behind another app. */
@@ -87,10 +95,10 @@ function App() {
   const settings = useSettings();
   const t = useT();
   const draft = useChampSelect() ?? fixture;
-  const [view, setView] = useState<View>(() => devView() ?? (draft ? "draft" : "home"));
+  const nav = useNavigation(devRoute() ?? { page: draft ? "draft" : "home" });
+  const { route } = nav;
   const [navigated, setNavigated] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [champion, setChampion] = useState<{ id: number; position: string | null; queue: number } | null>(null);
   const [splash, setSplash] = useState<string | null>(null);
   const draftActive = useRef(draft !== null);
 
@@ -112,10 +120,10 @@ function App() {
   useEffect(() => {
     const active = draft !== null;
     if (active && !draftActive.current) {
-      setView("draft");
+      nav.navigate({ page: "draft" });
       if (settings.showOnChampSelect) bringToFront();
     }
-    if (!active && draftActive.current) setView((v) => (v === "draft" ? "home" : v));
+    if (!active && draftActive.current && route.page === "draft") nav.replace({ page: "home" });
     draftActive.current = active;
   }, [draft, settings.showOnChampSelect]);
 
@@ -134,14 +142,18 @@ function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  function openChampion(id: number, position: string | null = null, queue = 420) {
+  function go(next: Route) {
     setNavigated(true);
-    setChampion({ id, position, queue });
-    setView("champion");
+    nav.navigate(next);
   }
 
-  const groups: NavGroup<View>[] = [
-    { items: [{ id: "home", label: "Panel", icon: "home" }] },
+  function openChampion(championId: number, position: string | null = null, queue = 420) {
+    noteRecent(championId);
+    go({ page: "champion", championId, position, queue });
+  }
+
+  const groups: NavGroup<Page>[] = [
+    { items: [{ id: "home", label: "Ana sayfa", icon: "home" }] },
     {
       heading: "Şu an",
       items: draft ? [{ id: "draft", label: "Şampiyon seçimi", icon: "draft", live: true }] : [],
@@ -150,36 +162,32 @@ function App() {
       heading: "Keşfet",
       items: [
         { id: "tiers", label: "Tier listesi", icon: "tiers" },
-        { id: "pros", label: "Pro'lar", icon: "pros" },
+        { id: "pros", label: "Pro build'ler", icon: "pros" },
       ],
     },
   ];
-  const footItems: NavItem<View>[] = [
+  const footItems: NavItem<Page>[] = [
+    { id: "overlay", label: "Overlay", icon: "overlay" },
     { id: "settings", label: "Ayarlar", icon: "settings" },
     { id: "about", label: "Hakkında", icon: "about" },
   ];
-  const championName = useChampionName(view === "champion" ? (champion?.id ?? null) : null);
+  const championName = useChampionName(route.page === "champion" ? route.championId : null);
 
   // Where the page sits, read left to right in the top bar.
-  const crumbs: string[] =
-    view === "champion" ? [t("Tier listesi"), championName ?? ""] : [t(LABELS[view])];
-
-  function open(id: View) {
-    if (id === view) return;
-    setNavigated(true);
-    setView(id);
-  }
+  const crumbs: string[] = route.page === "champion" ? [t("Tier listesi"), championName ?? ""] : [t(LABELS[route.page])];
+  const routeKey = JSON.stringify(route);
 
   return (
     <FlatGlass.Provider value={true}>
+    <ToastProvider>
     <div className="shell" data-navigated={navigated || undefined} data-collapsed={settings.sidebarCollapsed || undefined}>
       <Sidebar
         lcu={lcu}
         groups={groups}
         foot={footItems}
-        current={view === "champion" ? "tiers" : view}
+        current={SECTION[route.page]}
         collapsed={settings.sidebarCollapsed}
-        onOpen={open}
+        onOpen={(page) => page !== route.page && go({ page } as Route)}
         onSearch={() => setSearching(true)}
       />
       <header className="top" data-tauri-drag-region>
@@ -192,6 +200,14 @@ function App() {
         >
           <NavIcon name="sidebar" size={18} className="top__icon" />
         </button>
+        <span className="top__history">
+          <IconButton label={t("Geri (Alt+Sol)")} disabled={!nav.canGoBack} onClick={nav.back}>
+            <NavIcon name="chevron" size={16} className="top__back" />
+          </IconButton>
+          <IconButton label={t("İleri (Alt+Sağ)")} disabled={!nav.canGoForward} onClick={nav.forward}>
+            <NavIcon name="chevron" size={16} />
+          </IconButton>
+        </span>
         <ol className="top__crumbs" aria-label={t("Konum")} data-tauri-drag-region>
           <li data-tauri-drag-region>Vizier</li>
           {crumbs.filter(Boolean).map((crumb, i, all) => (
@@ -211,32 +227,36 @@ function App() {
         <div className="shell__stage">
           <SplashLayers className="splash" url={splash} />
         </div>
-        <main className="shell__main" key={view}>
-          {view === "draft" && draft ? (
-            <ChampSelectPage draft={draft} />
-          ) : view === "about" ? (
-            <About />
-          ) : view === "settings" ? (
-            <SettingsPage />
-          ) : view === "tiers" ? (
-            <TierListPage onOpenChampion={openChampion} />
-          ) : view === "pros" ? (
-            <ProsPage />
-          ) : view === "champion" && champion ? (
-            <ChampionPage
-              key={`${champion.id}:${champion.position}:${champion.queue}`}
-              championId={champion.id}
-              initialPosition={champion.position}
-              initialQueue={champion.queue}
-              onOpenChampion={openChampion}
-            />
-          ) : (
-            <Home lcu={lcu} onOpenChampion={openChampion} />
-          )}
+        <main className="shell__main" key={routeKey}>
+          <ErrorBoundary fallback={(reset) => <PageCrashed onReset={reset} />}>
+            {route.page === "draft" && draft ? (
+              <ChampSelectPage draft={draft} />
+            ) : route.page === "about" ? (
+              <About />
+            ) : route.page === "settings" ? (
+              <SettingsPage />
+            ) : route.page === "overlay" ? (
+              <OverlayPage />
+            ) : route.page === "tiers" ? (
+              <TierListPage onOpenChampion={openChampion} />
+            ) : route.page === "pros" ? (
+              <ProsPage />
+            ) : route.page === "champion" ? (
+              <ChampionPage
+                championId={route.championId}
+                initialPosition={route.position}
+                initialQueue={route.queue}
+                onOpenChampion={openChampion}
+              />
+            ) : (
+              <Home lcu={lcu} draftActive={draft !== null} onOpenChampion={openChampion} onNavigate={go} onSearch={() => setSearching(true)} />
+            )}
+          </ErrorBoundary>
         </main>
       </SplashProvider>
       <SearchPalette open={searching} onClose={() => setSearching(false)} onChampion={(id) => openChampion(id)} />
     </div>
+    </ToastProvider>
     </FlatGlass.Provider>
   );
 }

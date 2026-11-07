@@ -1,30 +1,135 @@
+import { isTauri } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { ClientStatus } from "../ClientStatus";
+import { champions, latestVersion } from "../data/ddragon";
 import type { LcuStatus } from "../lcu";
 import { MetaPicks } from "../MetaPicks";
+import { usePersonal } from "../personal";
 import { ProBuildList } from "../ProBuildList";
-import { useT } from "../i18n";
+import type { Route } from "../router";
+import { useLang, useT } from "../i18n";
+import { ChampionCard } from "../ui/GameIcons";
 import { LiquidGlass } from "../ui/LiquidGlass";
+import { NavIcon, type IconName } from "../ui/NavIcon";
+import { useAsync } from "../useAsync";
 
 type Props = {
   lcu: LcuStatus;
+  draftActive: boolean;
   onOpenChampion: (championId: number, position: string | null) => void;
+  onNavigate: (route: Route) => void;
+  onSearch: () => void;
 };
 
-// A plain start page until the new Home (roadmap phase 3) replaces it.
-export function Home({ lcu, onOpenChampion }: Props) {
+// Riot's own patch notes; Vizier links to them instead of copying them.
+const PATCH_NOTES = { tr: "https://www.leagueoflegends.com/tr-tr/news/game-updates/", en: "https://www.leagueoflegends.com/en-gb/news/game-updates/" };
+
+async function loadStatic() {
+  const [version, byKey] = await Promise.all([latestVersion(), champions()]);
+  return { version, champions: byKey };
+}
+
+function openExternal(url: string) {
+  if (isTauri()) openUrl(url).catch(() => {});
+  else window.open(url, "_blank", "noopener");
+}
+
+export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }: Props) {
   const t = useT();
+  const lang = useLang();
+  const personal = usePersonal();
+  const [data] = useAsync("static", loadStatic);
+  const summoner = lcu.state === "connected" ? lcu.summoner : null;
+  const patch = data.status === "done" ? data.value.version.split(".").slice(0, 2).join(".") : null;
+
+  const actions: { icon: IconName; title: string; text: string; onClick: () => void; disabled?: boolean }[] = [
+    { icon: "search", title: t("Şampiyon ara"), text: t("Build, eşleşme ve pro maçları, Ctrl K"), onClick: onSearch },
+    { icon: "tiers", title: t("Tier listesi"), text: t("Rol rol en güçlü şampiyonlar"), onClick: () => onNavigate({ page: "tiers" }) },
+    { icon: "pros", title: t("Pro build'ler"), text: t("Worlds, Türk oyuncular ve Challenger"), onClick: () => onNavigate({ page: "pros" }) },
+    { icon: "overlay", title: t("Overlay"), text: t("Oyun içi panel ve kısayollar"), onClick: () => onNavigate({ page: "overlay" }) },
+    {
+      icon: "draft",
+      title: t("Şampiyon seçimi"),
+      text: draftActive ? t("Seçim sürüyor, öneriler hazır") : t("Seçim başlayınca kendiliğinden açılır"),
+      onClick: () => onNavigate({ page: "draft" }),
+      disabled: !draftActive,
+    },
+  ];
+
+  const known = (ids: number[]) => (data.status === "done" ? ids.flatMap((id) => (data.value.champions.has(id) ? [data.value.champions.get(id)!] : [])) : []);
+  const recent = known(personal.recent);
+  const pool = known(personal.pool.map((p) => p.championId));
+
   return (
     <div className="home">
-      <div className="home__hero">
-        <header className="welcome">
-          <h1 className="wordmark enter">Vizier</h1>
-          <p className="welcome__line enter">{t("EUW ve TR oyuncuları için League of Legends yardımcısı.")}</p>
-          <ClientStatus status={lcu} className="enter" />
+      <div className="home__main">
+        <header className="home__hello enter">
+          <h1 className="page__title">{summoner ? t("Merhaba, {name}", { name: summoner.gameName }) : "Vizier"}</h1>
+          <p className="page__subtitle">
+            {patch ? t("Yama {patch}", { patch }) : t("EUW ve TR oyuncuları için League of Legends yardımcısı.")}
+            {patch && (
+              <>
+                {" "}
+                <button type="button" className="link" onClick={() => openExternal(PATCH_NOTES[lang])}>
+                  {t("Yama notlarını aç")}
+                </button>
+              </>
+            )}
+          </p>
+          <ClientStatus status={lcu} />
         </header>
+
+        <nav className="home__actions enter" aria-label={t("Hızlı erişim")}>
+          {actions.map((action) => (
+            <button key={action.title} type="button" className="action" disabled={action.disabled} onClick={action.onClick}>
+              <NavIcon name={action.icon} className="action__icon" />
+              <span className="action__title">{action.title}</span>
+              <span className="action__text">{action.text}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="home__lists enter">
+          <section aria-labelledby="home-recent">
+            <h2 id="home-recent" className="section-title">{t("Son baktıkların")}</h2>
+            {recent.length > 0 && data.status === "done" ? (
+              <div className="home__champions">
+                {recent.map((c) => (
+                  <ChampionCard key={c.key} version={data.value.version} championId={c.id} name={c.name} onOpen={() => onOpenChampion(c.key, null)} />
+                ))}
+              </div>
+            ) : (
+              <p className="state__text">{t("Açtığın şampiyonlar burada görünür. Aramak için Ctrl K.")}</p>
+            )}
+          </section>
+          <section aria-labelledby="home-pool">
+            <h2 id="home-pool" className="section-title">{t("Şampiyon havuzun")}</h2>
+            {pool.length > 0 && data.status === "done" ? (
+              <div className="home__champions">
+                {pool.map((c) => {
+                  const pick = personal.pool.find((p) => p.championId === c.key);
+                  return (
+                    <ChampionCard
+                      key={c.key}
+                      version={data.value.version}
+                      championId={c.id}
+                      name={c.name}
+                      onOpen={() => onOpenChampion(c.key, pick?.position ?? null)}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="state__text">{t("Bir şampiyonun sayfasında \"Havuzuna ekle\"ye basınca burada ve şampiyon seçiminde görünür.")}</p>
+            )}
+          </section>
+        </div>
+
         <MetaPicks onOpenChampion={onOpenChampion} />
       </div>
+
       <LiquidGlass className="panel home__pros" radius={28} strength={2.5} scroll>
-        <h2 className="draft__heading">{t("Son pro build'ler")}</h2>
+        <h2 className="section-title">{t("Son pro build'ler")}</h2>
         <ProBuildList
           filter={{ limit: 6 }}
           compact

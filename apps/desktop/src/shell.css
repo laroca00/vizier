@@ -423,6 +423,24 @@
   flex: none;
 }
 
+.top__history {
+  display: flex;
+  gap: 2px;
+}
+
+.top__history .icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.top__history .icon-btn:disabled:hover {
+  background: transparent;
+}
+
+.top__back {
+  transform: rotate(180deg);
+}
+
 .top__crumbs {
   display: flex;
   align-items: center;
