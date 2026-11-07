@@ -5,7 +5,8 @@ The plan for turning Vizier into a preparation and reference app: prepare, explo
 ## Decisions already made (2026-11-07)
 
 - Delete post-game analysis, the AI coach, player profiles and the dashboard completely: UI, Worker routes, modules and D1 tables.
-- Remove scouting and the performance overlay widgets.
+- Remove scouting and the overlay widgets that need the deleted backend (benchmarks, pace, coach goal).
+- Overlay 2.0 is out of this plan: the owner has their own design for it. The remaining overlay (timers, skill hint, next item, item gold, scoreboard) stays as it is until then.
 - Keep the Iznik palette and the current shell (side menu, top bar, traffic lights). The brief's violet palette was not adopted.
 - The language follows the League client, with a manual override. English is the fallback for keys without a translation.
 - Keep the stack: Tauri 2, React, plain CSS, Hono on Workers, D1 and the crawler on the free VM. Add no paid infrastructure.
@@ -16,7 +17,7 @@ The plan for turning Vizier into a preparation and reference app: prepare, explo
 | Phase | Status |
 |---|---|
 | 0. Audit, policy review, roadmap | Done (this document) |
-| 1. Removal and cleanup | Not started |
+| 1. Removal and cleanup | Code done; deploy steps open (see below) |
 | 2. Design system components | Not started |
 | 3. Navigation and Home | Not started |
 | 4. Champion Select 2.0 | Not started |
@@ -25,17 +26,32 @@ The plan for turning Vizier into a preparation and reference app: prepare, explo
 | 7. Pro Builds | Not started |
 | 8. Draft Simulator | Not started |
 | 9. Patch Tracker | Not started |
-| 10. Overlay 2.0 | Not started |
+| 10. Overlay 2.0 | Owner's design, not in this plan |
 | 11. Polish and release | Not started |
 
 Every phase ends the same way: typecheck, the existing tests and new tests pass, `pnpm build:web` succeeds, the affected screens are checked at 1280×720 and 1920×1080, this table is updated, and the work goes in small commits.
 
 ## Phase 1: removal and cleanup
 
+Done in code (commits `2dd73c6` to `d50312e`):
+- The Worker no longer has player, match, coach, benchmark, pace or augment routes, and needs no Riot key.
+- The crawler stops publishing those docs.
+- The desktop app lost the dashboard, profiles, queue screen, coach, scouting and the overlay widgets that need the deleted routes.
+- Unused translations and CSS are gone.
+- The JavaScript bundle went from 439 KB to 372 KB, the CSS from 62 KB to 50 KB.
+
+Still open, in this order:
+1. Release a desktop version. Installed copies of 0.6.1 call the removed routes, so the new version should be out before the Worker is deployed.
+2. Deploy the Worker (`pnpm --filter @vizier/api deploy`), then remove the secrets it no longer reads: `npx wrangler secret delete RIOT_API_KEY`, `ANTHROPIC_API_KEY` and `COACH_PUUIDS`.
+3. Back up D1, then apply migration `0011_drop_player_data.sql` with `pnpm --filter @vizier/api db:migrate:remote`.
+4. Pull and restart the crawler on the VM. It applies `0010` and `0011` to its own SQLite file on start.
+
+The plan as written before the work:
+
 Work: delete the items listed in `PRODUCT_AUDIT.md` section 6, in this order so nothing breaks halfway.
 
 1. Desktop: remove the Profile page, the post-game flow and the Queue screen from `App.tsx`. Make Home a temporary page with meta picks and pro builds until Phase 3. Remove `MyRecord` and the game log fetch from champ select.
-2. Overlay: drop benchmarks, pace, item gold, scoreboard rows, coach goal, scouting, objective timers, manual jungle timers and the skill hint (the last three stay out until Riot answers; see the policy review). Keep the window logic, edit mode, custom timer and stopwatch, and the next-item checklist.
+2. Overlay: drop benchmarks, pace, coach goal and scouting. The rest waits for the owner's overlay design; the policy review lists which widgets need Riot's answer first.
 3. Remove the dead modules, `api.ts` functions, settings keys, translations and CSS.
 4. API: remove the routes and modules, the `ai` binding, coach secrets and limits, the benchmark and pace docs, and the augment computation and endpoints. Deploy the Worker.
 5. Crawler: stop computing benchmarks, pace and augment docs. Keep the raw columns until a later migration, so the crawler and an older Worker stay compatible during the switch.
@@ -179,6 +195,8 @@ Risks:
 Acceptance: the diff between the current and previous version matches the raw JSON for a spot check of five champions and five items.
 
 ## Phase 10: Overlay 2.0
+
+Not part of this plan; the owner is designing it. The notes below are kept for reference.
 
 Work:
 - Widgets: custom timer and stopwatch, quick notes, rune page reference, ability reference, item lookup, build checklist.

@@ -1,17 +1,17 @@
 # Vizier
 
-A lightweight League of Legends companion for Windows. Vizier imports runes, summoner spells and item sets during champion select, and breaks down your games once they're over.
+A lightweight League of Legends companion for Windows, for preparing games rather than grading them. Vizier shows builds, matchups and team composition during champion select and imports runes, summoner spells and item sets into the client. Out of game it has tier lists, champion pages and pro players' builds.
 
-Early development. Nothing usable yet.
+Early development. The plan is in [docs/IMPLEMENTATION_ROADMAP.md](docs/IMPLEMENTATION_ROADMAP.md).
 
 ## How it works
 
 Vizier only uses the interfaces Riot exposes to third-party apps:
 
-- **League Client API** (local) for champion select, rune pages and item sets
-- **Live Client Data API** (local, port 2999) for in-game data the player can already see
-- **Riot Web API** for accounts, ranks and match history, called from our own backend so the API key never ships with the app
-- **Data Dragon** for champion, item and rune data
+- The League Client API (local) for champion select, rune pages and item sets.
+- The Live Client Data API (local, port 2999) for in-game data the player can already see.
+- The Riot Web API for match data. Only our crawler calls it, so the API key never ships with the app.
+- Data Dragon for champion, item and rune data.
 
 It never reads or writes game memory.
 
@@ -34,9 +34,7 @@ pnpm dev
 
 ### API service
 
-`services/api` holds the Riot API key and is the only part of Vizier that talks to the Riot Web API. It runs on Cloudflare Workers with a D1 database.
-
-Local run: copy `services/api/.dev.vars.example` to `services/api/.dev.vars` and add a key from the [Developer Portal](https://developer.riotgames.com).
+`services/api` serves the stats the crawler publishes (tier lists, builds, counters, synergies, pro builds) and the desktop app's updates. It runs on Cloudflare Workers with a D1 database and makes no Riot calls itself. `services/crawler` is the part that holds the Riot API key; its README covers the server it runs on.
 
 ```sh
 pnpm --filter @vizier/api db:migrate   # local D1
@@ -51,11 +49,10 @@ cd services/api
 npx wrangler login
 npx wrangler d1 create vizier          # put the printed database_id in wrangler.jsonc
 pnpm db:migrate:remote
-npx wrangler secret put RIOT_API_KEY
 pnpm deploy
 ```
 
-Post-game coaching is free: rules find the issues in a match and Workers AI rewords them within its free daily allocation; if the rewrite changes any number, the rule wording is served instead. Claude can take over for chosen accounts by setting `ANTHROPIC_API_KEY` and `COACH_PUUIDS` (comma-separated PUUIDs); that path costs money per analysis and is capped at 20 a day.
+Product scope and Riot policy notes live in [docs/](docs/).
 
 ## Legal
 
