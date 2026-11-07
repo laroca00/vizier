@@ -585,7 +585,7 @@
   width: min(680px, 100%);
 }
 
-.home:not(.home--dash) {
+.home {
   align-items: stretch;
 }
 
@@ -607,23 +607,6 @@
 .nav {
   --glass-tint: var(--surface);
   --glass-shadow: inset 0 0 0 1px var(--line);
-}
-
-.tile {
-  border-radius: var(--radius-panel);
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
-.page__title {
-  margin: 0;
-  font-size: 26px;
-  font-weight: 350;
-  letter-spacing: -0.02em;
-}
-
-.dash__bar {
-  justify-content: flex-start;
 }
 
 @media (prefers-reduced-motion: reduce) {
