@@ -26,7 +26,6 @@ export const EN: Record<string, string> = {
   "Ekranı kapla": "Maximise",
   "Önceki boyuta getir": "Restore",
   "Tepsiye kapat": "Close to tray",
-  Kapat: "Close",
   "Şampiyon ya da oyuncu ara": "Search champions or players",
   "İstemciye bağlanıyor": "Connecting to the client",
   "İstemci kapalı": "Client closed",

@@ -3,60 +3,68 @@ import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useT } from "./i18n";
 
-// Drawn on the same 20px grid as the nav icons, but at a 1.2 stroke: these
-// sit at the window's edge and should read lighter than the menu.
+// Glyphs only show while the pointer is over the group, as on macOS.
 const GLYPHS = {
-  minimize: "M5 10h10",
-  maximize: "M5.5 5.5h9v9h-9z",
-  restore: "M5.5 7.5h7v7h-7zM7.5 7.5V5.5h7v7h-2",
-  close: "M5.5 5.5l9 9M14.5 5.5l-9 9",
+  close: "M3.5 3.5l5 5M8.5 3.5l-5 5",
+  minimize: "M3 6h6",
+  maximize: "M3.6 8.4V3.6h4.8zM8.4 3.6v4.8H3.6z",
+  restore: "M6 2.8V6H2.8zM6 9.2V6h3.2z",
 };
 
-function Glyph({ d }: { d: string }) {
+function Light({ kind, label, glyph, onClick }: { kind: string; label: string; glyph: string; onClick: () => void }) {
   return (
-    <svg viewBox="0 0 20 20" width={16} height={16} aria-hidden="true">
-      <path d={d} fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <button type="button" className="lights__light" data-kind={kind} aria-label={label} title={label} onClick={onClick}>
+      <svg viewBox="0 0 12 12" width={12} height={12} aria-hidden="true">
+        <path d={glyph} fill={kind === "maximize" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.3} strokeLinecap="round" />
+      </svg>
+    </button>
   );
 }
 
-/** Minimise, maximise and close, drawn by the app since the window has no
+/** Close, minimise and maximise as traffic lights, since the window has no
  * system frame. Close keeps Vizier in the tray, same as before. */
 export function WindowControls() {
   const t = useT();
   const [maximized, setMaximized] = useState(false);
+  const [focused, setFocused] = useState(() => document.hasFocus());
 
   useEffect(() => {
-    if (!isTauri()) return;
-    const window = getCurrentWindow();
-    const sync = () => window.isMaximized().then(setMaximized, () => {});
+    const onFocus = () => setFocused(true);
+    const onBlur = () => setFocused(false);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", onBlur);
+    if (!isTauri()) {
+      return () => {
+        window.removeEventListener("focus", onFocus);
+        window.removeEventListener("blur", onBlur);
+      };
+    }
+    const current = getCurrentWindow();
+    const sync = () => current.isMaximized().then(setMaximized, () => {});
     sync();
-    const unlisten = window.onResized(sync);
+    const unlisten = current.onResized(sync);
     return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
       unlisten.then((stop) => stop());
     };
   }, []);
 
-  if (!isTauri()) return null;
-  const window = getCurrentWindow();
+  // Outside Tauri (the dev browser) the lights still render, so the layout can be checked.
+  const run = (action: (w: ReturnType<typeof getCurrentWindow>) => Promise<void>) => () => {
+    if (isTauri()) action(getCurrentWindow()).catch(() => {});
+  };
 
   return (
-    <div className="window">
-      <button type="button" className="window__button" aria-label={t("Simge durumuna küçült")} title={t("Simge durumuna küçült")} onClick={() => window.minimize()}>
-        <Glyph d={GLYPHS.minimize} />
-      </button>
-      <button
-        type="button"
-        className="window__button"
-        aria-label={t(maximized ? "Önceki boyuta getir" : "Ekranı kapla")}
-        title={t(maximized ? "Önceki boyuta getir" : "Ekranı kapla")}
-        onClick={() => window.toggleMaximize()}
-      >
-        <Glyph d={maximized ? GLYPHS.restore : GLYPHS.maximize} />
-      </button>
-      <button type="button" className="window__button window__button--close" aria-label={t("Kapat")} title={t("Tepsiye kapat")} onClick={() => window.close()}>
-        <Glyph d={GLYPHS.close} />
-      </button>
+    <div className="lights" data-blurred={!focused || undefined}>
+      <Light kind="close" label={t("Tepsiye kapat")} glyph={GLYPHS.close} onClick={run((w) => w.close())} />
+      <Light kind="minimize" label={t("Simge durumuna küçült")} glyph={GLYPHS.minimize} onClick={run((w) => w.minimize())} />
+      <Light
+        kind="maximize"
+        label={t(maximized ? "Önceki boyuta getir" : "Ekranı kapla")}
+        glyph={maximized ? GLYPHS.restore : GLYPHS.maximize}
+        onClick={run((w) => w.toggleMaximize())}
+      />
     </div>
   );
 }

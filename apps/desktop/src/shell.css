@@ -346,6 +346,15 @@
     width: 64px;
   }
 
+  .side .side__frame {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .side .lights {
+    gap: 6px;
+  }
+
   .side :is(.side__label, .side__kbd, .side__heading, .account__text, .account__chevron) {
     display: none;
   }
@@ -477,44 +486,68 @@
   text-overflow: ellipsis;
 }
 
-/* Window frame. The system title bar is off, so the top bar doubles as it:
-   empty space drags the window and the controls sit flush in the corner. */
+/* Window frame. The system title bar is off: the strip at the top of the
+   side menu carries the traffic lights and drags the window, and so does
+   empty space in the top bar. */
 
-.top:has(.window) {
-  padding-right: 0;
-}
-
-.window {
+.side__frame {
   display: flex;
-  align-self: stretch;
-  margin-left: 8px;
+  align-items: center;
+  height: 28px;
+  margin: -4px 0 10px;
+  padding: 0 8px;
 }
 
-.window__button {
+.side[data-collapsed] .side__frame {
+  justify-content: center;
+  padding: 0;
+}
+
+.side[data-collapsed] .lights {
+  gap: 6px;
+}
+
+.lights {
+  display: flex;
+  gap: 8px;
+}
+
+.lights__light {
   display: grid;
   place-items: center;
-  width: 46px;
+  width: 12px;
+  height: 12px;
+  padding: 0;
   border: 0;
-  color: var(--glaze-muted);
-  background: transparent;
+  border-radius: 50%;
+  color: transparent;
+  background: var(--light);
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.25);
   cursor: default;
-  transition:
-    background-color var(--duration-quick) var(--ease),
-    color var(--duration-quick) var(--ease);
 }
 
-.window__button:hover {
-  color: var(--glaze);
-  background: var(--hover);
+.lights__light[data-kind="close"] { --light: #ff5f57; }
+.lights__light[data-kind="minimize"] { --light: #febc2e; }
+.lights__light[data-kind="maximize"] { --light: #28c840; }
+
+/* Glyphs appear for the whole group at once, as on macOS. */
+.lights:hover .lights__light,
+.lights:focus-within .lights__light {
+  color: rgb(0 0 0 / 0.55);
 }
 
-.window__button--close:hover {
-  color: #fff;
-  background: var(--bole);
+.lights__light:active {
+  filter: brightness(0.85);
 }
 
-.window__button:focus-visible {
-  outline-offset: -3px;
+/* An unfocused window greys its lights out. */
+.lights[data-blurred]:not(:hover) .lights__light {
+  --light: rgb(238 242 236 / 0.18);
+  box-shadow: none;
+}
+
+.lights__light:focus-visible {
+  outline-offset: 2px;
 }
 
 /* Work area */

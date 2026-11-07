@@ -19,7 +19,6 @@ import { updateSettings, useSettings } from "./settings";
 import { FlatGlass } from "./ui/LiquidGlass";
 import { SplashLayers, SplashProvider } from "./ui/Splash";
 import { UpdateNotice } from "./UpdateNotice";
-import { WindowControls } from "./WindowControls";
 import "./App.css";
 import "./dashboard.css";
 import "./shell.css";
@@ -256,7 +255,6 @@ function App() {
           <span>{t("Şampiyon ya da oyuncu ara")}</span>
           <kbd>Ctrl K</kbd>
         </button>
-        <WindowControls />
       </header>
       <SplashProvider value={setSplash}>
         <div className="shell__stage">

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { phaseLabel, type LcuStatus } from "./lcu";
 import { useLang, useT } from "./i18n";
 import { NavIcon, type IconName } from "./ui/NavIcon";
+import { WindowControls } from "./WindowControls";
 
 export type NavItem<V extends string> = {
   id: V;
@@ -46,6 +47,9 @@ export function Sidebar<V extends string>({ lcu, groups, foot, current, collapse
 
   return (
     <aside className="side" data-collapsed={collapsed || undefined}>
+      <div className="side__frame" data-tauri-drag-region>
+        <WindowControls />
+      </div>
       <Account lcu={lcu} collapsed={collapsed} onOpenOwnProfile={onOpenOwnProfile} onOpenSettings={() => onOpen("settings" as V)} />
 
       <button type="button" className="side__item side__search" aria-keyshortcuts="Control+K" title={collapsed ? t("Ara") : undefined} onClick={onSearch}>
