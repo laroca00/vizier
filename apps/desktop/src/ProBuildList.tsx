@@ -17,6 +17,8 @@ import {
 } from "./data/ddragon";
 import { timeAgo } from "./labels";
 import { useAsync } from "./useAsync";
+import { Button } from "./ui/Button";
+import { ErrorState } from "./ui/States";
 
 type Static = { version: string; champions: Map<number, Champion>; items: Map<number, Item>; runes: Map<number, Rune> };
 
@@ -69,12 +71,7 @@ export function ProBuildList({ filter, compact = false, emptyText }: Props) {
 
   if (state.status === "error") {
     return (
-      <div role="alert">
-        <p className="build__note">{t("Pro maçları alınamadı.")}</p>
-        <button type="button" className="button" onClick={retry}>
-          {t("Tekrar dene")}
-        </button>
-      </div>
+      <ErrorState message={t("Pro maçları alınamadı.")} onRetry={retry} />
     );
   }
   if (state.status !== "done" || data.status !== "done") return <p className="build__note">{t("Pro maçları yükleniyor")}</p>;
@@ -144,9 +141,9 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: Static; compa
         </span>
       )}
       <span className="pros__action">
-        <button type="button" className="button" disabled={!isTauri() || importState.status === "working"} onClick={onImport}>
+        <Button disabled={!isTauri()} busy={importState.status === "working"} onClick={onImport}>
           {t("Aktar")}
-        </button>
+        </Button>
         {(importState.status === "done" || importState.status === "error") && (
           <span className="build__feedback" data-status={importState.status} role="status">
             {importState.message}

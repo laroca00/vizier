@@ -3,6 +3,7 @@ import type { Build, Picks } from "./api";
 import { STYLE_NAMES } from "./buildStyles";
 import { itemIconUrl, runeIconUrl, type Item, type RuneStyle } from "./data/ddragon";
 import { formatPercent, useLang, useT } from "./i18n";
+import { Tabs } from "./ui/Tabs";
 
 type Sort = "popular" | "winrate";
 
@@ -44,18 +45,16 @@ export function BuildCompare({ build, picks, version, runes, items }: Props) {
   return (
     <details className="build__block build__compare">
       <summary className="build__stat">{t("Build karşılaştırması")}</summary>
-      <div className="tiers__tabs" role="group" aria-label={t("Sıralama")}>
-        {(
-          [
-            ["popular", "En popüler"],
-            ["winrate", "En yüksek kazanma"],
-          ] as const
-        ).map(([id, label]) => (
-          <button key={id} type="button" className="nav__item" aria-selected={sort === id} onClick={() => setSort(id)}>
-            {t(label)}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        label={t("Sıralama")}
+        size="small"
+        items={[
+          { id: "popular" as const, label: t("En popüler") },
+          { id: "winrate" as const, label: t("En yüksek kazanma") },
+        ]}
+        value={sort}
+        onChange={setSort}
+      />
       {sort === "winrate" && <p className="build__note">{t("En az {games} maçta denenmiş seçenekler.", { games: floor })}</p>}
 
       {variants.length >= 2 && (

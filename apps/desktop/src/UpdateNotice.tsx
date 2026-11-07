@@ -3,6 +3,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { useT } from "./i18n";
+import { Button } from "./ui/Button";
 
 const CHECK_EVERY = 30 * 60_000;
 /** Focusing the window checks again, but not more often than this. */
@@ -50,9 +51,9 @@ export function UpdateNotice() {
       <span>
         {state === "failed" ? t("Güncelleme indirilemedi.") : t("Vizier {version} hazır.", { version: update.version })}
       </span>
-      <button type="button" className="button" disabled={state === "installing"} onClick={install}>
+      <Button variant="primary" busy={state === "installing"} onClick={install}>
         {state === "installing" ? t("Güncelleniyor") : state === "failed" ? t("Tekrar dene") : t("Güncelle ve yeniden başlat")}
-      </button>
+      </Button>
     </div>
   );
 }

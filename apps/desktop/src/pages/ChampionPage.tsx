@@ -12,6 +12,8 @@ import { QUEUES, RANKED, winLabel } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { SplashLayers, useSkinSplash, useSplashUrl } from "../ui/Splash";
 import { useAsync } from "../useAsync";
+import { EmptyState, ErrorState, Skeleton } from "../ui/States";
+import { Tabs } from "../ui/Tabs";
 import { SegmentBar } from "../charts";
 
 const SHOWN_MATCHUPS = 5;
@@ -79,32 +81,19 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
         </button>
       </header>
 
-      <div className="tiers__tabs enter" role="tablist" aria-label={t("Oyun modu")}>
-        {QUEUES.map((q) => (
-          <button key={q.id} type="button" role="tab" aria-selected={q.id === queue} className="nav__item" onClick={() => setQueue(q.id)}>
-            {t(q.label)}
-          </button>
-        ))}
-      </div>
+      <Tabs label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
 
       {state.status === "error" ? (
-        <div role="alert">
-          <p className="coach__note">{t("Şampiyon istatistikleri alınamadı. Vizier sunucusuna şu an ulaşılamıyor.")}</p>
-          <button type="button" className="button" onClick={retry}>
-            {t("Tekrar dene")}
-          </button>
-        </div>
+        <ErrorState message={t("Şampiyon istatistikleri alınamadı. Vizier sunucusuna şu an ulaşılamıyor.")} onRetry={retry} />
       ) : state.status !== "done" ? (
-        <p className="coach__note" aria-live="polite">
-          {t("Yükleniyor")}
-        </p>
+        <Skeleton lines={6} label={t("Yükleniyor")} />
       ) : !state.value ? (
-        <p className="coach__note">
+        <EmptyState title={t("Yeterli maç yok")}>
           {t("{champion} için {mode} modunda henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.", {
             champion: champion?.name ?? t("Bu şampiyon"),
             mode: queueLabel,
           })}
-        </p>
+        </EmptyState>
       ) : (
         <Overview
           overview={state.value}
@@ -156,21 +145,21 @@ function Overview({ overview, championId, championName, champions, version, queu
   return (
     <>
       {ranked && roles.length > 1 && (
-        <div className="tiers__tabs enter" role="tablist" aria-label={t("Rol")}>
-          {roles.map((p) => (
-            <button
-              key={p.position}
-              type="button"
-              role="tab"
-              aria-selected={p.position === position}
-              className="nav__item"
-              onClick={() => onPosition(p.position)}
-            >
-              <img className="role-icon" src={roleIconUrl(p.position)} alt="" width={16} height={16} />
-              {t(POSITIONS[p.position])} <span className="champion__share">{percent(p.share).replace(/\.0(?=%|$)/, "")}</span>
-            </button>
-          ))}
-        </div>
+        <Tabs
+          label={t("Rol")}
+          size="small"
+          items={roles.map((p) => ({
+            id: p.position,
+            icon: <img className="role-icon" src={roleIconUrl(p.position)} alt="" width={16} height={16} />,
+            label: (
+              <>
+                {t(POSITIONS[p.position])} <span className="champion__share">{percent(p.share).replace(/\.0(?=%|$)/, "")}</span>
+              </>
+            ),
+          }))}
+          value={position}
+          onChange={onPosition}
+        />
       )}
 
       {ranked && roles.length > 1 && (
@@ -281,12 +270,7 @@ function CounterLists({ championId, position, champions, version, onOpenChampion
   return (
     <section className="enter" aria-label={t("Eşleşmeler")}>
       {state.status === "error" ? (
-        <div role="alert">
-          <p className="coach__note">{t("Eşleşmeler alınamadı.")}</p>
-          <button type="button" className="button" onClick={retry}>
-            {t("Tekrar dene")}
-          </button>
-        </div>
+        <ErrorState message={t("Eşleşmeler alınamadı.")} onRetry={retry} />
       ) : state.status !== "done" ? null : state.value.matchups.length < 2 ? (
         <>
           <h2 className="draft__heading">{t("Eşleşmeler")}</h2>

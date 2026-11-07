@@ -21,6 +21,8 @@ import {
 import { useSettings } from "./settings";
 import { SkillGrid } from "./SkillGrid";
 import { useAsync } from "./useAsync";
+import { Button } from "./ui/Button";
+import { ErrorState } from "./ui/States";
 
 const FLASH = 4;
 const SHOWN_ITEMS = 6;
@@ -125,10 +127,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   if (state.status === "error") {
     return (
       <div className="build">
-        <p className="build__note">{t("Öneri alınamadı.")}</p>
-        <button type="button" className="button" onClick={retry}>
-          {t("Tekrar dene")}
-        </button>
+        <ErrorState message={t("Öneri alınamadı.")} onRetry={retry} />
       </div>
     );
   }
@@ -293,9 +292,9 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
                   <span className="build__stat">
                     {keystone?.name}, {t("{games} maçta, {rate} kazanma", { games: alt.games, rate: percent(alt.winRate) })}
                   </span>
-                  <button type="button" className="button button--small" disabled={!canImport || runeImport.status === "working"} onClick={() => importRunes(undefined, i + 1)}>
+                  <Button size="small" disabled={!canImport} busy={runeImport.status === "working"} onClick={() => importRunes(undefined, i + 1)}>
                     {t("Bunu aktar")}
-                  </button>
+                  </Button>
                 </div>
               );
             })}
@@ -404,9 +403,9 @@ function ImportControls({
         <p className="build__note">{t("Boş rün sayfası yok. Hangisinin yerine yazılsın?")}</p>
         <div className="build__pages">
           {state.pages.map((p) => (
-            <button key={p.id} type="button" className="button" onClick={() => onChoose(p.id)}>
+            <Button key={p.id} onClick={() => onChoose(p.id)}>
               {p.name}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -414,9 +413,9 @@ function ImportControls({
   }
   return (
     <div className="build__action">
-      <button type="button" className="button" disabled={disabled || state.status === "working"} onClick={onImport}>
+      <Button variant="primary" disabled={disabled} busy={state.status === "working"} onClick={onImport}>
         {label}
-      </button>
+      </Button>
       {(state.status === "done" || state.status === "error") && (
         <span className="build__feedback" data-status={state.status} role="status">
           {state.message}

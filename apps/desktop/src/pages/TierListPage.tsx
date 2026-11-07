@@ -7,6 +7,9 @@ import { ARENA, QUEUES, RANKED, winLabel } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { useAsync } from "../useAsync";
 import { Scatter } from "../charts";
+import { PageHeader } from "../ui/Page";
+import { ErrorState, Skeleton } from "../ui/States";
+import { Tabs } from "../ui/Tabs";
 
 // The most picked champions only; past this the plot turns into a pile of icons.
 const PLOTTED = 40;
@@ -41,46 +44,33 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
 
   return (
     <LiquidGlass className="panel tiers" radius={28} strength={2.5} scroll>
-      <header className="draft__header">
-        <h1 className="draft__title">{t("Tier listesi")}</h1>
-        {state.status === "done" && state.value.list.patches.length > 0 && (
-          <p className="draft__phase">
-            {t("Yama {patch}, TR ve EUW Emerald+ oyuncularından {games} maç", {
-              patch: state.value.list.patches[0],
-              games: Math.round(state.value.list.games / playersPerGame(queue)),
-            })}
-          </p>
-        )}
-      </header>
-
-      <div className="tiers__tabs" role="tablist" aria-label={t("Oyun modu")}>
-        {QUEUES.map((q) => (
-          <button key={q.id} type="button" role="tab" aria-selected={q.id === queue} className="nav__item" onClick={() => setQueue(q.id)}>
-            {t(q.label)}
-          </button>
-        ))}
-      </div>
+      <PageHeader
+        title={t("Tier listesi")}
+        subtitle={
+          state.status === "done" && state.value.list.patches.length > 0
+            ? t("Yama {patch}, TR ve EUW Emerald+ oyuncularından {games} maç", {
+                patch: state.value.list.patches[0],
+                games: Math.round(state.value.list.games / playersPerGame(queue)),
+              })
+            : undefined
+        }
+        toolbar={<Tabs label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />}
+      />
 
       {ranked && (
-        <div className="tiers__tabs tiers__tabs--roles" role="tablist" aria-label={t("Rol")}>
-          {ORDER.map((p) => (
-            <button key={p} type="button" role="tab" aria-selected={p === position} className="nav__item" onClick={() => setPosition(p)}>
-              <img className="role-icon" src={roleIconUrl(p)} alt="" width={16} height={16} />
-              {t(POSITIONS[p])}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          label={t("Rol")}
+          className="tiers__roles"
+          items={ORDER.map((p) => ({ id: p, label: t(POSITIONS[p]), icon: <img className="role-icon" src={roleIconUrl(p)} alt="" width={16} height={16} /> }))}
+          value={position}
+          onChange={setPosition}
+        />
       )}
 
       {state.status === "error" ? (
-        <div role="alert">
-          <p className="coach__note">{t("Tier listesi alınamadı.")}</p>
-          <button type="button" className="button" onClick={retry}>
-            {t("Tekrar dene")}
-          </button>
-        </div>
+        <ErrorState message={t("Tier listesi alınamadı.")} onRetry={retry} />
       ) : state.status !== "done" ? (
-        <p className="coach__note">{t("Yükleniyor")}</p>
+        <Skeleton lines={8} label={t("Yükleniyor")} />
       ) : (
         <div className="tiers__body" data-solo={!state.value.bans || undefined}>
           {state.value.list.champions.length > 4 && (
