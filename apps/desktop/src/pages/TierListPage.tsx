@@ -31,7 +31,8 @@ async function load(queue: number, position: string) {
 }
 
 export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: number, position: string | null, queue: number) => void }) {
-  const percent = percentIn(useLang());
+  const lang = useLang();
+  const percent = percentIn(lang);
   const t = useT();
   const [queue, setQueue] = useState(RANKED);
   const [position, setPosition] = useState("MIDDLE");
@@ -85,13 +86,26 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
           {state.value.list.champions.length > 4 && (
             <section className="tiers__map" aria-label={t("Kazanma ve seçilme haritası")}>
               <h2 className="draft__heading">{t("Kazanma ve seçilme haritası")}</h2>
-              <p className="build__note">{t("Sağ üstte sık seçilip sık kazananlar. Kesikli çizgiler %50 kazanmayı ve ortanca seçilmeyi gösterir.")}</p>
+              <p className="build__note">{t("En çok seçilen {count} şampiyon. Çizgiler %50 kazanmada ve ortanca seçilmede kesişir.", { count: Math.min(PLOTTED, state.value.list.champions.length) })}</p>
               <Scatter
                 label={t("Kazanma ve seçilme haritası")}
                 xLabel={t("Seçilme")}
                 yLabel={t(winLabel(queue))}
                 formatX={percent}
                 formatY={percent}
+                formatTick={(n) => formatPercent(n, lang, 0)}
+                quadrants={{
+                  topRight: t("Güçlü ve popüler"),
+                  topLeft: t("Gözden kaçan güçlü"),
+                  bottomRight: t("Popüler ama zayıf"),
+                  bottomLeft: t("Zayıf"),
+                }}
+                legend={[
+                  { group: "S", label: "S" },
+                  { group: "A", label: "A" },
+                  { group: "B", label: "B" },
+                  { group: "C", label: "C–D" },
+                ]}
                 points={[...state.value.list.champions]
                   .sort((a, b) => b.pickRate - a.pickRate)
                   .slice(0, PLOTTED)
@@ -105,7 +119,15 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
                         y: c.winRate,
                         name: champion.name,
                         icon: championIconUrl(state.value.version, champion.id),
-                        detail: <span>{t("{tier} tier, {games} maç", { tier: c.tier, games: c.games })}</span>,
+                        group: c.tier === "D" ? "C" : c.tier,
+                        detail: (
+                          <span className="scatter__tip-foot">
+                            <span className="tier" data-tier={c.tier}>
+                              {c.tier}
+                            </span>
+                            {t("{games} maç", { games: c.games.toLocaleString() })}
+                          </span>
+                        ),
                         onOpen: () => onOpenChampion(c.championId, ranked ? position : null, queue),
                       },
                     ];

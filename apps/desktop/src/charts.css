@@ -210,23 +210,141 @@
 
 .scatter {
   display: grid;
-  gap: 6px;
+  gap: 10px;
   margin: 0;
+  /* Tier rings share the tier badges' colors. */
+  --ring-S: var(--gilt);
+  --ring-A: var(--turquoise);
+  --ring-B: #4f74e0;
+  --ring-C: rgb(238 242 236 / 0.4);
+}
+
+.scatter__legend {
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  color: var(--glaze-muted);
+  list-style: none;
+}
+
+.scatter__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scatter__legend li::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--ring);
+  border-radius: 50%;
+}
+
+:is(.scatter__legend li, .scatter__point)[data-group="S"] { --ring: var(--ring-S); }
+:is(.scatter__legend li, .scatter__point)[data-group="A"] { --ring: var(--ring-A); }
+:is(.scatter__legend li, .scatter__point)[data-group="B"] { --ring: var(--ring-B); }
+:is(.scatter__legend li, .scatter__point)[data-group="C"] { --ring: var(--ring-C); }
+
+.scatter__frame {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-rows: 18px 380px 24px;
+  margin-right: 14px;
+  /* Room above and below the points for the quadrant names. */
+  --band: 30px;
+}
+
+.scatter__inner {
+  position: absolute;
+  inset: var(--band) 0;
+  container-type: size;
+}
+
+.scatter__axis-name {
+  font-size: 12px;
+  color: var(--glaze-muted);
+}
+
+.scatter__axis-name--y {
+  grid-column: 1 / -1;
+  align-self: start;
+}
+
+.scatter__axis-name--x {
+  position: absolute;
+  right: 0;
+  top: 5px;
+  padding-left: 12px;
+  background: var(--surface-raised);
+}
+
+.scatter__y,
+.scatter__x {
+  position: relative;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze-faint);
+}
+
+.scatter__y {
+  grid-row: 2;
+}
+
+.scatter__y span {
+  position: absolute;
+  right: 10px;
+  transform: translateY(-50%);
+}
+
+.scatter__x {
+  grid-column: 2;
+}
+
+.scatter__x span {
+  position: absolute;
+  top: 6px;
+  transform: translateX(-50%);
 }
 
 .scatter__plot {
   position: relative;
-  height: 320px;
-  margin: 14px 14px 14px 8px;
-  border-left: 1px solid var(--data-grid);
-  border-bottom: 1px solid var(--data-grid);
+  border-left: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.scatter__grid {
+  position: absolute;
+  border: 0 solid var(--data-grid);
+  opacity: 0.6;
+}
+
+.scatter__grid--y {
+  left: 0;
+  right: 0;
+  border-top-width: 1px;
+}
+
+.scatter__grid--x {
+  top: 0;
+  bottom: 0;
+  border-left-width: 1px;
+}
+
+/* The quadrant worth playing: picked often and winning. */
+.scatter__zone {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-radius: 0 10px 0 0;
+  background: linear-gradient(225deg, rgb(214 180 106 / 0.1), rgb(214 180 106 / 0.02) 70%);
 }
 
 .scatter__rule {
   position: absolute;
-  border-color: rgb(238 242 236 / 0.22);
-  border-style: dashed;
-  border-width: 0;
+  border: 0 dashed rgb(238 242 236 / 0.3);
 }
 
 .scatter__rule--y {
@@ -235,20 +353,24 @@
   border-top-width: 1px;
 }
 
-.scatter__rule--y em {
-  position: absolute;
-  right: 0;
-  transform: translateY(-120%);
-  font-size: 11px;
-  font-style: normal;
-  color: var(--glaze-faint);
-}
-
 .scatter__rule--x {
   top: 0;
   bottom: 0;
   border-left-width: 1px;
 }
+
+.scatter__quadrant {
+  position: absolute;
+  font-size: 12px;
+  color: var(--glaze-faint);
+  pointer-events: none;
+  transition: opacity var(--duration-standard) var(--ease);
+}
+
+.scatter__quadrant[data-corner="tr"] { top: 10px; right: 12px; color: var(--gilt); }
+.scatter__quadrant[data-corner="tl"] { top: 10px; left: 12px; }
+.scatter__quadrant[data-corner="br"] { bottom: 10px; right: 12px; }
+.scatter__quadrant[data-corner="bl"] { bottom: 10px; left: 12px; }
 
 .scatter__point {
   position: absolute;
@@ -258,30 +380,113 @@
   background: none;
   transform: translate(-50%, -50%);
   cursor: pointer;
-  transition: transform var(--duration-quick) var(--ease);
+  transition:
+    transform var(--duration-quick) var(--ease),
+    opacity var(--duration-standard) var(--ease);
+  /* One reveal: every icon travels out from where the split lines cross. */
+  animation: scatter-in var(--duration-slow) var(--ease-enter) calc(var(--order) * 14ms) backwards;
+}
+
+@keyframes scatter-in {
+  from {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--from-x)), calc(-50% + var(--from-y))) scale(0.4);
+  }
 }
 
 .scatter__point img {
   display: block;
   border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--ink), 0 0 0 3px rgb(214 180 106 / 0.5);
+  /* A surface gap first, so overlapping icons stay apart, then the tier ring. */
+  box-shadow:
+    0 0 0 2px var(--surface-raised),
+    0 0 0 4px var(--ring, var(--ring-C));
+}
+
+.scatter[data-hovering] .scatter__point:not([data-active]) {
+  opacity: 0.32;
+}
+
+.scatter[data-hovering] .scatter__quadrant {
+  opacity: 0.4;
 }
 
 .scatter__point:hover,
 .scatter__point[data-active] {
   z-index: 2;
-  transform: translate(-50%, -50%) scale(1.35);
+  transform: translate(-50%, -50%) scale(1.3);
 }
 
-.scatter__axes {
+.scatter__tip {
+  z-index: 3;
+  display: grid;
+  gap: 4px;
+  min-width: 170px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface-raised);
+  box-shadow: 0 14px 34px rgb(2 6 24 / 0.5);
+  pointer-events: none;
+}
+
+.scatter__tip[data-side="right"] {
+  transform: translate(22px, -50%);
+}
+
+.scatter__tip[data-side="left"] {
+  transform: translate(calc(-100% - 22px), -50%);
+}
+
+.scatter__tip-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.scatter__tip-head img {
+  border-radius: 8px;
+}
+
+.scatter__tip-row {
   display: flex;
   justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--glaze-muted);
+}
+
+.scatter__tip-row strong {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze);
+}
+
+.scatter__tip-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
   font-size: 12px;
   color: var(--glaze-faint);
 }
 
+.scatter__tip-foot .tier {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+
 @media (prefers-reduced-motion: reduce) {
   .scatter__point {
+    animation: none;
     transition: none;
   }
 }
+
