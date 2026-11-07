@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createDisplacementMap, type DisplacementMap } from "./glassMap";
 import "./glass.css";
 
@@ -23,6 +23,11 @@ type LiquidGlassProps = {
 
 type Size = { width: number; height: number };
 
+/** Inside a flat provider the glass renders as a plain surface: no blur, no
+ * displacement map, no resize observer. The map is a full-size bitmap per
+ * panel, so skipping it saves memory as well as GPU time. */
+export const FlatGlass = createContext(false);
+
 // Rebuilding the map costs a few milliseconds per 100k pixels, so wait for a
 // window resize to settle; the previous map is stretched meanwhile.
 const RESIZE_SETTLE_MS = 120;
@@ -44,8 +49,10 @@ export function LiquidGlass({
   const [size, setSize] = useState<Size | null>(null);
   const [map, setMap] = useState<DisplacementMap | null>(null);
   const hasMap = useRef(false);
+  const flat = useContext(FlatGlass);
 
   useEffect(() => {
+    if (flat) return;
     const observer = new ResizeObserver(([entry]) => {
       const box = entry.borderBoxSize[0];
       const next = { width: Math.round(box.inlineSize), height: Math.round(box.blockSize) };
@@ -53,12 +60,12 @@ export function LiquidGlass({
     });
     observer.observe(ref.current!);
     return () => observer.disconnect();
-  }, []);
+  }, [flat]);
 
   const cornerRadius = !size ? radius : shape === "rounded" ? radius : Math.min(size.width, size.height) / 2;
 
   useEffect(() => {
-    if (!size || size.width === 0 || size.height === 0) return;
+    if (flat || !size || size.width === 0 || size.height === 0) return;
     const timer = setTimeout(
       () => {
         hasMap.current = true;
@@ -67,10 +74,10 @@ export function LiquidGlass({
       hasMap.current ? RESIZE_SETTLE_MS : 0,
     );
     return () => clearTimeout(timer);
-  }, [size, cornerRadius, strength]);
+  }, [flat, size, cornerRadius, strength]);
 
-  const ready = map !== null && size !== null;
-  const classes = ["glass", `glass--${shape}`, scroll && "glass--scroll", className].filter(Boolean).join(" ");
+  const ready = !flat && map !== null && size !== null;
+  const classes = ["glass", `glass--${shape}`, flat && "glass--flat", scroll && "glass--scroll", className].filter(Boolean).join(" ");
 
   return (
     <div

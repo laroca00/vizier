@@ -20,8 +20,6 @@ const TOGGLES: { key: Toggle; label: string; hint: string }[] = [
   { key: "autoImportItems", label: "Eşya setini kendiliğinden aktar", hint: "Önerilen eşyalar oyun içi mağazada Vizier seti olarak görünür." },
   { key: "showOnChampSelect", label: "Şampiyon seçiminde Vizier'i öne getir", hint: "Tepsideyken bile seçim başlayınca pencere açılır." },
   { key: "openAnalysisAfterGame", label: "Maç bitince analizi aç", hint: "Riot maçı yayınlar yayınlamaz analiz ekrana gelir." },
-  { key: "pauseBackgroundInGame", label: "Oyundayken arka plan animasyonunu durdur", hint: "Oyun sırasında ekran kartına yük bindirmez." },
-  { key: "pauseBackgroundUnfocused", label: "Pencere arkadayken animasyonu durdur", hint: "Başka bir pencereye geçtiğinde arka plan donar, işlemci ve ekran kartı boşa çalışmaz." },
   { key: "queueCompanion", label: "Sıra beklerken sıra ekranını aç", hint: "Maç aranırken formun, hedeflerin ve oynayacağın şampiyonların notları. Pencereyi öne getirmez." },
   { key: "tiltWarnings", label: "Tilt uyarısı", hint: "Üst üste kayıplarda ve belirgin bir düşüşte ana sayfada ve sıra ekranında mola önerir." },
 ];

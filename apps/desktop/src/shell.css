@@ -1,59 +1,73 @@
-/* Dashboard shell: a glass side rail, a slim top bar and a full-height work
-   area. Loaded after App.css, so these rules replace the old top-nav layout. */
+/* Admin-style shell: a solid side menu, a slim top bar with the page's place
+   in the app, and a flat work area. Loaded after App.css and dashboard.css,
+   so these rules replace the old glass-over-gradient look. */
 
 .shell {
   grid-template-columns: auto minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
-  --gutter: clamp(20px, 2.6vw, 40px);
+  grid-template-rows: 56px minmax(0, 1fr);
+  --gutter: clamp(20px, 2.4vw, 36px);
+  background: var(--canvas);
 }
 
-.shell__side {
-  position: relative;
-  grid-row: 1 / -1;
-  display: flex;
-  padding: 18px 0 18px 18px;
-}
+/* Side menu */
 
 .side {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  width: 216px;
-  padding: 18px 10px 12px;
-  --glass-tint: linear-gradient(180deg, rgb(11 24 70 / 0.42), rgb(6 14 44 / 0.58));
-  --glass-shadow: inset 0 1px 0 rgb(255 255 255 / 0.26), inset 0 0 0 1px rgb(255 255 255 / 0.09), 0 24px 50px rgb(3 8 30 / 0.35);
-  animation: rise var(--enter-duration) var(--ease-enter) both;
+  gap: 2px;
+  width: 248px;
+  min-height: 0;
+  padding: 12px 10px;
+  border-right: 1px solid var(--line);
+  background: var(--rail);
+  transition: width var(--duration-standard) var(--ease);
 }
 
-.side__brand {
-  margin: 0 0 18px 12px;
-  font-size: 30px;
-  font-weight: 300;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  font-variation-settings: "SHRP" 100;
+.side__nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  margin-top: 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
 }
 
-.side__nav,
-.side__foot {
+.side__group {
   display: grid;
   gap: 2px;
 }
 
+.side__heading {
+  margin: 0 0 4px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--glaze-faint);
+  white-space: nowrap;
+}
+
 .side__foot {
-  margin-top: auto;
+  display: grid;
+  gap: 2px;
   padding-top: 10px;
-  border-top: 1px solid rgb(255 255 255 / 0.08);
+  border-top: 1px solid var(--line);
 }
 
 .side__item {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 11px;
+  min-height: 36px;
+  padding: 0 10px;
   border: 0;
-  border-radius: 14px;
+  border-radius: var(--radius-item);
   font: inherit;
   font-size: 14px;
   text-align: left;
@@ -67,12 +81,12 @@
 
 .side__item:hover {
   color: var(--glaze);
-  background: rgb(255 255 255 / 0.06);
+  background: var(--hover);
 }
 
 .side__item[aria-current="page"] {
   color: var(--glaze);
-  background: rgb(255 255 255 / 0.13);
+  background: var(--selected);
 }
 
 /* The gilt edge marks the page you're on, like the client's selected tab. */
@@ -80,48 +94,409 @@
   content: "";
   position: absolute;
   left: 0;
-  top: 10px;
-  bottom: 10px;
+  top: 9px;
+  bottom: 9px;
   width: 3px;
   border-radius: 9999px;
   background: var(--gilt);
-}
-
-/* Queue and champ select only exist while they're happening. */
-.side__item[data-live]::after {
-  content: "";
-  width: 7px;
-  height: 7px;
-  margin-left: auto;
-  border-radius: 50%;
-  background: var(--turquoise);
-  animation: breathe 2000ms ease-in-out infinite;
 }
 
 .side__icon {
   flex: none;
 }
 
-.side__item span {
+.side__item[aria-current="page"] .side__icon {
+  color: var(--gilt);
+}
+
+.side__label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: opacity var(--duration-quick) var(--ease);
+}
+
+.side__kbd,
+.top__search kbd {
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--glaze-faint);
   white-space: nowrap;
 }
 
-.shell__top {
-  position: relative;
-  display: flex;
+.side__live {
+  display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 18px var(--gutter) 0;
+  gap: 6px;
+  margin-left: auto;
+  padding: 1px 8px 1px 6px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--turquoise);
+  background: rgb(28 156 146 / 0.14);
+  white-space: nowrap;
 }
 
-.shell__top .update {
-  margin-right: auto;
+/* Queue and champ select only exist while they're happening. */
+.side__live::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: breathe 2000ms ease-in-out infinite;
+}
+
+/* Account card, in the slot an admin panel keeps for its workspace */
+
+.account {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.account__card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 6px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--glaze);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color var(--duration-quick) var(--ease);
+}
+
+.account__card:hover,
+.account__card[aria-expanded="true"] {
+  background: var(--hover);
+}
+
+.account__avatar {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--gilt);
+  background: var(--surface-raised);
+  box-shadow: inset 0 0 0 1px rgb(214 180 106 / 0.45);
+}
+
+.account__dot {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--rail);
+  border-radius: 50%;
+  background: var(--glaze-faint);
+  transition: background-color var(--duration-standard) var(--ease);
+}
+
+.account__dot[data-state="connecting"] {
+  animation: breathe 2000ms ease-in-out infinite;
+}
+
+.account__dot[data-state="connected"] {
+  background: var(--turquoise);
+}
+
+.account__text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.account__name {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.account__detail {
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--glaze-faint);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  animation: rise var(--duration-standard) var(--ease-enter) both;
+  --rise: 3px;
+}
+
+.account__chevron {
+  flex: none;
+  color: var(--glaze-faint);
+  transform: rotate(90deg);
+  transition: transform var(--duration-standard) var(--ease);
+}
+
+.account__card[aria-expanded="true"] .account__chevron {
+  transform: rotate(-90deg);
+}
+
+.account__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 10;
+  display: grid;
+  gap: 2px;
+  width: max(100%, 228px);
+  padding: 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface-raised);
+  box-shadow: 0 16px 40px rgb(2 6 24 / 0.5);
+  transform-origin: top left;
+  animation: menu-in var(--duration-quick) var(--ease-enter) both;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+.account__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: var(--glaze);
+  background: transparent;
+  cursor: pointer;
+}
+
+.account__option:hover {
+  background: var(--hover);
+}
+
+.account__option-icon {
+  color: var(--glaze-muted);
+}
+
+.account__hint {
+  margin: 4px 0 2px;
+  padding: 8px 10px 4px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--glaze-faint);
+}
+
+/* Icon rail, by choice or when the window is narrow. Labels hide, the live
+   badge shrinks to its dot. */
+
+.side[data-collapsed] {
+  width: 64px;
+}
+
+.side[data-collapsed] :is(.side__label, .side__kbd, .side__heading, .account__text, .account__chevron) {
+  display: none;
+}
+
+.side[data-collapsed] .side__heading + .side__item {
+  margin-top: 0;
+}
+
+.side[data-collapsed] .side__group:has(.side__heading) {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.side[data-collapsed] .side__item,
+.side[data-collapsed] .account__card {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.side[data-collapsed] .side__live {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  padding: 0;
+  font-size: 0;
+  background: none;
+}
+
+@media (max-width: 1100px) {
+  .side {
+    width: 64px;
+  }
+
+  .side :is(.side__label, .side__kbd, .side__heading, .account__text, .account__chevron) {
+    display: none;
+  }
+
+  .side .side__group:has(.side__heading) {
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+
+  .side .side__item,
+  .side .account__card {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .side .side__live {
+    position: absolute;
+    top: 5px;
+    right: 7px;
+    padding: 0;
+    font-size: 0;
+    background: none;
+  }
+
+  .top__toggle {
+    display: none;
+  }
+}
+
+/* Top bar */
+
+.top {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 var(--gutter) 0 12px;
+  border-bottom: 1px solid var(--line);
+  background: rgb(7 15 44 / 0.86);
+}
+
+.top__toggle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--glaze-muted);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-quick) var(--ease),
+    color var(--duration-quick) var(--ease);
+}
+
+.top__toggle:hover {
+  color: var(--glaze);
+  background: var(--hover);
+}
+
+.top__icon {
+  flex: none;
+}
+
+.top__crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0 auto 0 0;
+  padding: 0;
+  font-size: 14px;
+  list-style: none;
+  color: var(--glaze-faint);
+}
+
+.top__crumbs li {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.top__crumbs li + li::before {
+  content: "/";
+  margin-right: 8px;
+  color: var(--line-strong);
+}
+
+.top__crumbs li[aria-current="page"] {
+  font-weight: 500;
+  color: var(--glaze);
+}
+
+.top .update {
+  font-size: 13px;
+}
+
+.top__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(300px, 32vw);
+  height: 34px;
+  padding: 0 8px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-item);
+  font: inherit;
+  font-size: 13px;
+  color: var(--glaze-faint);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-quick) var(--ease),
+    color var(--duration-quick) var(--ease);
+}
+
+.top__search:hover {
+  border-color: var(--line-strong);
+  color: var(--glaze-muted);
+}
+
+.top__search span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Work area */
+
+/* Champion art sits faintly behind the work area's top right, under the bar. */
+.shell__stage {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  position: relative;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.shell__stage .splash {
+  --layer-opacity: 0.2;
 }
 
 .shell__main {
+  grid-column: 2;
+  grid-row: 2;
   align-items: stretch;
-  padding: 16px var(--gutter) 22px;
+  padding: 20px var(--gutter) 24px;
 }
 
 /* Pages fill the work area instead of floating at the bottom. */
@@ -134,17 +509,43 @@
 
 .shell__main > .settings,
 .shell__main > .about {
-  width: min(640px, 100%);
+  width: min(680px, 100%);
 }
 
 .home:not(.home--dash) {
   align-items: stretch;
 }
 
+/* Flat surfaces for everything that used to be glass. */
+.shell .glass {
+  border-radius: var(--radius-panel);
+}
+
+.shell .glass--pill {
+  border-radius: 9999px;
+}
+
+.panel {
+  --glass-tint: var(--surface);
+  --glass-shadow: inset 0 0 0 1px var(--line);
+}
+
+.status,
+.nav {
+  --glass-tint: var(--surface);
+  --glass-shadow: inset 0 0 0 1px var(--line);
+}
+
+.tile {
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
 .page__title {
   margin: 0;
-  font-size: 28px;
-  font-weight: 300;
+  font-size: 26px;
+  font-weight: 350;
   letter-spacing: -0.02em;
 }
 
@@ -152,38 +553,15 @@
   justify-content: flex-start;
 }
 
-@media (max-width: 1180px) {
-  .side {
-    width: 64px;
-    padding-inline: 8px;
-  }
-
-  .side__brand {
-    margin-left: 6px;
-    font-size: 0;
-  }
-
-  .side__brand::first-letter {
-    font-size: 30px;
-  }
-
-  .side__item span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-  }
-
-  .side__item[data-live]::after {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .side__item[data-live]::after {
+  .side,
+  .account__chevron {
+    transition: none;
+  }
+
+  .side__live::before,
+  .account__dot[data-state="connecting"],
+  .account__menu {
     animation: none;
   }
 }
@@ -191,8 +569,8 @@
 .tiers__map {
   grid-column: 1 / -1;
   padding: 18px 20px 10px;
-  border-radius: 20px;
-  background: rgb(255 255 255 / 0.04);
+  border-radius: var(--radius-panel);
+  background: var(--surface-raised);
 }
 
 /* The champion's headline numbers read as stat tiles. */
@@ -203,9 +581,9 @@
 .champion .figures > div {
   min-width: 128px;
   padding: 12px 16px;
-  border-radius: 16px;
-  background: rgb(255 255 255 / 0.05);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  border-radius: 12px;
+  background: var(--surface-raised);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 .champion .segbar {

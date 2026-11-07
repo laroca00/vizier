@@ -97,3 +97,7 @@
     --fade-bottom: 0px;
   }
 }
+
+.glass--flat {
+  backdrop-filter: none;
+}

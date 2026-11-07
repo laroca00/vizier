@@ -7,7 +7,6 @@ export type Settings = {
   autoImportItems: boolean;
   showOnChampSelect: boolean;
   openAnalysisAfterGame: boolean;
-  pauseBackgroundInGame: boolean;
   overlay: boolean;
   overlaySkills: boolean;
   overlayObjectives: boolean;
@@ -26,8 +25,8 @@ export type Settings = {
   tiltWarnings: boolean;
   /** Switch to the queue screen when matchmaking starts. */
   queueCompanion: boolean;
-  /** Pause the background animation while the window doesn't have focus. */
-  pauseBackgroundUnfocused: boolean;
+  /** The side menu shrinks to an icon rail. */
+  sidebarCollapsed: boolean;
   /** "auto" follows the League client's language. */
   language: LanguageSetting;
 };
@@ -38,7 +37,6 @@ const DEFAULTS: Settings = {
   autoImportItems: true,
   showOnChampSelect: true,
   openAnalysisAfterGame: true,
-  pauseBackgroundInGame: true,
   overlay: true,
   overlaySkills: true,
   overlayObjectives: true,
@@ -54,7 +52,7 @@ const DEFAULTS: Settings = {
   customTimerSeconds: 90,
   tiltWarnings: true,
   queueCompanion: true,
-  pauseBackgroundUnfocused: true,
+  sidebarCollapsed: false,
   language: "auto",
 };
 

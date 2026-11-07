@@ -15,6 +15,18 @@ export const EN: Record<string, string> = {
   "Yama {patch}, koridorların en güçlüleri": "Patch {patch}, strongest in each lane",
   "Koridorların en güçlüleri": "Strongest in each lane",
   "Son pro build'ler": "Latest pro builds",
+  "Şu an": "Right now",
+  Keşfet: "Explore",
+  Canlı: "Live",
+  Profil: "Profile",
+  Konum: "Location",
+  "Menüyü aç": "Expand menu",
+  "Menüyü daralt": "Collapse menu",
+  "Şampiyon ya da oyuncu ara": "Search champions or players",
+  "İstemciye bağlanıyor": "Connecting to the client",
+  "İstemci kapalı": "Client closed",
+  "Profilimi aç": "Open my profile",
+  "League istemcisini açınca hesabın burada görünür.": "Your account shows up here once the League client is open.",
 
   // Client status
   "League istemcisine bağlı değil": "Not connected to the League client",

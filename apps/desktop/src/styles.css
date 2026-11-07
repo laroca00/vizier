@@ -10,6 +10,19 @@
   /* Tezhip gilding; frames champion art the way the client's gold borders do. */
   --gilt: #d6b46a;
 
+  /* Flat layers of the same night cobalt, darkest at the back. Lines do the
+     separating, so surfaces carry no drop shadows. */
+  --canvas: #070f2c;
+  --rail: #09143a;
+  --surface: #0d1a48;
+  --surface-raised: #122257;
+  --hover: rgb(238 242 236 / 0.05);
+  --selected: rgb(238 242 236 / 0.09);
+  --line: rgb(238 242 236 / 0.08);
+  --line-strong: rgb(238 242 236 / 0.14);
+  --radius-panel: 16px;
+  --radius-item: 10px;
+
   /* Chart marks, checked with the dataviz validator on --ink (lightness band,
      colour-blind separation and contrast all pass). Text never uses them. */
   --data-series: #5b7fe6;
@@ -32,7 +45,7 @@
   line-height: 1.5;
   font-synthesis: none;
   color: var(--glaze);
-  background: var(--ink);
+  background: var(--canvas);
   -webkit-font-smoothing: antialiased;
 }
 

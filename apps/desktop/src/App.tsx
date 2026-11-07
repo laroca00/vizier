@@ -15,42 +15,47 @@ import { TierListPage } from "./pages/TierListPage";
 import type { CoachTarget } from "./ProfileCard";
 import { SearchPalette, type RiotId } from "./SearchPalette";
 import { setClientLocale, useT } from "./i18n";
-import { useSettings } from "./settings";
-import { LiquidGlass } from "./ui/LiquidGlass";
-import { ShaderGradient } from "./ui/ShaderGradient";
+import { updateSettings, useSettings } from "./settings";
+import { FlatGlass } from "./ui/LiquidGlass";
 import { SplashLayers, SplashProvider } from "./ui/Splash";
 import { UpdateNotice } from "./UpdateNotice";
 import "./App.css";
 import "./dashboard.css";
 import "./shell.css";
-import { ClientStatus } from "./ClientStatus";
-import { NavIcon, type IconName } from "./ui/NavIcon";
-
-// Night cobalt to turquoise across the plane, bright cobalt on the folds.
-const GRADIENT: [string, string, string] = ["#0b1846", "#1c9c92", "#2f55c8"];
+import { champions } from "./data/ddragon";
+import { Sidebar, type NavGroup, type NavItem } from "./Sidebar";
+import { NavIcon } from "./ui/NavIcon";
 
 type View = "home" | "about" | "draft" | "queue" | "settings" | "tiers" | "pros" | "champion" | "profile";
+
+const LABELS: Record<View, string> = {
+  home: "Panel",
+  about: "Hakkında",
+  draft: "Şampiyon seçimi",
+  queue: "Sıra",
+  settings: "Ayarlar",
+  tiers: "Tier listesi",
+  pros: "Pro'lar",
+  champion: "Tier listesi",
+  profile: "Profil",
+};
+
+function useChampionName(id: number | null) {
+  const [name, setName] = useState<string | null>(null);
+  useEffect(() => {
+    if (id === null) return setName(null);
+    let current = true;
+    champions().then((all) => current && setName(all.get(id)?.name ?? null), () => {});
+    return () => {
+      current = false;
+    };
+  }, [id]);
+  return name;
+}
 
 const fixture = champSelectFixture();
 const POST_GAME_PHASES = new Set(["PreEndOfGame", "EndOfGame"]);
 const QUEUE_PHASES = new Set(["Matchmaking", "ReadyCheck"]);
-
-/** False while the window is hidden, minimised or behind another app. */
-function useWindowActive() {
-  const [active, setActive] = useState(() => !document.hidden && document.hasFocus());
-  useEffect(() => {
-    const update = () => setActive(!document.hidden && document.hasFocus());
-    window.addEventListener("focus", update);
-    window.addEventListener("blur", update);
-    document.addEventListener("visibilitychange", update);
-    return () => {
-      window.removeEventListener("focus", update);
-      window.removeEventListener("blur", update);
-      document.removeEventListener("visibilitychange", update);
-    };
-  }, []);
-  return active;
-}
 
 async function bringToFront() {
   if (!isTauri()) return;
@@ -75,7 +80,6 @@ function App() {
   const draftActive = useRef(draft !== null);
   const queueActive = useRef(false);
   const [queuedAt, setQueuedAt] = useState(Date.now);
-  const windowActive = useWindowActive();
   const analysedGame = useRef<number | null>(null);
 
   const phase = lcu.state === "connected" ? lcu.phase : null;
@@ -85,6 +89,7 @@ function App() {
   const clientLocale = lcu.state === "connected" ? (lcu.region?.locale ?? null) : null;
 
   useEffect(() => setClientLocale(clientLocale), [clientLocale]);
+
 
   // Jump to the draft when it starts and leave it when it ends, but don't
   // pull the player back if they switched away during it.
@@ -145,30 +150,36 @@ function App() {
     setView("profile");
   }
 
-  const items: { id: View; label: string; icon: IconName; live?: boolean }[] = [
-    { id: "home", label: "Panel", icon: "home" },
-    ...(inQueue && summoner ? [{ id: "queue" as const, label: "Sıra", icon: "queue" as const, live: true }] : []),
-    ...(draft ? [{ id: "draft" as const, label: "Şampiyon seçimi", icon: "draft" as const, live: true }] : []),
-    { id: "tiers", label: "Tier listesi", icon: "tiers" },
-    { id: "pros", label: "Pro'lar", icon: "pros" },
+  const groups: NavGroup<View>[] = [
+    { items: [{ id: "home", label: "Panel", icon: "home" }] },
+    {
+      heading: "Şu an",
+      items: [
+        ...(inQueue && summoner ? [{ id: "queue" as const, label: "Sıra", icon: "queue" as const, live: true }] : []),
+        ...(draft ? [{ id: "draft" as const, label: "Şampiyon seçimi", icon: "draft" as const, live: true }] : []),
+      ],
+    },
+    {
+      heading: "Keşfet",
+      items: [
+        { id: "tiers", label: "Tier listesi", icon: "tiers" },
+        { id: "pros", label: "Pro'lar", icon: "pros" },
+      ],
+    },
   ];
-  const footItems: { id: View; label: string; icon: IconName }[] = [
+  const footItems: NavItem<View>[] = [
     { id: "settings", label: "Ayarlar", icon: "settings" },
     { id: "about", label: "Hakkında", icon: "about" },
   ];
-  const navButton = (item: { id: View; label: string; icon: IconName; live?: boolean }) => (
-    <button
-      key={item.id}
-      type="button"
-      className="side__item"
-      aria-current={item.id === view ? "page" : undefined}
-      data-live={item.live || undefined}
-      onClick={() => open(item.id)}
-    >
-      <NavIcon name={item.icon} />
-      <span>{t(item.label)}</span>
-    </button>
-  );
+  const championName = useChampionName(view === "champion" ? (champion?.id ?? null) : null);
+
+  // Where the page sits, read left to right in the top bar.
+  const crumbs: string[] =
+    view === "champion"
+      ? [t("Tier listesi"), championName ?? ""]
+      : view === "profile" && riotId
+        ? [t("Profil"), `${riotId.gameName}#${riotId.tagLine}`]
+        : [t(LABELS[view])];
 
   function open(id: View) {
     if (id === view) return;
@@ -177,34 +188,47 @@ function App() {
   }
 
   return (
-    <div className="shell" data-navigated={navigated || undefined}>
-      <ShaderGradient
-        className="shell__backdrop"
-        colors={GRADIENT}
-        strength={3}
-        reflection={0.18}
-        paused={(settings.pauseBackgroundInGame && phase === "InProgress") || (settings.pauseBackgroundUnfocused && !windowActive)}
+    <FlatGlass.Provider value={true}>
+    <div className="shell" data-navigated={navigated || undefined} data-collapsed={settings.sidebarCollapsed || undefined}>
+      <Sidebar
+        lcu={lcu}
+        groups={groups}
+        foot={footItems}
+        current={view === "champion" ? "tiers" : view}
+        collapsed={settings.sidebarCollapsed}
+        onOpen={open}
+        onSearch={() => setSearching(true)}
+        onOpenOwnProfile={summoner ? () => openProfile({ gameName: summoner.gameName, tagLine: summoner.tagLine, platform }) : null}
       />
-      <SplashLayers className="splash" url={splash} />
-      <aside className="shell__side">
-        <LiquidGlass className="side" radius={26} blur={4}>
-          <p className="side__brand">Vizier</p>
-          <nav className="side__nav" aria-label={t("Ana menü")}>
-            {items.map(navButton)}
-          </nav>
-          <div className="side__foot">{footItems.map(navButton)}</div>
-        </LiquidGlass>
-      </aside>
-      <header className="shell__top">
+      <header className="top">
+        <button
+          type="button"
+          className="top__toggle"
+          aria-label={t(settings.sidebarCollapsed ? "Menüyü aç" : "Menüyü daralt")}
+          aria-pressed={settings.sidebarCollapsed}
+          onClick={() => updateSettings({ sidebarCollapsed: !settings.sidebarCollapsed })}
+        >
+          <NavIcon name="sidebar" size={18} className="top__icon" />
+        </button>
+        <ol className="top__crumbs" aria-label={t("Konum")}>
+          <li>Vizier</li>
+          {crumbs.filter(Boolean).map((crumb, i, all) => (
+            <li key={i} aria-current={i === all.length - 1 ? "page" : undefined}>
+              {crumb}
+            </li>
+          ))}
+        </ol>
         <UpdateNotice />
-        <ClientStatus status={lcu} />
-        <LiquidGlass className="nav" shape="pill" blur={4}>
-          <button type="button" className="nav__item nav__search" aria-keyshortcuts="Control+K" onClick={() => setSearching(true)}>
-            {t("Ara")} <kbd>Ctrl K</kbd>
-          </button>
-        </LiquidGlass>
+        <button type="button" className="top__search" aria-keyshortcuts="Control+K" onClick={() => setSearching(true)}>
+          <NavIcon name="search" size={16} className="top__icon" />
+          <span>{t("Şampiyon ya da oyuncu ara")}</span>
+          <kbd>Ctrl K</kbd>
+        </button>
       </header>
       <SplashProvider value={setSplash}>
+        <div className="shell__stage">
+          <SplashLayers className="splash" url={splash} />
+        </div>
         <main className="shell__main" key={view}>
           {view === "draft" && draft ? (
             <ChampSelectPage draft={draft} puuid={summoner?.puuid ?? null} />
@@ -235,6 +259,7 @@ function App() {
       </SplashProvider>
       <SearchPalette open={searching} onClose={() => setSearching(false)} onChampion={(id) => openChampion(id)} onProfile={openProfile} home={platform} />
     </div>
+    </FlatGlass.Provider>
   );
 }
 
