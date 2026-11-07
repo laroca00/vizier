@@ -2,18 +2,7 @@
 // to D1's stat_docs as finished JSON; the Worker only reads them. Keys are
 // shared here so both sides agree.
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
-import {
-  arenaAugments,
-  banSuggestions,
-  benchmarks,
-  championOverview,
-  counters,
-  latestPatches,
-  mayhemAugments,
-  pace,
-  synergies,
-  tierList,
-} from "./stats.ts";
+import { banSuggestions, championOverview, counters, latestPatches, synergies, tierList } from "./stats.ts";
 
 const RANKED = 420;
 // Matchup builds need this many games, the same as aggregateBuild asks for.
@@ -31,10 +20,6 @@ export const docKey = {
   matchupBuilds: (championId: number, position: string) => `buildvs:${championId}:${position}`,
   counters: (championId: number, position: string) => `counters:${championId}:${position}`,
   synergies: (championId: number, position: string) => `synergies:${championId}:${position}`,
-  benchmarks: (position: string, championId: number | null) => `bench:${position}:${championId ?? "ANY"}`,
-  pace: (position: string, championId: number | null) => `pace:${position}:${championId ?? "ANY"}`,
-  arenaAugments: (championId: number) => `augments:${championId}`,
-  mayhemAugments: () => "mayhem-augments",
   bans: () => "bans",
 };
 
@@ -56,12 +41,6 @@ export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown
     }
   }
   yield [docKey.bans(), await banSuggestions(db)];
-  yield [docKey.mayhemAugments(), await mayhemAugments(db)];
-
-  for (const position of POSITIONS) {
-    yield [docKey.benchmarks(position, null), await benchmarks(db, position)];
-    yield [docKey.pace(position, null), await pace(db, position)];
-  }
 
   const { results: champions } = await db
     .prepare("SELECT DISTINCT queue_id, champion_id FROM stat_counts WHERE kind = 'games'")
@@ -71,7 +50,6 @@ export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown
     if (!overview) continue;
     yield [docKey.champion(queue, championId, null), overview];
     yield [docKey.build(queue, championId, null), await aggregateBuild(db, championId, null, null, queue)];
-    if (queue === 1700) yield [docKey.arenaAugments(championId), await arenaAugments(db, championId)];
     if (queue !== RANKED) continue;
 
     for (const { position } of overview.positions) {
@@ -80,11 +58,6 @@ export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown
       yield [docKey.matchupBuilds(championId, position), await matchupBuilds(db, championId, position)];
       yield [docKey.counters(championId, position), await counters(db, championId, position)];
       yield [docKey.synergies(championId, position), await synergies(db, championId, position)];
-      // Thin champions fall back to the role's numbers, which have their own doc.
-      const bench = await benchmarks(db, position, championId);
-      if (bench.championId) yield [docKey.benchmarks(position, championId), bench];
-      const curve = await pace(db, position, championId);
-      if (curve.championId) yield [docKey.pace(position, championId), curve];
     }
   }
 }

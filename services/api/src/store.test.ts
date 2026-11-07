@@ -1,37 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { Match } from "./riot/types.ts";
 import { D1Store } from "./store.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
-const match: Match = {
-  metadata: { matchId: "TR1_42", participants: ["a", "b"] },
-  info: {
-    gameVersion: "26.21.715.1234",
-    queueId: 420,
-    gameStartTimestamp: 1_790_000_000_000,
-    gameDuration: 1800,
-    participants: [
-      { puuid: "a", championId: 103, teamPosition: "MIDDLE", win: true },
-      { puuid: "b", championId: 64, teamPosition: "JUNGLE", win: false },
-    ],
-  },
-};
-
 describe("D1Store", () => {
-  it("stores a match once with its participants", async () => {
-    const { db, sqlite } = fakeD1();
-    const store = new D1Store(db);
-    await store.putMatch(match);
-    await store.putMatch(match);
-
-    expect(await store.getMatch("TR1_42")).toEqual(match);
-    expect(sqlite.prepare("SELECT patch, queue_id FROM matches").all()).toEqual([{ patch: "26.21", queue_id: 420 }]);
-    expect(sqlite.prepare("SELECT puuid, champion_id, win FROM match_participants ORDER BY puuid").all()).toEqual([
-      { puuid: "a", champion_id: 103, win: 1 },
-      { puuid: "b", champion_id: 64, win: 0 },
-    ]);
-  });
-
   it("expires cached values", async () => {
     let now = 1000;
     const { db, sqlite } = fakeD1();

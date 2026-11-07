@@ -6,8 +6,6 @@
   "observability": { "enabled": true },
   // 04:00 UTC: clear expired cache rows, old patches and old pro games. Crawling runs in services/crawler.
   "triggers": { "crons": ["0 4 * * *"] },
-  // Free coach wording; see src/coachRewrite.ts.
-  "ai": { "binding": "AI" },
   // Desktop app updates: latest.json and the signed installers, written by scripts/release.mjs.
   "kv_namespaces": [{ "binding": "UPDATES", "id": "c8b82682f41c44119dceff2b7d15f100" }],
   "d1_databases": [

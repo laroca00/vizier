@@ -1,19 +1,9 @@
-// Aggregates over the crawler's games: benchmarks, tier lists, bans. Tiers,
-// matchups and bans read the rolled-up counts in stat_counts; benchmarks and
-// pace need every value, so they read the last few days of raw rows.
-// Everything covers the two newest stored patches. Tier lists, pick and ban
-// rates read only the TR and EUW Emerald+ pool (kinds "pool", "pool-ban",
-// "pool-games"); builds and matchups use every crawled game.
+// Aggregates over the crawler's rolled-up counts in stat_counts: tier lists,
+// champion pages, matchups, synergies and bans, over the two newest stored
+// patches. Tier lists, pick and ban rates read only the TR and EUW Emerald+
+// pool (kinds "pool", "pool-ban", "pool-games"); builds and matchups use
+// every crawled game.
 
-export const METRICS = ["cs10", "cs_pm", "gold_pm", "vision_pm", "kill_participation", "damage_share", "deaths"] as const;
-export type Metric = (typeof METRICS)[number];
-
-/** 21 values: the 0th, 5th, ..., 100th percentile. */
-export type Distribution = { games: number; quantiles: number[] };
-export type Benchmarks = { position: string; championId: number | null; patches: string[]; metrics: Partial<Record<Metric, Distribution>> };
-
-// Below this many games a champion-specific benchmark is noise; the role's is used instead.
-const MIN_CHAMPION_GAMES = 50;
 // Shrinks small samples towards 50% so a 3-0 champion doesn't top the list.
 export const sampleLimits = {
   // Win rates are pulled towards 50% as if every champion had this many more
@@ -23,7 +13,7 @@ export const sampleLimits = {
   tierPriorGames: 1500,
   // A champion is ranked in a role only from this many games; below it the rate is mostly luck.
   tierGames: 100,
-  // Matchups, duos and augments split a champion's games further, so they get a lower bar.
+  // Matchups and duos split a champion's games further, so they get a lower bar.
   pairGames: 30,
 };
 
@@ -36,61 +26,6 @@ export async function latestPatches(db: D1Database, count = 2): Promise<string[]
 }
 
 const placeholders = (n: number) => Array.from({ length: n }, () => "?").join(",");
-
-export function quantiles(values: number[]): number[] {
-  const sorted = [...values].sort((a, b) => a - b);
-  return Array.from({ length: 21 }, (_, i) => {
-    const at = (i / 20) * (sorted.length - 1);
-    const lo = Math.floor(at);
-    const hi = Math.ceil(at);
-    return Math.round((sorted[lo] + (sorted[hi] - sorted[lo]) * (at - lo)) * 100) / 100;
-  });
-}
-
-/** Share of benchmark games below `value`, from the quantile table. */
-export function rankOf(distribution: Distribution, value: number): number {
-  const q = distribution.quantiles;
-  if (value <= q[0]) return 0;
-  if (value >= q[20]) return 1;
-  for (let i = 1; i <= 20; i++) {
-    if (value <= q[i]) {
-      const span = q[i] - q[i - 1];
-      const within = span > 0 ? (value - q[i - 1]) / span : 0;
-      return (i - 1 + within) / 20;
-    }
-  }
-  return 1;
-}
-
-export async function benchmarks(db: D1Database, position: string, championId: number | null = null): Promise<Benchmarks> {
-  const patches = await latestPatches(db);
-  const empty: Benchmarks = { position, championId: null, patches, metrics: {} };
-  if (patches.length === 0) return empty;
-
-  const load = async (champion: number | null) => {
-    const { results } = await db
-      .prepare(
-        `SELECT ${METRICS.join(", ")} FROM participant_stats
-          WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? ${champion ? "AND champion_id = ?" : ""}`,
-      )
-      .bind(...patches, position, ...(champion ? [champion] : []))
-      .all<Record<Metric, number | null>>();
-    return results;
-  };
-
-  let rows = championId ? await load(championId) : [];
-  let usedChampion: number | null = championId;
-  if (rows.length < MIN_CHAMPION_GAMES) {
-    rows = await load(null);
-    usedChampion = null;
-  }
-  const metrics: Benchmarks["metrics"] = {};
-  for (const metric of METRICS) {
-    const values = rows.map((r) => r[metric]).filter((v): v is number => v !== null);
-    if (values.length > 0) metrics[metric] = { games: values.length, quantiles: quantiles(values) };
-  }
-  return { position, championId: usedChampion, patches, metrics };
-}
 
 export type TierEntry = {
   championId: number;
@@ -345,40 +280,6 @@ export async function banSuggestions(db: D1Database, limit = 5): Promise<{ patch
   return { patches, champions };
 }
 
-export type Pace = { position: string; championId: number | null; patches: string[]; games: number; median: number[] };
-
-// Fewer games here than for benchmarks: only games with a timeline carry a pace.
-const MIN_CHAMPION_PACE_GAMES = 20;
-
-/** Median total CS at the end of each early minute, for the role or the champion in it. */
-export async function pace(db: D1Database, position: string, championId: number | null = null): Promise<Pace> {
-  const patches = await latestPatches(db);
-  const load = async (champion: number | null) => {
-    if (patches.length === 0) return [];
-    const { results } = await db
-      .prepare(
-        `SELECT cs_minutes FROM participant_stats
-          WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND cs_minutes IS NOT NULL
-          ${champion ? "AND champion_id = ?" : ""}`,
-      )
-      .bind(...patches, position, ...(champion ? [champion] : []))
-      .all<{ cs_minutes: string }>();
-    return results.map((r) => r.cs_minutes.split(",").map(Number));
-  };
-  let used = championId;
-  let rows = championId ? await load(championId) : [];
-  if (rows.length < MIN_CHAMPION_PACE_GAMES) {
-    used = null;
-    rows = await load(null);
-  }
-  const longest = Math.max(0, ...rows.map((r) => r.length));
-  const median = Array.from({ length: longest }, (_, minute) => {
-    const values = rows.map((r) => r[minute]).filter((v) => v !== undefined);
-    return quantiles(values)[10];
-  });
-  return { position, championId: used, patches, games: rows.length, median };
-}
-
 /** How the champion does with each ranked teammate; best first. */
 export async function synergies(
   db: D1Database,
@@ -405,61 +306,4 @@ export async function synergies(
     .sort((a, b) => b.score - a.score)
     .map(({ score: _, ...a }) => a);
   return { patches, games: results.reduce((sum, r) => sum + r.games, 0), allies };
-}
-
-export type AugmentStat = { augmentId: number; games: number; topFourRate: number };
-
-export type MayhemAugment = { augmentId: number; games: number; pickRate: number; winRate: number; tier: string };
-
-/** Per-augment counts and the number of games that had augments, for a queue and optionally a champion. */
-async function augmentCounts(db: D1Database, patches: string[], queue: number, championId: number | null) {
-  const { results } = await db
-    .prepare(
-      `SELECT kind, value, SUM(games) AS games, SUM(wins) AS wins FROM stat_counts
-        WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ? ${championId ? "AND champion_id = ?" : ""}
-          AND kind IN ('augment', 'augmented')
-        GROUP BY kind, value`,
-    )
-    .bind(...patches, queue, ...(championId ? [championId] : []))
-    .all<{ kind: string; value: string; games: number; wins: number }>();
-  const games = results.find((r) => r.kind === "augmented")?.games ?? 0;
-  const augments = results.filter((r) => r.kind === "augment").map((r) => ({ augmentId: Number(r.value), games: r.games, wins: r.wins }));
-  return { games, augments };
-}
-
-/**
- * ARAM Mayhem augments across all champions, tiered like champions are.
- * Served behind a flag until Riot says whether these may be shown.
- */
-export async function mayhemAugments(db: D1Database): Promise<{ patches: string[]; games: number; augments: MayhemAugment[] }> {
-  const patches = await latestPatches(db);
-  if (patches.length === 0) return { patches, games: 0, augments: [] };
-  const { games, augments: counts } = await augmentCounts(db, patches, 2400, null);
-  const augments = counts
-    .filter((c) => c.games >= sampleLimits.pairGames)
-    .map((c) => ({
-      augmentId: c.augmentId,
-      games: c.games,
-      pickRate: round3(c.games / games),
-      winRate: round3(c.wins / c.games),
-      score: round3(smoothed(c.wins, c.games)),
-    }))
-    .sort((a, b) => b.score - a.score)
-    .map(({ score, ...a }) => ({ ...a, tier: TIER_CUTS.find(([cut]) => score >= cut)?.[1] ?? "D" }));
-  return { patches, games, augments };
-}
-
-/**
- * Arena augment top-four rates for a champion. Riot's policy forbids showing
- * these without written approval, so the API serves them only behind a flag.
- */
-export async function arenaAugments(db: D1Database, championId: number): Promise<{ patches: string[]; games: number; augments: AugmentStat[] }> {
-  const patches = await latestPatches(db);
-  if (patches.length === 0) return { patches, games: 0, augments: [] };
-  const { games, augments: counts } = await augmentCounts(db, patches, 1700, championId);
-  const augments = counts
-    .filter((c) => c.games >= sampleLimits.pairGames)
-    .map((c) => ({ augmentId: c.augmentId, games: c.games, topFourRate: round3(c.wins / c.games) }))
-    .sort((a, b) => b.topFourRate - a.topFourRate);
-  return { patches, games, augments };
 }

@@ -149,10 +149,6 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
         tally.add(row, "opponent", String(opponent), row.win);
         for (const [kind, value] of choices) tally.add(row, `vs-${kind}`, `${opponent}|${value}`, row.win);
       }
-      if (row.augments) {
-        tally.add(row, "augmented", "", row.win);
-        for (const id of new Set(ids(row.augments))) tally.add(row, "augment", String(id), row.win);
-      }
       if (row.queue_id === RANKED_SOLO && row.team_id !== null) {
         const team = `${row.match_id}:${row.team_id}`;
         teams.set(team, [...(teams.get(team) ?? []), row]);

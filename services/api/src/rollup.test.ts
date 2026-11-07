@@ -92,11 +92,10 @@ describe("stat docs", () => {
         docKey.build(420, 103, "MIDDLE"),
         docKey.matchupBuilds(103, "MIDDLE"),
         docKey.counters(103, "MIDDLE"),
-        docKey.benchmarks("MIDDLE", null),
       ]),
     );
 
-    const app = createApp(noRiot, new MemoryStore(), { statsDb: db });
+    const app = createApp(new MemoryStore(), { statsDb: db });
     const list = (await (await app.request("/v1/tierlist/MIDDLE")).json()) as { champions: { championId: number }[] };
     expect(list.champions.map((c) => c.championId)).toContain(103);
     expect(await (await app.request("/v1/builds/103?position=MIDDLE&vs=238")).json()).toMatchObject({ vs: 238, games: 20 });
