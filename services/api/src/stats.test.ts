@@ -47,7 +47,7 @@ async function seed(games: { me: number; them: number; win: boolean; version?: s
 }
 
 // The fixtures hold a handful of games, so they use the small sample limits these tests were written for.
-beforeAll(() => Object.assign(sampleLimits, { priorGames: 50, tierGames: 10, pairGames: 10 }));
+beforeAll(() => Object.assign(sampleLimits, { priorGames: 50, tierPriorGames: 50, tierGames: 10, pairGames: 10 }));
 
 describe("quantiles and rankOf", () => {
   it("place a value within the distribution", () => {
@@ -102,7 +102,8 @@ describe("champion pages", () => {
       ...Array.from({ length: 10 }, (_, i) => ({ me: 103, them: 238, win: i < 6 })),
     ]);
     const overview = await championOverview(db, 103, null);
-    expect(overview).toMatchObject({ position: "MIDDLE", games: 20, winRate: 0.5, pickRate: 0.5, winRateChange: 0.2 });
+    // Pick rate is per match: Ahri is in every one of these.
+    expect(overview).toMatchObject({ position: "MIDDLE", games: 20, winRate: 0.5, pickRate: 1, winRateChange: 0.2 });
     expect(overview?.positions).toEqual([{ position: "MIDDLE", games: 20, share: 1 }]);
     expect(await championOverview(db, 1, null)).toBeNull();
   });
@@ -178,6 +179,65 @@ describe("findHabits", () => {
     expect(trends.habits).toEqual([
       { title: "Maç boyunca minyon toplaman düşük", detail: "Son 10 maçın 8 tanesinde dakika başına minyonun Emerald+ medyanı olan 7 değerinin altındaydı.", metric: "cs_pm", target: 7 },
     ]);
+  });
+});
+
+describe("the TR and EUW Emerald+ pool", () => {
+  async function saveGames(db: D1Database, prefix: string, count: number, me: number, win: boolean, bans: number[] = []) {
+    const crawler = new Crawler(db, { get: async () => null } as unknown as RiotClient);
+    for (let n = 1; n <= count; n++) {
+      const match: Match = {
+        metadata: { matchId: `${prefix}_${me}_${n}`, participants: [] },
+        info: {
+          gameVersion: "16.21.1",
+          queueId: 420,
+          gameStartTimestamp: n,
+          gameDuration: 1800,
+          participants: [player(1, 100, me, win, 200), player(6, 200, 238, !win, 180)],
+          teams: [{ teamId: 100, bans: bans.map((championId) => ({ championId, pickTurn: 1 })) }],
+        },
+      };
+      await crawler.save(match);
+    }
+  }
+
+  it("keeps KR games out of tiers, pick and ban rates but in builds", async () => {
+    const { db } = fakeD1();
+    await saveGames(db, "TR1", 12, 103, true, [84]);
+    await saveGames(db, "KR", 12, 7, true, [84, 157]);
+    await rollup(db, noCatalog);
+
+    const tiers = await tierList(db, "MIDDLE");
+    expect(tiers.champions.map((c) => c.championId).sort()).toEqual([103, 238]);
+    expect(tiers.games).toBe(24);
+    // Per match, out of the 12 pool games; Ahri is in all of them.
+    expect(tiers.champions.find((c) => c.championId === 103)).toMatchObject({ pickRate: 1, banRate: 0 });
+    expect(await championOverview(db, 103, null)).toMatchObject({ banRate: 0, pickRate: 1 });
+    // LeBlanc was only played in KR: no tier, but her build is still there.
+    expect(await aggregateBuild(db, 7, "MIDDLE", null)).toMatchObject({ games: 12 });
+  });
+
+  it("counts bans per pool match", async () => {
+    const { db } = fakeD1();
+    await saveGames(db, "EUW1", 10, 103, true, [238]);
+    await saveGames(db, "TR1", 10, 7, false);
+    await rollup(db, noCatalog);
+    const tiers = await tierList(db, "MIDDLE");
+    expect(tiers.champions.find((c) => c.championId === 238)?.banRate).toBe(0.5);
+  });
+
+  it("backfills the pool once from rows rolled up before it existed", async () => {
+    const { db, sqlite } = fakeD1();
+    await saveGames(db, "TR1", 12, 103, true, [84]);
+    await rollup(db, noCatalog);
+    const before = await tierList(db, "MIDDLE");
+
+    // As if these rows had been rolled up by the version without pool counts.
+    sqlite.prepare("DELETE FROM stat_counts WHERE kind LIKE 'pool%'").run();
+    sqlite.prepare("DELETE FROM crawl_state WHERE key = 'pool_backfilled'").run();
+    await rollup(db, noCatalog);
+    await rollup(db, noCatalog);
+    expect(await tierList(db, "MIDDLE")).toEqual(before);
   });
 });
 

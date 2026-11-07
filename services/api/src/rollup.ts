@@ -55,6 +55,20 @@ class Tally {
 
 const ids = (csv: string) => csv.split(",").filter(Boolean).map(Number);
 
+/**
+ * Games from TR and EUW Emerald+ players. Tier lists, pick and ban rates read
+ * only these, so KR Challenger games (crawled for builds) don't skew them.
+ * A match id starts with the platform it was played on.
+ */
+export const inPool = (matchId: string) => /^(TR1|EUW1)_/.test(matchId);
+
+// Counts that only cover the pool. `pool-games` rows sit on champion 0 and
+// count matches, so ban rates have a denominator from the same games.
+const POOL = "pool";
+const POOL_BAN = "pool-ban";
+const POOL_GAMES = "pool-games";
+const matchRow = (patch: string, queue: number) => ({ patch, queue_id: queue, team_position: "", champion_id: 0 });
+
 /** What a row adds to its champion's build, as [kind, value] pairs. */
 function buildChoices(row: Raw, finished: Set<number>): [string, string][] {
   const choices: [string, string][] = [
@@ -94,6 +108,7 @@ function upserts(db: D1Database, tally: Tally) {
  * chunk and its watermark commit together, so a crash never counts a row twice.
  */
 export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> = loadCatalog): Promise<number> {
+  await backfillPool(db);
   await rollupMatches(db);
   let rolled = 0;
   let catalog: Catalog | null = null;
@@ -120,6 +135,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const teams = new Map<string, Raw[]>();
     for (const row of rows) {
       tally.add(row, "games", "", row.win);
+      if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
       const choices = buildChoices(row, catalog.finished);
       for (const [kind, value] of choices) tally.add(row, kind, value, row.win);
       // Each build style gets its own runes, items and skills: AP Kai'Sa is not crit Kai'Sa.
@@ -160,13 +176,46 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
   }
 }
 
+type MatchRow = { rowid: number; match_id: string; patch: string; queue_id: number; game_start: number; bans: string | null };
+
+function tallyPoolMatches(tally: Tally, matches: MatchRow[]) {
+  for (const m of matches) {
+    if (!inPool(m.match_id)) continue;
+    tally.add(matchRow(m.patch, m.queue_id), POOL_GAMES, "", 0);
+    for (const id of new Set(ids(m.bans ?? ""))) tally.add({ ...matchRow(m.patch, m.queue_id), champion_id: id }, POOL_BAN, "", 0);
+  }
+}
+
+/**
+ * The pool counts arrived after games were already rolled up. Once, count
+ * the pool from the raw rows still kept (a few days' worth), so tier lists
+ * don't start empty. Later rows are counted by the normal rollup.
+ */
+async function backfillPool(db: D1Database) {
+  if (await watermark(db, "pool_backfilled")) return;
+  const [participants, matches] = await Promise.all([watermark(db, "rolled_participants"), watermark(db, "rolled_matches")]);
+  const tally = new Tally();
+  const { results: rows } = await db
+    .prepare("SELECT match_id, patch, queue_id, team_position, champion_id, win FROM participant_stats WHERE rowid <= ?")
+    .bind(participants)
+    .all<{ match_id: string; patch: string; queue_id: number; team_position: string; champion_id: number; win: number }>();
+  for (const row of rows) if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
+  const { results: games } = await db
+    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans FROM crawled_matches WHERE rowid <= ?")
+    .bind(matches)
+    .all<MatchRow>();
+  tallyPoolMatches(tally, games);
+  // One batch, flag included, so a crash can't count the backfill twice.
+  await db.batch([...upserts(db, tally), setWatermark(db, "pool_backfilled", 1)]);
+}
+
 /** Game counts per patch and queue, and ranked bans. */
 async function rollupMatches(db: D1Database) {
   const from = await watermark(db, "rolled_matches");
   const { results } = await db
-    .prepare("SELECT rowid, patch, queue_id, game_start, bans FROM crawled_matches WHERE rowid > ? ORDER BY rowid")
+    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans FROM crawled_matches WHERE rowid > ? ORDER BY rowid")
     .bind(from)
-    .all<{ rowid: number; patch: string; queue_id: number; game_start: number; bans: string | null }>();
+    .all<MatchRow>();
   if (results.length === 0) return;
 
   const games = new Map<string, { patch: string; queue: number; games: number; last: number }>();
@@ -179,6 +228,7 @@ async function rollupMatches(db: D1Database) {
     games.set(key, g);
     for (const id of new Set(ids(m.bans ?? ""))) tally.add({ patch: m.patch, queue_id: m.queue_id, team_position: "", champion_id: id }, "ban", "", 0);
   }
+  tallyPoolMatches(tally, results);
   const insertGames = db.prepare(
     `INSERT INTO stat_matches (patch, queue_id, games, last_start) VALUES (?, ?, ?, ?)
       ON CONFLICT DO UPDATE SET games = games + excluded.games, last_start = MAX(last_start, excluded.last_start)`,

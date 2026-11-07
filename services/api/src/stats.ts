@@ -1,7 +1,9 @@
 // Aggregates over the crawler's games: benchmarks, tier lists, bans. Tiers,
 // matchups and bans read the rolled-up counts in stat_counts; benchmarks and
 // pace need every value, so they read the last few days of raw rows.
-// Everything covers the two newest stored patches.
+// Everything covers the two newest stored patches. Tier lists, pick and ban
+// rates read only the TR and EUW Emerald+ pool (kinds "pool", "pool-ban",
+// "pool-games"); builds and matchups use every crawled game.
 
 export const METRICS = ["cs10", "cs_pm", "gold_pm", "vision_pm", "kill_participation", "damage_share", "deaths"] as const;
 export type Metric = (typeof METRICS)[number];
@@ -17,6 +19,8 @@ export const sampleLimits = {
   // Win rates are pulled towards 50% as if every champion had this many more
   // games at even odds, so 17 games at 76% can't outrank 400 at 54%.
   priorGames: 200,
+  // Tiers pull harder: a few hundred lucky games shouldn't make a champion S.
+  tierPriorGames: 1500,
   // A champion is ranked in a role only from this many games; below it the rate is mostly luck.
   tierGames: 100,
   // Matchups, duos and augments split a champion's games further, so they get a lower bar.
@@ -93,6 +97,8 @@ export type TierEntry = {
   games: number;
   winRate: number;
   pickRate: number;
+  /** Share of games the champion was banned in, any role; ranked only. */
+  banRate: number | null;
   score: number;
   tier: string;
   /** Newest patch against the one before, when both have enough games. */
@@ -102,28 +108,65 @@ export type TierEntry = {
 const smoothed = (wins: number, games: number) => (wins + sampleLimits.priorGames / 2) / (games + sampleLimits.priorGames);
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
-// Cut-offs on the smoothed win rate, so a tier means the same however many
-// champions have enough games.
-const TIER_CUTS: [number, string][] = [[0.53, "S"], [0.515, "A"], [0.49, "B"], [0.475, "C"]];
+const RANKED = 420;
+const ARENA = 1700;
 
-function assignTiers(entries: Omit<TierEntry, "tier">[]): TierEntry[] {
-  return [...entries]
-    .sort((a, b) => b.score - a.score)
-    .map((e) => ({ ...e, tier: TIER_CUTS.find(([cut]) => e.score >= cut)?.[1] ?? "D" }));
+/** Players a pick rate is out of in one match: two per role on the Rift, everyone elsewhere. */
+function slotsPerGame(queue: number) {
+  return queue === RANKED ? 2 : queue === ARENA ? 16 : 10;
 }
+
+// A tier mixes how a champion wins with how much it's played. The win rate,
+// pulled towards 50%, carries most of it; presence (pick rate plus the bans
+// that fall on this role) moves it by PRESENCE_WEIGHT per doubling against
+// the role's average, so a strong pick nobody plays doesn't top the list.
+const PRESENCE_WEIGHT = 0.006;
+const TIER_CUTS: [number, string][] = [[0.5175, "S"], [0.5085, "A"], [0.4985, "B"], [0.489, "C"]];
+
+type Unranked = Omit<TierEntry, "tier" | "score"> & { wins: number; presence: number };
+
+function assignTiers(entries: Unranked[]): TierEntry[] {
+  const reference = entries.reduce((sum, e) => sum + e.presence, 0) / Math.max(entries.length, 1);
+  const prior = sampleLimits.tierPriorGames;
+  return entries
+    .map(({ wins, presence, ...e }) => {
+      const win = (wins + prior / 2) / (e.games + prior);
+      const lift = Math.max(-3, Math.min(2, Math.log2(Math.max(presence, 1e-4) / reference)));
+      const score = round3(win + PRESENCE_WEIGHT * lift);
+      return { ...e, score, tier: TIER_CUTS.find(([cut]) => score >= cut)?.[1] ?? "D" };
+    })
+    .sort((a, b) => b.score - a.score);
+}
+
+/** Pool matches in ranked and how often each champion was banned in them. */
+async function poolBans(db: D1Database, patches: string[]): Promise<{ matches: number; bans: Map<number, number> }> {
+  const { results } = await db
+    .prepare(
+      `SELECT champion_id, kind, SUM(games) AS games FROM stat_counts
+        WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ${RANKED} AND kind IN ('pool-ban', 'pool-games')
+        GROUP BY champion_id, kind`,
+    )
+    .bind(...patches)
+    .all<{ champion_id: number; kind: string; games: number }>();
+  const matches = results.find((r) => r.kind === "pool-games")?.games ?? 0;
+  return { matches, bans: new Map(results.filter((r) => r.kind === "pool-ban").map((r) => [r.champion_id, r.games])) };
+}
+
+const banRateOf = (data: { matches: number; bans: Map<number, number> }, championId: number) =>
+  data.matches >= sampleLimits.tierGames ? round3((data.bans.get(championId) ?? 0) / data.matches) : null;
 
 /** `position` is "" for queues without roles (ARAM, Arena, URF). */
 export async function tierList(
   db: D1Database,
   position: string,
-  queue = 420,
+  queue = RANKED,
 ): Promise<{ patches: string[]; games: number; champions: TierEntry[] }> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return { patches, games: 0, champions: [] };
   const { results: byPatch } = await db
     .prepare(
       `SELECT champion_id, patch, games, wins FROM stat_counts
-        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ? AND kind = 'games'`,
+        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ? AND kind = 'pool'`,
     )
     .bind(...patches, position, queue)
     .all<{ champion_id: number; patch: string; games: number; wins: number }>();
@@ -136,16 +179,40 @@ export async function tierList(
     byChampion.set(r.champion_id, c);
   }
   const total = [...byChampion.values()].reduce((sum, c) => sum + c.games, 0);
+  const matches = total / slotsPerGame(queue);
+
+  // A ban counts against every role the champion plays, so each role gets its share.
+  const ranked = queue === RANKED;
+  const bans = ranked ? await poolBans(db, patches) : null;
+  const allRoles = new Map<number, number>();
+  if (ranked) {
+    const { results } = await db
+      .prepare(
+        `SELECT champion_id, SUM(games) AS games FROM stat_counts
+          WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ${RANKED} AND kind = 'pool' GROUP BY champion_id`,
+      )
+      .bind(...patches)
+      .all<{ champion_id: number; games: number }>();
+    for (const r of results) allRoles.set(r.champion_id, r.games);
+  }
+
   const entries = [...byChampion.entries()]
     .filter(([, c]) => c.games >= sampleLimits.tierGames)
-    .map(([championId, c]) => ({
-      championId,
-      games: c.games,
-      winRate: round3(c.wins / c.games),
-      pickRate: round3(c.games / total),
-      score: round3(smoothed(c.wins, c.games)),
-      winRateChange: patchChange(patches, c.patches),
-    }));
+    .map(([championId, c]) => {
+      const pickRate = c.games / matches;
+      const banRate = bans ? banRateOf(bans, championId) : null;
+      const roleShare = c.games / (allRoles.get(championId) ?? c.games);
+      return {
+        championId,
+        games: c.games,
+        wins: c.wins,
+        winRate: round3(c.wins / c.games),
+        pickRate: round3(pickRate),
+        banRate,
+        presence: pickRate + (banRate ?? 0) * roleShare,
+        winRateChange: patchChange(patches, c.patches),
+      };
+    });
   return { patches, games: total, champions: assignTiers(entries) };
 }
 
@@ -197,10 +264,11 @@ export async function championOverview(
 
   const list = await tierList(db, used, queue);
   const entry = list.champions.find((c) => c.championId === championId);
+  // Roles above come from every game, so builds cover KR too; the numbers below are the pool's, like the tier list.
   const { results: byPatch } = await db
     .prepare(
       `SELECT patch, games, wins FROM stat_counts
-        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ? AND queue_id = ? AND kind = 'games'`,
+        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ? AND queue_id = ? AND kind = 'pool'`,
     )
     .bind(...patches, championId, used, queue)
     .all<{ patch: string; games: number; wins: number }>();
@@ -213,30 +281,11 @@ export async function championOverview(
     position: used || null,
     games,
     winRate: round3(wins / Math.max(games, 1)),
-    pickRate: round3(games / Math.max(list.games, 1)),
+    pickRate: round3(games / Math.max(list.games / slotsPerGame(queue), 1)),
     tier: entry?.tier ?? null,
     winRateChange: patchChange(patches, new Map(byPatch.map((p) => [p.patch, p]))),
-    banRate: ranked ? await banRate(db, patches, championId) : null,
+    banRate: ranked ? banRateOf(await poolBans(db, patches), championId) : null,
   };
-}
-
-async function banRate(db: D1Database, patches: string[], championId: number): Promise<number | null> {
-  const [matches, banned] = await Promise.all([
-    db
-      .prepare(`SELECT SUM(games) AS games FROM stat_matches WHERE patch IN (${placeholders(patches.length)}) AND queue_id = 420`)
-      .bind(...patches)
-      .first<{ games: number | null }>(),
-    db
-      .prepare(
-        `SELECT SUM(games) AS games FROM stat_counts
-          WHERE patch IN (${placeholders(patches.length)}) AND queue_id = 420 AND champion_id = ? AND kind = 'ban'`,
-      )
-      .bind(...patches, championId)
-      .first<{ games: number | null }>(),
-  ]);
-  const games = matches?.games ?? 0;
-  if (games < sampleLimits.tierGames) return null;
-  return round3((banned?.games ?? 0) / games);
 }
 
 export type Matchup = { championId: number; games: number; winRate: number };
@@ -275,7 +324,7 @@ export async function banSuggestions(db: D1Database, limit = 5): Promise<{ patch
   const { results } = await db
     .prepare(
       `SELECT champion_id, SUM(games) AS games, SUM(wins) AS wins FROM stat_counts
-        WHERE patch IN (${placeholders(patches.length)}) AND queue_id = 420 AND kind = 'games' GROUP BY champion_id`,
+        WHERE patch IN (${placeholders(patches.length)}) AND queue_id = 420 AND kind = 'pool' GROUP BY champion_id`,
     )
     .bind(...patches)
     .all<{ champion_id: number; games: number; wins: number }>();
