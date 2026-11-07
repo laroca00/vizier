@@ -99,7 +99,14 @@ fn set_low_memory(window: &tauri::WebviewWindow, low: bool) {
     use webview2_com::Microsoft::Web::WebView2::Win32::{
         COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW, COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_NORMAL, ICoreWebView2_19,
     };
+    use std::sync::atomic::{AtomicU8, Ordering};
     use windows_core::Interface;
+    // Resizes come in bursts while the window is dragged; skip the COM call
+    // when the level hasn't changed.
+    static LAST: AtomicU8 = AtomicU8::new(0);
+    if LAST.swap(if low { 2 } else { 1 }, Ordering::Relaxed) == if low { 2 } else { 1 } {
+        return;
+    }
     let _ = window.with_webview(move |webview| {
         // SAFETY: COM calls on the controller Tauri hands out on its own thread.
         unsafe {
@@ -113,6 +120,26 @@ fn set_low_memory(window: &tauri::WebviewWindow, low: bool) {
 
 #[cfg(not(windows))]
 fn set_low_memory(_window: &tauri::WebviewWindow, _low: bool) {}
+
+/// Set by the webview while a game runs and Vizier isn't the window in front.
+#[derive(Default)]
+struct MainMemory {
+    background: std::sync::atomic::AtomicBool,
+}
+
+/// Low while the main window can't be seen: in the tray, minimised, or
+/// behind the game.
+fn refresh_memory(window: &tauri::WebviewWindow) {
+    let background = window.state::<MainMemory>().background.load(std::sync::atomic::Ordering::Relaxed);
+    let away = !window.is_visible().unwrap_or(true) || window.is_minimized().unwrap_or(false);
+    set_low_memory(window, away || background);
+}
+
+#[tauri::command]
+fn set_background(window: tauri::WebviewWindow, state: tauri::State<'_, MainMemory>, background: bool) {
+    state.background.store(background, std::sync::atomic::Ordering::Relaxed);
+    refresh_memory(&window);
+}
 
 /// Manual timers on the overlay. They are registered only while a game runs,
 /// so the combinations stay free in every other app.
@@ -211,6 +238,7 @@ pub fn run() {
         )
         .manage(LcuApi::default())
         .manage(OverlayState::default())
+        .manage(MainMemory::default())
         .invoke_handler(tauri::generate_handler![
             lcu_status,
             champ_select,
@@ -222,7 +250,8 @@ pub fn run() {
             overlay_hidden,
             set_overlay_enabled,
             overlay_editing,
-            set_overlay_editing
+            set_overlay_editing,
+            set_background
         ])
         .setup(|app| {
             setup_tray(app)?;
@@ -244,14 +273,24 @@ pub fn run() {
         })
         // Closing keeps Vizier in the tray so it can still react to champ select.
         .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { api, .. } = event
-                && window.label() != live::OVERLAY_LABEL
-            {
-                api.prevent_close();
-                let _ = window.hide();
-                if let Some(webview) = window.app_handle().get_webview_window(window.label()) {
-                    set_low_memory(&webview, true);
+            if window.label() == live::OVERLAY_LABEL {
+                return;
+            }
+            match event {
+                WindowEvent::CloseRequested { api, .. } => {
+                    api.prevent_close();
+                    let _ = window.hide();
+                    if let Some(webview) = window.app_handle().get_webview_window(window.label()) {
+                        set_low_memory(&webview, true);
+                    }
                 }
+                // Minimising and restoring both arrive as a resize.
+                WindowEvent::Resized(_) => {
+                    if let Some(webview) = window.app_handle().get_webview_window(window.label()) {
+                        refresh_memory(&webview);
+                    }
+                }
+                _ => {}
             }
         })
         .run(tauri::generate_context!())

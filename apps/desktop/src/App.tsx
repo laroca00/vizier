@@ -57,6 +57,23 @@ const fixture = champSelectFixture();
 const POST_GAME_PHASES = new Set(["PreEndOfGame", "EndOfGame"]);
 const QUEUE_PHASES = new Set(["Matchmaking", "ReadyCheck"]);
 
+/** False while the window is hidden, minimised or behind another app. */
+function useWindowActive() {
+  const [active, setActive] = useState(() => !document.hidden && document.hasFocus());
+  useEffect(() => {
+    const update = () => setActive(!document.hidden && document.hasFocus());
+    window.addEventListener("focus", update);
+    window.addEventListener("blur", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      window.removeEventListener("focus", update);
+      window.removeEventListener("blur", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, []);
+  return active;
+}
+
 async function bringToFront() {
   if (!isTauri()) return;
   const window = getCurrentWindow();
@@ -90,6 +107,13 @@ function App() {
 
   useEffect(() => setClientLocale(clientLocale), [clientLocale]);
 
+  // Nobody looks at Vizier while the game is in front, so WebView2 can hand
+  // memory back to the game until the player switches over.
+  const windowActive = useWindowActive();
+  const behindGame = phase === "InProgress" && !windowActive;
+  useEffect(() => {
+    if (isTauri()) invoke("set_background", { background: behindGame }).catch(() => {});
+  }, [behindGame]);
 
   // Jump to the draft when it starts and leave it when it ends, but don't
   // pull the player back if they switched away during it.
