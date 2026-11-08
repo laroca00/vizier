@@ -283,10 +283,13 @@ Acceptance:
 - Pro games: one row per game and player even after a key change, and a fifteen-day lookback.
 - Sections load on first use; the main bundle went from 501 KB to 334 KB.
 
+## What comes next
+
+The next round of work is in `BACKLOG.md`.
+
 ## Not planned
 
 - Accounts or cloud sync.
 - Win probability in the draft simulator.
 - Parsing Riot's patch note pages.
-- Augment win rates without written approval.
 - Any game memory access.
