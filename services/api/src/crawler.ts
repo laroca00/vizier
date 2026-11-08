@@ -8,12 +8,21 @@ export const ARENA = 1700;
 export const MAYHEM = 2400;
 // Arena moved to this queue; its games are stored under ARENA so the rollup, docs and older apps carry on.
 export const ARENA_LIVE = 1750;
+// ARAM Mayhem runs under several queue ids (2400 had no games while the mode was live);
+// all of them are asked for and stored under MAYHEM, the same way.
+export const MAYHEM_QUEUES = [MAYHEM, 2401, 2403, 2405];
+
+/** The queue a game is stored and rolled up under. */
+export function storedQueue(queueId: number): number {
+  if (queueId === ARENA_LIVE) return ARENA;
+  return MAYHEM_QUEUES.includes(queueId) ? MAYHEM : queueId;
+}
 // URF and ARURF come and go with rotations; their games are kept when they show up.
 const URF = [900, 1900];
 /** Queues whose games are stored. Only ranked solo has roles, timelines and bans. */
-export const STORED_QUEUES = new Set([RANKED_SOLO, ARAM, MAYHEM, ARENA, ARENA_LIVE, ...URF]);
+export const STORED_QUEUES = new Set([RANKED_SOLO, ARAM, ...MAYHEM_QUEUES, ARENA, ARENA_LIVE, ...URF]);
 // Asked for in turns, one per run, from one of that run's players.
-const EXTRA_QUEUES = [ARAM, MAYHEM, ARENA_LIVE, ...URF];
+const EXTRA_QUEUES = [ARAM, ...MAYHEM_QUEUES, ARENA_LIVE, ...URF];
 const DAY = 86_400_000;
 const RESEED_AFTER = DAY;
 const LOOKBACK = 3 * DAY;
@@ -25,7 +34,7 @@ const MODE_PLAYERS_MAX = 3000;
 // Mode game players are remembered under their mode, then asked about every mode in turn:
 // the same people play ARAM, Mayhem and Arena, and Mayhem and Arena come and go.
 const FOLLOW: Record<number, number> = { [ARAM]: ARAM, [MAYHEM]: MAYHEM, [ARENA]: ARENA };
-const MODE_QUEUES = [ARAM, MAYHEM, ARENA_LIVE];
+const MODE_QUEUES = [ARAM, ...MAYHEM_QUEUES, ARENA_LIVE];
 // Remakes end before five minutes and say nothing about a build.
 const MIN_DURATION_SECONDS = 300;
 
@@ -221,7 +230,7 @@ export class Crawler {
       for (const [i, { puuid, queue_id }] of followed.entries()) {
         // The player's own mode every other visit, the other modes in between.
         const slot = Math.floor(this.now() / 120_000) + i;
-        const own = queue_id === ARENA ? ARENA_LIVE : queue_id;
+        const own = queue_id === ARENA ? ARENA_LIVE : queue_id === MAYHEM ? MAYHEM_QUEUES[(slot >> 1) % MAYHEM_QUEUES.length] : queue_id;
         const queue = slot % 2 === 0 ? own : MODE_QUEUES[(slot >> 1) % MODE_QUEUES.length];
         for (const id of (await ids(puuid, queue, 10)) ?? []) extras.add(id);
         await this.db.prepare("UPDATE mode_players SET last_crawled_at = ? WHERE puuid = ?").bind(this.now(), puuid).run();
@@ -242,7 +251,7 @@ export class Crawler {
 
   /** Returns false for games that carry no build signal. */
   async save(match: Match, timeline: Timeline | null = null): Promise<boolean> {
-    const info = match.info.queueId === ARENA_LIVE ? { ...match.info, queueId: ARENA } : match.info;
+    const info = storedQueue(match.info.queueId) === match.info.queueId ? match.info : { ...match.info, queueId: storedQueue(match.info.queueId) };
     const matchId = match.metadata.matchId;
     const patch = patchOf(info.gameVersion);
     const ranked = info.queueId === RANKED_SOLO;
@@ -327,7 +336,7 @@ export class Crawler {
 
   /** Remembers a mode game's players so their next games of that mode are found. */
   private async follow(match: Match): Promise<D1PreparedStatement[]> {
-    const queue = FOLLOW[match.info.queueId === ARENA_LIVE ? ARENA : match.info.queueId];
+    const queue = FOLLOW[storedQueue(match.info.queueId)];
     if (!queue) return [];
     const count = await this.db.prepare("SELECT COUNT(*) AS n FROM mode_players").first<{ n: number }>();
     if ((count?.n ?? 0) >= MODE_PLAYERS_MAX) return [];

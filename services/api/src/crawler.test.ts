@@ -149,11 +149,11 @@ describe("Other modes", () => {
     await crawler.run();
     expect(asked).toEqual(["aram1:450"]);
     // Odd slots go round every mode, Arena under its live queue.
-    for (let slot = 1; slot < 12; slot += 2) {
+    for (let slot = 1; slot < 24; slot += 2) {
       now = 30 * DAY + slot * 120_000;
       await crawler.run();
     }
-    expect(new Set(asked)).toEqual(new Set(["aram1:450", "aram1:2400", "aram1:1750"]));
+    expect(new Set(asked)).toEqual(new Set(["aram1:450", "aram1:2400", "aram1:2401", "aram1:2403", "aram1:2405", "aram1:1750"]));
   });
 
   it("stores games of the live Arena queue as Arena", async () => {
@@ -164,6 +164,15 @@ describe("Other modes", () => {
     expect(sqlite.prepare("SELECT queue_id FROM crawled_matches").all()).toEqual([{ queue_id: 1700 }]);
     expect(sqlite.prepare("SELECT queue_id, win, runes FROM participant_stats").all()).toEqual([{ queue_id: 1700, win: 1, runes: "" }]);
     expect(sqlite.prepare("SELECT queue_id FROM mode_players").all()).toEqual([{ queue_id: 1700 }]);
+  });
+
+  it("stores every ARAM Mayhem queue as Mayhem", async () => {
+    const { db, sqlite } = fakeD1();
+    const options = { region: "asia", platforms: ["kr"], leagues: "challenger", playersPerRun: 0, matchesPerRun: 5, extraMatchesPerRun: 2, timelinesPerRun: 0 } as const;
+    const crawler = new Crawler(db, {} as RiotClient, () => 30 * DAY, { ...options, platforms: [...options.platforms] });
+    expect(await crawler.save(match("KR_8", [participant(64, true, { puuid: "kiwi1" })], { queueId: 2403 }))).toBe(true);
+    expect(sqlite.prepare("SELECT queue_id FROM crawled_matches").all()).toEqual([{ queue_id: 2400 }]);
+    expect(sqlite.prepare("SELECT queue_id FROM mode_players").all()).toEqual([{ queue_id: 2400 }]);
   });
 
   it("has every player in a run look at a different mode, two weeks back", async () => {
