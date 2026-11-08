@@ -1,22 +1,17 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "https://vizier-api.vizier-api.workers.dev";
 
+import { createApiCache } from "./apiCache";
 import { ApiError, requestJson } from "./http";
 
 export { ApiError };
 
-// Several champ select panels read the same build, counters and role data; one
-// request each per few minutes is enough, the Worker publishes every 4 hours.
-const FRESH_FOR = 5 * 60_000;
-const recent = new Map<string, { at: number; value: Promise<unknown> }>();
+// Several panels read the same build, counters and role data, and the Worker only
+// publishes every few hours, so answers are kept per route (see apiCache.ts).
+const cache = createApiCache(typeof sessionStorage === "undefined" ? null : sessionStorage);
 
 function get<T>(path: string, init?: RequestInit): Promise<T> {
   if (init) return request<T>(path, init);
-  const hit = recent.get(path);
-  if (hit && Date.now() - hit.at < FRESH_FOR) return hit.value as Promise<T>;
-  const value = request<T>(path);
-  recent.set(path, { at: Date.now(), value });
-  value.catch(() => recent.delete(path));
-  return value;
+  return cache.get(path, () => request<T>(path));
 }
 
 function request<T>(path: string, init?: RequestInit) {
