@@ -822,4 +822,11 @@ export const EN: Record<string, string> = {
   "İlk harfi: {letter}": "First letter: {letter}",
   "Eşya tahmin et": "Guess an item",
   "Eşya adı yaz": "Type an item name",
+  "Yama {patch} havuzunu nasıl etkiledi?": "How did patch {patch} change your pool?",
+  "Yama takibinde gör": "See it in the patch tracker",
+  "Havuzun bu yamada": "Your pool this patch",
+  "Havuzun yama {patch}'de": "Your pool in patch {patch}",
+  "Havuzundaki şampiyonların Data Dragon değerleri bu yamada değişmedi.": "None of your pool's Data Dragon values changed this patch.",
+  "ve {count} değişiklik daha": "and {count} more changes",
+  "Tüm değişiklikler": "All changes",
 };

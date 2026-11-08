@@ -3,9 +3,10 @@ import { championIconUrl, champions, itemIconUrl, latestVersion } from "../data/
 import { useLang, useT, type Lang } from "../i18n";
 import "../library/library.css";
 import { openExternal, PATCH_NOTES } from "../links";
-import { direction, type Change, type EntityDiff, type Kind } from "../patches/diff";
+import { direction, type EntityDiff, type Kind } from "../patches/diff";
 import { patchDiff, patchName, patchVersions, type PatchDiff } from "../patches/load";
 import "../patches/patches.css";
+import { fieldLabel, formatValue } from "../patches/format";
 import { usePersonal } from "../personal";
 import { Button } from "../ui/Button";
 import { FilterChips, SearchInput, Select } from "../ui/Fields";
@@ -14,46 +15,6 @@ import { PageHeader } from "../ui/Page";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
 import { useAsync } from "../useAsync";
-
-const STAT_NAMES: Record<string, string> = {
-  hp: "Can",
-  hpperlevel: "Seviye başına can",
-  mp: "Kaynak",
-  mpperlevel: "Seviye başına kaynak",
-  movespeed: "Hareket hızı",
-  armor: "Zırh",
-  armorperlevel: "Seviye başına zırh",
-  spellblock: "Büyü direnci",
-  spellblockperlevel: "Seviye başına büyü direnci",
-  attackrange: "Saldırı menzili",
-  hpregen: "Can yenilenmesi",
-  hpregenperlevel: "Seviye başına can yenilenmesi",
-  mpregen: "Kaynak yenilenmesi",
-  mpregenperlevel: "Seviye başına kaynak yenilenmesi",
-  crit: "Kritik vuruş",
-  critperlevel: "Seviye başına kritik vuruş",
-  attackdamage: "Saldırı gücü",
-  attackdamageperlevel: "Seviye başına saldırı gücü",
-  attackspeed: "Saldırı hızı",
-  attackspeedperlevel: "Seviye başına saldırı hızı",
-};
-
-const ITEM_STATS: Record<string, string> = {
-  FlatHPPoolMod: "Can",
-  FlatMPPoolMod: "Mana",
-  FlatArmorMod: "Zırh",
-  FlatSpellBlockMod: "Büyü direnci",
-  FlatPhysicalDamageMod: "Saldırı gücü",
-  FlatMagicDamageMod: "Yetenek gücü",
-  PercentAttackSpeedMod: "Saldırı hızı",
-  FlatCritChanceMod: "Kritik vuruş şansı",
-  FlatMovementSpeedMod: "Hareket hızı",
-  PercentMovementSpeedMod: "Hareket hızı",
-  PercentLifeStealMod: "Can çalma",
-  FlatHPRegenMod: "Can yenilenmesi",
-};
-
-const SPELL_FIELDS: Record<string, string> = { cooldown: "{key} bekleme süresi", cost: "{key} bedeli", range: "{key} menzili" };
 
 type Category = "all" | Kind;
 const CATEGORIES: { id: Category; label: string }[] = [
@@ -208,8 +169,8 @@ function Entry({ entry, icon, itemNames, lang, onOpen }: { entry: EntityDiff; ic
             <li key={change.field} data-direction={direction(change) ?? undefined}>
               <span>{fieldLabel(change.field, t)}</span>
               <span className="patches__values">
-                {format(change, change.before, itemNames, lang, t)} <span aria-hidden="true">→</span>
-                <span className="visually-hidden">{t("şuna değişti:")}</span> {format(change, change.after, itemNames, lang, t)}
+                {formatValue(change, change.before, itemNames, lang, t)} <span aria-hidden="true">→</span>
+                <span className="visually-hidden">{t("şuna değişti:")}</span> {formatValue(change, change.after, itemNames, lang, t)}
                 {direction(change) && <span className="visually-hidden">{direction(change) === "up" ? t("(güçlendirme)") : t("(zayıflatma)")}</span>}
               </span>
             </li>
@@ -218,26 +179,4 @@ function Entry({ entry, icon, itemNames, lang, onOpen }: { entry: EntityDiff; ic
       )}
     </li>
   );
-}
-
-type T = (text: string, params?: Record<string, string | number>) => string;
-
-function fieldLabel(field: string, t: T) {
-  const [kind, a, b] = field.split(":");
-  if (kind === "stat") return t(STAT_NAMES[a] ?? a);
-  if (kind === "spell") return t(SPELL_FIELDS[b] ?? b, { key: a });
-  if (field === "item:gold") return t("Fiyat");
-  if (field === "item:recipe") return t("Tarif");
-  if (kind === "item" && a === "stat") return t(ITEM_STATS[b] ?? b);
-  return field;
-}
-
-function format(change: Change, value: Change["before"], itemNames: Record<string, string>, lang: Lang, t: T) {
-  if (value === null) return t("yok");
-  if (change.field === "item:recipe") return String(value).split("+").map((id) => itemNames[id] ?? id).join(" + ");
-  const stat = change.field.split(":").pop() ?? "";
-  if (typeof value === "number" && (stat.startsWith("Percent") || stat === "FlatCritChanceMod")) {
-    return `${Math.round(value * 1000) / 10}%`;
-  }
-  return typeof value === "number" ? value.toLocaleString(lang === "tr" ? "tr" : "en-GB") : value;
 }

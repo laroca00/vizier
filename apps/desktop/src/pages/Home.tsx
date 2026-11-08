@@ -15,6 +15,7 @@ import { useAsync } from "../useAsync";
 import { dayKey, MODES } from "../quiz/logic";
 import { useQuizRecords } from "../quiz/store";
 import "./Home.css";
+import { PoolPatch } from "./PoolPatch";
 
 type Props = {
   lcu: LcuStatus;
@@ -131,6 +132,8 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
             )}
           </section>
         </div>
+
+        <PoolPatch onNavigate={onNavigate} />
 
         <MetaPicks onOpenChampion={onOpenChampion} />
       </div>

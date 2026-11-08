@@ -27,6 +27,16 @@ async function json<T>(version: string, file: string, lang: Lang): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+/** A diff the patch tracker already computed, or null; never downloads anything. */
+export function cachedPatchDiff(from: string, to: string, lang: Lang): PatchDiff | null {
+  try {
+    const hit = localStorage.getItem(`${CACHE_PREFIX}${from}.${to}.${lang}`);
+    return hit ? (JSON.parse(hit) as PatchDiff) : null;
+  } catch {
+    return null;
+  }
+}
+
 export type PatchDiff = { from: string; to: string; entries: EntityDiff[]; itemNames: Record<string, string> };
 
 /**
