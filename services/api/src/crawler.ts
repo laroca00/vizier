@@ -15,6 +15,8 @@ const EXTRA_QUEUES = [ARAM, MAYHEM, ARENA, ...URF];
 const DAY = 86_400_000;
 const RESEED_AFTER = DAY;
 const LOOKBACK = 3 * DAY;
+// Ranked players play the other modes rarely, so those look further back.
+const EXTRA_LOOKBACK = 14 * DAY;
 // Remakes end before five minutes and say nothing about a build.
 const MIN_DURATION_SECONDS = 300;
 
@@ -181,20 +183,20 @@ export class Crawler {
       .bind(region, playersPerRun)
       .all<{ puuid: string }>();
 
-    const startTime = Math.floor((this.now() - LOOKBACK) / 1000);
+    const since = (lookback: number) => Math.floor((this.now() - lookback) / 1000);
     const ids = (puuid: string, queue: number, count: number) =>
       this.riot.get<string[]>(
         region,
         "/lol/match/v5/matches/by-puuid/ids",
-        `/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=${queue}&startTime=${startTime}&start=0&count=${count}`,
+        `/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=${queue}&startTime=${since(queue === RANKED_SOLO ? LOOKBACK : EXTRA_LOOKBACK)}&start=0&count=${count}`,
       );
     const candidates = new Set<string>();
     const extras = new Set<string>();
     for (const [i, { puuid }] of due.entries()) {
       for (const id of (await ids(puuid, RANKED_SOLO, 20)) ?? []) candidates.add(id);
-      if (i === 0) {
-        // Runs are two minutes apart, so this walks through the queues.
-        const queue = EXTRA_QUEUES[Math.floor(this.now() / 120_000) % EXTRA_QUEUES.length];
+      if (extraMatchesPerRun > 0) {
+        // Each player looks at a different mode, and the modes shift every run, so every mode is checked often.
+        const queue = EXTRA_QUEUES[(Math.floor(this.now() / 120_000) + i) % EXTRA_QUEUES.length];
         for (const id of (await ids(puuid, queue, 10)) ?? []) extras.add(id);
       }
       await this.db

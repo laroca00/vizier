@@ -125,6 +125,28 @@ describe("Crawler in another region", () => {
   });
 });
 
+describe("Other modes", () => {
+  it("has every player in a run look at a different mode, two weeks back", async () => {
+    const { db, sqlite } = fakeD1();
+    sqlite.prepare("INSERT INTO crawl_players (puuid, tier, region) VALUES ('a', 'CHALLENGER', 'asia'), ('b', 'CHALLENGER', 'asia'), ('c', 'CHALLENGER', 'asia')").run();
+    const asked: { queue: string; start: number }[] = [];
+    const riot = {
+      get: async (_routing: string, _method: string, path: string) => {
+        if (path.includes("challengerleagues")) return { entries: [] };
+        const query = path.includes("/ids?") ? new URLSearchParams(path.split("?")[1]) : null;
+        if (query && query.get("queue") !== "420") asked.push({ queue: query.get("queue")!, start: Number(query.get("startTime")) });
+        return query ? [] : null;
+      },
+    } as unknown as RiotClient;
+    const now = 30 * DAY;
+    const options = { region: "asia", platforms: ["kr"], leagues: "challenger", playersPerRun: 3, matchesPerRun: 5, extraMatchesPerRun: 2, timelinesPerRun: 0 } as const;
+    await new Crawler(db, riot, () => now, { ...options, platforms: [...options.platforms] }).run();
+    expect(asked).toHaveLength(3);
+    expect(new Set(asked.map((a) => a.queue)).size).toBe(3);
+    expect(asked.every((a) => a.start === Math.floor((now - 14 * DAY) / 1000))).toBe(true);
+  });
+});
+
 describe("Emerald+ seeding", () => {
   it("samples the apex leagues, asks every Emerald and Diamond division and replaces the old list", async () => {
     const { db, sqlite } = fakeD1();
