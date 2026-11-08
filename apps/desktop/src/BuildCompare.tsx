@@ -3,6 +3,7 @@ import type { Build, Picks } from "./api";
 import { STYLE_NAMES } from "./buildStyles";
 import { itemIconUrl, runeIconUrl, type Item, type RuneStyle } from "./data/ddragon";
 import { formatPercent, useLang, useT } from "./i18n";
+import { sideBySide, winRateBar } from "./buildSideBySide";
 import { Tabs } from "./ui/Tabs";
 
 type Sort = "popular" | "winrate";
@@ -28,7 +29,7 @@ export function BuildCompare({ build, picks, version, runes, items }: Props) {
   const [sort, setSort] = useState<Sort>("popular");
   const percent = (n: number) => formatPercent(n, lang, 1);
   // A win-rate sort only ranks choices with enough games to mean something.
-  const floor = Math.max(20, Math.round(build.games * 0.03));
+  const floor = winRateBar(build.games);
   const order = <T extends { games: number; winRate: number }>(list: T[]) =>
     sort === "popular" ? [...list].sort((a, b) => b.games - a.games) : list.filter((x) => x.games >= floor).sort((a, b) => b.winRate - a.winRate);
 
@@ -45,6 +46,7 @@ export function BuildCompare({ build, picks, version, runes, items }: Props) {
   return (
     <details className="build__block build__compare">
       <summary className="build__stat">{t("Build karşılaştırması")}</summary>
+      <SideBySide build={build} version={version} items={items} />
       <Tabs
         label={t("Sıralama")}
         size="small"
@@ -137,5 +139,47 @@ export function BuildCompare({ build, picks, version, runes, items }: Props) {
         </tbody>
       </table>
     </details>
+  );
+}
+
+const COLUMN_TITLES = {
+  popular: "En popüler build",
+  winrate: "En yüksek kazanma",
+  ap: "Büyü hasarı ağırlıklı takıma karşı",
+  ad: "Fiziksel hasar ağırlıklı takıma karşı",
+  tank: "Tank ağırlıklı takıma karşı",
+} as const;
+
+/** The popular build, the best win rate and the answers to AP, AD and tank teams, with the games behind each. */
+function SideBySide({ build, version, items }: { build: Build; version: string; items: Map<number, Item> }) {
+  const t = useT();
+  const lang = useLang();
+  const { columns, bar, sameAsPopular } = sideBySide(build);
+  if (columns.length < 2 && !sameAsPopular) return null;
+  return (
+    <section className="side" aria-label={t("Yan yana")}>
+      <ul className="side__cols">
+        {columns.map((c) => (
+          <li key={c.id} className="side__col">
+            <span className="build__stat">{t(COLUMN_TITLES[c.id])}</span>
+            {c.style && <span className="build__style-meta">{t(STYLE_NAMES[c.style])}</span>}
+            <span className="side__items">
+              {c.items.map((id) => (
+                <img key={id} src={itemIconUrl(version, id)} alt={items.get(id)?.name ?? ""} title={items.get(id)?.name} width={28} height={28} />
+              ))}
+            </span>
+            <span className="build__style-meta" data-thin={c.games < THIN_GAMES || undefined}>
+              {c.winRate === null
+                ? t("{games} maç", { games: c.games })
+                : t("{games} maç, {rate} kazanma", { games: c.games, rate: formatPercent(c.winRate, lang, 1) })}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="build__note">
+        {sameAsPopular ? t("En popüler build aynı zamanda en çok kazanan. ") : ""}
+        {t("En yüksek kazanma için en az {games} maç aranır.", { games: bar })}
+      </p>
+    </section>
   );
 }
