@@ -116,16 +116,16 @@ Help players build a pool that covers their role, not only store it.
 - [x] 9.3 Rune explorer page: every keystone with the champions that use it most and their win rate with it. (fddc671; Runes page lists keystones; win rate is the weighted rate of the champion builds that take the keystone)
 - [x] 9.4 Build editor: drag to reorder items, item search with stat filters, duplicate warning; rune editor validation and "copy from recommended". (fddc671; drag or Alt+arrows to reorder, stat filter in the item search, repeated item warning, rune page checks, copy runes or items from the recommended build)
 - [x] 9.5 Tags and sorting in the library (last edited, champion, collection). (fddc671; free-form tags (up to 6 per build) with a tag filter, and sorting by last edit, champion, name or collection)
-- [ ] 9.6 Share codes v2: shorter codes that still read v1; pasting a code anywhere in the app offers to open it.
-- [ ] 9.7 Build diff between two saved builds.
+- [x] 9.6 Share codes v2: shorter codes that still read v1; pasting a code anywhere in the app offers to open it. (a1aef51; VZ2 codes pack ids as varint bytes (about half the length); VZB1 codes still read; pasting a code outside a text field asks whether to add the build)
+- [x] 9.7 Build diff between two saved builds. (a1aef51; pick another saved build in the build view to see runes, spells, items and skill order that differ)
 - [x] 9.8 Search the build index by item ("who builds Rabadon's") and keystone. (fddc671; the build explorer already filtered by item and keystone; no new work)
 
 ## 10. Queue and lobby companion
 
-- [ ] 10.1 LCU gameflow phases (lobby, matchmaking, ready check) in the frontend state; Rust tests with recorded events.
-- [ ] 10.2 Queue view: while in queue, show the selected roles' pool champions with their current tier, a patch change badge and their saved build, plus "if you get autofilled" picks for the other roles (easiest high win rate champions).
-- [ ] 10.3 Ready check: optional sound and taskbar flash when a match is found (setting, off by default).
-- [ ] 10.4 Lobby: when the player sets roles, preload the data champ select will need so it opens instantly.
+- [-] 10.1 LCU gameflow phases (lobby, matchmaking, ready check) in the frontend state; Rust tests with recorded events. (The cloud sandbox cannot build the Tauri crate (no webkit2gtk), so Rust code and its tests cannot be run here; do it on a machine that can run cargo test.)
+- [-] 10.2 Queue view: while in queue, show the selected roles' pool champions with their current tier, a patch change badge and their saved build, plus "if you get autofilled" picks for the other roles (easiest high win rate champions). (Needs the selected roles from the lobby (10.1).)
+- [x] 10.3 Ready check: optional sound and taskbar flash when a match is found (setting, off by default). (a1aef51; setting "Maç bulununca haber ver", off by default; uses the phase the app already gets, adds the request-user-attention window permission)
+- [x] 10.4 Lobby: when the player sets roles, preload the data champ select will need so it opens instantly. (a1aef51; the lobby, queue and ready check phases fetch static data, tier lists for the pool roles, bans and the pool builds into the API cache; roles are not read from the lobby (see 10.1))
 
 ## 11. Pro play
 
@@ -195,4 +195,5 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 - Apply D1 migration 0013 (lane stats) remotely before the next crawler run on the VM; lane docs fill as timelines are crawled.
 - After the Worker and crawler update, the build docs gain `perks`, `perkGames` and `skillOptions` on the next publish; single-rune counts only cover games rolled up after the crawler update.
 - Apply D1 migration 0014 (item completion times) remotely before the next crawler run on the VM; times fill as timelines are crawled.
+- Release a desktop version to ship the Journal, item and rune explorers, pool export, ready check alert and share codes v2 (the new window permission needs a rebuild).
 - Optional: set `ARENA_ITEMS=off` on the Worker to hide Arena item stats; they are on by default.
