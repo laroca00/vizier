@@ -11,6 +11,8 @@ import { ChampionCard } from "../ui/GameIcons";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { NavIcon, type IconName } from "../ui/NavIcon";
 import { useAsync } from "../useAsync";
+import { dayKey, MODES } from "../quiz/logic";
+import { useQuizRecords } from "../quiz/store";
 import "./Home.css";
 
 type Props = {
@@ -33,6 +35,8 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
   const personal = usePersonal();
   const [data] = useAsync("static", loadStatic);
   const summoner = lcu.state === "connected" ? lcu.summoner : null;
+  const today = dayKey(new Date());
+  const solvedToday = useQuizRecords().filter((r) => r.day === today && r.solved).length;
   const patch = data.status === "done" ? data.value.version.split(".").slice(0, 2).join(".") : null;
 
   const actions: { icon: IconName; title: string; text: string; onClick: () => void; disabled?: boolean }[] = [
@@ -40,6 +44,12 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
     { icon: "tiers", title: t("Tier listesi"), text: t("Rol rol en güçlü şampiyonlar"), onClick: () => onNavigate({ page: "tiers" }) },
     { icon: "pros", title: t("Pro build'ler"), text: t("Worlds, Türk oyuncular ve Challenger"), onClick: () => onNavigate({ page: "pros" }) },
     { icon: "overlay", title: t("Overlay"), text: t("Oyun içi panel ve kısayollar"), onClick: () => onNavigate({ page: "overlay" }) },
+    {
+      icon: "quiz",
+      title: t("Günün bilmecesi"),
+      text: t("Bugün {solved}/{total} mod çözüldü", { solved: solvedToday, total: MODES.length }),
+      onClick: () => onNavigate({ page: "quiz" }),
+    },
     {
       icon: "draft",
       title: t("Şampiyon seçimi"),

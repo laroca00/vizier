@@ -761,4 +761,5 @@ export const EN: Record<string, string> = {
   "{champion} seç": "Pick {champion}",
   "Rakibe hazırlan": "Prepare for",
   "Rakip seçilmedi": "No opponent",
+  "Bugün {solved}/{total} mod çözüldü": "{solved} of {total} modes solved today",
 };
