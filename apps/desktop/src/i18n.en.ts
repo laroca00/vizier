@@ -997,4 +997,7 @@ export const EN: Record<string, string> = {
   "Çekirdek eşyalar": "Core items",
   "{games} maçta en sık çekirdek eşyalar, sırayla": "Most common core items in {games} games, in buy order",
   "Çekirdek eşyalar için yeterli maç yok.": "Not enough games for core items.",
+  "Eşleşmeyi aç": "Open matchup",
+  "Eşleşme sayfasında incele": "Study on the matchup page",
+  "{a} - {b}": "{a} vs {b}",
 };

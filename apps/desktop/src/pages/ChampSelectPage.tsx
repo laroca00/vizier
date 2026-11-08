@@ -31,6 +31,7 @@ import { formatPercent, useLang, useT } from "../i18n";
 import { JournalNote } from "../Journal";
 import { draftPhaseLabel, positionLabel } from "../labels";
 import type { ChampSelect, DraftMember } from "../lcu";
+import { MatchupLink } from "../matchupLink";
 import { championNoteKey, matchupNoteKey, usePersonal } from "../personal";
 import { MAYHEM } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
@@ -154,6 +155,9 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                   champions={ready.champions}
                   version={ready.version}
                 />
+              )}
+              {role && ready && myChampion > 0 && vs && (
+                <MatchupLink championId={myChampion} opponentId={vs} position={role} label={t("Eşleşme sayfasında incele")} />
               )}
               {role && !locked && ready && myChampion > 0 && vs && ready.champions.get(myChampion) && ready.champions.get(vs) && (
                 <HoverMatchup

@@ -611,3 +611,20 @@
 .curve__bars span[data-side="theirs"] {
   background: var(--data-physical);
 }
+
+/* A text link that opens the matchup page next to a champion. */
+.matchups__study {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  font-size: var(--text-small);
+  color: var(--glaze-muted);
+  background: none;
+  cursor: pointer;
+}
+
+.matchups__study:hover {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

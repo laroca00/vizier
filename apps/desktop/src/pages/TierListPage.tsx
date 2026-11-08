@@ -1,3 +1,4 @@
+import { MatchupLink } from "../matchupLink";
 import { useState } from "react";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { getBans, getTierList } from "../api";
@@ -164,6 +165,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
                   <th scope="col">{t("Seçilme")}</th>
                   {ranked && <th scope="col">{t("Yasaklanma")}</th>}
                   <th scope="col">{t("Maç")}</th>
+                  {ranked && <th scope="col">{t("Eşleşme")}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -195,6 +197,11 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
                       <td>{percent(c.pickRate)}</td>
                       {ranked && <td>{c.banRate == null ? "–" : percent(c.banRate)}</td>}
                       <td>{c.games.toLocaleString()}</td>
+                      {ranked && (
+                        <td>
+                          <MatchupLink championId={c.championId} opponentId={null} position={position} />
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

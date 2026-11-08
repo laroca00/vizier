@@ -4,6 +4,7 @@ import { getChampion, getCounters, getSynergies, getTierList, type ChampionOverv
 import { BuildSuggestion } from "../BuildSuggestion";
 import { Abilities, ChampionReference, ChampionTitle, StrengthsWeaknesses } from "../ChampionGuide";
 import { JournalNote, MatchupNotes } from "../Journal";
+import { MatchupLink } from "../matchupLink";
 import { championNoteKey, inPool, toggleFavouriteChampion, togglePool, usePersonal } from "../personal";
 import { ProBuildList } from "../ProBuildList";
 import { championIconUrl, champions, latestVersion, roleIconUrl, type Champion } from "../data/ddragon";
@@ -349,13 +350,13 @@ function CounterLists({ championId, position, champions, version, onOpenChampion
           <p className="build__note">{t("Koridor rakiplerine göre ayırmak için henüz yeterli maç yok.")}</p>
         </>
       ) : (
-        <Matchups counters={state.value} champions={champions} version={version} onOpenChampion={onOpenChampion} />
+        <Matchups counters={state.value} championId={championId} position={position} champions={champions} version={version} onOpenChampion={onOpenChampion} />
       )}
     </section>
   );
 }
 
-function Matchups({ counters, champions, version, onOpenChampion }: { counters: Counters } & Omit<CounterProps, "championId" | "position">) {
+function Matchups({ counters, champions, version, onOpenChampion, championId, position }: { counters: Counters } & CounterProps) {
   const percent = percentIn(useLang());
   const t = useT();
   const all = counters.matchups;
@@ -385,6 +386,7 @@ function Matchups({ counters, champions, version, onOpenChampion }: { counters: 
               </span>
               <span className="matchups__rate">{percent(m.winRate)}</span>
               <span className="matchups__games">{t("{games} maç", { games: m.games })}</span>
+              <MatchupLink championId={championId} opponentId={m.championId} position={position} />
             </li>
           );
         })}
