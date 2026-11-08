@@ -177,10 +177,10 @@ Worlds and pro builds are a top priority for the EUW audience.
 
 ## 15. Riddle and fun
 
-- [ ] 15.1 Item recipe mode: guess the item from its components.
-- [ ] 15.2 Ability icon mode with rotation and greyscale difficulty steps.
-- [ ] 15.3 Stats page: streaks, guess distribution, history per mode.
-- [ ] 15.4 Item game timed mode with a local best score.
+- [x] 15.1 Item recipe mode: guess the item from its components. (a3e1739; recipe mode; the answer is shown as its component icons, price and combine cost open as hints)
+- [x] 15.2 Ability icon mode with rotation and greyscale difficulty steps. (a3e1739; the icon starts turned and grey, straightens and gains colour with wrong guesses)
+- [x] 15.3 Stats page: streaks, guess distribution, history per mode. (a3e1739; Statistics tab: per-mode played, streak, best streak, guess distribution and the last 14 days; daily games only)
+- [x] 15.4 Item game timed mode with a local best score. (a3e1739; Timed tab in the item mode: 60 seconds, skip allowed, best score kept locally)
 
 ## 16. Only when a feature needs it
 
