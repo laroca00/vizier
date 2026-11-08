@@ -1,5 +1,6 @@
 import type { Champion } from "./data/ddragon";
 import { adviceAgainst, analyzeComp, curveRead, teamCurve, teamDamage, compDimensions, DIMENSION_NAMES, dimensionText, PHASE_TEXT, WEAKNESS_TEXT, type CompReport } from "./data/traits";
+import { ARCHETYPE_NAMES, ARCHETYPE_PLANS, winConditions } from "./draft/winConditions";
 import { formatPercent, useLang, useT } from "./i18n";
 
 const PIPS = [0, 1, 2];
@@ -60,6 +61,24 @@ export function CompSummary({ team, report, label }: { team: Champion[]; report:
   );
 }
 
+function WinConditions({ team }: { team: Champion[] }) {
+  const t = useT();
+  const list = winConditions(team);
+  if (list.length === 0) return null;
+  return (
+    <ul className="advice win-conditions">
+      {list.map((w) => (
+        <li key={w.archetype}>
+          <p>{t(ARCHETYPE_NAMES[w.archetype])}</p>
+          {ARCHETYPE_PLANS[w.archetype].map((line) => (
+            <p key={line}>{t(line, { names: w.names.join(", ") })}</p>
+          ))}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 type Props = { allies: number[]; enemies: number[]; champions: Map<number, Champion> };
 
 /** Both drafts one after the other plus general plans against the enemy one. */
@@ -79,10 +98,22 @@ export function CompAnalysis({ allies, enemies, champions }: Props) {
     <section aria-label={t("Takım kompozisyonu")}>
       <h2 className="draft__heading">{t("Takımının kompozisyonu")}</h2>
       {ours.champions === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary team={ourTeam} report={ours} label={t("Takımın")} />}
+      {ours.champions >= 3 && winConditions(ourTeam).length > 0 && (
+        <>
+          <h2 className="draft__heading">{t("Takımın nasıl oynamak istediği")}</h2>
+          <WinConditions team={ourTeam} />
+        </>
+      )}
       {theirs.champions > 0 && (
         <>
           <h2 className="draft__heading">{t("Rakibin kompozisyonu")}</h2>
           <CompSummary team={theirTeam} report={theirs} label={t("Rakip takım")} />
+        </>
+      )}
+      {theirs.champions >= 3 && winConditions(theirTeam).length > 0 && (
+        <>
+          <h2 className="draft__heading">{t("Rakibin nasıl oynamak istediği")}</h2>
+          <WinConditions team={theirTeam} />
         </>
       )}
       {curve && (
