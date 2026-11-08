@@ -88,17 +88,17 @@ A dedicated place to study any matchup before the game, not only during champ se
 - [x] 6.3 Low-sample rows: lower the cut-off but mark rows under the threshold with a badge and a toggle to hide them. (da33aa2; the API lists champions from 30 games, the app flags rows under 100)
 - [x] 6.4 Sorting by every column, search by name, a "my pool only" filter, all kept in the route state. (da33aa2; view state lives in the tiers route, so Back keeps it)
 - [x] 6.5 Meta movers card on the tier list and Home: biggest win rate and pick rate risers and fallers this patch. (da33aa2; adds pickRateChange to tier rows; the card sits on Home and under the ranked tier list)
-- [ ] 6.6 Tier list by rank band (Emerald, Diamond, Master+): add region and tier to the crawler's counts (new migration, backward compatible) and a query parameter; old clients keep the pooled list.
-- [ ] 6.7 "How tiers are made" popover with the real rule and the game count.
+- [-] 6.6 Tier list by rank band (Emerald, Diamond, Master+): add region and tier to the crawler's counts (new migration, backward compatible) and a query parameter; old clients keep the pooled list. (Needs an owner decision: the crawler does not store the fetching player's tier per game, and per-band counts would multiply the pool rows written to D1.)
+- [x] 6.7 "How tiers are made" popover with the real rule and the game count. (847a7be; the Worker sends the rule with the tier list, so the text uses the real numbers)
 
 ## 7. Champion pool builder
 
 Help players build a pool that covers their role, not only store it.
 
-- [ ] 7.1 Pool coverage: for the role's 20 most played opponents, which pool champion has the best matchup against each, and the opponents nobody in the pool handles well.
-- [ ] 7.2 Pool suggestions: champions that would fill those gaps, ranked by matchup win rate against the gap opponents, tier and similarity to what the player already plays.
-- [ ] 7.3 Blind pick pick: mark which pool champion is safest blind (fewest bad matchups among common opponents).
-- [ ] 7.4 Pool patch watch: on Home and the pool page, which pool champions changed in the latest patch and how their win rate moved.
+- [x] 7.1 Pool coverage: for the role's 20 most played opponents, which pool champion has the best matchup against each, and the opponents nobody in the pool handles well. (847a7be; pool picks without a role use the role the champion is picked in most)
+- [x] 7.2 Pool suggestions: champions that would fill those gaps, ranked by matchup win rate against the gap opponents, tier and similarity to what the player already plays. (847a7be; candidates are the role's 12 best-tier champions outside the pool)
+- [x] 7.3 Blind pick pick: mark which pool champion is safest blind (fewest bad matchups among common opponents). (847a7be; shown when the role has two or more pool champions)
+- [x] 7.4 Pool patch watch: on Home and the pool page, which pool champions changed in the latest patch and how their win rate moved. (847a7be; win rate moves come from the role tier lists; the patch-changed tag reads the patch tracker cache)
 - [ ] 7.5 Pool export: one button to write item sets for every pool champion into the client (reuses the item set importer), with a summary toast.
 
 ## 8. Champion journal
