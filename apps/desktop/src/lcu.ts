@@ -50,6 +50,10 @@ export type ChampSelect = {
   theirTeam: DraftMember[];
   bans: number[];
   phase: string;
+  /** ARAM and Mayhem bench; missing from backends older than this field. */
+  bench?: number[];
+  /** Rerolls left for the local player; missing from older backends. */
+  rerollsRemaining?: number;
   /** Missing from backends older than 0.8. */
   turn?: DraftTurn | null;
   phaseEndsAt: number;

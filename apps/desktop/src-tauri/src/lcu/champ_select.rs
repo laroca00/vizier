@@ -17,7 +17,18 @@ struct RawSession {
     bans: RawBans,
     #[serde(default)]
     actions: Vec<Vec<RawAction>>,
+    #[serde(default)]
+    bench_champions: Vec<RawBench>,
+    #[serde(default)]
+    rerolls_remaining: i64,
     timer: RawTimer,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawBench {
+    #[serde(default)]
+    champion_id: i64,
 }
 
 #[derive(Deserialize)]
@@ -94,6 +105,10 @@ pub struct ChampSelect {
     pub their_team: Vec<Member>,
     pub bans: Vec<i64>,
     pub phase: String,
+    /// Champions on the shared bench in ARAM and Mayhem; empty elsewhere.
+    pub bench: Vec<i64>,
+    /// Rerolls the local player has left; 0 outside ARAM and Mayhem.
+    pub rerolls_remaining: i64,
     /// None during planning, finalization and between turns.
     pub turn: Option<Turn>,
     /// Epoch milliseconds; the client and Vizier share the machine clock.
@@ -138,6 +153,8 @@ pub fn parse(value: serde_json::Value) -> Option<ChampSelect> {
             .chain(raw.bans.their_team_bans)
             .filter(|&id| id > 0)
             .collect(),
+        bench: raw.bench_champions.into_iter().map(|b| b.champion_id).filter(|&id| id > 0).collect(),
+        rerolls_remaining: raw.rerolls_remaining.max(0),
         phase: raw.timer.phase,
         turn,
         phase_ends_at: raw.timer.internal_now_in_epoch_ms + raw.timer.adjusted_time_left_in_phase,
@@ -174,6 +191,32 @@ mod tests {
         assert_eq!(parsed.turn, Some(Turn { kind: "pick".into(), mine: true }));
         let json = serde_json::to_string(&parsed).unwrap();
         assert!(!json.contains("Someone") && !json.contains("secret"));
+    }
+
+    #[test]
+    fn reads_the_aram_bench_and_rerolls() {
+        let session = serde_json::json!({
+            "localPlayerCellId": 0,
+            "myTeam": [{ "cellId": 0, "championId": 99 }],
+            "benchEnabled": true,
+            "benchChampions": [{ "championId": 103, "isPriority": false }, { "championId": 0 }, { "championId": 238 }],
+            "rerollsRemaining": 2,
+            "timer": { "phase": "BAN_PICK", "adjustedTimeLeftInPhase": 0, "internalNowInEpochMs": 0 }
+        });
+        let parsed = parse(session).unwrap();
+        assert_eq!(parsed.bench, vec![103, 238]);
+        assert_eq!(parsed.rerolls_remaining, 2);
+    }
+
+    #[test]
+    fn sessions_without_a_bench_have_none() {
+        let session = serde_json::json!({
+            "localPlayerCellId": 0,
+            "timer": { "phase": "BAN_PICK", "adjustedTimeLeftInPhase": 0, "internalNowInEpochMs": 0 }
+        });
+        let parsed = parse(session).unwrap();
+        assert!(parsed.bench.is_empty());
+        assert_eq!(parsed.rerolls_remaining, 0);
     }
 
     #[test]
