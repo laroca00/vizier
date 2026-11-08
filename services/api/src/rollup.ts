@@ -8,8 +8,11 @@ const CORE_ITEMS = 3;
 const DAY = 86_400_000;
 // Benchmarks and the CS curve need raw rows; a few days of games is plenty for them.
 const RAW_DAYS = 3;
-// Match ids must outlive the crawler's lookback so a game isn't fetched twice.
-const MATCH_ID_DAYS = 4;
+// Match ids must outlive the crawler's longest lookback (14 days for the
+// other modes) so a game isn't fetched and counted twice.
+const MATCH_ID_DAYS = 15;
+// Followed mode players are dropped after a while so the list keeps finding active ones.
+const MODE_PLAYER_DAYS = 7;
 
 type Raw = {
   rowid: number;
@@ -254,6 +257,7 @@ export async function pruneRaw(db: D1Database, now = Date.now()) {
       )
       .bind(participants, now - RAW_DAYS * DAY),
     db.prepare("DELETE FROM crawled_matches WHERE rowid <= ? AND game_start < ?").bind(matches, now - MATCH_ID_DAYS * DAY),
+    db.prepare("DELETE FROM mode_players WHERE added_at < ?").bind(now - MODE_PLAYER_DAYS * DAY),
   ]);
   const { results } = await db
     .prepare("SELECT patch FROM stat_matches GROUP BY patch ORDER BY MAX(last_start) DESC LIMIT 2")

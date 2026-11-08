@@ -17,6 +17,11 @@ const RESEED_AFTER = DAY;
 const LOOKBACK = 3 * DAY;
 // Ranked players play the other modes rarely, so those look further back.
 const EXTRA_LOOKBACK = 14 * DAY;
+// Players from Arena and Mayhem games, and ARAM players for Mayhem, checked each run.
+const MODE_PLAYERS_PER_RUN = 2;
+const MODE_PLAYERS_MAX = 3000;
+// The queue a mode game's players are checked for: ARAM players are the ones who play Mayhem.
+const FOLLOW: Record<number, number> = { [ARAM]: MAYHEM, [MAYHEM]: MAYHEM, [ARENA]: ARENA };
 // Remakes end before five minutes and say nothing about a build.
 const MIN_DURATION_SECONDS = 300;
 
@@ -204,6 +209,18 @@ export class Crawler {
         .bind(this.now(), puuid)
         .run();
     }
+    if (extraMatchesPerRun > 0) {
+      const { results: followed } = await this.db
+        .prepare("SELECT puuid, queue_id FROM mode_players WHERE region = ? ORDER BY last_crawled_at LIMIT ?")
+        .bind(region, MODE_PLAYERS_PER_RUN)
+        .all<{ puuid: string; queue_id: number }>();
+      for (const { puuid, queue_id } of followed) {
+        // Every other run a Mayhem player is asked about Arena too, so Arena finds its first games.
+        const queue = queue_id === MAYHEM && Math.floor(this.now() / 120_000) % 2 === 1 ? ARENA : queue_id;
+        for (const id of (await ids(puuid, queue, 10)) ?? []) extras.add(id);
+        await this.db.prepare("UPDATE mode_players SET last_crawled_at = ? WHERE puuid = ?").bind(this.now(), puuid).run();
+      }
+    }
     const list = [...candidates, ...extras];
     if (list.length === 0) return [];
 
@@ -291,8 +308,18 @@ export class Crawler {
         ),
       ];
     });
-    await this.db.batch([record, ...rows]);
+    await this.db.batch([record, ...rows, ...(await this.follow(match))]);
     return true;
+  }
+
+  /** Remembers a mode game's players so their next games of that mode are found. */
+  private async follow(match: Match): Promise<D1PreparedStatement[]> {
+    const queue = FOLLOW[match.info.queueId];
+    if (!queue) return [];
+    const count = await this.db.prepare("SELECT COUNT(*) AS n FROM mode_players").first<{ n: number }>();
+    if ((count?.n ?? 0) >= MODE_PLAYERS_MAX) return [];
+    const insert = this.db.prepare("INSERT OR IGNORE INTO mode_players (puuid, region, queue_id, added_at) VALUES (?, ?, ?, ?)");
+    return match.info.participants.filter((p) => p.puuid).map((p) => insert.bind(p.puuid, this.options.region, queue, this.now()));
   }
 }
 

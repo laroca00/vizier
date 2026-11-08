@@ -126,6 +126,34 @@ describe("Crawler in another region", () => {
 });
 
 describe("Other modes", () => {
+  it("follows the players of mode games and asks about their mode next run", async () => {
+    const { db, sqlite } = fakeD1();
+    const asked: string[] = [];
+    const riot = {
+      get: async (_routing: string, _method: string, path: string) => {
+        if (path.includes("challengerleagues")) return { entries: [] };
+        if (path.includes("/ids?")) {
+          asked.push(`${path.split("/by-puuid/")[1].split("/")[0]}:${new URLSearchParams(path.split("?")[1]).get("queue")}`);
+          return [];
+        }
+        return null;
+      },
+    } as unknown as RiotClient;
+    // An even two-minute slot, so a Mayhem player is asked about Mayhem.
+    const now = 30 * DAY;
+    const options = { region: "asia", platforms: ["kr"], leagues: "challenger", playersPerRun: 0, matchesPerRun: 5, extraMatchesPerRun: 2, timelinesPerRun: 0 } as const;
+    const crawler = new Crawler(db, riot, () => now, { ...options, platforms: [...options.platforms] });
+    await crawler.save(match("KR_1", [participant(103, true, { puuid: "aram1" })], { queueId: 450 }));
+    await crawler.save(match("KR_2", [participant(64, true, { puuid: "arena1", perks: undefined, placement: 1 })], { queueId: 1700 }));
+    await crawler.save(match("KR_3", [participant(157, true, { puuid: "ranked1" })]));
+    expect(sqlite.prepare("SELECT puuid, queue_id FROM mode_players ORDER BY puuid").all()).toEqual([
+      { puuid: "aram1", queue_id: 2400 },
+      { puuid: "arena1", queue_id: 1700 },
+    ]);
+    await crawler.run();
+    expect(asked.sort()).toEqual(["aram1:2400", "arena1:1700"]);
+  });
+
   it("has every player in a run look at a different mode, two weeks back", async () => {
     const { db, sqlite } = fakeD1();
     sqlite.prepare("INSERT INTO crawl_players (puuid, tier, region) VALUES ('a', 'CHALLENGER', 'asia'), ('b', 'CHALLENGER', 'asia'), ('c', 'CHALLENGER', 'asia')").run();
