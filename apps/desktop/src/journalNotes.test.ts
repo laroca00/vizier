@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupJournal, journalEntries, mergeNotes, noteToStore, notesFile, parseNoteKey, readNotesFile } from "./journal";
+import { groupJournal, journalEntries, mergeNotes, noteToStore, notesFile, parseNoteKey, readNotesFile } from "./journalNotes";
 
 const names: Record<number, string> = { 103: "Ahri", 238: "Zed", 1: "Annie", 157: "Yasuo" };
 const nameOf = (id: number) => names[id] ?? "";

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { championIconUrl, champions, latestVersion } from "../data/ddragon";
 import { useLang, useT } from "../i18n";
-import { groupJournal, journalEntries, mergeNotes, notesFile, readNotesFile, type JournalEntry } from "../journal";
+import { groupJournal, journalEntries, mergeNotes, notesFile, readNotesFile, type JournalEntry } from "../journalNotes";
 import { replaceNotes, setNote, usePersonal } from "../personal";
 import { useToast } from "../ui/Toast";
 import { Button } from "../ui/Button";

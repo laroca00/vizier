@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { championIconUrl, type Champion } from "./data/ddragon";
 import { useLang, useT } from "./i18n";
-import { noteToStore } from "./journal";
+import { noteToStore } from "./journalNotes";
 import { matchupNoteKey, notedMatchups, setNote, usePersonal } from "./personal";
 
 /** The saved note as read-only text, for places where there's no room for the editor. Nothing without a note. */

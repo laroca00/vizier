@@ -21,12 +21,8 @@ import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
-<<<<<<< HEAD
 import { PoolMoves } from "../PoolMovesPanel";
-=======
-import { PoolMoves } from "../PoolMoves";
 import { PoolExportButton } from "../PoolExportButton";
->>>>>>> auto/7-8-pool-export-and-journal
 import { PoolCoverage } from "./PoolCoverage";
 import { useAsync } from "../useAsync";
 
