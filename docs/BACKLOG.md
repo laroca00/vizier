@@ -136,15 +136,15 @@ Worlds and pro builds are a top priority for the EUW audience.
 - [x] 11.3 Followed pros on Home: their newest games. (9828989; already on Home before this job; player names now open the pro page)
 - [x] 11.4 Pro games on the champion page and matchup page, same opponent first. (9828989; already shipped: champ select, champion page and matchup page list pro games with the same opponent first)
 - [x] 11.5 Save any pro build to the library in one click from every view. (9828989; Save button on Home, champion page and champ select pro cards too)
-- [ ] 11.6 More pro accounts: LCK, LPL, LEC and LCS players whose solo queue accounts are public, with name-matching tests.
+- [-] 11.6 More pro accounts: LCK, LPL, LEC and LCS players whose solo queue accounts are public, with name-matching tests. (Not done: the solo queue accounts of LCK, LPL, LEC and LCS players can't be checked from here, and guessed Riot IDs would show other people's games. Needs an owner-supplied list.)
 
 ## 12. Draft simulator improvements
 
-- [ ] 12.1 Load the current champ select into the simulator.
-- [ ] 12.2 Share a draft as text and as a code; import from a code.
-- [ ] 12.3 Undo and redo.
-- [ ] 12.4 The new champ select analysis in the simulator: damage profile, phase curve, win conditions, threats (epics 1.3–1.7).
-- [ ] 12.5 Keyboard flow: type to search, Enter to pick into the selected slot, Tab to the next slot.
+- [x] 12.1 Load the current champ select into the simulator. (66bd2d4; the button is on while champ select is open; your team is blue, hovered champions count)
+- [x] 12.2 Share a draft as text and as a code; import from a code. (66bd2d4; VZD1 codes; the copied text ends with the code; paste a code into the box above the teams)
+- [x] 12.3 Undo and redo. (66bd2d4; Ctrl+Z and Ctrl+Y or the buttons; 100 steps)
+- [x] 12.4 The new champ select analysis in the simulator: damage profile, phase curve, win conditions, threats (epics 1.3–1.7). (66bd2d4; phase curves, win conditions and threats for both teams; damage split and dimensions were already there)
+- [x] 12.5 Keyboard flow: type to search, Enter to pick into the selected slot, Tab to the next slot. (66bd2d4; type anywhere to search, Enter picks the first result, Tab and Shift+Tab walk the slots)
 - [ ] 12.6 Clash planner: up to five players with their pools saved locally; the simulator suggests a draft that uses each player's pool and covers the team's needs.
 
 ## 13. Patch tracker improvements
@@ -197,4 +197,5 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 - Apply D1 migration 0014 (item completion times) remotely before the next crawler run on the VM; times fill as timelines are crawled.
 - Release a desktop version to ship the Journal, item and rune explorers, pool export, ready check alert and share codes v2 (the new window permission needs a rebuild).
 - Deploy the Worker for `/v1/pros/meta` (the Pro meta tab shows an empty list until then) and release a desktop version to ship the pro player page.
+- Release a desktop version to ship the simulator changes (load champ select, codes, undo, analysis, keyboard flow).
 - Optional: set `ARENA_ITEMS=off` on the Worker to hide Arena item stats; they are on by default.
