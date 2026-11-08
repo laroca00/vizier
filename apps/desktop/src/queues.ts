@@ -11,7 +11,7 @@ export const QUEUES: { id: number; label: string }[] = [
   { id: RANKED, label: "Dereceli" },
   { id: 450, label: "ARAM" },
   { id: ARENA, label: "Arena" },
-  { id: MAYHEM, label: "ARAM Mayhem" },
+  { id: MAYHEM, label: "ARAM: Şamata" },
   { id: 1900, label: "URF" },
 ];
 

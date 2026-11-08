@@ -19,7 +19,7 @@ const ARENA = 1700;
 const MAYHEM = 2400;
 const QUEUES = [
   { id: ARENA, label: "Arena" },
-  { id: MAYHEM, label: "ARAM Mayhem" },
+  { id: MAYHEM, label: "ARAM: Şamata" },
 ];
 const ALL = "ALL";
 const CLASSES = ["Fighter", "Mage", "Assassin", "Marksman", "Support", "Tank"];
@@ -114,7 +114,7 @@ export function AugmentsPage({ onOpenChampion }: { onOpenChampion?: (championId:
         subtitle={
           stats.status === "done" && stats.value && stats.value.games > 0
             ? t("Yama {patch}, {games} oyuncu-maç", { patch: stats.value.patches[0] ?? "", games: stats.value.games })
-            : t("Arena ve ARAM Mayhem augment'lerinin seçilme ve kazanma oranları")
+            : t("Arena ve ARAM: Şamata augment'lerinin seçilme ve kazanma oranları")
         }
         toolbar={<Tabs label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />}
       />

@@ -214,7 +214,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 queue={queue}
               />
               {isArena(draft) && <ArenaItems championId={myChampion} />}
-              {hasBench(draft) && <ChampionAugments championId={myChampion} queue={MAYHEM} limit={6} title={t("Mayhem ise: ilk bakılacak augment'ler")} hideEmpty />}
+              {hasBench(draft) && <ChampionAugments championId={myChampion} queue={MAYHEM} limit={6} title={t("Şamata ise: ilk bakılacak augment'ler")} hideEmpty />}
               {enemyPicks.length >= 3 && (
                 <ItemAdvicePanel
                   championId={myChampion}

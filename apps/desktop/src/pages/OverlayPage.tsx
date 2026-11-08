@@ -10,7 +10,7 @@ const WIDGETS: { key: ToggleKey; label: string; hint: string }[] = [
   { key: "overlayObjectives", label: "Ejder, Baron ve inhibitör süreleri", hint: "Kesildiklerinde yeniden doğmalarına kalan süre." },
   { key: "overlayItems", label: "Eşya altını farkı", hint: "Koridor rakibine ve rakip takıma göre eşyalarına harcanan altın." },
   { key: "overlayScoreboard", label: "Skor tablosunda eşya farkı", hint: "Tab'a basılıyken her oyuncunun karşısındakine göre eşya altını farkı, tablonun ortasında." },
-  { key: "overlayAugments", label: "Augment önerisi", hint: "Arena ve ARAM Mayhem'de şampiyonunun her nadirlikteki en iyi augment'leri." },
+  { key: "overlayAugments", label: "Augment önerisi", hint: "Arena ve Şamata'da şampiyonunun her nadirlikteki en iyi augment'leri." },
   { key: "overlayNextItem", label: "Sıradaki eşya", hint: "Seçtiğin build türünde henüz almadığın ilk eşya ve ona kalan altın." },
   { key: "overlayTimers", label: "Elle başlatılan zamanlayıcılar", hint: "Kamp, ejder ve Baron zamanlayıcıları, kronometre ve ilk doğuş hatırlatıcıları. Kısayollar aşağıda." },
   { key: "timerSound", label: "Zamanlayıcı sesi", hint: "Bir süre dolmadan 30 saniye önce ve dolunca kısa bir ses çalar." },
