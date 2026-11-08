@@ -1,30 +1,22 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { championIconUrl, champions, latestVersion, type Champion } from "./data/ddragon";
-import { fold } from "./fold";
+import { championIconUrl, champions, latestVersion } from "./data/ddragon";
 import { useT } from "./i18n";
-import { NavIcon, type IconName } from "./ui/NavIcon";
+import { NavIcon } from "./ui/NavIcon";
 import { useAsync } from "./useAsync";
-import { guessPosition, parseMatchupQuery } from "./pages/matchupRoute";
+import { getProTeams } from "./api";
+import { useOpenPro } from "./proLink";
+import { guessPosition } from "./pages/matchupRoute";
+import { search, type PaletteLink, type Pro, type Result } from "./paletteSearch";
+
+export type { PaletteLink };
 import "./SearchPalette.css";
 
-const SHOWN = 8;
-
-export type PaletteLink = { id: string; label: string; icon: IconName };
-
-type Result = { kind: "page"; link: PaletteLink } | { kind: "champion"; champion: Champion } | { kind: "matchup"; a: Champion; b: Champion };
-
-/** Names that start with the query come first; matching pages lead. */
-function search(query: string, list: Champion[], links: PaletteLink[]): Result[] {
-  const needle = fold(query);
-  if (!needle) return [];
-  const versus = parseMatchupQuery(query, list);
-  const rank = (name: string) => Number(!fold(name).startsWith(needle));
-  const pages = links.filter((l) => fold(l.label).includes(needle)).sort((a, b) => rank(a.label) - rank(b.label));
-  const champs = list
-    .filter((c) => fold(c.name).includes(needle))
-    .sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name, "tr"));
-  return [...(versus ? [{ kind: "matchup" as const, ...versus }] : []), ...pages.map((link) => ({ kind: "page" as const, link })), ...champs.map((champion) => ({ kind: "champion" as const, champion }))].slice(0, SHOWN);
-}
+// The palette still finds champions when the pro list can't be loaded.
+const loadPros = (): Promise<Pro[]> =>
+  getProTeams().then(
+    (teams) => teams.flatMap((entry) => entry.players.map((player) => ({ player, team: entry.team }))),
+    () => [],
+  );
 
 async function loadStatic() {
   const [version, byKey] = await Promise.all([latestVersion(), champions()]);
@@ -48,6 +40,8 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink, o
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const [data] = useAsync(open ? "static" : null, loadStatic);
+  const [pros] = useAsync(open ? "palette-pros" : null, loadPros);
+  const openPro = useOpenPro();
   const listId = useId();
 
   useEffect(() => {
@@ -61,7 +55,7 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink, o
     if (!open && element.open) element.close();
   }, [open]);
 
-  const results = search(query, data.status === "done" ? data.value.list : [], links);
+  const results = search(query, data.status === "done" ? data.value.list : [], links, pros.status === "done" ? pros.value : []);
   const version = data.status === "done" ? data.value.version : "";
 
   function choose(result: Result | undefined) {
@@ -69,6 +63,7 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink, o
     onClose();
     if (result.kind === "champion") onChampion(result.champion.key);
     else if (result.kind === "matchup") onMatchup?.(result.a.key, result.b.key, guessPosition(result.a));
+    else if (result.kind === "pro") openPro(result.pro.player);
     else onLink?.(result.link.id);
   }
 
@@ -124,7 +119,15 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink, o
             ) : (
               results.map((result, i) => (
                 <li
-                  key={result.kind === "champion" ? `c${result.champion.key}` : result.kind === "matchup" ? `m${result.a.key}:${result.b.key}` : `p${result.link.id}`}
+                  key={
+                    result.kind === "champion"
+                      ? `c${result.champion.key}`
+                      : result.kind === "matchup"
+                        ? `m${result.a.key}:${result.b.key}`
+                        : result.kind === "pro"
+                          ? `r${result.pro.player}`
+                          : `p${result.link.id}`
+                  }
                   id={optionId(i)}
                   role="option"
                   aria-selected={i === active}
@@ -143,6 +146,14 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink, o
                       <img src={championIconUrl(version, result.a.id)} alt="" width={28} height={28} />
                       <span>{t("{a} - {b}", { a: result.a.name, b: result.b.name })}</span>
                       <span className="palette__kind">{t("Eşleşme")}</span>
+                    </>
+                  ) : result.kind === "pro" ? (
+                    <>
+                      <span className="palette__page-icon">
+                        <NavIcon name="pros" size={18} />
+                      </span>
+                      <span>{result.pro.team ? t("{player} ({team})", { player: result.pro.player, team: result.pro.team }) : result.pro.player}</span>
+                      <span className="palette__kind">{t("Pro oyuncu")}</span>
                     </>
                   ) : (
                     <>

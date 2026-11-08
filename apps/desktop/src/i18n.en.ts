@@ -1196,4 +1196,5 @@ export const EN: Record<string, string> = {
   "{name}: {rate} {word}, {games} maç": "{name}: {rate} {word}, {games} games",
   "Arena ve Şamata'da şampiyonunun her nadirlikteki en iyi augment'leri.": "In Arena and ARAM Mayhem, your champion's best augments of each rarity.",
   "Augment önerisi": "Augment picks",
+  "{player} ({team})": "{player} ({team})",
 };

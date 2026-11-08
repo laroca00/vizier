@@ -263,7 +263,8 @@ function Overview({ overview, championId, championName, champions, version, queu
           <section className="enter champion__pros" aria-label={t("Pro maçları")}>
             <h2 className="draft__heading">{t("Pro'lar bu şampiyonu nasıl oynadı")}</h2>
             <ProBuildList
-              filter={{ championId, position: position ?? undefined, limit: 6 }}
+              filter={{ championId, position: position ?? undefined, limit: 12 }}
+              preferOpponent={opponent}
               compact
               emptyText={t("Worlds oyuncularının bu şampiyonla son 30 günde solo kuyruk maçı yok.")}
             />

@@ -58,3 +58,9 @@ export function summarizePlayer(builds: ProBuild[], keystoneOf: (b: ProBuild) =>
     spells: tally(games.flatMap((b) => b.spells.filter(Boolean)), (id) => id),
   };
 }
+
+/** Games against the given opponent first, keeping the order otherwise. */
+export function opponentFirst(builds: ProBuild[], opponentId: number | null | undefined): ProBuild[] {
+  if (!opponentId) return builds;
+  return [...builds.filter((b) => b.opponentChampionId === opponentId), ...builds.filter((b) => b.opponentChampionId !== opponentId)];
+}

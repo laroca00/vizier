@@ -25,6 +25,7 @@ import { fromPro } from "./library/convert";
 import { createBuild } from "./library/store";
 import { useToast } from "./ui/Toast";
 import { useOpenPro } from "./proLink";
+import { opponentFirst } from "./proStats";
 import { toggleFollow, usePersonal } from "./personal";
 import { Button } from "./ui/Button";
 import { ErrorState } from "./ui/States";
@@ -83,6 +84,8 @@ type Props = {
   players?: string[];
   compact?: boolean;
   emptyText: string;
+  /** Games against this champion go first, for a matchup the player is studying. */
+  preferOpponent?: number | null;
 };
 
 async function loadBuilds(filter: ProFilter, players?: string[]): Promise<ProBuild[]> {
@@ -94,7 +97,7 @@ async function loadBuilds(filter: ProFilter, players?: string[]): Promise<ProBui
     .slice(0, filter.limit ?? 30);
 }
 
-export function ProBuildList({ filter, players, compact = false, emptyText }: Props) {
+export function ProBuildList({ filter, players, compact = false, emptyText, preferOpponent }: Props) {
   const t = useT();
   const key = JSON.stringify([filter, players]);
   const [state, retry] = useAsync(key, () => loadBuilds(filter, players));
@@ -110,7 +113,7 @@ export function ProBuildList({ filter, players, compact = false, emptyText }: Pr
 
   return (
     <ul className="pros" data-compact={compact || undefined}>
-      {state.value.map((b) => (
+      {opponentFirst(state.value, preferOpponent).map((b) => (
         <ProRow key={`${b.matchId}-${b.player}`} build={b} data={data.value} compact={compact} />
       ))}
     </ul>

@@ -7,7 +7,7 @@ import { direction, verdict, type EntityDiff, type Kind, type Verdict } from "..
 import { patchDiff, patchName, patchVersions, type PatchDiff } from "../patches/load";
 import "../patches/patches.css";
 import { fieldLabel, formatValue } from "../patches/format";
-import { WinRateShift } from "../patches/WinRateShift";
+import { WinRateShift } from "../patches/WinRateShiftPanel";
 import { poolFirst } from "../patches/pool";
 import { usePersonal } from "../personal";
 import { Button } from "../ui/Button";

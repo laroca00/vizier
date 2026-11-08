@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ProBuild } from "./api";
-import { summarizePlayer, uniqueGames } from "./proStats";
+import { opponentFirst, summarizePlayer, uniqueGames } from "./proStats";
 
 const build = (extra: Partial<ProBuild>): ProBuild => ({
   matchId: "EUW1_1", player: "Chovy", team: "Gen.G", platform: "kr", patch: "16.21", gameStart: 1000, duration: 1800,
@@ -45,5 +45,13 @@ describe("summarizePlayer", () => {
 
   it("is empty without games", () => {
     expect(summarizePlayer([], keystone).champions).toEqual([]);
+  });
+});
+
+describe("opponentFirst", () => {
+  it("moves games against the opponent to the top and keeps the order otherwise", () => {
+    const list = [{ matchId: "a", opponentChampionId: 1 }, { matchId: "b", opponentChampionId: 238 }, { matchId: "c", opponentChampionId: 2 }] as ProBuild[];
+    expect(opponentFirst(list, 238).map((b) => b.matchId)).toEqual(["b", "a", "c"]);
+    expect(opponentFirst(list, null)).toBe(list);
   });
 });
