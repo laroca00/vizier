@@ -4,8 +4,8 @@ import { CHAMPION_FACTS, CHAMPION_TRAITS, type Gender, type Region, type Species
 // The champion riddle: one answer per mode per day, the same for every
 // player, or a random one in free play. Pure, so it is tested without a page.
 
-export type QuizMode = "classic" | "ability" | "emoji" | "skin" | "item";
-export const MODES: QuizMode[] = ["classic", "ability", "emoji", "skin", "item"];
+export type QuizMode = "classic" | "ability" | "emoji" | "skin" | "item" | "recipe";
+export const MODES: QuizMode[] = ["classic", "ability", "emoji", "skin", "item", "recipe"];
 
 /** FNV-1a: a small, stable hash so a day's answer doesn't depend on the JavaScript engine. */
 export function hash(text: string): number {
@@ -118,6 +118,17 @@ export function skinView(wrongGuesses: number): { zoom: number; radius: number }
   return steps[Math.min(wrongGuesses, steps.length - 1)];
 }
 
+/**
+ * How an ability icon is disguised after this many wrong guesses: turned
+ * and grey first, then straightened, then in colour.
+ */
+export function abilityView(wrongGuesses: number, seed: number): { rotate: number; grey: boolean } {
+  const turns = [180, 120, 60, 0];
+  const base = turns[Math.min(wrongGuesses, turns.length - 1)];
+  // The direction depends on the day's seed, so the same icon isn't always turned the same way.
+  return { rotate: seed % 2 === 0 ? base : -base, grey: wrongGuesses < 2 };
+}
+
 /** Pixels of blur on the item icon: heavy at first, sharp after five wrong guesses. */
 export function itemBlur(wrongGuesses: number): number {
   const steps = [10, 7, 5, 3, 1.5, 0];
@@ -140,6 +151,23 @@ export function itemPool<T extends PoolItem>(items: Iterable<T>): T[] {
   return [...byName.values()].sort((a, b) => a.id - b.id);
 }
 
+/** Items with at least two components, so the recipe is a real clue. */
+export function recipePool<T extends PoolItem & { from?: number[] }>(items: Iterable<T>): T[] {
+  return itemPool(items).filter((item) => (item.from?.length ?? 0) >= 2);
+}
+
+/** A recipe's parts with how many of each, in the order Data Dragon lists them. */
+export function recipeParts(from: number[]): { id: number; count: number }[] {
+  const counts = new Map<number, number>();
+  for (const id of from) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return [...counts].map(([id, count]) => ({ id, count }));
+}
+
+/** Gold paid on top of the components, a hint that narrows the recipe down. */
+export function combineCost(gold: number, partGold: number[]): number {
+  return gold - partGold.reduce((sum, g) => sum + g, 0);
+}
+
 /** Emoji hints revealed: one to start, one more for each wrong guess. */
 export const emojisShown = (wrongGuesses: number, total: number) => Math.min(total, 1 + wrongGuesses);
 
@@ -157,3 +185,59 @@ export function streak(records: QuizRecord[], mode: QuizMode, today: string): nu
   }
   return count;
 }
+
+export type ModeStats = {
+  played: number;
+  solved: number;
+  current: number;
+  best: number;
+  /** Solved days by number of guesses: index 0 is one guess, the last bucket is six or more. */
+  distribution: number[];
+};
+
+export const DISTRIBUTION_BUCKETS = 6;
+
+/** Longest run of consecutive solved days. */
+export function bestStreak(records: QuizRecord[], mode: QuizMode): number {
+  const days = [...new Set(records.filter((r) => r.mode === mode && r.solved).map((r) => r.day))].sort();
+  let best = 0;
+  let run = 0;
+  let previous: Date | null = null;
+  for (const day of days) {
+    const date = new Date(`${day}T12:00:00`);
+    const next = previous && dayKey(new Date(previous.getTime() + 36e5 * 24)) === day;
+    run = next ? run + 1 : 1;
+    best = Math.max(best, run);
+    previous = date;
+  }
+  return best;
+}
+
+export function modeStats(records: QuizRecord[], mode: QuizMode, today: string): ModeStats {
+  const own = records.filter((r) => r.mode === mode);
+  const distribution = new Array<number>(DISTRIBUTION_BUCKETS).fill(0);
+  for (const r of own) if (r.solved) distribution[Math.min(r.guesses.length, DISTRIBUTION_BUCKETS) - 1]++;
+  return { played: own.length, solved: own.filter((r) => r.solved).length, current: streak(records, mode, today), best: bestStreak(records, mode), distribution };
+}
+
+export const TIMED_SECONDS = 60;
+
+/** A shuffled copy for the timed item game; the same seed gives the same order. */
+export function shuffled<T>(items: T[], seed: number): T[] {
+  const out = [...items];
+  let state = seed >>> 0 || 1;
+  for (let i = out.length - 1; i > 0; i--) {
+    // xorshift32: small and stable across engines.
+    state ^= state << 13;
+    state >>>= 0;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    state >>>= 0;
+    const j = state % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Keeps the better of two timed scores; a first score always counts. */
+export const betterScore = (best: number | null, score: number): number => (best === null ? score : Math.max(best, score));

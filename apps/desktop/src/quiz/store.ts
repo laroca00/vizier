@@ -49,3 +49,23 @@ export function saveRecord(record: QuizRecord) {
 }
 
 export const recordFor = (records: QuizRecord[], day: string, mode: QuizMode) => records.find((r) => r.day === day && r.mode === mode);
+
+// The best timed item game score, kept on this computer.
+const BEST_KEY = "vizier.quiz.timedBest";
+
+export function readTimedBest(): number | null {
+  try {
+    const value = Number(localStorage.getItem(BEST_KEY));
+    return Number.isFinite(value) && value > 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveTimedBest(score: number) {
+  try {
+    localStorage.setItem(BEST_KEY, String(score));
+  } catch {
+    // Kept for this session only.
+  }
+}

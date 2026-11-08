@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Champion } from "../data/ddragon";
 import { EMOJI_HINTS } from "./emoji";
-import { attributesOf, mainRoles, classicGrid, itemBlur, itemPool, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinView, streak, type QuizRecord } from "./logic";
+import { attributesOf, mainRoles, classicGrid, itemBlur, itemPool, abilityView, betterScore, shuffled, bestStreak, modeStats, recipePool, recipeParts, combineCost, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinView, streak, type QuizRecord } from "./logic";
 
 function champion(id: string, tags: string[], difficulty: number, partype: string, attackRange: number): Champion {
   return { id, key: id.length, name: id, magic: true, tank: false, tags, info: { attack: 5, defense: 5, magic: 5, difficulty }, partype, attackRange };
@@ -93,5 +93,67 @@ describe("champion riddle", () => {
 
   it("has at least four emoji hints per champion", () => {
     for (const hints of Object.values(EMOJI_HINTS)) expect(hints.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe("recipe mode", () => {
+  it("keeps finished items with at least two components", () => {
+    const pool = recipePool([
+      { id: 3089, name: "Rabadon", complete: true, gold: 3600, from: [1026, 1058] },
+      { id: 3006, name: "Boots", complete: true, gold: 2100, from: [1001] },
+      { id: 3031, name: "NoRecipe", complete: true, gold: 3400 },
+    ]);
+    expect(pool.map((i) => i.id)).toEqual([3089]);
+  });
+
+  it("counts repeated components", () => {
+    expect(recipeParts([1052, 1052, 1026])).toEqual([{ id: 1052, count: 2 }, { id: 1026, count: 1 }]);
+  });
+
+  it("works out the combine cost", () => {
+    expect(combineCost(3600, [1250, 1250])).toBe(1100);
+  });
+});
+
+describe("ability disguise", () => {
+  it("straightens and colours the icon as guesses go wrong", () => {
+    expect(abilityView(0, 2)).toEqual({ rotate: 180, grey: true });
+    expect(abilityView(2, 2)).toEqual({ rotate: 60, grey: false });
+    expect(abilityView(9, 2)).toEqual({ rotate: 0, grey: false });
+  });
+
+  it("turns the other way on odd seeds", () => {
+    expect(abilityView(1, 3).rotate).toBe(-120);
+  });
+});
+
+describe("statistics", () => {
+  const rec = (day: string, guesses: number, solved = true): QuizRecord => ({ day, mode: "classic", guesses: Array(guesses).fill(1), solved });
+  const records = [rec("2026-11-01", 3), rec("2026-11-02", 2), rec("2026-11-03", 7), rec("2026-11-05", 1), rec("2026-11-06", 4, false)];
+
+  it("finds the longest run of solved days", () => {
+    expect(bestStreak(records, "classic")).toBe(3);
+    expect(bestStreak(records, "emoji")).toBe(0);
+  });
+
+  it("counts games, solves and the guess distribution", () => {
+    const s = modeStats(records, "classic", "2026-11-06");
+    expect(s).toMatchObject({ played: 5, solved: 4, best: 3, current: 1 });
+    expect(s.distribution).toEqual([1, 1, 1, 0, 0, 1]);
+  });
+});
+
+describe("timed item game", () => {
+  it("shuffles the same way for the same seed and keeps every item", () => {
+    const list = [1, 2, 3, 4, 5, 6, 7, 8];
+    expect(shuffled(list, 42)).toEqual(shuffled(list, 42));
+    expect([...shuffled(list, 42)].sort()).toEqual(list);
+    expect(shuffled(list, 42)).not.toEqual(shuffled(list, 43));
+  });
+
+  it("keeps the best score", () => {
+    expect(betterScore(null, 4)).toBe(4);
+    expect(betterScore(7, 4)).toBe(7);
+    expect(betterScore(7, 9)).toBe(9);
   });
 });

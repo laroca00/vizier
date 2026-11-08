@@ -14,6 +14,7 @@ import {
   hash,
   rangeOf,
   skinView,
+  abilityView,
   streak,
   type ClassicResult,
   type Match,
@@ -30,17 +31,20 @@ import { Tabs } from "../ui/Tabs";
 import { useAsync } from "../useAsync";
 import { useToast } from "../ui/Toast";
 import { ItemGame } from "../quiz/ItemGame";
+import { TimedItemGame } from "../quiz/TimedItemGame";
+import { StatsView } from "../quiz/StatsView";
 import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
 
 const MODE_LABELS: Record<QuizMode, { label: string; hint: string }> = {
   classic: { label: "Klasik", hint: "Her tahmin; cinsiyet, pozisyon, tür, kaynak, menzil, bölge ve çıkış yılında ne kadar yaklaştığını gösterir." },
-  ability: { label: "Yetenek", hint: "Bu yetenek kimin? Yanlış tahminlerde ikon renklenir, sonra tuşu ve adı açılır." },
+  ability: { label: "Yetenek", hint: "Bu yetenek kimin? İkon önce ters ve gri; yanlış tahminlerde döner ve renklenir, sonra tuşu ve adı açılır." },
   emoji: { label: "Emoji", hint: "Her yanlış tahminde bir emoji daha açılır." },
   skin: { label: "Kostüm", hint: "Bir kostüm görselinin yakın planı. Her yanlış tahminde görüntü uzaklaşır." },
+  recipe: { label: "Tarif", hint: "Bu parçalardan hangi eşya yapılır? Her yanlış tahminde fiyat ve ilk harf gibi ipuçları açılır." },
   item: { label: "Eşya", hint: "Bulanık bir eşya ikonu. Her yanlış tahminde netleşir; sonra fiyatı ve ilk harfi açılır." },
 };
 
-type Play = "daily" | "free";
+type Play = "daily" | "free" | "timed" | "stats";
 
 export function QuizPage() {
   const t = useT();
@@ -53,30 +57,49 @@ export function QuizPage() {
     <LiquidGlass className="panel tiers quiz" radius={28} strength={2.5} scroll>
       <PageHeader
         title={t("Şampiyon bilmecesi")}
-        subtitle={t(MODE_LABELS[mode].hint)}
+        subtitle={play === "stats" ? t("Günün bilmecesindeki sonuçların, bu bilgisayarda tutulur.") : t(MODE_LABELS[mode].hint)}
         toolbar={
           <Tabs
             label={t("Oyun")}
             items={[
               { id: "daily" as Play, label: t("Günün bilmecesi") },
               { id: "free" as Play, label: t("Serbest") },
+              ...(mode === "item" ? [{ id: "timed" as Play, label: t("Zamana karşı") }] : []),
+              { id: "stats" as Play, label: t("İstatistik") },
             ]}
             value={play}
             onChange={setPlay}
           />
         }
       />
-      <Tabs label={t("Mod")} size="small" items={(Object.keys(MODE_LABELS) as QuizMode[]).map((m) => ({ id: m, label: t(MODE_LABELS[m].label) }))} value={mode} onChange={setMode} />
+      {play === "stats" ? (
+        <StatsView />
+      ) : (
+        <>
+      <Tabs
+        label={t("Mod")}
+        size="small"
+        items={(Object.keys(MODE_LABELS) as QuizMode[]).map((m) => ({ id: m, label: t(MODE_LABELS[m].label) }))}
+        value={mode}
+        onChange={(m) => {
+          setMode(m);
+          if (m !== "item" && play === "timed") setPlay("free");
+        }}
+      />
       {data.status === "error" ? (
         <ErrorState message={t("Oyun verisi alınamadı.")} onRetry={retry} />
       ) : data.status !== "done" ? (
         <Skeleton lines={5} label={t("Yükleniyor")} />
       ) : (
-        mode === "item" ? (
-          <ItemGame key={`item:${play}:${round}`} play={play} onNext={() => setRound(round + 1)} />
+        play === "timed" ? (
+          <TimedItemGame />
+        ) : mode === "item" || mode === "recipe" ? (
+          <ItemGame key={`${mode}:${play}:${round}`} mode={mode} play={play} onNext={() => setRound(round + 1)} />
         ) : (
           <Game key={`${mode}:${play}:${round}`} mode={mode} play={play} data={data.value} onNext={() => setRound(round + 1)} />
         )
+      )}
+        </>
       )}
     </LiquidGlass>
   );
@@ -240,9 +263,17 @@ function Clue({ mode, answer, wrong, over, data, seed }: { mode: QuizMode; answe
   if (mode === "ability") {
     if (detail.status !== "done") return <Skeleton lines={2} label={t("Yükleniyor")} />;
     const ability = detail.value.abilities[seed % detail.value.abilities.length];
+    const view = over ? { rotate: 0, grey: false } : abilityView(wrong, seed);
     return (
       <div className="quiz__ability">
-        <img src={abilityIconUrl(data.version, ability.image)} alt={t("Tahmin edilecek yetenek")} width={96} height={96} data-grey={(!over && wrong < 2) || undefined} />
+        <img
+          src={abilityIconUrl(data.version, ability.image)}
+          alt={t("Tahmin edilecek yetenek")}
+          width={96}
+          height={96}
+          data-grey={view.grey || undefined}
+          style={{ transform: `rotate(${view.rotate}deg)` }}
+        />
         <p className="build__note">
           {over || wrong >= 3 ? t("Tuş: {key}", { key: ability.key === "P" ? t("Pasif") : ability.key }) : t("3 yanlıştan sonra tuşu açılır")}
           {(over || wrong >= 5) && `. ${ability.name}`}

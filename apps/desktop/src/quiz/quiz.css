@@ -96,7 +96,7 @@
 .quiz__ability img {
   border-radius: 16px;
   box-shadow: 0 0 0 2px var(--gilt);
-  transition: filter var(--duration-slow) var(--ease);
+  transition: filter var(--duration-slow) var(--ease), transform var(--duration-slow) var(--ease);
 }
 
 .quiz__ability img[data-grey] {
@@ -291,4 +291,91 @@
   .quiz__guesses li {
     animation: none;
   }
+}
+
+.quiz__recipe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quiz__recipe li {
+  position: relative;
+}
+
+.quiz__recipe img {
+  border-radius: 12px;
+  box-shadow: 0 0 0 2px var(--gilt);
+}
+
+.quiz__recipe span {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-raised, #222);
+  font-size: 0.8rem;
+}
+
+.quiz__stats {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.quiz__stats-mode h3 {
+  margin: 0;
+}
+
+.quiz__distribution {
+  display: grid;
+  gap: 4px;
+  margin: var(--space-2) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quiz__distribution li {
+  display: grid;
+  grid-template-columns: 2ch 1fr 3ch;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.quiz__bar {
+  display: block;
+  min-width: 4px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--gilt);
+}
+
+.quiz__bar[data-empty] {
+  opacity: 0.25;
+}
+
+.quiz__history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quiz__history li {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-size: 0.85rem;
+}
+
+.quiz__history li[data-solved] {
+  background: color-mix(in srgb, var(--gilt) 45%, transparent);
 }
