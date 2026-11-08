@@ -13,6 +13,8 @@ export const sampleLimits = {
   tierPriorGames: 1500,
   // A champion is ranked in a role only from this many games; below it the rate is mostly luck.
   tierGames: 100,
+  // The tier list shows champions from this many games, flagged by the app while under tierGames.
+  listGames: 30,
   // Matchups and duos split a champion's games further, so they get a lower bar.
   pairGames: 30,
 };
@@ -38,6 +40,8 @@ export type TierEntry = {
   tier: string;
   /** Newest patch against the one before, when both have enough games. */
   winRateChange: number | null;
+  /** Change in pick rate over the same two patches; null when either has too few games. */
+  pickRateChange?: number | null;
 };
 
 const smoothed = (wins: number, games: number) => (wins + sampleLimits.priorGames / 2) / (games + sampleLimits.priorGames);
@@ -60,15 +64,27 @@ const TIER_CUTS: [number, string][] = [[0.5175, "S"], [0.5085, "A"], [0.4985, "B
 
 type Unranked = Omit<TierEntry, "tier" | "score"> & { wins: number; presence: number };
 
+/**
+ * Win rate pulled towards the role's average by `prior` games, shifted so an
+ * average role sits at 50%, plus a bonus or malus for how much the champion is
+ * present. Few games stay near the middle whatever their win rate.
+ */
+export function tierScore(wins: number, games: number, roleAverage: number, lift: number, prior = sampleLimits.tierPriorGames) {
+  const win = (wins + prior * roleAverage) / (games + prior) + (0.5 - roleAverage);
+  return round3(win + PRESENCE_WEIGHT * lift);
+}
+
+export const tierOf = (score: number) => TIER_CUTS.find(([cut]) => score >= cut)?.[1] ?? "D";
+
 function assignTiers(entries: Unranked[]): TierEntry[] {
   const reference = entries.reduce((sum, e) => sum + e.presence, 0) / Math.max(entries.length, 1);
-  const prior = sampleLimits.tierPriorGames;
+  const totalGames = entries.reduce((sum, e) => sum + e.games, 0);
+  const roleAverage = totalGames ? entries.reduce((sum, e) => sum + e.wins, 0) / totalGames : 0.5;
   return entries
     .map(({ wins, presence, ...e }) => {
-      const win = (wins + prior / 2) / (e.games + prior);
       const lift = Math.max(-3, Math.min(2, Math.log2(Math.max(presence, 1e-4) / reference)));
-      const score = round3(win + PRESENCE_WEIGHT * lift);
-      return { ...e, score, tier: TIER_CUTS.find(([cut]) => score >= cut)?.[1] ?? "D" };
+      const score = tierScore(wins, e.games, roleAverage, lift);
+      return { ...e, score, tier: tierOf(score) };
     })
     .sort((a, b) => b.score - a.score);
 }
@@ -114,6 +130,8 @@ export async function tierList(
     c.patches.set(r.patch, r);
     byChampion.set(r.champion_id, c);
   }
+  const patchGames = new Map<string, number>();
+  for (const r of byPatch) patchGames.set(r.patch, (patchGames.get(r.patch) ?? 0) + r.games);
   const total = [...byChampion.values()].reduce((sum, c) => sum + c.games, 0);
   const matches = total / slotsPerGame(queue);
 
@@ -133,7 +151,7 @@ export async function tierList(
   }
 
   const entries = [...byChampion.entries()]
-    .filter(([, c]) => c.games >= sampleLimits.tierGames)
+    .filter(([, c]) => c.games >= Math.min(sampleLimits.listGames, sampleLimits.tierGames))
     .map(([championId, c]) => {
       const pickRate = c.games / matches;
       const banRate = bans ? banRateOf(bans, championId) : null;
@@ -147,6 +165,7 @@ export async function tierList(
         banRate,
         presence: pickRate + (banRate ?? 0) * roleShare,
         winRateChange: patchChange(patches, c.patches),
+        pickRateChange: pickChange(patches, c.patches, patchGames, slotsPerGame(queue)),
       };
     });
   return { patches, games: total, champions: assignTiers(entries) };
@@ -157,6 +176,12 @@ function patchChange(patches: string[], byPatch: Map<string, { games: number; wi
   return newest && previous && newest.games >= sampleLimits.tierGames && previous.games >= sampleLimits.tierGames
     ? round3(newest.wins / newest.games - previous.wins / previous.games)
     : null;
+}
+
+function pickChange(patches: string[], byPatch: Map<string, { games: number }>, patchGames: Map<string, number>, slots: number): number | null {
+  const [newest, previous] = patches.map((p) => ({ own: byPatch.get(p)?.games ?? 0, all: patchGames.get(p) ?? 0 }));
+  if (!newest || !previous || newest.own < sampleLimits.tierGames || previous.own < sampleLimits.tierGames) return null;
+  return round3(newest.own / (newest.all / slots) - previous.own / (previous.all / slots));
 }
 
 export type ChampionOverview = {
