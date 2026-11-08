@@ -976,4 +976,8 @@ export const EN: Record<string, string> = {
   "Eşleşmeyi görmek için iki farklı şampiyon ve bir rol seç.": "Choose two different champions and a role to see the matchup.",
   "{champion} için {opponent} karşısında build": "{champion} build against {opponent}",
   "Eşleşme notun": "Your matchup note",
+  "Temel istatistikler": "Base stats",
+  "{champion} ve {opponent} temel istatistikleri": "Base stats of {champion} and {opponent}",
+  "Seviye {level}": "Level {level}",
+  "{champion} · {opponent}; öndeki kalın yazılır.": "{champion} · {opponent}; the one ahead is in bold.",
 };
