@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emptyDraft, nextSlot, parseDrafts, place, sideToPick, swap } from "./store";
+import { emptyDraft, MAX_BANS, nextSlot, parseDrafts, place, sideToPick, swap, toggleBan } from "./store";
 
 describe("draft simulator", () => {
   it("keeps a champion in one slot only", () => {
@@ -30,6 +30,17 @@ describe("draft simulator", () => {
     expect(nextSlot(draft, false, { side: "red", slot: 4 })).toEqual({ side: "blue", slot: 0 });
   });
 
+  it("bans take a champion out of the teams, up to ten", () => {
+    let draft = toggleBan(place(emptyDraft(), "blue", 0, 54), 54);
+    expect(draft.blue[0]).toBe(0);
+    expect(draft.bans).toEqual([54]);
+    expect(toggleBan(draft, 54).bans).toEqual([]);
+    for (let i = 1; i <= 20; i++) draft = toggleBan(draft, 1000 + i);
+    expect(draft.bans).toHaveLength(MAX_BANS);
+    // Picking a banned champion lifts the ban.
+    expect(place(draft, "red", 0, 54).bans).not.toContain(54);
+  });
+
   it("swaps roles within a team", () => {
     const draft = swap(place(emptyDraft(), "blue", 0, 54), "blue", 0, 2);
     expect(draft.blue).toEqual([0, 0, 54, 0, 0]);
@@ -40,5 +51,6 @@ describe("draft simulator", () => {
     const [d] = parseDrafts(JSON.stringify([{ id: "a", name: "x", blue: [1, 2], red: "bad" }]));
     expect(d.blue).toEqual([1, 2, 0, 0, 0]);
     expect(d.red).toEqual([0, 0, 0, 0, 0]);
+    expect(d.bans).toEqual([]);
   });
 });

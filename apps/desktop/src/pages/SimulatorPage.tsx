@@ -11,9 +11,11 @@ import {
   emptyDraft,
   nextSlot,
   place,
+  MAX_BANS,
   ROLES,
   saveDraft,
   swap,
+  toggleBan,
   useSavedDrafts,
   type Draft,
   type SavedDraft,
@@ -26,8 +28,10 @@ import { LiquidGlass } from "../ui/LiquidGlass";
 import { ConfirmDialog, Modal } from "../ui/Modal";
 import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
+import { Tabs } from "../ui/Tabs";
 import { useToast } from "../ui/Toast";
 import { useAsync } from "../useAsync";
+import { PickSuggestions } from "../draft/PickSuggestions";
 import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
 
 const ALL = "ALL";
@@ -66,8 +70,10 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const [deleting, setDeleting] = useState<SavedDraft | null>(null);
   const [compare, setCompare] = useState<[string, string] | null>(null);
   const [compareWith, setCompareWith] = useState<string>("");
+  const [banning, setBanning] = useState(false);
 
   const picked = new Set([...draft.blue, ...draft.red].filter((id) => id > 0));
+  const unavailable = new Set([...picked, ...draft.bans]);
   const role = roleFilter === SLOT_ROLE ? (active ? ROLES[active.slot] : null) : roleFilter === ALL ? null : roleFilter;
   const needle = query.trim().toLocaleLowerCase(lang);
   const pool = [...data.champions.values()]
@@ -75,6 +81,10 @@ function Simulator({ data }: { data: ChampionRoles }) {
     .sort((a, b) => a.name.localeCompare(b.name, lang));
 
   function choose(championId: number) {
+    if (banning) {
+      setDraft(toggleBan(draft, championId));
+      return;
+    }
     if (!active) return;
     let slot = active.slot;
     if (!active.explicit) {
@@ -94,7 +104,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
   }
 
   function load(d: SavedDraft) {
-    setDraft({ blue: [...d.blue], red: [...d.red] });
+    setDraft({ blue: [...d.blue], red: [...d.red], bans: [...d.bans] });
     setName(d.name);
     setCurrentId(d.id);
     setActive(nextSlot(d, pickOrder, { side: "blue", slot: 0 }));
@@ -143,6 +153,16 @@ function Simulator({ data }: { data: ChampionRoles }) {
               : t("İki takım da dolu. Değiştirmek için bir yere tıkla.")}
           </p>
           <div className="sim__picker-filters">
+            <Tabs
+              label={t("Ne seçiliyor")}
+              size="small"
+              items={[
+                { id: "pick", label: t("Seçim") },
+                { id: "ban", label: t("Yasak {count}/{max}", { count: draft.bans.length, max: MAX_BANS }) },
+              ]}
+              value={banning ? "ban" : "pick"}
+              onChange={(id) => setBanning(id === "ban")}
+            />
             <SearchInput label={t("Şampiyon ara")} value={query} onChange={setQuery} placeholder={t("Şampiyon ara")} />
             <Select
               label={t("Rol")}
@@ -156,10 +176,51 @@ function Simulator({ data }: { data: ChampionRoles }) {
               onChange={setRoleFilter}
             />
           </div>
+          {!banning && active && (
+            <div className="sim__suggest">
+              <h3 className="draft__heading">{t("{role} için öneriler", { role: t(POSITIONS[ROLES[active.slot]]) })}</h3>
+              <PickSuggestions
+                role={ROLES[active.slot]}
+                opponentId={draft[active.side === "blue" ? "red" : "blue"][active.slot] || null}
+                allies={draft[active.side].filter((id, i) => id > 0 && i !== active.slot).map((id) => data.champions.get(id)).filter((c): c is Champion => c !== undefined)}
+                unavailable={unavailable}
+                champions={data.champions}
+                version={data.version}
+                onPick={(id) => {
+                  const slot = active.slot;
+                  const next = place(draft, active.side, slot, id);
+                  setDraft(next);
+                  setActive(nextSlot(next, pickOrder, active));
+                }}
+                limit={4}
+              />
+            </div>
+          )}
+          {draft.bans.length > 0 && (
+            <ul className="sim__bans" aria-label={t("Yasaklar")}>
+              {draft.bans.map((id) => {
+                const c = data.champions.get(id);
+                return c ? (
+                  <li key={id}>
+                    <button type="button" title={t("{champion} yasağını kaldır", { champion: c.name })} aria-label={t("{champion} yasağını kaldır", { champion: c.name })} onClick={() => setDraft(toggleBan(draft, id))}>
+                      <img src={championIconUrl(data.version, c.id)} alt="" width={28} height={28} />
+                    </button>
+                  </li>
+                ) : null;
+              })}
+            </ul>
+          )}
           <ul className="sim__grid">
             {pool.map((c) => (
               <li key={c.key}>
-                <button type="button" disabled={!active || picked.has(c.key)} title={c.name} aria-label={c.name} onClick={() => choose(c.key)}>
+                <button
+                  type="button"
+                  disabled={banning ? picked.has(c.key) || (draft.bans.length >= MAX_BANS && !draft.bans.includes(c.key)) : !active || unavailable.has(c.key)}
+                  aria-pressed={banning ? draft.bans.includes(c.key) : undefined}
+                  title={c.name}
+                  aria-label={c.name}
+                  onClick={() => choose(c.key)}
+                >
                   <img src={championIconUrl(data.version, c.id)} alt="" width={44} height={44} loading="lazy" />
                 </button>
               </li>

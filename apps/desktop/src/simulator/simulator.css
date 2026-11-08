@@ -233,3 +233,41 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.sim__bans {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.sim__bans button {
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  cursor: pointer;
+}
+
+.sim__bans img {
+  display: block;
+  border-radius: 7px;
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+
+.sim__bans button:hover img {
+  filter: none;
+  opacity: 1;
+}
+
+.sim__grid button[aria-pressed="true"] img {
+  filter: grayscale(1);
+  outline: 2px solid var(--bole);
+}
+
+.sim__suggest {
+  margin-bottom: var(--space-3);
+}

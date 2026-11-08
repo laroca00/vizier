@@ -129,6 +129,18 @@
   border-radius: 10px;
 }
 
+.picks__pick {
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+}
+
+.picks__pick:hover {
+  box-shadow: 0 0 0 2px var(--gilt);
+}
+
 .picks__name {
   margin: 0 0 4px;
   font-size: var(--text-lead);

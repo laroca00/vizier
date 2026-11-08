@@ -27,10 +27,14 @@ type Props = {
   unavailable: Set<number>;
   champions: Map<number, Champion>;
   version: string;
+  /** Makes each row a button, as in the draft simulator. */
+  onPick?: (championId: number) => void;
+  /** Fewer rows where space is tight. */
+  limit?: number;
 };
 
 /** Picks for the player's role from the meta, the lane opponent and what the team lacks. */
-export function PickSuggestions({ role, opponentId, allies, unavailable, champions, version }: Props) {
+export function PickSuggestions({ role, opponentId, allies, unavailable, champions, version, onPick, limit }: Props) {
   const t = useT();
   const lang = useLang();
   const [tiers] = useAsync(`tiers:${role}`, () => getTierList(role));
@@ -46,7 +50,7 @@ export function PickSuggestions({ role, opponentId, allies, unavailable, champio
     allies,
     champions,
     unavailable,
-  });
+  }).slice(0, limit);
   if (picks.length === 0) return <p className="draft__empty">{t("Şu an öne çıkan bir seçim yok.")}</p>;
 
   // A gap every pick fills is said once above the list instead of on every row.
@@ -78,8 +82,14 @@ export function PickSuggestions({ role, opponentId, allies, unavailable, champio
           const champion = champions.get(pick.championId);
           if (!champion) return null;
           return (
-            <li key={pick.championId} className="picks__row">
-              <img src={championIconUrl(version, champion.id)} alt="" width={40} height={40} />
+            <li key={pick.championId} className="picks__row" data-pickable={onPick ? true : undefined}>
+              {onPick ? (
+                <button type="button" className="picks__pick" aria-label={t("{champion} seç", { champion: champion.name })} onClick={() => onPick(pick.championId)}>
+                  <img src={championIconUrl(version, champion.id)} alt="" width={40} height={40} />
+                </button>
+              ) : (
+                <img src={championIconUrl(version, champion.id)} alt="" width={40} height={40} />
+              )}
               <div className="picks__body">
                 <p className="picks__name">{champion.name}</p>
                 <ul className="picks__reasons">

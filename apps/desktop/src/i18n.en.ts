@@ -754,4 +754,9 @@ export const EN: Record<string, string> = {
   "Şampiyon adı yaz": "Type a champion name",
   "Şampiyon bilmecesi": "Champion riddle",
   "Şampiyon tahmin et": "Guess a champion",
+  "Ne seçiliyor": "What you're choosing",
+  "Seçim": "Pick",
+  "Yasak {count}/{max}": "Ban {count}/{max}",
+  "{champion} yasağını kaldır": "Lift the ban on {champion}",
+  "{champion} seç": "Pick {champion}",
 };

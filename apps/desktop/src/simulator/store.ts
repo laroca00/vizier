@@ -7,11 +7,13 @@ export const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"] as const;
 export type Side = "blue" | "red";
 /** One champion per role slot; 0 while empty. */
 export type Team = number[];
-export type Draft = { blue: Team; red: Team };
+/** Bans are one list of up to ten; which side banned what doesn't change the analysis. */
+export type Draft = { blue: Team; red: Team; bans: number[] };
+export const MAX_BANS = 10;
 export type SavedDraft = Draft & { id: string; name: string; createdAt: number; updatedAt: number };
 
 export const emptyTeam = (): Team => ROLES.map(() => 0);
-export const emptyDraft = (): Draft => ({ blue: emptyTeam(), red: emptyTeam() });
+export const emptyDraft = (): Draft => ({ blue: emptyTeam(), red: emptyTeam(), bans: [] });
 
 /** Whose pick it is in ranked: B1, R1, R2, B2, B3, R3, R4, B4, B5, R5. */
 export const PICK_ORDER: Side[] = ["blue", "red", "red", "blue", "blue", "red", "red", "blue", "blue", "red"];
@@ -19,7 +21,7 @@ export const PICK_ORDER: Side[] = ["blue", "red", "red", "blue", "blue", "red", 
 /** Puts a champion in a slot; a champion is in a draft once, so it leaves any other slot. */
 export function place(draft: Draft, side: Side, slot: number, championId: number): Draft {
   const clear = (team: Team) => team.map((id) => (id === championId ? 0 : id));
-  const next = { blue: clear(draft.blue), red: clear(draft.red) };
+  const next = { blue: clear(draft.blue), red: clear(draft.red), bans: draft.bans.filter((id) => id !== championId) };
   next[side] = next[side].map((id, i) => (i === slot ? championId : id));
   return next;
 }
@@ -49,6 +51,14 @@ export function nextSlot(draft: Draft, usePickOrder: boolean, from: { side: Side
   return null;
 }
 
+/** Adds a ban, or lifts it if it's already there; a banned champion leaves the teams. */
+export function toggleBan(draft: Draft, championId: number): Draft {
+  if (draft.bans.includes(championId)) return { ...draft, bans: draft.bans.filter((id) => id !== championId) };
+  if (draft.bans.length >= MAX_BANS) return draft;
+  const clear = (team: Team) => team.map((id) => (id === championId ? 0 : id));
+  return { blue: clear(draft.blue), red: clear(draft.red), bans: [...draft.bans, championId] };
+}
+
 /** Swaps the champions of two slots on one side, for fixing roles. */
 export function swap(draft: Draft, side: Side, a: number, b: number): Draft {
   const team = [...draft[side]];
@@ -69,7 +79,16 @@ export function parseDrafts(raw: string | null): SavedDraft[] {
     const list = JSON.parse(raw ?? "[]");
     return (Array.isArray(list) ? list : [])
       .filter((d) => d && typeof d.id === "string")
-      .map((d) => ({ id: d.id, name: String(d.name ?? ""), blue: team(d.blue), red: team(d.red), createdAt: Number(d.createdAt) || 0, updatedAt: Number(d.updatedAt) || 0 }));
+      .map((d) => ({
+        id: d.id,
+        name: String(d.name ?? ""),
+        blue: team(d.blue),
+        red: team(d.red),
+        // Drafts saved before bans existed have none.
+        bans: Array.isArray(d.bans) ? d.bans.filter((n: unknown): n is number => typeof n === "number").slice(0, MAX_BANS) : [],
+        createdAt: Number(d.createdAt) || 0,
+        updatedAt: Number(d.updatedAt) || 0,
+      }));
   } catch {
     return [];
   }
@@ -127,7 +146,7 @@ export function saveDraft(draft: Draft, name: string, id: string | null, now = D
 
 export function duplicateDraft(id: string, copyName: (name: string) => string): string | null {
   const source = current.find((d) => d.id === id);
-  return source ? saveDraft({ blue: [...source.blue], red: [...source.red] }, copyName(source.name), null) : null;
+  return source ? saveDraft({ blue: [...source.blue], red: [...source.red], bans: [...source.bans] }, copyName(source.name), null) : null;
 }
 
 export function deleteDraft(id: string) {
