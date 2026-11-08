@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ProBuild, TierEntry } from "../api";
 import type { Champion } from "../data/ddragon";
 import type { ChampSelect, DraftMember } from "../lcu";
-import { autoView, matchupLine, duoPartnerRole, difficultyOf, guessOpponent, matchupItems, rankProBuilds, suggestPicks, teamNeeds, type RoleShares } from "./logic";
+import { autoView, hasBench, matchupLine, duoPartnerRole, difficultyOf, guessOpponent, matchupItems, rankProBuilds, suggestPicks, teamNeeds, type RoleShares } from "./logic";
 
 function champion(key: number, id: string, tags: string[], info: Partial<Champion["info"]> = {}): Champion {
   const full = { attack: 5, defense: 5, magic: 5, difficulty: 5, ...info };
@@ -229,5 +229,17 @@ describe("matchupLine", () => {
   it("ignores thin and missing matchups", () => {
     expect(matchupLine(counters, 2)).toBeNull();
     expect(matchupLine(counters, 3)).toBeNull();
+  });
+});
+
+describe("hasBench", () => {
+  it("is true once the session lists a bench or rerolls", () => {
+    expect(hasBench(draft({ bench: [103] }))).toBe(true);
+    expect(hasBench(draft({ rerollsRemaining: 1 }))).toBe(true);
+  });
+
+  it("is false for sessions without one", () => {
+    expect(hasBench(draft({}))).toBe(false);
+    expect(hasBench(draft({ bench: [], rerollsRemaining: 0 }))).toBe(false);
   });
 });

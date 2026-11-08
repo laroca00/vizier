@@ -941,4 +941,11 @@ export const EN: Record<string, string> = {
   "{champion} - {opponent}: {rate} kazanma, {games} maç. {difficulty}": "{champion} vs {opponent}: {rate} win rate, {games} games. {difficulty}",
   "{champion} - {opponent}: yeterli maç yok.": "{champion} vs {opponent}: not enough games.",
   "(rakip tahmini)": "(guessed opponent)",
+  "Senin": "Yours",
+  "Sırada": "On the bench",
+  "Takım arkadaşı": "Teammate",
+  "Sıra ve takım": "Bench and team",
+  "ARAM: {rate} kazanma, {games} maç": "ARAM: {rate} win rate, {games} games",
+  "ARAM: yeterli maç yok ({games} maç)": "ARAM: not enough games ({games} games)",
+  "Sıradan bunu al": "Take this from the bench",
 };

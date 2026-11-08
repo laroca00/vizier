@@ -247,3 +247,8 @@ export function matchupLine(
   if (!m || m.games < MIN_LINE_GAMES) return null;
   return { winRate: m.winRate, games: m.games, difficulty: difficultyOf(m.winRate) };
 }
+
+/** ARAM and Mayhem hand out a shared bench; other queues never have one. */
+export function hasBench(draft: ChampSelect): boolean {
+  return (draft.bench?.length ?? 0) > 0 || (draft.rerollsRemaining ?? 0) > 0;
+}

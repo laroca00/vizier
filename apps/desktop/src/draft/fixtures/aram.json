@@ -117,7 +117,13 @@
     "bans": [],
     "phase": "BAN_PICK",
     "turn": null,
-    "phaseEndsAt": 30000
+    "phaseEndsAt": 30000,
+    "bench": [
+      157,
+      117,
+      25
+    ],
+    "rerollsRemaining": 2
   },
   {
     "myTeam": [
@@ -237,6 +243,12 @@
     "bans": [],
     "phase": "FINALIZATION",
     "turn": null,
-    "phaseEndsAt": 30000
+    "phaseEndsAt": 30000,
+    "bench": [
+      157,
+      117,
+      25
+    ],
+    "rerollsRemaining": 2
   }
 ]

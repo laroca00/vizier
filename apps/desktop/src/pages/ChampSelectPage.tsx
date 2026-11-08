@@ -13,9 +13,10 @@ import {
   type SummonerSpell,
 } from "../data/ddragon";
 import { checkRole } from "../draft/allyRole";
+import { BenchHelper } from "../draft/BenchHelper";
 import { HoverMatchup } from "../draft/HoverMatchup";
 import { BanPlanner } from "../draft/BanPlanner";
-import { autoView, duoPartnerRole, shownChampion, type DraftView } from "../draft/logic";
+import { autoView, duoPartnerRole, hasBench, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";
 import { ThreatsPanel } from "../draft/ThreatsPanel";
@@ -123,6 +124,15 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
         <section key={view} className="draft__main draft__view" aria-label={view === "draft" ? t("Draft") : t("Build")}>
           {view === "draft" ? (
             <>
+              {ready && hasBench(draft) && (
+                <BenchHelper
+                  current={myChampion}
+                  bench={draft.bench ?? []}
+                  allies={draft.myTeam.filter((m) => !m.isLocal).map(shownChampion)}
+                  champions={ready.champions}
+                  version={ready.version}
+                />
+              )}
               {role && !locked && ready && myChampion > 0 && vs && ready.champions.get(myChampion) && ready.champions.get(vs) && (
                 <HoverMatchup
                   champion={ready.champions.get(myChampion)!}
