@@ -13,6 +13,7 @@ import {
   type SummonerSpell,
 } from "../data/ddragon";
 import { checkRole } from "../draft/allyRole";
+import { HoverMatchup } from "../draft/HoverMatchup";
 import { BanPlanner } from "../draft/BanPlanner";
 import { autoView, duoPartnerRole, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
@@ -122,6 +123,15 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
         <section key={view} className="draft__main draft__view" aria-label={view === "draft" ? t("Draft") : t("Build")}>
           {view === "draft" ? (
             <>
+              {role && !locked && ready && myChampion > 0 && vs && ready.champions.get(myChampion) && ready.champions.get(vs) && (
+                <HoverMatchup
+                  champion={ready.champions.get(myChampion)!}
+                  role={role}
+                  opponent={ready.champions.get(vs)!}
+                  guessed={opponent?.guessed ?? false}
+                  version={ready.version}
+                />
+              )}
               {role && !locked && ready && (
                 <>
                   <h2 className="draft__heading">{t("{role} için öneriler", { role: positionLabel(role, lang) ?? "" })}</h2>

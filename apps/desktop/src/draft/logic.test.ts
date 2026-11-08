@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ProBuild, TierEntry } from "../api";
 import type { Champion } from "../data/ddragon";
 import type { ChampSelect, DraftMember } from "../lcu";
-import { autoView, duoPartnerRole, difficultyOf, guessOpponent, matchupItems, rankProBuilds, suggestPicks, teamNeeds, type RoleShares } from "./logic";
+import { autoView, matchupLine, duoPartnerRole, difficultyOf, guessOpponent, matchupItems, rankProBuilds, suggestPicks, teamNeeds, type RoleShares } from "./logic";
 
 function champion(key: number, id: string, tags: string[], info: Partial<Champion["info"]> = {}): Champion {
   const full = { attack: 5, defense: 5, magic: 5, difficulty: 5, ...info };
@@ -216,5 +216,18 @@ describe("duoPartnerRole", () => {
     expect(duoPartnerRole("TOP")).toBeNull();
     expect(duoPartnerRole("")).toBeNull();
     expect(duoPartnerRole(undefined)).toBeNull();
+  });
+});
+
+describe("matchupLine", () => {
+  const counters = { matchups: [{ championId: 1, games: 120, winRate: 0.45 }, { championId: 2, games: 10, winRate: 0.7 }] };
+
+  it("reads the win rate, games and difficulty", () => {
+    expect(matchupLine(counters, 1)).toEqual({ winRate: 0.45, games: 120, difficulty: "hard" });
+  });
+
+  it("ignores thin and missing matchups", () => {
+    expect(matchupLine(counters, 2)).toBeNull();
+    expect(matchupLine(counters, 3)).toBeNull();
   });
 });

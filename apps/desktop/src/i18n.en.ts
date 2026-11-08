@@ -938,4 +938,7 @@ export const EN: Record<string, string> = {
   "{role} rolünde nadir oynanıyor": "Rarely played in {role}",
   "Rol dışı": "Off role",
   "Birlikte {rate}, {games} maç": "Together {rate}, {games} games",
+  "{champion} - {opponent}: {rate} kazanma, {games} maç. {difficulty}": "{champion} vs {opponent}: {rate} win rate, {games} games. {difficulty}",
+  "{champion} - {opponent}: yeterli maç yok.": "{champion} vs {opponent}: not enough games.",
+  "(rakip tahmini)": "(guessed opponent)",
 };

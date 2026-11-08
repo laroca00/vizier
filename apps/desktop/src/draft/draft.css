@@ -531,3 +531,27 @@
   font-weight: 400;
   opacity: 0.7;
 }
+
+.hover-matchup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.06);
+}
+
+.hover-matchup p {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+}
+
+.hover-matchup[data-difficulty="hard"] {
+  box-shadow: inset 3px 0 0 var(--data-loss);
+}
+
+.hover-matchup__guess {
+  opacity: 0.6;
+}
