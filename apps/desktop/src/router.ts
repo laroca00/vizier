@@ -9,6 +9,7 @@ export type Route =
   | { page: "draft" }
   | { page: "tiers"; view?: TierView }
   | { page: "pros" }
+  | { page: "pro"; player: string }
   | { page: "builds" }
   | { page: "champions" }
   | { page: "simulator" }
@@ -29,6 +30,7 @@ export type Page = Route["page"];
 /** The route a menu entry opens; pages that carry choices start empty. */
 export function pageRoute(page: Page): Route {
   if (page === "matchup") return { page, championId: null, opponentId: null, position: "MIDDLE" };
+  if (page === "pro") return { page, player: "" };
   if (page === "champion") return { page, championId: 0, position: null, queue: 420 };
   return { page };
 }

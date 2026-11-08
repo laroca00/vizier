@@ -24,6 +24,7 @@ import { useAsync } from "./useAsync";
 import { fromPro } from "./library/convert";
 import { createBuild } from "./library/store";
 import { useToast } from "./ui/Toast";
+import { useOpenPro } from "./proLink";
 import { toggleFollow, usePersonal } from "./personal";
 import { Button } from "./ui/Button";
 import { ErrorState } from "./ui/States";
@@ -123,6 +124,7 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: ProStatic; co
   const [open, setOpen] = useState(false);
   const following = usePersonal().followed.includes(build.player);
   const toast = useToast();
+  const openPro = useOpenPro();
   const champion = data.champions.get(build.championId);
   const opponent = build.opponentChampionId ? data.champions.get(build.opponentChampionId) : undefined;
   const keystone = data.runes.get(parseRunes(build.runes).selectedPerkIds[0]);
@@ -142,7 +144,9 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: ProStatic; co
     <li className="pros__row" data-result={build.win ? "win" : "loss"}>
       <span className="pros__who">
         <span className="pros__player">
-          {build.player}
+          <button type="button" className="pros__name" onClick={() => openPro(build.player)}>
+            {build.player}
+          </button>
           <button
             type="button"
             className="pros__follow"
