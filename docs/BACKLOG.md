@@ -7,6 +7,7 @@ Product scope: prepare, explore, customize. No post-game analysis, coaching or p
 ## How to work through this file
 
 - Epics are in priority order. Inside an epic, slices are in order.
+- **Who takes which epic (owner's split, 2026-11-08):** 12.6, 13.6 and epic 14 are built in the owner's local sessions; the cloud routine takes epics 15 and 16 only and skips the others, so the two never build the same slice. Epic 0 is done.
 - **One run is one job: the next 4–5 unchecked slices of the highest epic that isn't blocked**, built together as one feature on one branch (`auto/<epic>-<topic>`), one commit per slice. If the epic has fewer slices left, take the rest of it plus the start of the next epic. Don't stop after a single slice; a run should be long, finishing the whole job, and then start the next job if time is left.
 - Merge the branch into main when the whole job is done and green. If time runs out mid-job, merge the slices that are finished and green, and leave a `<!-- in progress: ... -->` line under the next slice saying where you stopped.
 - Mark each slice `[x]` with the merge commit hash when it lands, e.g. `- [x] 3.2 ... (a1b2c3d)`. (949d3b2; the rollup pairs Arena players by subteam, docs `duos:1700:<champion>`, route `/v1/arena/duos/:championId`)
@@ -21,6 +22,17 @@ Product scope: prepare, explore, customize. No post-game analysis, coaching or p
 - Anything that needs a Worker deploy, a remote D1 migration or a VM restart must stay backward compatible; add the step to "Owner deploy queue" at the bottom instead of running it.
 
 ---
+
+## 0. Augments 2.0
+
+Owner's priority on 2026-11-08: augment stats that answer "which augment on which champion", in the app and in game.
+
+- [x] 0.1 Augment ratings by lift: each augment is tiered by how far it moves a champion above that champion's own rate (`delta` on every augment row), so a strong champion's list isn't all S. Same doc keys, extra field.
+- [x] 0.2 Champions per augment: crawler doc `augmentchamps:<queue>` with the ten champions each augment lifts most; route `/v1/augments/champions?queue=` behind the `AUGMENTS` switch.
+- [x] 0.3 Augments page: sortable columns (tier, name, pick rate, win rate, games), a "best on" column with champion icons that opens the full list, and the lift shown when a champion is picked.
+- [x] 0.4 Champion augment tier board: on the champion page in Arena and Mayhem, every augment in S–D rows with a rarity filter, win rate, lift and games.
+- [x] 0.5 In-game augment card: in Arena (`CHERRY`) and Mayhem (`KIWI`) the overlay shows the champion's best four augments per rarity; setting "Augment önerisi", on by default. `?fixture=arena` previews it in dev.
+- [x] 0.6 ARAM Mayhem (Şamata in the Turkish client) is live: the crawler asks queues 2400, 2401, 2403 and 2405 and stores them all as 2400. `services/crawler/src/probeQueues.ts` prints which queue ids have games.
 
 ## 1. Champ select: smarter preparation
 
@@ -198,4 +210,7 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 - Release a desktop version to ship the Journal, item and rune explorers, pool export, ready check alert and share codes v2 (the new window permission needs a rebuild).
 - Deploy the Worker for `/v1/pros/meta` (the Pro meta tab shows an empty list until then) and release a desktop version to ship the pro player page.
 - Release a desktop version to ship the simulator changes (load champ select, codes, undo, analysis, keyboard flow).
+- Augments 2.0 and Şamata: deploy the Worker, then pull and restart the crawler. Augment rows gain `delta`, the `augmentchamps:<queue>` docs appear after the next publish, and Mayhem games start to arrive. Older apps keep working.
+- Run the queue probe on the VM once to see which Mayhem queue id is live (README, "Finding a mode's live queue"), then trim `MAYHEM_QUEUES` to it.
+- Release a desktop version to ship the augment tier board, the reworked augments page, the in-game augment card and the Şamata name.
 - Optional: set `ARENA_ITEMS=off` on the Worker to hide Arena item stats; they are on by default.
