@@ -45,14 +45,14 @@ ARAM players get almost nothing from current tools. Make Vizier the best ARAM he
 - [x] 2.1 LCU: read the ARAM bench (`benchChampions` in the champ select session) and the player's reroll count in the Rust champ select state; expose them to the frontend. Rust tests with a recorded session. (74f7224)
 - [x] 2.2 Bench helper: rank the player's current champion, the bench and teammates' champions by ARAM win rate (queue 450) with game counts, and highlight "take this from the bench" when a bench champion is clearly better. (74f7224)
 - [x] 2.3 Reroll advice: when the current champion is in the bottom part of the ARAM tier list and rerolls are left, say so. (74f7224)
-- [ ] 2.4 ARAM team composition: the same composition analysis tuned for ARAM (poke and sustain matter more, split push doesn't), with one line on the team's plan.
-- [ ] 2.5 ARAM builds in champ select: when the queue is ARAM or Mayhem, the build tab uses the queue's build docs and imports the ARAM item set.
-- [ ] 2.6 Mayhem augments in champ select: the champion's best augments for Mayhem (from the existing augment docs; respects the `AUGMENTS` switch), shown as a short pick order.
-- [ ] 2.7 ARAM tier list page tab with its own sorting by win rate and pick rate.
+- [x] 2.4 ARAM team composition: the same composition analysis tuned for ARAM (poke and sustain matter more, split push doesn't), with one line on the team's plan. (54179bf)
+- [x] 2.5 ARAM builds in champ select: when the queue is ARAM or Mayhem, the build tab uses the queue's build docs and imports the ARAM item set. (54179bf)
+- [x] 2.6 Mayhem augments in champ select: the champion's best augments for Mayhem (from the existing augment docs; respects the `AUGMENTS` switch), shown as a short pick order. (54179bf)
+- [x] 2.7 ARAM tier list page tab with its own sorting by win rate and pick rate. (54179bf)
 
 ## 3. Arena companion
 
-- [ ] 3.1 Arena champion page: best augments per champion (existing data), best items once available, and the champion's Arena win rate.
+- [x] 3.1 Arena champion page: best augments per champion (existing data), best items once available, and the champion's Arena win rate. (54179bf; augments and the Arena rate were already on the page, the item list follows with 3.4)
 - [ ] 3.2 Arena duo helper: in Arena champ select, show the partner's champion and suggest picks that pair well (from Arena games where both champions were on the same team; needs a crawler rollup of duo pairs for queue 1700, backward compatible).
 - [ ] 3.3 Arena augment tier list page with filters by rarity tier (silver, gold, prismatic) and by champion class.
 - [ ] 3.4 Arena items: crawler rollup of item win rates for queue 1700 (same `AUGMENTS`-style switch, named `ARENA_ITEMS`, default on), then the item list on the Arena champion page.
