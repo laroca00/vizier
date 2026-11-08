@@ -2,9 +2,9 @@ import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { useState } from "react";
 import { getChampion, getCounters, getSynergies, type ChampionOverview, type Counters } from "../api";
 import { BuildSuggestion } from "../BuildSuggestion";
-import { Abilities, StrengthsWeaknesses } from "../ChampionGuide";
+import { Abilities, ChampionReference, ChampionTitle, StrengthsWeaknesses } from "../ChampionGuide";
 import { JournalNote, MatchupNotes } from "../Journal";
-import { championNoteKey, inPool, togglePool, usePersonal } from "../personal";
+import { championNoteKey, inPool, toggleFavouriteChampion, togglePool, usePersonal } from "../personal";
 import { ProBuildList } from "../ProBuildList";
 import { championIconUrl, champions, latestVersion, roleIconUrl, type Champion } from "../data/ddragon";
 import { POSITIONS } from "../labels";
@@ -61,6 +61,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
         {champion && version && <img className="champion__portrait" src={championIconUrl(version, champion.id)} alt="" width={64} height={64} />}
         <div>
           <h1 className="champion__name">{champion?.name ?? t("Şampiyon")}</h1>
+          {champion && <ChampionTitle champion={champion} />}
           {state.status === "done" && state.value && (
             <p className="detail__meta">
               {t("Yama {patch}, Emerald+ {scope}, {games} maç", {
@@ -74,6 +75,14 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
         <button
           type="button"
           className="star champion__star"
+          aria-pressed={personal.favourites.includes(championId)}
+          onClick={() => toggleFavouriteChampion(championId)}
+        >
+          {personal.favourites.includes(championId) ? t("Favorilerde") : t("Favorilere ekle")}
+        </button>
+        <button
+          type="button"
+          className="star"
           aria-pressed={pooled}
           onClick={() => togglePool(championId, state.status === "done" ? (state.value?.position ?? position) : position)}
         >
@@ -115,6 +124,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           </section>
           <div>
             <StrengthsWeaknesses champion={champion} />
+            <ChampionReference champion={champion} />
             <JournalNote noteKey={championNoteKey(championId)} label={t("{champion} notların", { champion: champion.name })} />
             {data.status === "done" && <MatchupNotes championId={championId} champions={data.value.champions} version={version} />}
           </div>

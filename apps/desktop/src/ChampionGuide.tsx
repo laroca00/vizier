@@ -115,3 +115,62 @@ export function EnemyTips({ enemies }: { enemies: Champion[] }) {
     </>
   );
 }
+
+const STAT_ROWS: { label: string; base: string; perLevel?: string; format?: (n: number) => string }[] = [
+  { label: "Can", base: "hp", perLevel: "hpperlevel" },
+  { label: "Can yenilenmesi", base: "hpregen", perLevel: "hpregenperlevel" },
+  { label: "Kaynak", base: "mp", perLevel: "mpperlevel" },
+  { label: "Saldırı gücü", base: "attackdamage", perLevel: "attackdamageperlevel" },
+  { label: "Saldırı hızı", base: "attackspeed", perLevel: "attackspeedperlevel", format: (n) => n.toFixed(3) },
+  { label: "Zırh", base: "armor", perLevel: "armorperlevel" },
+  { label: "Büyü direnci", base: "spellblock", perLevel: "spellblockperlevel" },
+  { label: "Saldırı menzili", base: "attackrange" },
+  { label: "Hareket hızı", base: "movespeed" },
+];
+
+const trim = (n: number) => String(Math.round(n * 100) / 100);
+
+/** Title, lore and level-one stats from Data Dragon, with growth per level. */
+export function ChampionReference({ champion }: { champion: Champion }) {
+  const t = useT();
+  const lang = useLang();
+  const [state] = useAsync(`detail:${lang}:${champion.id}`, () => championDetail(champion.id, lang));
+  if (state.status !== "done") return null;
+  const { lore, stats, resource } = state.value;
+  const rows = STAT_ROWS.filter((row) => (stats[row.base] ?? 0) > 0);
+  return (
+    <div className="champion__lore-stats">
+      {lore && (
+        <section aria-label={t("Hikaye")}>
+          <h2 className="draft__heading">{t("Hikaye")}</h2>
+          <p className="champion__lore">{lore}</p>
+        </section>
+      )}
+      <section aria-label={t("Temel değerler")}>
+        <h2 className="draft__heading">{t("Temel değerler")}</h2>
+        <table className="base-stats">
+          <tbody>
+            {rows.map((row) => {
+              const format = row.format ?? trim;
+              const growth = row.perLevel ? (stats[row.perLevel] ?? 0) : 0;
+              return (
+                <tr key={row.base}>
+                  <th scope="row">{row.base === "mp" && resource ? resource : t(row.label)}</th>
+                  <td>{format(stats[row.base])}</td>
+                  <td className="base-stats__growth">{growth ? t("seviye başına +{value}", { value: row.base === "attackspeed" ? `${trim(growth)}%` : trim(growth) }) : ""}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  );
+}
+
+/** "the Nine-Tailed Fox", in the UI language. */
+export function ChampionTitle({ champion }: { champion: Champion }) {
+  const lang = useLang();
+  const [state] = useAsync(`detail:${lang}:${champion.id}`, () => championDetail(champion.id, lang));
+  return state.status === "done" && state.value.title ? <p className="champion__title">{state.value.title}</p> : null;
+}

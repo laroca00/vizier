@@ -1238,27 +1238,6 @@
   margin: 0;
 }
 
-.pool {
-  display: grid;
-  gap: 6px;
-  margin: 10px 0 0;
-  padding: 0;
-  list-style: none;
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
-}
-
-.pool li {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto 3.4rem 4.6rem;
-  align-items: center;
-  column-gap: 10px;
-}
-
-.pool img {
-  border-radius: 7px;
-}
-
 /* Champion art behind the page, faded out where the text sits. */
 .splash {
   position: absolute;

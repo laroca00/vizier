@@ -1,0 +1,166 @@
+/* Champions list, pool manager and the champion page's reference block. */
+
+.champions__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.champions__card {
+  position: relative;
+}
+
+.champions__open {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: var(--space-3) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-item);
+  font: inherit;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+}
+
+.champions__open:hover {
+  background: var(--hover);
+}
+
+.champions__open img {
+  display: block;
+  border-radius: 14px;
+}
+
+.champions__name {
+  font-size: var(--text-small);
+  text-align: center;
+}
+
+.champions__meta {
+  font-size: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze-muted);
+}
+
+.champions__fav {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  color: var(--glaze-faint);
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--duration-quick) var(--ease);
+}
+
+.champions__card:hover .champions__fav,
+.champions__fav:focus-visible,
+.champions__fav[aria-pressed="true"] {
+  opacity: 1;
+}
+
+.champions__fav path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.champions__fav[aria-pressed="true"] {
+  color: var(--gilt);
+}
+
+.champions__fav[aria-pressed="true"] path {
+  fill: currentColor;
+}
+
+.pool {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-3);
+}
+
+.pool__list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pool__row {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 6px var(--space-2);
+  border-radius: var(--radius-item);
+}
+
+.pool__row[data-rank="main"] {
+  box-shadow: inset 2px 0 0 var(--gilt);
+}
+
+.pool__note {
+  width: 100%;
+}
+
+.champion__title {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--glaze-muted);
+}
+
+.champion__lore-stats {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.champion__lore {
+  margin: 0;
+  max-width: 70ch;
+  font-size: var(--text-small);
+  font-weight: 350;
+  line-height: 1.6;
+  color: var(--glaze-muted);
+}
+
+.base-stats {
+  border-collapse: collapse;
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.base-stats th {
+  padding: 3px var(--space-4) 3px 0;
+  font-weight: 350;
+  text-align: left;
+  color: var(--glaze-muted);
+}
+
+.base-stats td {
+  padding: 3px var(--space-3) 3px 0;
+}
+
+.base-stats__growth {
+  color: var(--glaze-muted);
+}
+
+@media (max-width: 900px) {
+  .pool__row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}

@@ -9,6 +9,7 @@ import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { OverlayPage } from "./pages/OverlayPage";
 import { BuildsPage } from "./pages/BuildsPage";
+import { ChampionsPage } from "./pages/ChampionsPage";
 import { ProsPage } from "./pages/ProsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TierListPage } from "./pages/TierListPage";
@@ -36,14 +37,15 @@ const LABELS: Record<Page, string> = {
   tiers: "Tier listesi",
   pros: "Pro build'ler",
   builds: "Build kütüphanesi",
-  champion: "Tier listesi",
+  champions: "Şampiyonlar",
+  champion: "Şampiyonlar",
   overlay: "Overlay",
   settings: "Ayarlar",
   about: "Hakkında",
 };
 
-/** The menu entry a page belongs to; a champion page sits under the tier list. */
-const SECTION: Record<Page, Page> = { ...Object.fromEntries(Object.keys(LABELS).map((p) => [p, p])), champion: "tiers" } as Record<Page, Page>;
+/** The menu entry a page belongs to; a champion page sits under the champion list. */
+const SECTION: Record<Page, Page> = { ...Object.fromEntries(Object.keys(LABELS).map((p) => [p, p])), champion: "champions" } as Record<Page, Page>;
 
 function useChampionName(id: number | null) {
   const [name, setName] = useState<string | null>(null);
@@ -163,6 +165,7 @@ function App() {
     {
       heading: "Keşfet",
       items: [
+        { id: "champions", label: "Şampiyonlar", icon: "champions" },
         { id: "tiers", label: "Tier listesi", icon: "tiers" },
         { id: "builds", label: "Build kütüphanesi", icon: "library" },
         { id: "pros", label: "Pro build'ler", icon: "pros" },
@@ -177,7 +180,7 @@ function App() {
   const championName = useChampionName(route.page === "champion" ? route.championId : null);
 
   // Where the page sits, read left to right in the top bar.
-  const crumbs: string[] = route.page === "champion" ? [t("Tier listesi"), championName ?? ""] : [t(LABELS[route.page])];
+  const crumbs: string[] = route.page === "champion" ? [t("Şampiyonlar"), championName ?? ""] : [t(LABELS[route.page])];
   const routeKey = JSON.stringify(route);
 
   return (
@@ -242,6 +245,8 @@ function App() {
               <OverlayPage />
             ) : route.page === "tiers" ? (
               <TierListPage onOpenChampion={openChampion} />
+            ) : route.page === "champions" ? (
+              <ChampionsPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "builds" ? (
               <BuildsPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "pros" ? (

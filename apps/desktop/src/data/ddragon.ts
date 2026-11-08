@@ -156,7 +156,17 @@ export type Ability = {
   image: string;
 };
 
-export type ChampionDetail = { title: string; abilities: Ability[]; allyTips: string[]; enemyTips: string[] };
+export type ChampionDetail = {
+  title: string;
+  lore: string;
+  /** The champion's resource, "Mana", "Energy" and so on, in the UI language. */
+  resource: string;
+  /** Data Dragon's base stats: hp, hpperlevel, armor, attackrange, movespeed and so on. */
+  stats: Record<string, number>;
+  abilities: Ability[];
+  allyTips: string[];
+  enemyTips: string[];
+};
 
 const detailsByKey = new Map<string, Promise<ChampionDetail>>();
 
@@ -179,7 +189,19 @@ export function championDetail(championId: string, lang: "tr" | "en"): Promise<C
       .then(
         (response) =>
           response.json() as Promise<{
-            data: Record<string, { title: string; passive: RawSpell; spells: RawSpell[]; allytips: string[]; enemytips: string[] }>;
+            data: Record<
+              string,
+              {
+                title: string;
+                lore: string;
+                partype: string;
+                stats: Record<string, number>;
+                passive: RawSpell;
+                spells: RawSpell[];
+                allytips: string[];
+                enemytips: string[];
+              }
+            >;
           }>,
       )
       .then(({ data }) => {
@@ -187,6 +209,9 @@ export function championDetail(championId: string, lang: "tr" | "en"): Promise<C
         const keys = ["Q", "W", "E", "R"] as const;
         return {
           title: c.title,
+          lore: plain(c.lore),
+          resource: c.partype,
+          stats: c.stats,
           abilities: [
             { key: "P" as const, name: c.passive.name, description: plain(c.passive.description), cooldowns: [], image: `passive/${c.passive.image.full}` },
             ...c.spells.map((s, i) => ({ key: keys[i], name: s.name, description: plain(s.description), cooldowns: s.cooldown ?? [], image: `spell/${s.image.full}` })),
