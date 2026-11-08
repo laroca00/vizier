@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createStaleCache } from "./staleCache";
+
+const results = createStaleCache(10 * 60_000);
 
 export type AsyncState<T> =
   | { status: "idle" }
@@ -6,7 +9,10 @@ export type AsyncState<T> =
   | { status: "done"; value: T }
   | { status: "error"; error: unknown };
 
-/** Runs `load` whenever `key` changes; a null key means nothing to load yet. */
+/**
+ * Runs `load` whenever `key` changes; a null key means nothing to load yet.
+ * A key seen before shows its last result straight away and refreshes behind it.
+ */
 export function useAsync<T>(key: string | null, load: () => Promise<T>) {
   const [state, setState] = useState<AsyncState<T>>({ status: "idle" });
   const [attempt, setAttempt] = useState(0);
@@ -21,10 +27,14 @@ export function useAsync<T>(key: string | null, load: () => Promise<T>) {
       return;
     }
     let current = true;
-    setState({ status: "loading" });
+    const stale = results.get<T>(key);
+    setState(stale === undefined ? { status: "loading" } : { status: "done", value: stale });
     latest.current().then(
-      (value) => current && setState({ status: "done", value }),
-      (error) => current && setState({ status: "error", error }),
+      (value) => {
+        results.set(key, value);
+        if (current) setState({ status: "done", value });
+      },
+      (error) => current && stale === undefined && setState({ status: "error", error }),
     );
     return () => {
       current = false;
