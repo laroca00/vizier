@@ -211,7 +211,8 @@ function Game({ mode, play, data, onNext }: { mode: QuizMode; play: Play; data: 
 function Clue({ mode, answer, wrong, over, data, seed }: { mode: QuizMode; answer: Champion; wrong: number; over: boolean; data: ChampionRoles; seed: number }) {
   const t = useT();
   const lang = useLang();
-  const [detail] = useAsync(mode === "ability" ? `detail:${lang}:${answer.id}` : null, () => championDetail(answer.id, lang));
+  const titleHint = mode === "classic" && !over && wrong >= TITLE_HINT_AFTER;
+  const [detail] = useAsync(mode === "ability" || titleHint ? `detail:${lang}:${answer.id}` : null, () => championDetail(answer.id, lang));
   const [skinList] = useAsync(mode === "skin" ? `skins:${answer.id}` : null, () => skins(answer.id));
 
   if (mode === "emoji") {
@@ -261,8 +262,22 @@ function Clue({ mode, answer, wrong, over, data, seed }: { mode: QuizMode; answe
     );
   }
 
+  if (mode === "classic") {
+    if (over) return null;
+    return (
+      <p className="build__note quiz__hint">
+        {titleHint && detail.status === "done"
+          ? t("İpucu: unvanı \"{title}\"", { title: detail.value.title })
+          : t("{count} yanlış tahminden sonra şampiyonun unvanı ipucu olarak açılır.", { count: TITLE_HINT_AFTER })}
+      </p>
+    );
+  }
+
   return null;
 }
+
+// Wrong classic guesses before the champion's title shows as a hint.
+const TITLE_HINT_AFTER = 5;
 
 const MATCH_LABEL: Record<Match, string> = { yes: "Doğru", partial: "Kısmen", no: "Yanlış" };
 

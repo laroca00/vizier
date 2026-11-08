@@ -775,4 +775,6 @@ export const EN: Record<string, string> = {
   "{rate}, {games} maç": "{rate}, {games} games",
   "{tier} tier": "{tier} tier",
   "geçen yamaya göre {change}": "{change} since last patch",
+  "İpucu: unvanı \"{title}\"": "Hint: their title is \"{title}\"",
+  "{count} yanlış tahminden sonra şampiyonun unvanı ipucu olarak açılır.": "After {count} wrong guesses the champion's title shows as a hint.",
 };
