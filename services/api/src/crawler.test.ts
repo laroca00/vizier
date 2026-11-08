@@ -221,7 +221,7 @@ describe("buildPaths", () => {
       { type: "ITEM_PURCHASED", timestamp: 400_000, participantId: 1, itemId: 6655 },
     ];
     const paths = buildPaths({ info: { frames: [{ timestamp: 0, participantFrames: {}, events }] } });
-    expect(paths.get(1)).toEqual({ startItems: [1056, 2003], skillOrder: [1, 3], purchases: [1056, 2003, 6655] });
+    expect(paths.get(1)).toEqual({ startItems: [1056, 2003], skillOrder: [1, 3], purchases: [1056, 2003, 6655], purchaseTimes: [10, 12, 400] });
   });
 });
 

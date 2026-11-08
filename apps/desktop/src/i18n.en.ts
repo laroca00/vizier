@@ -1002,6 +1002,8 @@ export const EN: Record<string, string> = {
   "{a} - {b}": "{a} vs {b}",
   "{rune}: {rate} seçilme, {games} maç": "{rune}: {rate} taken, {games} games",
   "Eşya yolu": "Item path",
+  "Tamamlanma: {minutes}. dakika, en az {games} maç": "Finished around minute {minutes}, at least {games} games",
+  "{item}: ortalama {minute}. dakika, {games} maç": "{item}: finished around minute {minute}, {games} games",
   "Sonra en sık": "Most common after",
   "{item}: {rate} kazanma, {games} maç": "{item}: {rate} win rate, {games} games",
   "{games} maça kadar": "Up to {games} games",

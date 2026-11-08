@@ -429,3 +429,21 @@ export async function laneStats(db: D1Database, championId: number, position: st
     ]),
   );
 }
+
+// Timelines are fetched for few games, so each item time comes with its game count.
+const MIN_ITEM_TIME_GAMES = 10;
+
+/** Average minute each finished item is completed, keyed by item id, for items with enough timeline games. */
+export async function itemTimes(db: D1Database, championId: number, position: string): Promise<Record<number, { games: number; minute: number }>> {
+  const patches = await latestPatches(db);
+  if (patches.length === 0) return {};
+  const { results } = await db
+    .prepare(
+      `SELECT item_id, SUM(games) AS games, SUM(seconds) AS seconds FROM item_time_sums
+        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ?
+        GROUP BY item_id HAVING SUM(games) >= ?`,
+    )
+    .bind(...patches, championId, position, MIN_ITEM_TIME_GAMES)
+    .all<{ item_id: number; games: number; seconds: number }>();
+  return Object.fromEntries(results.map((r) => [r.item_id, { games: r.games, minute: Math.round((r.seconds / r.games / 60) * 10) / 10 }]));
+}
