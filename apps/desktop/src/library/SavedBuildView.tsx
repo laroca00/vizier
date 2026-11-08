@@ -1,4 +1,4 @@
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { isTauri } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { championIconUrl, itemIconUrl, runeIconUrl, spellIconUrl } from "../data/ddragon";
 import { useT } from "../i18n";
@@ -6,7 +6,7 @@ import { positionLabel } from "../labels";
 import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/Modal";
 import { useToast } from "../ui/Toast";
-import { runesComplete, toClient } from "./convert";
+import { useBuildExport } from "./useBuildExport";
 import { skillOrderLabel, type LibraryData } from "./data";
 import { shardName } from "./RuneEditor";
 import { deleteBuild, duplicateBuild, toggleFavourite, type SavedBuild } from "./store";
@@ -24,43 +24,12 @@ export function SavedBuildView({ build, data, onEdit, onSelect }: Props) {
   const t = useT();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [pages, setPages] = useState<{ id: number; name: string }[] | null>(null);
+  const { busy, pages, exportToClient, cancel } = useBuildExport(build);
   const champion = data.champions.get(build.championId);
   const primary = data.styles.get(build.runes.primaryStyle);
   const secondary = data.styles.get(build.runes.subStyle);
   const [keystone, ...rest] = build.runes.perks;
 
-  async function exportToClient(replacePageId: number | null = null) {
-    const client = toClient(build, { start: t("Başlangıç"), core: t("Ana eşyalar, bu sırayla"), more: t("Duruma göre") });
-    setBusy(true);
-    setPages(null);
-    const done: string[] = [];
-    try {
-      if (runesComplete(build.runes)) {
-        const result = await invoke<{ status: "imported" } | { status: "needsSlot"; pages: { id: number; name: string }[] }>("import_runes", {
-          page: client.page,
-          replacePageId,
-        });
-        if (result.status === "needsSlot") setPages(result.pages);
-        else done.push(t("rünler"));
-      }
-      if (client.itemSet.blocks.length) {
-        await invoke("import_item_set", client.itemSet);
-        done.push(t("eşya seti"));
-      }
-      // The client only takes summoner spells during champ select; outside it this fails and that's fine.
-      await invoke("import_spells", { spells: client.spells }).then(
-        () => done.push(t("büyüler")),
-        () => {},
-      );
-      if (done.length) toast("success", t("Aktarıldı: {parts}", { parts: done.join(", ") }));
-    } catch {
-      toast("error", t("Aktarılamadı. League istemcisinin açık olduğundan emin ol."));
-    } finally {
-      setBusy(false);
-    }
-  }
 
   return (
     <article className="saved" aria-label={build.name}>
@@ -106,7 +75,7 @@ export function SavedBuildView({ build, data, onEdit, onSelect }: Props) {
                 {t("{page} yerine yaz", { page: p.name })}
               </Button>
             ))}
-            <Button variant="ghost" onClick={() => setPages(null)}>
+            <Button variant="ghost" onClick={cancel}>
               {t("Vazgeç")}
             </Button>
           </div>

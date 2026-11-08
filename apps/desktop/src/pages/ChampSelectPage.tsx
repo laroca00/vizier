@@ -15,6 +15,7 @@ import {
 import { autoView, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";
+import { PoolBuild } from "../draft/PoolBuild";
 import { useOpponent, type Opponent } from "../draft/useOpponent";
 import { formatPercent, useLang, useT } from "../i18n";
 import { JournalNote } from "../Journal";
@@ -134,16 +135,19 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
               {ready && me && <PoolStrip position={me.position} data={ready} />}
             </>
           ) : me && ready && myChampion > 0 ? (
-            <BuildSuggestion
-              championId={myChampion}
-              championName={ready.champions.get(myChampion)?.name ?? ""}
-              position={me.position || null}
-              currentSpells={me.spells as [number, number]}
-              locked={locked}
-              vs={vs}
-              enemies={enemyPicks}
-              showPros
-            />
+            <>
+              <PoolBuild championId={myChampion} role={role} locked={locked} />
+              <BuildSuggestion
+                championId={myChampion}
+                championName={ready.champions.get(myChampion)?.name ?? ""}
+                position={me.position || null}
+                currentSpells={me.spells as [number, number]}
+                locked={locked}
+                vs={vs}
+                enemies={enemyPicks}
+                showPros
+              />
+            </>
           ) : (
             <p className="draft__empty">{t("Bir şampiyonun üzerine geldiğinde build burada açılır.")}</p>
           )}

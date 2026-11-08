@@ -765,4 +765,5 @@ export const EN: Record<string, string> = {
   "Şampiyon ya da bölüm ara": "Search champions or sections",
   "Bölüm": "Section",
   "Bu adla bir şampiyon ya da bölüm yok.": "No champion or section by that name.",
+  "Havuzundaki build'in: {name}": "Your pool build: {name}",
 };
