@@ -7,7 +7,9 @@ import { buildPaths, type Timeline } from "./timeline.ts";
 
 const RANKED_SOLO = 420;
 const DAY = 86_400_000;
-const LOOKBACK = 7 * DAY;
+// Two weeks back, so a pro added to the list arrives with half a month of games.
+const LOOKBACK = 15 * DAY;
+const IDS_PER_CALL = 20;
 // Each game costs a match and a timeline call; two per run keeps the pro
 // crawl to about five calls next to the stats crawler's ten.
 const MATCHES_PER_RUN = 2;
@@ -154,7 +156,7 @@ export class ProCrawler {
       (await this.riot.get<string[]>(
         region,
         "/lol/match/v5/matches/by-puuid/ids",
-        `/lol/match/v5/matches/by-puuid/${account.puuid}/ids?queue=${RANKED_SOLO}&startTime=${startTime}&start=0&count=10`,
+        `/lol/match/v5/matches/by-puuid/${account.puuid}/ids?queue=${RANKED_SOLO}&startTime=${startTime}&start=0&count=${IDS_PER_CALL}`,
       )) ?? [];
     if (matchIds.length === 0) return 0;
 
