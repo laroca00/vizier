@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getAugments, getTierList, type AugmentStats } from "../api";
-import { augmentInfo, RARITY } from "../augments/data";
+import { augmentInfo, modeAugments, RARITY, type AugmentInfo } from "../augments/data";
 import { classChampions, mergeAugmentStats, RARITY_FILTERS } from "../augments/filter";
 import "../augments/augments.css";
 import { CLASS_NAMES } from "../ChampionGuide";
@@ -105,9 +105,7 @@ export function AugmentsPage() {
       ) : stats.value === null ? (
         <EmptyState title={t("Augment istatistikleri şu an kapalı")}>{t("Vizier sunucusu bu verileri şimdilik göstermiyor.")}</EmptyState>
       ) : stats.value.augments.length === 0 ? (
-        <EmptyState title={t("Henüz yeterli maç yok")}>
-          {t("Bu mod oyunda açıkken Vizier maçları topladıkça augment'ler burada görünür. Arena ve ARAM Mayhem her zaman açık olmayabilir.")}
-        </EmptyState>
+        <Catalogue queue={queue} names={names} needle={needle} rarity={rarity} />
       ) : (
         <table className="augments__table">
           <thead>
@@ -145,5 +143,49 @@ export function AugmentsPage() {
         </table>
       )}
     </LiquidGlass>
+  );
+}
+
+const RARITY_GROUPS = [2, 1, 0, 4];
+
+/** Every augment the mode hands out, from the client's own data, while there are no games to rate them. */
+function Catalogue({ queue, names, needle, rarity }: { queue: number; names: Map<number, AugmentInfo>; needle: string; rarity: string }) {
+  const t = useT();
+  const lang = useLang();
+  const [ids] = useAsync(`mode-augments:${queue}`, () => modeAugments(queue === MAYHEM ? "KIWI" : "CHERRY"));
+  const wanted = RARITY_FILTERS.find((r) => r.value === rarity)?.rarity ?? null;
+  const list = ids.status === "done" ? ids.value.map((id) => names.get(id)).filter((a): a is AugmentInfo => a !== undefined) : [];
+  const shown = list.filter((a) => (wanted === null || a.rarity === wanted) && (!needle || a.name.toLocaleLowerCase(lang).includes(needle)));
+  return (
+    <>
+      <p className="build__note">
+        {t("Bu mod için henüz yeterli maç yok. Oranlar, mod oyunda açıkken toplanan maçlarla gelir. Şimdilik moddaki {count} augment:", { count: list.length })}
+      </p>
+      {ids.status === "error" ? (
+        <EmptyState title={t("Augment listesi alınamadı")}>{t("CommunityDragon şu an yanıt vermiyor.")}</EmptyState>
+      ) : ids.status !== "done" || names.size === 0 ? (
+        <Skeleton lines={6} label={t("Yükleniyor")} />
+      ) : (
+        RARITY_GROUPS.map((group) => {
+          const rows = shown.filter((a) => a.rarity === group).sort((a, b) => a.name.localeCompare(b.name, lang));
+          if (rows.length === 0) return null;
+          return (
+            <section key={group} className="augments__catalogue" aria-label={t(RARITY[group] ?? "Özel")}>
+              <h2 className="draft__heading">
+                {t(RARITY[group] ?? "Özel")} · {rows.length}
+              </h2>
+              <ul className="champion-augments__list">
+                {rows.map((a) => (
+                  <li key={a.id}>
+                    <img src={a.icon} alt="" width={28} height={28} loading="lazy" />
+                    <span className="champion-augments__name">{a.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })
+      )}
+    </>
   );
 }

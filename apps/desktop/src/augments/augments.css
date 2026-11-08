@@ -63,3 +63,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.augments__catalogue {
+  margin-top: var(--space-4);
+}
