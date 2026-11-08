@@ -1219,4 +1219,11 @@ export const EN: Record<string, string> = {
   "Ön hat, savaş başlatma ve karışık hasar var; herkes kendi rolünde.": "There's a frontline, a way to start fights and mixed damage; everyone is in their role.",
   "İkinci rol": "Second role",
   "Şampiyon ekle": "Add champion",
+  "Okunan yamalarda {champion} değişmedi.": "{champion} didn't change in the patches read so far.",
+  "Onları da yükle": "Load them too",
+  "Yama geçmişi": "Patch history",
+  "Yama takibinde açtığın yamalar burada görünür.": "Patches you open in the patch tracker show up here.",
+  "Yamalar yükleniyor: {done}/{total}": "Loading patches: {done}/{total}",
+  "{champion} yama geçmişi": "{champion} patch history",
+  "{count} yama henüz okunmadı.": "{count} patches not read yet.",
 };

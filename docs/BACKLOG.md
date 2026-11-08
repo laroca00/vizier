@@ -166,7 +166,7 @@ Worlds and pro builds are a top priority for the EUW audience.
 - [x] 13.3 Buff / nerf / mixed label per champion and item from simple rules. (4a9f5d2; label from the direction of each number, none for recipes and new entries)
 - [x] 13.4 Pool champions first and a Home badge when one changed. (4a9f5d2; pool and favourites first in the tracker; Home pool cards say when the patch changed them (reads the tracker's cache))
 - [x] 13.5 Win rate before and after the patch for each changed champion (uses 6.2). (4a9f5d2; shown for the newest patch only, since the change compares the latest two crawled patches; loads on its own for the pool, on click for others; hidden under 100 games)
-- [ ] 13.6 A champion's change history over the cached versions on its page.
+- [x] 13.6 A champion's change history over the cached versions on its page. (reads the tracker's cached diffs; the pairs not read yet load on request, one at a time)
 
 ## 14. Home
 

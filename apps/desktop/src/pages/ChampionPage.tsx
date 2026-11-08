@@ -1,3 +1,4 @@
+import { ChampionHistory } from "../patches/ChampionHistory";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { useState } from "react";
 import { getChampion, getCounters, getSynergies, getTierList, type ChampionOverview, type Counters } from "../api";
@@ -136,6 +137,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           <div>
             <StrengthsWeaknesses champion={champion} />
             <ChampionReference champion={champion} />
+            <ChampionHistory championKey={championId} championName={champion.name} />
             <SkinGallery champion={champion} />
             <JournalNote noteKey={championNoteKey(championId)} label={t("{champion} notların", { champion: champion.name })} />
             {data.status === "done" && <MatchupNotes championId={championId} champions={data.value.champions} version={version} />}
