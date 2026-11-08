@@ -303,7 +303,8 @@ export class Crawler {
           path ? path.purchases.join(",") : null,
           csMinutes?.length ? csMinutes.join(",") : null,
           info.queueId,
-          p.teamId ?? null,
+          // An Arena team is a duo, which teamId alone may not tell apart.
+          (info.queueId === ARENA ? p.playerSubteamId : undefined) ?? p.teamId ?? null,
           augments.length ? augments.join(",") : null,
         ),
       ];

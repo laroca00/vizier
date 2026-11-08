@@ -21,6 +21,8 @@ export type AppOptions = {
   statsDb?: D1Database;
   /** Arena and ARAM Mayhem augment stats; the owner switches them off with the AUGMENTS variable. */
   augments?: boolean;
+  /** Arena item stats; the owner switches them off with ARENA_ITEMS=off. */
+  arenaItems?: boolean;
   /** Data Dragon items, to name pro builds' styles; without it they have none. */
   catalog?: () => Promise<Catalog>;
 };
@@ -37,7 +39,7 @@ function queueOf(value: string | undefined): number {
  * Every route reads what services/crawler published to D1, so the Worker
  * makes no Riot calls and needs no Riot key.
  */
-export function createApp(store: Store, { statsDb, catalog, augments = false }: AppOptions = {}) {
+export function createApp(store: Store, { statsDb, catalog, augments = false, arenaItems = true }: AppOptions = {}) {
   // Concurrent misses for the same key share one load.
   const pending = new Map<string, Promise<unknown>>();
 
@@ -132,6 +134,19 @@ export function createApp(store: Store, { statsDb, catalog, augments = false }: 
     if (!position) badRequest("position is required");
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json((await readDoc(statsDb, docKey.synergies(championId, position))) ?? { patches: [], games: 0, allies: [] });
+  });
+
+  app.get("/v1/arena/duos/:championId", async (c) => {
+    const { championId } = championRequest(c);
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json((await readDoc(statsDb, docKey.duos(championId))) ?? { patches: [], games: 0, partners: [] });
+  });
+
+  app.get("/v1/arena/items/:championId", async (c) => {
+    if (!arenaItems) return c.json({ error: "Arena item stats are switched off" }, 403);
+    const { championId } = championRequest(c);
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json((await readDoc(statsDb, docKey.arenaItems(championId))) ?? { patches: [], games: 0, items: [] });
   });
 
   app.get("/v1/pros/builds", async (c) => {

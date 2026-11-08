@@ -144,6 +144,25 @@ export function getSynergies(championId: number, position: string) {
   return get<Synergies>(`/v1/champions/${championId}/synergies?position=${position}`);
 }
 
+export type ArenaDuos = { patches: string[]; games: number; partners: { championId: number; games: number; winRate: number }[] };
+
+/** Champions that placed top four most often next to this one in Arena. */
+export function getArenaDuos(championId: number) {
+  return get<ArenaDuos>(`/v1/arena/duos/${championId}`);
+}
+
+export type ArenaItems = { patches: string[]; games: number; items: { id: number; games: number; pickRate: number; winRate: number }[] };
+
+/** Null while the server has Arena item stats switched off. */
+export async function getArenaItems(championId: number): Promise<ArenaItems | null> {
+  try {
+    return await get<ArenaItems>(`/v1/arena/items/${championId}`);
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 403 || error.status === 404)) return null;
+    throw error;
+  }
+}
+
 export type Counters = { patches: string[]; games: number; matchups: { championId: number; games: number; winRate: number }[] };
 
 export function getCounters(championId: number, position: string) {

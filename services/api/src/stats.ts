@@ -339,3 +339,51 @@ export async function augmentStats(
     .map(({ score, ...a }) => ({ ...a, tier: TIER_CUTS.find(([cut]) => score >= cut)?.[1] ?? "D" }));
   return { patches, games, augments };
 }
+
+export type DuoPartner = { championId: number; games: number; winRate: number };
+
+/** Arena partners for a champion: how often a top-four finish follows each pairing. */
+export async function arenaDuos(db: D1Database, championId: number): Promise<{ patches: string[]; games: number; partners: DuoPartner[] }> {
+  const patches = await latestPatches(db);
+  if (patches.length === 0) return { patches, games: 0, partners: [] };
+  const { results } = await db
+    .prepare(
+      `SELECT value, SUM(games) AS games, SUM(wins) AS wins FROM stat_counts
+        WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ? AND champion_id = ? AND kind = 'duo'
+        GROUP BY value`,
+    )
+    .bind(...patches, ARENA, championId)
+    .all<{ value: string; games: number; wins: number }>();
+  const partners = results
+    .filter((r) => r.games >= sampleLimits.pairGames)
+    .map((r) => ({ championId: Number(r.value), games: r.games, winRate: round3(r.wins / r.games), score: smoothed(r.wins, r.games) }))
+    .sort((a, b) => b.score - a.score)
+    .map(({ score: _, ...p }) => p);
+  return { patches, games: results.reduce((sum, r) => sum + r.games, 0), partners };
+}
+
+export type ArenaItem = { id: number; games: number; pickRate: number; winRate: number };
+
+const ARENA_ITEMS_SHOWN = 24;
+
+/** Items bought in Arena games with a champion; a "win" is a top-four finish. The client keeps finished items. */
+export async function arenaItems(db: D1Database, championId: number): Promise<{ patches: string[]; games: number; items: ArenaItem[] }> {
+  const patches = await latestPatches(db);
+  if (patches.length === 0) return { patches, games: 0, items: [] };
+  const { results } = await db
+    .prepare(
+      `SELECT kind, value, SUM(games) AS games, SUM(wins) AS wins FROM stat_counts
+        WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ? AND champion_id = ? AND kind IN ('item', 'games')
+        GROUP BY kind, value`,
+    )
+    .bind(...patches, ARENA, championId)
+    .all<{ kind: string; value: string; games: number; wins: number }>();
+  const games = results.find((r) => r.kind === "games")?.games ?? 0;
+  const items = results
+    .filter((r) => r.kind === "item" && r.games >= sampleLimits.pairGames)
+    .map((r) => ({ id: Number(r.value), games: r.games, pickRate: round3(r.games / Math.max(games, 1)), winRate: round3(r.wins / r.games), score: smoothed(r.wins, r.games) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, ARENA_ITEMS_SHOWN)
+    .map(({ score: _, ...i }) => i);
+  return { patches, games, items };
+}

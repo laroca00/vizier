@@ -7,7 +7,7 @@ import { useChampSelect, useLcuStatus } from "./lcu";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { noteRecent } from "./personal";
-import { useNavigation, type Page, type Route } from "./router";
+import { pageRoute, useNavigation, type Page, type Route } from "./router";
 import { SearchPalette } from "./SearchPalette";
 import { setClientLocale, useT } from "./i18n";
 import { updateSettings, useSettings } from "./settings";
@@ -30,6 +30,7 @@ const BuildsPage = lazy(() => import("./pages/BuildsPage").then((m) => ({ defaul
 const ChampionsPage = lazy(() => import("./pages/ChampionsPage").then((m) => ({ default: m.ChampionsPage })));
 const SimulatorPage = lazy(() => import("./pages/SimulatorPage").then((m) => ({ default: m.SimulatorPage })));
 const PatchesPage = lazy(() => import("./pages/PatchesPage").then((m) => ({ default: m.PatchesPage })));
+const MatchupPage = lazy(() => import("./pages/MatchupPage").then((m) => ({ default: m.MatchupPage })));
 const AugmentsPage = lazy(() => import("./pages/AugmentsPage").then((m) => ({ default: m.AugmentsPage })));
 const QuizPage = lazy(() => import("./pages/QuizPage").then((m) => ({ default: m.QuizPage })));
 const ProsPage = lazy(() => import("./pages/ProsPage").then((m) => ({ default: m.ProsPage })));
@@ -47,6 +48,7 @@ const LABELS: Record<Page, string> = {
   patches: "Yama takibi",
   quiz: "Şampiyon bilmecesi",
   augments: "Augment'ler",
+  matchup: "Eşleşme",
   champion: "Şampiyonlar",
   overlay: "Overlay",
   settings: "Ayarlar",
@@ -75,7 +77,8 @@ const fixture = champSelectFixture();
 function devRoute(): Route | null {
   if (!import.meta.env.DEV) return null;
   const view = new URLSearchParams(location.search).get("view");
-  return view && view in LABELS && view !== "champion" ? ({ page: view } as Route) : null;
+  if (view === "matchup") return { page: "matchup", championId: 103, opponentId: 238, position: "MIDDLE" };
+  return view && view in LABELS && view !== "champion" ? pageRoute(view as Page) : null;
 }
 
 /** False while the window is hidden, minimised or behind another app. */
@@ -158,7 +161,7 @@ function App() {
         const page = shortcutsRef.current[digit - 1];
         if (page) {
           event.preventDefault();
-          goRef.current({ page } as Route);
+          goRef.current(pageRoute(page));
         }
       }
     };
@@ -194,6 +197,7 @@ function App() {
         { id: "simulator", label: "Draft simülatörü", icon: "simulator" },
         { id: "patches", label: "Yama takibi", icon: "patches" },
         { id: "quiz", label: "Şampiyon bilmecesi", icon: "quiz" },
+        { id: "matchup", label: "Eşleşme", icon: "matchup" },
       ],
     },
   ];
@@ -223,7 +227,7 @@ function App() {
         foot={footItems}
         current={SECTION[route.page]}
         collapsed={settings.sidebarCollapsed}
-        onOpen={(page) => page !== route.page && go({ page } as Route)}
+        onOpen={(page) => page !== route.page && go(pageRoute(page))}
         onSearch={() => setSearching(true)}
       />
       <header className="top" data-tauri-drag-region>
@@ -278,6 +282,8 @@ function App() {
               <TierListPage onOpenChampion={openChampion} />
             ) : route.page === "augments" ? (
               <AugmentsPage />
+            ) : route.page === "matchup" ? (
+              <MatchupPage route={route} onChange={replace} />
             ) : route.page === "quiz" ? (
               <QuizPage />
             ) : route.page === "patches" ? (
@@ -309,7 +315,7 @@ function App() {
         onClose={() => setSearching(false)}
         onChampion={(id) => openChampion(id)}
         links={[...groups.flatMap((g) => g.items), ...footItems].map((item) => ({ id: item.id, label: t(item.label), icon: item.icon }))}
-        onLink={(id) => go({ page: id } as Route)}
+        onLink={(id) => go(pageRoute(id as Page))}
       />
     </div>
     </ToastProvider>

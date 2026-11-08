@@ -13,6 +13,9 @@ import {
   type SummonerSpell,
 } from "../data/ddragon";
 import { checkRole } from "../draft/allyRole";
+import { ArenaItems } from "../draft/ArenaItems";
+import { ArenaDuo } from "../draft/ArenaDuo";
+import { isArena } from "../draft/arena";
 import { BenchHelper } from "../draft/BenchHelper";
 import { HoverMatchup } from "../draft/HoverMatchup";
 import { ChampionAugments } from "../augments/ChampionAugments";
@@ -94,6 +97,11 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
     .filter((m) => !m.isLocal && shownChampion(m) > 0 && m.position)
     .map((m) => ({ championId: shownChampion(m), position: m.position.toUpperCase() }));
 
+  // In Arena the partner's champion decides what pairs well; before it is chosen, the player's own does.
+  const partnerMember = isArena(draft) ? draft.myTeam.find((m) => !m.isLocal) : undefined;
+  const arenaPartner = partnerMember ? shownChampion(partnerMember) : 0;
+  const arenaAnchor = isArena(draft) ? arenaPartner || myChampion : 0;
+
   function chooseOpponent(id: number) {
     // Pressing the current choice again hands the lane back to the guess.
     setChosenOpponent(opponent && !opponent.guessed && opponent.championId === id ? null : id);
@@ -127,6 +135,16 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
         <section key={view} className="draft__main draft__view" aria-label={view === "draft" ? t("Draft") : t("Build")}>
           {view === "draft" ? (
             <>
+              {ready && arenaAnchor > 0 && (
+                <ArenaDuo
+                  anchor={arenaAnchor}
+                  partner={arenaPartner > 0}
+                  taken={new Set([...draft.bans, ...draft.myTeam.map((m) => m.championId), ...enemyPicks])}
+                  pool={new Set(pool.map((p) => p.championId))}
+                  champions={ready.champions}
+                  version={ready.version}
+                />
+              )}
               {ready && hasBench(draft) && (
                 <BenchHelper
                   current={myChampion}
@@ -190,6 +208,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 showPros
                 queue={queue}
               />
+              {isArena(draft) && <ArenaItems championId={myChampion} />}
               {hasBench(draft) && <ChampionAugments championId={myChampion} queue={MAYHEM} limit={6} title={t("Mayhem ise: ilk bakılacak augment'ler")} hideEmpty />}
               {enemyPicks.length >= 3 && (
                 <ItemAdvicePanel

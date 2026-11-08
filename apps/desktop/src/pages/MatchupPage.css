@@ -1,0 +1,49 @@
+.matchup-page__sides {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.matchup-page__side {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.matchup-page__side img {
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.14);
+}
+
+.matchup-page__body {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.duel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.duel th,
+.duel td {
+  padding: 6px var(--space-2);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.duel thead th {
+  font-weight: 350;
+  color: var(--glaze-muted);
+}
+
+.duel [data-ahead] {
+  font-weight: var(--weight-medium);
+  color: var(--glaze-text, inherit);
+}

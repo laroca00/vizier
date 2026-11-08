@@ -7,7 +7,7 @@ import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { pruneRaw, rollup } from "./rollup.ts";
 import { docKey, statDocs } from "./statDocs.ts";
-import { augmentStats, sampleLimits, tierList } from "./stats.ts";
+import { arenaDuos, arenaItems, augmentStats, sampleLimits, tierList } from "./stats.ts";
 import { MemoryStore } from "./store.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
@@ -96,6 +96,38 @@ describe("augments", () => {
     const all = await augmentStats(db, 1700, null);
     expect(all.augments.find((a) => a.augmentId === 9)?.games).toBe(18);
     expect((await augmentStats(db, 2400, null)).augments).toEqual([]);
+  });
+});
+
+describe("arena duos", () => {
+  it("pairs the two players of a subteam and counts a top-four finish as a win", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, noRiot);
+    for (let n = 1; n <= 12; n++) {
+      const top4 = n % 3 !== 0;
+      const match = game(n, top4);
+      match.metadata.matchId = `TR1_D${n}`;
+      match.info.queueId = 1700;
+      // Both sides share a teamId in this fixture; the subteam is what separates the duos.
+      const arena = (id: number, subteam: number, champion: number, place: number) =>
+        ({ ...player(id, 100, champion, false), teamPosition: "", placement: place, playerSubteamId: subteam }) as Participant;
+      match.info.participants = [
+        arena(1, 1, 103, top4 ? 2 : 6),
+        arena(2, 1, 238, top4 ? 2 : 6),
+        arena(3, 2, 64, top4 ? 6 : 2),
+        arena(4, 2, 157, top4 ? 6 : 2),
+      ];
+      await crawler.save(match);
+    }
+    await rollup(db, noCatalog);
+    const ahri = await arenaDuos(db, 103);
+    expect(ahri.partners).toEqual([{ championId: 238, games: 12, winRate: 0.667 }]);
+    expect((await arenaDuos(db, 64)).partners).toEqual([{ championId: 157, games: 12, winRate: 0.333 }]);
+    expect((await arenaDuos(db, 999)).partners).toEqual([]);
+
+    // The same games also carry item counts; player() buys item 3157 in every game.
+    expect(await arenaItems(db, 103)).toMatchObject({ games: 12, items: [{ id: 3157, games: 12, pickRate: 1, winRate: 0.667 }] });
+    expect((await arenaItems(db, 999)).items).toEqual([]);
   });
 });
 

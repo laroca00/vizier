@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { getAugments } from "../api";
+import { getAugments, getTierList, type AugmentStats } from "../api";
 import { augmentInfo, RARITY } from "../augments/data";
+import { classChampions, mergeAugmentStats, RARITY_FILTERS } from "../augments/filter";
 import "../augments/augments.css";
+import { CLASS_NAMES } from "../ChampionGuide";
 import { champions } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
 import "../library/library.css";
@@ -19,6 +21,17 @@ const QUEUES = [
   { id: MAYHEM, label: "ARAM Mayhem" },
 ];
 const ALL = "ALL";
+const CLASSES = ["Fighter", "Mage", "Assassin", "Marksman", "Support", "Tank"];
+// A class view merges the stats of its most played champions; more would mean many more requests.
+const CLASS_CHAMPIONS = 12;
+
+async function loadClass(queue: number, tag: string, tagsOf: (id: number) => string[] | undefined): Promise<{ stats: AugmentStats | null; champions: number }> {
+  const tiers = await getTierList("ALL", queue);
+  const ids = classChampions(tiers.champions, tagsOf, tag, CLASS_CHAMPIONS);
+  const docs = await Promise.all(ids.map((id) => getAugments(queue, id)));
+  const found = docs.filter((d): d is AugmentStats => d !== null && d.games > 0);
+  return { stats: found.length ? mergeAugmentStats(found) : null, champions: found.length };
+}
 
 export function AugmentsPage() {
   const t = useT();
@@ -27,9 +40,19 @@ export function AugmentsPage() {
   const [champion, setChampion] = useState(ALL);
   const [query, setQuery] = useState("");
   const championId = champion === ALL ? null : Number(champion);
-  const [stats, retry] = useAsync(`augments:${queue}:${championId}`, () => getAugments(queue, championId));
-  const [info] = useAsync(`augment-info:${lang}`, () => augmentInfo(lang));
+  const [rarity, setRarity] = useState("ALL");
+  const [tag, setTag] = useState(ALL);
   const [championList] = useAsync("champions", champions);
+  const byClass = tag !== ALL && championId === null;
+  const [overall, retryOverall] = useAsync(`augments:${queue}:${championId}`, () => getAugments(queue, championId));
+  const [classView, retryClass] = useAsync(`augments-class:${queue}:${byClass ? tag : ALL}:${championList.status}`, async () => {
+    if (!byClass || championList.status !== "done") return null;
+    const list = championList.value;
+    return loadClass(queue, tag, (id) => list.get(id)?.tags);
+  });
+  const stats = byClass ? (classView.status === "done" ? { status: "done" as const, value: classView.value?.stats ?? null } : classView) : overall;
+  const retry = byClass ? retryClass : retryOverall;
+  const [info] = useAsync(`augment-info:${lang}`, () => augmentInfo(lang));
   const options = championList.status === "done" ? [...championList.value.values()].sort((a, b) => a.name.localeCompare(b.name, lang)) : [];
   const rateLabel = queue === ARENA ? t("İlk 4") : t("Kazanma");
 
@@ -37,7 +60,12 @@ export function AugmentsPage() {
   const needle = query.trim().toLocaleLowerCase(lang);
   const rows =
     stats.status === "done" && stats.value
-      ? stats.value.augments.filter((a) => !needle || (names.get(a.augmentId)?.name ?? "").toLocaleLowerCase(lang).includes(needle))
+      ? stats.value.augments.filter((a) => {
+          const meta = names.get(a.augmentId);
+          if (needle && !(meta?.name ?? "").toLocaleLowerCase(lang).includes(needle)) return false;
+          const wanted = RARITY_FILTERS.find((r) => r.value === rarity)?.rarity ?? null;
+          return wanted === null || meta?.rarity === wanted;
+        })
       : [];
 
   return (
@@ -53,8 +81,23 @@ export function AugmentsPage() {
       />
       <div className="library__filters">
         <SearchInput label={t("Augment ara")} value={query} onChange={setQuery} placeholder={t("Augment ara")} />
-        <Select label={t("Şampiyon")} value={champion} options={[{ value: ALL, label: t("Tüm şampiyonlar") }, ...options.map((c) => ({ value: String(c.key), label: c.name }))]} onChange={setChampion} />
+        <Select label={t("Nadirlik")} value={rarity} options={RARITY_FILTERS.map((r) => ({ value: r.value, label: t(r.label) }))} onChange={setRarity} />
+        <Select
+          label={t("Sınıf")}
+          value={champion === ALL ? tag : ALL}
+          options={[{ value: ALL, label: t("Tüm sınıflar") }, ...CLASSES.map((c) => ({ value: c, label: t(CLASS_NAMES[c]) }))]}
+          onChange={(next) => {
+            setTag(next);
+            setChampion(ALL);
+          }}
+        />
+        <Select label={t("Şampiyon")} value={champion} options={[{ value: ALL, label: t("Tüm şampiyonlar") }, ...options.map((c) => ({ value: String(c.key), label: c.name }))]} onChange={(next) => { setChampion(next); setTag(ALL); }} />
       </div>
+      {byClass && classView.status === "done" && classView.value?.stats && (
+        <p className="build__note">
+          {t("{champions} şampiyonun birleşik verisi, {games} oyuncu-maç", { champions: classView.value.champions, games: classView.value.stats.games })}
+        </p>
+      )}
       {stats.status === "error" ? (
         <ErrorState message={t("Augment istatistikleri alınamadı.")} onRetry={retry} />
       ) : stats.status !== "done" ? (

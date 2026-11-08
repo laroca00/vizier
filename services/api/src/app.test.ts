@@ -29,4 +29,12 @@ describe("api", () => {
     expect((await on.request("/v1/augments?queue=420")).status).toBe(400);
     expect((await on.request("/v1/augments?queue=1700&champion=x")).status).toBe(400);
   });
+
+  it("serves Arena items unless they are switched off", async () => {
+    expect((await app().request("/v1/arena/items/103")).status).toBe(503);
+    const off = createApp(new MemoryStore(), { arenaItems: false });
+    expect((await off.request("/v1/arena/items/103")).status).toBe(403);
+    expect((await app().request("/v1/arena/items/x")).status).toBe(400);
+    expect((await app().request("/v1/arena/duos/x")).status).toBe(400);
+  });
 });
