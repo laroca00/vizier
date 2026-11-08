@@ -1,3 +1,4 @@
+import { BootsSpells } from "./BootsSpells";
 import { BuildPath } from "./BuildPath";
 import { RunePageView } from "./RunePageView";
 import { formatPercent, useLang, useT, type Lang } from "./i18n";
@@ -396,6 +397,8 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           {inDraft && <ImportControls label={t("Büyüleri aktar")} state={spellImport} disabled={!canImport} onImport={importSpells} />}
         </section>
       )}
+
+      <BootsSpells picks={picks} total={shown.games} items={state.value.items} spells={state.value.spells} version={version} />
 
       <BuildPath picks={picks} items={state.value.items} version={version} />
 

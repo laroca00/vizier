@@ -121,3 +121,22 @@
 .path__meta {
   margin: 0;
 }
+
+.comparison {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.comparison__table th[scope="row"] {
+  font-weight: var(--weight-medium);
+}
+
+.comparison__name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.comparison__name img {
+  border-radius: 6px;
+}

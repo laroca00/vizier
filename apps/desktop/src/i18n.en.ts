@@ -1005,4 +1005,6 @@ export const EN: Record<string, string> = {
   "Sonra en sık": "Most common after",
   "{item}: {rate} kazanma, {games} maç": "{item}: {rate} win rate, {games} games",
   "{games} maça kadar": "Up to {games} games",
+  "Botlar ve büyüler": "Boots and summoner spells",
+  "Botlar": "Boots",
 };

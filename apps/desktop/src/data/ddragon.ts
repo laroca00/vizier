@@ -101,7 +101,7 @@ export function runeIconUrl(icon: string) {
   return `${BASE}/cdn/img/${icon}`;
 }
 
-export type Item = { id: number; name: string; complete: boolean; gold: number };
+export type Item = { id: number; name: string; complete: boolean; gold: number; boots?: boolean };
 
 let itemsById: Promise<Map<number, Item>> | undefined;
 
@@ -120,6 +120,7 @@ export function items(): Promise<Map<number, Item>> {
               id: Number(id),
               name: item.name,
               gold: item.gold.total,
+              boots: !!item.tags?.includes("Boots"),
               // Nothing builds out of it and it isn't used up: a finished item.
               complete:
                 !item.into?.length && !item.consumed && !item.tags?.includes("Trinket") && item.gold.total >= 900,
