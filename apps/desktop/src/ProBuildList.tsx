@@ -165,21 +165,23 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: ProStatic; co
         <Button disabled={!isTauri()} busy={importState.status === "working"} onClick={onImport}>
           {t("Aktar")}
         </Button>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            createBuild(
-              fromPro(
-                { name: [build.player, champion?.name].filter(Boolean).join(" "), championId: build.championId, position: build.position || null },
-                build,
-                (id) => !!data.items.get(id)?.complete,
-              ),
-            );
-            toast("success", t("{champion} buildlerine kaydedildi", { champion: champion?.name ?? "" }));
-          }}
-        >
-          {t("Kaydet")}
-        </Button>
+        {!compact && (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              createBuild(
+                fromPro(
+                  { name: [build.player, champion?.name].filter(Boolean).join(" "), championId: build.championId, position: build.position || null },
+                  build,
+                  (id) => !!data.items.get(id)?.complete,
+                ),
+              );
+              toast("success", t("{champion} buildlerine kaydedildi", { champion: champion?.name ?? "" }));
+            }}
+          >
+            {t("Kaydet")}
+          </Button>
+        )}
         {(importState.status === "done" || importState.status === "error") && (
           <span className="build__feedback" data-status={importState.status} role="status">
             {importState.message}

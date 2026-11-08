@@ -86,3 +86,7 @@
 .patches__changes li[data-direction="down"] .patches__values {
   color: #f08a7e;
 }
+
+.patches .search-input {
+  min-width: 280px;
+}

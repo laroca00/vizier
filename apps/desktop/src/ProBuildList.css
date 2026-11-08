@@ -95,3 +95,9 @@
 .pros__gap {
   width: var(--space-2);
 }
+
+/* Six item icons don't fit beside the actions in a narrow window; they wrap instead of overlapping. */
+.pros__items {
+  flex-wrap: wrap;
+  min-width: 0;
+}
