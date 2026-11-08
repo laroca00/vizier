@@ -270,3 +270,50 @@ export function roleIconUrl(position: string) {
   const role = ROLE_ICONS[position.toUpperCase()] ?? "fill";
   return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-${role}.png`;
 }
+
+export type ItemDetail = {
+  id: number;
+  name: string;
+  /** Data Dragon's one-line summary. */
+  plaintext: string;
+  gold: { base: number; total: number; purchasable: boolean };
+  from: number[];
+  into: number[];
+  stats: Record<string, number>;
+  tags: string[];
+  /** Same rule as `Item.complete`. */
+  complete: boolean;
+};
+
+type RawItemDetail = RawItem & { plaintext?: string; from?: string[]; stats?: Record<string, number>; maps?: Record<string, boolean>; gold: { base: number; total: number; purchasable: boolean } };
+
+let itemDetailsById: Promise<Map<number, ItemDetail>> | undefined;
+
+/** Summoner's Rift items with stats and recipes; the item list above keeps only what other pages need. */
+export function itemDetails(): Promise<Map<number, ItemDetail>> {
+  itemDetailsById ??= latestVersion()
+    .then((v) => fetch(`${BASE}/cdn/${v}/data/tr_TR/item.json`))
+    .then((response) => response.json() as Promise<{ data: Record<string, RawItemDetail> }>)
+    .then(
+      ({ data }) =>
+        new Map(
+          Object.entries(data)
+            .filter(([, item]) => item.maps?.["11"] !== false)
+            .map(([id, item]) => [
+              Number(id),
+              {
+                id: Number(id),
+                name: item.name,
+                plaintext: item.plaintext ?? "",
+                gold: { base: item.gold.base, total: item.gold.total, purchasable: item.gold.purchasable },
+                from: (item.from ?? []).map(Number),
+                into: (item.into ?? []).map(Number),
+                stats: item.stats ?? {},
+                tags: item.tags ?? [],
+                complete: !item.into?.length && !item.consumed && !item.tags?.includes("Trinket") && item.gold.total >= 900,
+              },
+            ]),
+        ),
+    );
+  return itemDetailsById;
+}
