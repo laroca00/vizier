@@ -131,11 +131,11 @@ Help players build a pool that covers their role, not only store it.
 
 Worlds and pro builds are a top priority for the EUW audience.
 
-- [ ] 11.1 Pro player pages: recent games, most played champions, usual runes and items, team and region.
-- [ ] 11.2 Pro meta page: most picked and banned champions in pro games this patch, by role, with their win rate in pro games.
-- [ ] 11.3 Followed pros on Home: their newest games.
-- [ ] 11.4 Pro games on the champion page and matchup page, same opponent first.
-- [ ] 11.5 Save any pro build to the library in one click from every view.
+- [x] 11.1 Pro player pages: recent games, most played champions, usual runes and items, team and region. (9828989; pro page links from every pro name; stats come from the stored 30 days of games, no new data)
+- [x] 11.2 Pro meta page: most picked and banned champions in pro games this patch, by role, with their win rate in pro games. (9828989; picks and win rate only, bans are not stored; new route /v1/pros/meta)
+- [x] 11.3 Followed pros on Home: their newest games. (9828989; already on Home before this job; player names now open the pro page)
+- [x] 11.4 Pro games on the champion page and matchup page, same opponent first. (9828989; already shipped: champ select, champion page and matchup page list pro games with the same opponent first)
+- [x] 11.5 Save any pro build to the library in one click from every view. (9828989; Save button on Home, champion page and champ select pro cards too)
 - [ ] 11.6 More pro accounts: LCK, LPL, LEC and LCS players whose solo queue accounts are public, with name-matching tests.
 
 ## 12. Draft simulator improvements
@@ -196,4 +196,5 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 - After the Worker and crawler update, the build docs gain `perks`, `perkGames` and `skillOptions` on the next publish; single-rune counts only cover games rolled up after the crawler update.
 - Apply D1 migration 0014 (item completion times) remotely before the next crawler run on the VM; times fill as timelines are crawled.
 - Release a desktop version to ship the Journal, item and rune explorers, pool export, ready check alert and share codes v2 (the new window permission needs a rebuild).
+- Deploy the Worker for `/v1/pros/meta` (the Pro meta tab shows an empty list until then) and release a desktop version to ship the pro player page.
 - Optional: set `ARENA_ITEMS=off` on the Worker to hide Arena item stats; they are on by default.
