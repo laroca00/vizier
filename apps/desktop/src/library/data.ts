@@ -1,18 +1,20 @@
-import { champions, items, latestVersion, runes, summonerSpells, type Champion, type Item, type Rune, type RuneStyle, type SummonerSpell } from "../data/ddragon";
+import { champions, itemDetails, items, latestVersion, runes, summonerSpells, type Champion, type Item, type ItemDetail, type Rune, type RuneStyle, type SummonerSpell } from "../data/ddragon";
 
 export type LibraryData = {
   version: string;
   champions: Map<number, Champion>;
   items: Map<number, Item>;
+  /** Stats and prices, for filtering items by what they give. */
+  details: Map<number, ItemDetail>;
   styles: Map<number, RuneStyle>;
   runes: Map<number, Rune>;
   spells: Map<number, SummonerSpell>;
 };
 
 export async function loadLibraryData(): Promise<LibraryData> {
-  const [version, championList, itemList, styles, spells] = await Promise.all([latestVersion(), champions(), items(), runes(), summonerSpells()]);
+  const [version, championList, itemList, details, styles, spells] = await Promise.all([latestVersion(), champions(), items(), itemDetails(), runes(), summonerSpells()]);
   const runeById = new Map([...styles.values()].flatMap((s) => s.slots.flat().map((r) => [r.id, r] as const)));
-  return { version, champions: championList, items: itemList, styles, runes: runeById, spells };
+  return { version, champions: championList, items: itemList, details, styles, runes: runeById, spells };
 }
 
 /** Summoner's Rift spells, the ones a saved build can use. */

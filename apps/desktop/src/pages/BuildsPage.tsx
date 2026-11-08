@@ -6,6 +6,7 @@ import { formatPercent, useLang, useT } from "../i18n";
 import { POSITIONS, positionLabel } from "../labels";
 import { BuildEditor } from "../library/BuildEditor";
 import { fromPicks } from "../library/convert";
+import { sortBuilds, tagCounts, type LibrarySort } from "../library/organize";
 import { readShareCode } from "../library/share";
 import { loadLibraryData, type LibraryData } from "../library/data";
 import "../library/library.css";
@@ -227,7 +228,16 @@ function Mine({ data }: { data: LibraryData }) {
   const [newChampion, setNewChampion] = useState<string>("");
   const [code, setCode] = useState("");
 
-  const shown = library.builds.filter((b) => (filter === ALL ? true : filter === FAVOURITES ? b.favourite : b.collections.includes(filter)));
+  const [sort, setSort] = useState<LibrarySort>("edited");
+  const [tag, setTag] = useState("");
+  const tags = tagCounts(library.builds);
+  const lang = useLang();
+  const shown = sortBuilds(
+    library.builds.filter((b) => (filter === ALL ? true : filter === FAVOURITES ? b.favourite : b.collections.includes(filter)) && (!tag || (b.tags ?? []).includes(tag))),
+    sort,
+    (id) => data.champions.get(id)?.name ?? "",
+    lang,
+  );
   const current = library.builds.find((b) => b.id === selected) ?? shown[0] ?? null;
   const championOptions = [...data.champions.values()].sort((a, b) => a.name.localeCompare(b.name, "tr")).map((c) => ({ value: String(c.key), label: c.name }));
 
@@ -316,6 +326,25 @@ function Mine({ data }: { data: LibraryData }) {
         </Button>
       </form>
 
+      {library.builds.length > 1 && (
+        <div className="library__filters">
+          <Select
+            label={t("Sırala")}
+            value={sort}
+            options={[
+              { value: "edited" as LibrarySort, label: t("Son düzenlenen") },
+              { value: "champion" as LibrarySort, label: t("Şampiyon") },
+              { value: "name" as LibrarySort, label: t("Ad") },
+              { value: "collection" as LibrarySort, label: t("Koleksiyon") },
+            ]}
+            onChange={setSort}
+          />
+          {tags.length > 0 && (
+            <Select label={t("Etiket")} value={tag} options={[{ value: "", label: t("Hepsi") }, ...tags.map((x) => ({ value: x.tag, label: `${x.tag} (${x.count})` }))]} onChange={setTag} />
+          )}
+        </div>
+      )}
+
       <div className="library__new">
         <Select label={t("Yeni build için şampiyon")} value={newChampion || championOptions[0]?.value || ""} options={championOptions} onChange={setNewChampion} />
         <Button variant="primary" onClick={startNew}>
@@ -339,7 +368,7 @@ function Mine({ data }: { data: LibraryData }) {
                     {champion && <img src={championIconUrl(data.version, champion.id)} alt="" width={32} height={32} />}
                     <span className="library__who">
                       <span className="library__name">{b.name}</span>
-                      <span className="build__stat">{[champion?.name, b.favourite ? t("Favori") : null].filter(Boolean).join(", ")}</span>
+                      <span className="build__stat">{[champion?.name, b.favourite ? t("Favori") : null, ...(b.tags ?? []).map((x) => `#${x}`)].filter(Boolean).join(", ")}</span>
                     </span>
                   </button>
                 </li>

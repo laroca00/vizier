@@ -34,6 +34,8 @@ const PatchesPage = lazy(() => import("./pages/PatchesPage").then((m) => ({ defa
 const MatchupPage = lazy(() => import("./pages/MatchupPage").then((m) => ({ default: m.MatchupPage })));
 const AugmentsPage = lazy(() => import("./pages/AugmentsPage").then((m) => ({ default: m.AugmentsPage })));
 const JournalPage = lazy(() => import("./pages/JournalPage").then((m) => ({ default: m.JournalPage })));
+const ItemsPage = lazy(() => import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage })));
+const RunesPage = lazy(() => import("./pages/RunesPage").then((m) => ({ default: m.RunesPage })));
 const QuizPage = lazy(() => import("./pages/QuizPage").then((m) => ({ default: m.QuizPage })));
 const ProsPage = lazy(() => import("./pages/ProsPage").then((m) => ({ default: m.ProsPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
@@ -52,6 +54,8 @@ const LABELS: Record<Page, string> = {
   augments: "Augment'ler",
   matchup: "Eşleşme",
   journal: "Günlük",
+  items: "Eşyalar",
+  runes: "Rünler",
   champion: "Şampiyonlar",
   overlay: "Overlay",
   settings: "Ayarlar",
@@ -205,6 +209,8 @@ function App() {
         { id: "patches", label: "Yama takibi", icon: "patches" },
         { id: "quiz", label: "Şampiyon bilmecesi", icon: "quiz" },
         { id: "matchup", label: "Eşleşme", icon: "matchup" },
+        { id: "items", label: "Eşyalar", icon: "items" },
+        { id: "runes", label: "Rünler", icon: "runes" },
         { id: "journal", label: "Günlük", icon: "journal" },
       ],
     },
@@ -293,6 +299,10 @@ function App() {
               <AugmentsPage />
             ) : route.page === "matchup" ? (
               <MatchupPage route={route} onChange={replace} />
+            ) : route.page === "items" ? (
+              <ItemsPage onOpenChampion={(id, position) => openChampion(id, position)} />
+            ) : route.page === "runes" ? (
+              <RunesPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "journal" ? (
               <JournalPage onOpenChampion={(id) => openChampion(id)} onOpenMatchup={openMatchup} />
             ) : route.page === "quiz" ? (

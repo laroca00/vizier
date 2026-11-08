@@ -491,3 +491,17 @@ textarea.text-input {
 .library__import .text-input {
   width: min(420px, 100%);
 }
+
+.editor__issues {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.editor__item-list li[data-repeated] img {
+  outline: 2px solid var(--gilt);
+  outline-offset: 1px;
+}
+
+.editor__item-list li[draggable="true"] {
+  cursor: grab;
+}
