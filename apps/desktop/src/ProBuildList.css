@@ -126,3 +126,16 @@
 .pros__follow[aria-pressed="true"] path {
   fill: currentColor;
 }
+
+.pros__name {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.pros__name:hover {
+  text-decoration: underline;
+}

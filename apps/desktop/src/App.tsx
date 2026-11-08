@@ -8,6 +8,7 @@ import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { noteRecent, usePersonal } from "./personal";
 import { pageRoute, useNavigation, type Page, type Route } from "./router";
+import { OpenProProvider } from "./proLink";
 import { OpenMatchupProvider } from "./matchupLink";
 import { useReadyCheckAlert } from "./readyCheck";
 import { enteredQueueFlow, planPreload, runPreload } from "./preload";
@@ -41,6 +42,7 @@ const ItemsPage = lazy(() => import("./pages/ItemsPage").then((m) => ({ default:
 const RunesPage = lazy(() => import("./pages/RunesPage").then((m) => ({ default: m.RunesPage })));
 const QuizPage = lazy(() => import("./pages/QuizPage").then((m) => ({ default: m.QuizPage })));
 const ProsPage = lazy(() => import("./pages/ProsPage").then((m) => ({ default: m.ProsPage })));
+const ProPlayerPage = lazy(() => import("./pages/ProPlayerPage").then((m) => ({ default: m.ProPlayerPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 const TierListPage = lazy(() => import("./pages/TierListPage").then((m) => ({ default: m.TierListPage })));
 
@@ -49,6 +51,7 @@ const LABELS: Record<Page, string> = {
   draft: "Şampiyon seçimi",
   tiers: "Tier listesi",
   pros: "Pro build'ler",
+  pro: "Pro oyuncu",
   builds: "Build kütüphanesi",
   champions: "Şampiyonlar",
   simulator: "Draft simülatörü",
@@ -66,7 +69,7 @@ const LABELS: Record<Page, string> = {
 };
 
 /** The menu entry a page belongs to; a champion page sits under the champion list. */
-const SECTION: Record<Page, Page> = { ...Object.fromEntries(Object.keys(LABELS).map((p) => [p, p])), champion: "champions" } as Record<Page, Page>;
+const SECTION: Record<Page, Page> = { ...Object.fromEntries(Object.keys(LABELS).map((p) => [p, p])), champion: "champions", pro: "pros" } as Record<Page, Page>;
 
 function useChampionName(id: number | null) {
   const [name, setName] = useState<string | null>(null);
@@ -87,6 +90,7 @@ const fixture = champSelectFixture();
 function devRoute(): Route | null {
   if (!import.meta.env.DEV) return null;
   const view = new URLSearchParams(location.search).get("view");
+  if (view === "pro") return { page: "pro", player: "Chovy" };
   if (view === "matchup") return { page: "matchup", championId: 103, opponentId: 238, position: "MIDDLE" };
   return view && view in LABELS && view !== "champion" ? pageRoute(view as Page) : null;
 }
@@ -249,6 +253,7 @@ function App() {
     <FlatGlass.Provider value={true}>
     <ToastProvider>
     <OpenMatchupProvider value={openMatchup}>
+    <OpenProProvider value={(player) => go({ page: "pro", player })}>
     <div className="shell" data-navigated={navigated || undefined} data-collapsed={settings.sidebarCollapsed || undefined}>
       <Sidebar
         lcu={lcu}
@@ -330,7 +335,9 @@ function App() {
             ) : route.page === "builds" ? (
               <BuildsPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "pros" ? (
-              <ProsPage />
+              <ProsPage onOpenChampion={(id, position) => openChampion(id, position)} />
+            ) : route.page === "pro" ? (
+              <ProPlayerPage player={route.player} />
             ) : route.page === "champion" ? (
               <ChampionPage
                 championId={route.championId}
@@ -355,6 +362,7 @@ function App() {
         onMatchup={openMatchup}
       />
     </div>
+    </OpenProProvider>
     </OpenMatchupProvider>
     </ToastProvider>
     </FlatGlass.Provider>

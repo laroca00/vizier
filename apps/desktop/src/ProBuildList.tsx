@@ -24,6 +24,7 @@ import { useAsync } from "./useAsync";
 import { fromPro } from "./library/convert";
 import { createBuild } from "./library/store";
 import { useToast } from "./ui/Toast";
+import { useOpenPro } from "./proLink";
 import { toggleFollow, usePersonal } from "./personal";
 import { Button } from "./ui/Button";
 import { ErrorState } from "./ui/States";
@@ -122,7 +123,7 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: ProStatic; co
   const [importState, setImportState] = useState<ImportState>({ status: "idle" });
   const [open, setOpen] = useState(false);
   const following = usePersonal().followed.includes(build.player);
-  const toast = useToast();
+  const openPro = useOpenPro();
   const champion = data.champions.get(build.championId);
   const opponent = build.opponentChampionId ? data.champions.get(build.opponentChampionId) : undefined;
   const keystone = data.runes.get(parseRunes(build.runes).selectedPerkIds[0]);
@@ -142,7 +143,9 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: ProStatic; co
     <li className="pros__row" data-result={build.win ? "win" : "loss"}>
       <span className="pros__who">
         <span className="pros__player">
-          {build.player}
+          <button type="button" className="pros__name" onClick={() => openPro(build.player)}>
+            {build.player}
+          </button>
           <button
             type="button"
             className="pros__follow"
@@ -196,23 +199,7 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: ProStatic; co
         <Button disabled={!isTauri()} busy={importState.status === "working"} onClick={onImport}>
           {t("Aktar")}
         </Button>
-        {!compact && (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              createBuild(
-                fromPro(
-                  { name: [build.player, champion?.name].filter(Boolean).join(" "), championId: build.championId, position: build.position || null },
-                  build,
-                  (id) => !!data.items.get(id)?.complete,
-                ),
-              );
-              toast("success", t("{champion} buildlerine kaydedildi", { champion: champion?.name ?? "" }));
-            }}
-          >
-            {t("Kaydet")}
-          </Button>
-        )}
+        <SaveProButton build={build} data={data} />
         {(importState.status === "done" || importState.status === "error") && (
           <span className="build__feedback" data-status={importState.status} role="status">
             {importState.message}
@@ -221,6 +208,30 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: ProStatic; co
       </span>
       {open && <ProDetail build={build} data={data} />}
     </li>
+  );
+}
+
+/** Adds the pro's build to the library; the same button sits on every list that shows pro games. */
+export function SaveProButton({ build, data }: { build: ProBuild; data: ProStatic }) {
+  const t = useT();
+  const toast = useToast();
+  const champion = data.champions.get(build.championId);
+  return (
+    <Button
+      variant="ghost"
+      onClick={() => {
+        createBuild(
+          fromPro(
+            { name: [build.player, champion?.name].filter(Boolean).join(" "), championId: build.championId, position: build.position || null },
+            build,
+            (id) => !!data.items.get(id)?.complete,
+          ),
+        );
+        toast("success", t("{champion} buildlerine kaydedildi", { champion: champion?.name ?? "" }));
+      }}
+    >
+      {t("Kaydet")}
+    </Button>
   );
 }
 

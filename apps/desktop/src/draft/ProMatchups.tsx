@@ -3,7 +3,7 @@ import { championIconUrl, itemIconUrl, runeIconUrl } from "../data/ddragon";
 import { useLang, useT } from "../i18n";
 import { timeAgo } from "../labels";
 import { maxOrderOf } from "../library/convert";
-import { loadProStatic, parseRunes, type ProStatic } from "../ProBuildList";
+import { loadProStatic, parseRunes, SaveProButton, type ProStatic } from "../ProBuildList";
 import { useAsync } from "../useAsync";
 import { rankProBuilds, type ProMatch } from "./logic";
 
@@ -94,6 +94,7 @@ function ProCard({ build, match, data }: { build: ProBuild; match: ProMatch; dat
         </span>
         {order && <span>{order.map((s) => SKILL_KEYS[s]).join(" > ")}</span>}
         <span>{timeAgo(build.gameStart + build.duration * 1000, lang)}</span>
+        <SaveProButton build={build} data={data} />
       </p>
     </li>
   );
