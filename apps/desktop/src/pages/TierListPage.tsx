@@ -1,3 +1,4 @@
+import { MetaMovers } from "../MetaMovers";
 import { MatchupLink } from "../matchupLink";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { getBans, getTierList } from "../api";
@@ -268,6 +269,7 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
           )}
         </div>
       )}
+      {ranked && state.status === "done" && <MetaMovers onOpenChampion={(id, role) => onOpenChampion(id, role, queue)} />}
     </LiquidGlass>
   );
 }
