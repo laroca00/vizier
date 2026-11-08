@@ -2,6 +2,7 @@ import type { Counters, ProBuild, TierEntry } from "../api";
 import type { Champion } from "../data/ddragon";
 import { analyzeComp, traitsOf } from "../data/traits";
 import type { ChampSelect, DraftMember } from "../lcu";
+import { ARAM, RANKED } from "../queues";
 
 export const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"] as const;
 
@@ -251,4 +252,9 @@ export function matchupLine(
 /** ARAM and Mayhem hand out a shared bench; other queues never have one. */
 export function hasBench(draft: ChampSelect): boolean {
   return (draft.bench?.length ?? 0) > 0 || (draft.rerollsRemaining ?? 0) > 0;
+}
+
+/** The session does not name its queue; a bench means ARAM-style rules, so builds come from ARAM games. */
+export function draftQueue(draft: ChampSelect): number {
+  return hasBench(draft) ? ARAM : RANKED;
 }

@@ -15,13 +15,13 @@ export function buildPool(build: Build): Set<number> {
   return pool;
 }
 
-type Props = { championId: number; position: string | null; enemies: Champion[] };
+type Props = { championId: number; position: string | null; enemies: Champion[]; queue?: number };
 
 /** Item answers to the enemy draft, drawn from what the champion's builds already buy. */
-export function ItemAdvicePanel({ championId, position, enemies }: Props) {
+export function ItemAdvicePanel({ championId, position, enemies, queue = 420 }: Props) {
   const t = useT();
-  const [state] = useAsync(`item-advice:${championId}:${position}`, async () => {
-    const [build, names, version] = await Promise.all([getBuild(championId, position), loadItems(), latestVersion()]);
+  const [state] = useAsync(`item-advice:${queue}:${championId}:${position}`, async () => {
+    const [build, names, version] = await Promise.all([getBuild(championId, position, null, queue), loadItems(), latestVersion()]);
     return { build, names, version };
   });
   if (state.status !== "done" || !state.value.build) return null;

@@ -16,7 +16,7 @@ import { checkRole } from "../draft/allyRole";
 import { BenchHelper } from "../draft/BenchHelper";
 import { HoverMatchup } from "../draft/HoverMatchup";
 import { BanPlanner } from "../draft/BanPlanner";
-import { autoView, duoPartnerRole, hasBench, shownChampion, type DraftView } from "../draft/logic";
+import { autoView, draftQueue, duoPartnerRole, hasBench, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";
 import { ThreatsPanel } from "../draft/ThreatsPanel";
@@ -62,6 +62,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const ready = data.status === "done" ? data.value : null;
   const myChampion = me ? shownChampion(me) : 0;
   const locked = !!me && me.championId !== 0;
+  const queue = draftQueue(draft);
   const role = me?.position ? me.position.toUpperCase() : null;
   useSplash(myChampion || null);
 
@@ -185,11 +186,13 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 vs={vs}
                 enemies={enemyPicks}
                 showPros
+                queue={queue}
               />
               {enemyPicks.length >= 3 && (
                 <ItemAdvicePanel
                   championId={myChampion}
                   position={me.position || null}
+                  queue={queue}
                   enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c): c is Champion => c !== undefined)}
                 />
               )}

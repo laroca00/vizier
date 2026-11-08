@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ProBuild, TierEntry } from "../api";
 import type { Champion } from "../data/ddragon";
 import type { ChampSelect, DraftMember } from "../lcu";
-import { autoView, hasBench, matchupLine, duoPartnerRole, difficultyOf, guessOpponent, matchupItems, rankProBuilds, suggestPicks, teamNeeds, type RoleShares } from "./logic";
+import { autoView, draftQueue, hasBench, matchupLine, duoPartnerRole, difficultyOf, guessOpponent, matchupItems, rankProBuilds, suggestPicks, teamNeeds, type RoleShares } from "./logic";
 
 function champion(key: number, id: string, tags: string[], info: Partial<Champion["info"]> = {}): Champion {
   const full = { attack: 5, defense: 5, magic: 5, difficulty: 5, ...info };
@@ -241,5 +241,12 @@ describe("hasBench", () => {
   it("is false for sessions without one", () => {
     expect(hasBench(draft({}))).toBe(false);
     expect(hasBench(draft({ bench: [], rerollsRemaining: 0 }))).toBe(false);
+  });
+});
+
+describe("draftQueue", () => {
+  it("uses ARAM builds when there is a bench and ranked otherwise", () => {
+    expect(draftQueue(draft({ bench: [1] }))).toBe(450);
+    expect(draftQueue(draft({}))).toBe(420);
   });
 });
