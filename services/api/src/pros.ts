@@ -250,12 +250,21 @@ type Row = {
   purchase_order: string | null;
 };
 
-export type ProFilter = { championId?: number; position?: string; team?: string; group?: ProGroup; limit?: number };
+export type ProFilter = {
+  championId?: number;
+  position?: string;
+  team?: string;
+  group?: ProGroup;
+  player?: string;
+  platform?: string;
+  patch?: string;
+  limit?: number;
+};
 
 /** Newest first. */
 export async function proBuilds(
   db: D1Database,
-  { championId, position, team, group, limit = 30 }: ProFilter = {},
+  { championId, position, team, group, player, platform, patch, limit = 30 }: ProFilter = {},
   catalog: Catalog | null = null,
 ): Promise<ProBuild[]> {
   const where = [
@@ -263,12 +272,15 @@ export async function proBuilds(
     position ? "team_position = ?" : "",
     team ? "team = ?" : "",
     group ? "grp = ?" : "",
+    player ? "player = ?" : "",
+    platform ? "platform = ?" : "",
+    patch ? "patch = ?" : "",
   ].filter(Boolean);
   const { results } = await db
     .prepare(
       `SELECT * FROM pro_matches ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY game_start DESC LIMIT ?`,
     )
-    .bind(...[championId, position, team, group].filter((v) => v !== undefined), limit)
+    .bind(...[championId, position, team, group, player, platform, patch].filter((v) => v !== undefined), limit)
     .all<Row>();
   return results.map((r) => ({
     matchId: r.match_id,
@@ -296,6 +308,14 @@ export async function proBuilds(
     purchases: ids(r.purchase_order),
     style: catalog ? buildStyle(ids(r.items), catalog) : null,
   }));
+}
+
+/** Patches with stored pro games, newest first, for the page's filters. */
+export async function proPatches(db: D1Database): Promise<string[]> {
+  const { results } = await db
+    .prepare("SELECT patch FROM pro_matches GROUP BY patch ORDER BY MAX(game_start) DESC LIMIT 6")
+    .all<{ patch: string }>();
+  return results.map((r) => r.patch);
 }
 
 /** Teams and players with stored games, for the page's filters. */

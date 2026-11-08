@@ -1517,3 +1517,44 @@
     animation: none;
   }
 }
+
+.pros__detail {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  padding: var(--space-3) 0 var(--space-2);
+  border-top: 1px solid var(--line);
+}
+
+.pros__detail p {
+  margin: 0;
+}
+
+.pros__detail-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+
+.pros__gap {
+  width: var(--space-2);
+}
+
+.pros__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+}
+
+.pros__detail .skillgrid {
+  max-width: 560px;
+}
+
+.pros:not([data-compact]) .pros__action {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+}

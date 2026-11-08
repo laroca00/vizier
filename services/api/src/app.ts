@@ -5,7 +5,7 @@ import type { Catalog } from "./archetypes.ts";
 import { POSITIONS, type Build } from "./builds.ts";
 import { docKey, readDoc } from "./statDocs.ts";
 import { STORED_QUEUES } from "./crawler.ts";
-import { proBuilds, proTeams } from "./pros.ts";
+import { proBuilds, proPatches, proTeams } from "./pros.ts";
 import type { Store } from "./store.ts";
 
 const MINUTE = 60_000;
@@ -142,17 +142,28 @@ export function createApp(store: Store, { statsDb, catalog }: AppOptions = {}) {
     if (team !== undefined && !/^[\w .-]{1,40}$/.test(team)) badRequest("Invalid team");
     const group = c.req.query("group");
     if (group !== undefined && group !== "worlds" && group !== "turkey" && group !== "challenger") badRequest("Unsupported group");
+    const player = c.req.query("player");
+    if (player !== undefined && !/^[\p{L}\p{N} ._#-]{1,40}$/u.test(player)) badRequest("Invalid player");
+    const platform = c.req.query("platform");
+    if (platform !== undefined && !/^[a-z]{2,4}\d?$/.test(platform)) badRequest("Invalid platform");
+    const patch = c.req.query("patch");
+    if (patch !== undefined && !/^\d{1,2}\.\d{1,2}$/.test(patch)) badRequest("Invalid patch");
     const limit = Number(c.req.query("limit") ?? 30);
     if (!Number.isInteger(limit) || limit < 1 || limit > 100) badRequest("limit must be 1-100");
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
-    const key = `pro-builds:${championId ?? "ANY"}:${position ?? "ANY"}:${team ?? "ANY"}:${group ?? "ANY"}:${limit}`;
+    const key = ["pro-builds", championId, position, team, group, player, platform, patch, limit].map((v) => v ?? "ANY").join(":");
     // Pro games arrive every few minutes; a short cache keeps the list fresh.
     const load = async () => {
       // A Data Dragon outage costs the style labels, not the list.
       const items = catalog ? await catalog().catch(() => null) : null;
-      return proBuilds(statsDb, { championId, position, team, group, limit }, items);
+      return proBuilds(statsDb, { championId, position, team, group, player, platform, patch, limit }, items);
     };
     return c.json({ builds: await cached(key, 5 * MINUTE, load) });
+  });
+
+  app.get("/v1/pros/patches", async (c) => {
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json({ patches: await cached("pro-patches", 60 * MINUTE, () => proPatches(statsDb)) });
   });
 
   app.get("/v1/pros/teams", async (c) => {

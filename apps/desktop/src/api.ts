@@ -155,6 +155,7 @@ export type ProBuild = {
   matchId: string;
   player: string;
   team: string;
+  group?: ProGroup;
   platform: string;
   patch: string;
   gameStart: number;
@@ -178,7 +179,39 @@ export type ProBuild = {
   style?: BuildStyle | null;
 };
 export type ProGroup = "worlds" | "turkey" | "challenger";
-export type ProFilter = { championId?: number; position?: string; team?: string; group?: ProGroup; limit?: number };
+export type ProFilter = {
+  championId?: number;
+  position?: string;
+  team?: string;
+  group?: ProGroup;
+  player?: string;
+  /** Lowercase platform id: kr, euw1, tr1, na1. */
+  platform?: string;
+  patch?: string;
+  limit?: number;
+};
+
+/** True when the game matches every filter that is set; checks the server's answer, which older Workers don't filter. */
+export function matchesProFilter(build: ProBuild, filter: ProFilter) {
+  return (
+    (!filter.championId || build.championId === filter.championId) &&
+    (!filter.position || build.position === filter.position) &&
+    (!filter.team || build.team === filter.team) &&
+    (!filter.group || build.group === filter.group) &&
+    (!filter.player || build.player === filter.player) &&
+    (!filter.platform || build.platform === filter.platform) &&
+    (!filter.patch || build.patch === filter.patch)
+  );
+}
+
+/** Patches with pro games, newest first; empty when the Worker predates the route. */
+export async function getProPatches(): Promise<string[]> {
+  try {
+    return (await get<{ patches: string[] }>("/v1/pros/patches")).patches;
+  } catch {
+    return [];
+  }
+}
 
 export async function getProBuilds(filter: ProFilter): Promise<ProBuild[]> {
   const params = new URLSearchParams();
@@ -186,8 +219,12 @@ export async function getProBuilds(filter: ProFilter): Promise<ProBuild[]> {
   if (filter.position) params.set("position", filter.position);
   if (filter.team) params.set("team", filter.team);
   if (filter.group) params.set("group", filter.group);
+  if (filter.player) params.set("player", filter.player);
+  if (filter.platform) params.set("platform", filter.platform);
+  if (filter.patch) params.set("patch", filter.patch);
   if (filter.limit) params.set("limit", String(filter.limit));
-  return (await get<{ builds: ProBuild[] }>(`/v1/pros/builds${params.size ? `?${params}` : ""}`)).builds;
+  const { builds } = await get<{ builds: ProBuild[] }>(`/v1/pros/builds${params.size ? `?${params}` : ""}`);
+  return builds.filter((b) => matchesProFilter(b, filter));
 }
 
 export async function getProTeams() {

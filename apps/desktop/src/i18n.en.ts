@@ -615,4 +615,15 @@ export const EN: Record<string, string> = {
   Zor: "Hard",
   "Can yenilenmesi": "Health regen",
   Kaynak: "Resource",
+
+  // Pro builds filters and detail
+  "Alış sırası": "Buy order",
+  "Ayrıntı": "Details",
+  "Bu filtrelerle pro maçı yok. Bir filtreyi kaldır ya da başka bir grup seç.": "No pro games with these filters. Remove one or pick another group.",
+  "Bölge": "Region",
+  Gizle: "Hide",
+  Oyuncu: "Player",
+  Yama: "Patch",
+  "{cs} CS, {gold} altın": "{cs} CS, {gold} gold",
+  "{date}, {minutes}:{seconds} sürdü": "{date}, lasted {minutes}:{seconds}",
 };

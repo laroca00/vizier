@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ProCrawler, proBuilds, proTeams, syncChallengers } from "./pros.ts";
+import { ProCrawler, proBuilds, proPatches, proTeams, syncChallengers } from "./pros.ts";
 import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
@@ -76,6 +76,12 @@ describe("ProCrawler", () => {
     expect(await proBuilds(db, { championId: 238 })).toEqual([]);
     expect(await proTeams(db)).toEqual([{ team: "T1", group: "worlds", players: ["Faker"] }]);
     expect(await proBuilds(db, { group: "turkey" })).toEqual([]);
+    expect((await proBuilds(db, { player: "Faker", platform: "kr" })).length).toBe(3);
+    expect(await proBuilds(db, { player: "Chovy" })).toEqual([]);
+    expect(await proBuilds(db, { platform: "euw1" })).toEqual([]);
+    const [patch] = await proPatches(db);
+    expect((await proBuilds(db, { patch })).length).toBeGreaterThan(0);
+    expect(await proBuilds(db, { patch: "1.1" })).toEqual([]);
   });
 });
 
