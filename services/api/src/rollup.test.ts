@@ -7,7 +7,7 @@ import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { pruneRaw, rollup } from "./rollup.ts";
 import { docKey, statDocs } from "./statDocs.ts";
-import { arenaDuos, arenaItems, augmentStats, itemTimes, laneStats, sampleLimits, tierList } from "./stats.ts";
+import { arenaDuos, arenaItems, augmentChampions, augmentStats, itemTimes, laneStats, sampleLimits, tierList } from "./stats.ts";
 import { MemoryStore } from "./store.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
@@ -96,6 +96,37 @@ describe("augments", () => {
     const all = await augmentStats(db, 1700, null);
     expect(all.augments.find((a) => a.augmentId === 9)?.games).toBe(18);
     expect((await augmentStats(db, 2400, null)).augments).toEqual([]);
+  });
+
+  it("rates augments against the champion's own rate and lists the champions each one suits", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, noRiot);
+    for (let n = 1; n <= 40; n++) {
+      // Ahri finishes top four in 3 of 4 games; augment 9 wins every game, 11 only half.
+      const nine = n % 2 === 1;
+      const top4 = nine || n % 4 === 0;
+      const match = game(n, top4);
+      match.metadata.matchId = `TR1_L${n}`;
+      match.info.queueId = 1700;
+      match.info.participants = [
+        { ...player(1, 100, 103, false), teamPosition: "", placement: top4 ? 2 : 6, playerAugment1: nine ? 9 : 11 } as Participant,
+        { ...player(2, 200, 238, false), teamPosition: "", placement: top4 ? 6 : 2, playerAugment1: 9 } as Participant,
+      ];
+      await crawler.save(match);
+    }
+    await rollup(db, noCatalog);
+    const ahri = await augmentStats(db, 1700, 103);
+    const nine = ahri.augments.find((a) => a.augmentId === 9)!;
+    const eleven = ahri.augments.find((a) => a.augmentId === 11)!;
+    expect(nine.delta).toBe(0.25);
+    expect(eleven.delta).toBe(-0.25);
+    expect(ahri.augments[0].augmentId).toBe(9);
+
+    const suits = await augmentChampions(db, 1700);
+    const forNine = suits.augments.find((a) => a.augmentId === 9)!;
+    expect(forNine.champions.map((c) => c.championId)).toEqual([103, 238]);
+    expect(forNine.champions[0]).toMatchObject({ games: 20, winRate: 1, delta: 0.25 });
+    expect((await augmentChampions(db, 2400)).augments).toEqual([]);
   });
 });
 

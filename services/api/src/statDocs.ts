@@ -2,7 +2,7 @@
 // to D1's stat_docs as finished JSON; the Worker only reads them. Keys are
 // shared here so both sides agree.
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
-import { arenaDuos, arenaItems, augmentStats, banSuggestions, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
+import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
 
 // Queues with augments: Arena and ARAM Mayhem.
 export const AUGMENT_QUEUES = [1700, 2400];
@@ -36,6 +36,8 @@ export const docKey = {
   buildIndex: () => "buildindex",
   /** Augment stats for a queue, overall or for one champion. */
   augments: (queue: number, championId: number | null) => `augments:${queue}:${championId ?? "ANY"}`,
+  /** For each augment of a queue, the champions it does best on. */
+  augmentChampions: (queue: number) => `augmentchamps:${queue}`,
 };
 
 export type BuildIndexEntry = {
@@ -85,7 +87,10 @@ export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown
     }
   }
   yield [docKey.bans(), await banSuggestions(db)];
-  for (const queue of AUGMENT_QUEUES) yield [docKey.augments(queue, null), await augmentStats(db, queue, null)];
+  for (const queue of AUGMENT_QUEUES) {
+    yield [docKey.augments(queue, null), await augmentStats(db, queue, null)];
+    yield [docKey.augmentChampions(queue), await augmentChampions(db, queue)];
+  }
 
   const index: BuildIndexEntry[] = [];
   let indexPatches: string[] = [];

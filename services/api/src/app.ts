@@ -195,6 +195,14 @@ export function createApp(store: Store, { statsDb, catalog, augments = false, ar
     return c.json({ builds: await cached(key, 5 * MINUTE, load) });
   });
 
+  app.get("/v1/augments/champions", async (c) => {
+    if (!augments) return c.json({ error: "Augment stats are switched off" }, 403);
+    const queue = Number(c.req.query("queue"));
+    if (!AUGMENT_QUEUES.includes(queue)) badRequest("Unsupported queue");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json((await readDoc(statsDb, docKey.augmentChampions(queue))) ?? { patches: [], augments: [] });
+  });
+
   app.get("/v1/augments", async (c) => {
     if (!augments) return c.json({ error: "Augment stats are switched off" }, 403);
     const queue = Number(c.req.query("queue"));

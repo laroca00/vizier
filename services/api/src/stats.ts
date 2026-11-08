@@ -344,12 +344,50 @@ export async function synergies(
   return { patches, games: results.reduce((sum, r) => sum + r.games, 0), allies };
 }
 
-export type AugmentStat = { augmentId: number; games: number; pickRate: number; winRate: number; tier: string };
+export type AugmentStat = {
+  augmentId: number;
+  games: number;
+  pickRate: number;
+  winRate: number;
+  tier: string;
+  /** Win rate minus the champion's (or the mode's) own rate with any augment. */
+  delta: number;
+};
+
+type AugmentRow = { kind: string; value: string; games: number; wins: number };
+
+/**
+ * Pulls a win rate towards a baseline rather than 50%, then reads it as a lift
+ * over that baseline, so a strong champion's augments aren't all S just
+ * because the champion wins a lot.
+ */
+const liftScore = (wins: number, games: number, baseline: number) =>
+  (wins + sampleLimits.priorGames * baseline) / (games + sampleLimits.priorGames) - baseline + 0.5;
+
+function rateAugments(rows: AugmentRow[]): { games: number; augments: AugmentStat[] } {
+  const all = rows.find((r) => r.kind === "augmented");
+  const games = all?.games ?? 0;
+  const baseline = all && all.games > 0 ? all.wins / all.games : 0.5;
+  const augments = rows
+    .filter((r) => r.kind === "augment" && r.games >= sampleLimits.pairGames)
+    .map((r) => ({
+      augmentId: Number(r.value),
+      games: r.games,
+      pickRate: round3(r.games / Math.max(games, 1)),
+      winRate: round3(r.wins / r.games),
+      delta: round3(r.wins / r.games - baseline),
+      score: liftScore(r.wins, r.games, baseline),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .map(({ score, ...a }) => ({ ...a, tier: tierOf(score) }));
+  return { games, augments };
+}
 
 /**
  * Arena and ARAM Mayhem augments, overall or for one champion: how often each
  * is taken and how it does (in Arena a "win" is a top-four finish), tiered
- * like champions. The Worker serves these only while AUGMENTS is "on".
+ * by the lift over the champion's own rate. The Worker serves these only
+ * while AUGMENTS is "on".
  */
 export async function augmentStats(
   db: D1Database,
@@ -366,14 +404,58 @@ export async function augmentStats(
         GROUP BY kind, value`,
     )
     .bind(...patches, queue, ...(championId ? [championId] : []))
-    .all<{ kind: string; value: string; games: number; wins: number }>();
-  const games = results.find((r) => r.kind === "augmented")?.games ?? 0;
-  const augments = results
-    .filter((r) => r.kind === "augment" && r.games >= sampleLimits.pairGames)
-    .map((r) => ({ augmentId: Number(r.value), games: r.games, pickRate: round3(r.games / Math.max(games, 1)), winRate: round3(r.wins / r.games), score: smoothed(r.wins, r.games) }))
-    .sort((a, b) => b.score - a.score)
-    .map(({ score, ...a }) => ({ ...a, tier: TIER_CUTS.find(([cut]) => score >= cut)?.[1] ?? "D" }));
-  return { patches, games, augments };
+    .all<AugmentRow>();
+  return { patches, ...rateAugments(results) };
+}
+
+export type AugmentChampion = { championId: number; games: number; winRate: number; delta: number; tier: string };
+export type AugmentChampions = { augmentId: number; champions: AugmentChampion[] };
+
+const AUGMENT_CHAMPIONS_SHOWN = 10;
+
+/**
+ * For every augment, the champions it lifts most over their own rate. One
+ * document per queue keeps the D1 writes down.
+ */
+export async function augmentChampions(db: D1Database, queue: number): Promise<{ patches: string[]; augments: AugmentChampions[] }> {
+  const patches = await latestPatches(db);
+  if (patches.length === 0) return { patches, augments: [] };
+  const { results } = await db
+    .prepare(
+      `SELECT champion_id, kind, value, SUM(games) AS games, SUM(wins) AS wins FROM stat_counts
+        WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ? AND kind IN ('augment', 'augmented')
+        GROUP BY champion_id, kind, value`,
+    )
+    .bind(...patches, queue)
+    .all<AugmentRow & { champion_id: number }>();
+  const byChampion = new Map<number, AugmentRow[]>();
+  for (const r of results) {
+    const list = byChampion.get(r.champion_id) ?? [];
+    list.push(r);
+    byChampion.set(r.champion_id, list);
+  }
+  const byAugment = new Map<number, (AugmentChampion & { score: number })[]>();
+  for (const [championId, rows] of byChampion) {
+    const all = rows.find((r) => r.kind === "augmented");
+    const baseline = all && all.games > 0 ? all.wins / all.games : 0.5;
+    for (const r of rows) {
+      if (r.kind !== "augment" || r.games < sampleLimits.pairGames) continue;
+      const score = liftScore(r.wins, r.games, baseline);
+      const list = byAugment.get(Number(r.value)) ?? [];
+      list.push({ championId, games: r.games, winRate: round3(r.wins / r.games), delta: round3(r.wins / r.games - baseline), tier: tierOf(score), score });
+      byAugment.set(Number(r.value), list);
+    }
+  }
+  const augments = [...byAugment]
+    .map(([augmentId, list]) => ({
+      augmentId,
+      champions: list
+        .sort((a, b) => b.score - a.score)
+        .slice(0, AUGMENT_CHAMPIONS_SHOWN)
+        .map(({ score: _, ...c }) => c),
+    }))
+    .sort((a, b) => a.augmentId - b.augmentId);
+  return { patches, augments };
 }
 
 export type DuoPartner = { championId: number; games: number; winRate: number };

@@ -25,6 +25,7 @@ describe("api", () => {
 
   it("serves augments only while the switch is on", async () => {
     expect((await app().request("/v1/augments?queue=1700")).status).toBe(403);
+    expect((await app().request("/v1/augments/champions?queue=1700")).status).toBe(403);
     const on = createApp(new MemoryStore(), { augments: true });
     expect((await on.request("/v1/augments?queue=420")).status).toBe(400);
     expect((await on.request("/v1/augments?queue=1700&champion=x")).status).toBe(400);
