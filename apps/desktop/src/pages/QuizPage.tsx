@@ -31,6 +31,7 @@ import { Tabs } from "../ui/Tabs";
 import { useAsync } from "../useAsync";
 import { useToast } from "../ui/Toast";
 import { ItemGame } from "../quiz/ItemGame";
+import { StatsView } from "../quiz/StatsView";
 import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
 
 const MODE_LABELS: Record<QuizMode, { label: string; hint: string }> = {
@@ -42,7 +43,7 @@ const MODE_LABELS: Record<QuizMode, { label: string; hint: string }> = {
   item: { label: "Eşya", hint: "Bulanık bir eşya ikonu. Her yanlış tahminde netleşir; sonra fiyatı ve ilk harfi açılır." },
 };
 
-type Play = "daily" | "free";
+type Play = "daily" | "free" | "stats";
 
 export function QuizPage() {
   const t = useT();
@@ -55,19 +56,24 @@ export function QuizPage() {
     <LiquidGlass className="panel tiers quiz" radius={28} strength={2.5} scroll>
       <PageHeader
         title={t("Şampiyon bilmecesi")}
-        subtitle={t(MODE_LABELS[mode].hint)}
+        subtitle={play === "stats" ? t("Günün bilmecesindeki sonuçların, bu bilgisayarda tutulur.") : t(MODE_LABELS[mode].hint)}
         toolbar={
           <Tabs
             label={t("Oyun")}
             items={[
               { id: "daily" as Play, label: t("Günün bilmecesi") },
               { id: "free" as Play, label: t("Serbest") },
+              { id: "stats" as Play, label: t("İstatistik") },
             ]}
             value={play}
             onChange={setPlay}
           />
         }
       />
+      {play === "stats" ? (
+        <StatsView />
+      ) : (
+        <>
       <Tabs label={t("Mod")} size="small" items={(Object.keys(MODE_LABELS) as QuizMode[]).map((m) => ({ id: m, label: t(MODE_LABELS[m].label) }))} value={mode} onChange={setMode} />
       {data.status === "error" ? (
         <ErrorState message={t("Oyun verisi alınamadı.")} onRetry={retry} />
@@ -79,6 +85,8 @@ export function QuizPage() {
         ) : (
           <Game key={`${mode}:${play}:${round}`} mode={mode} play={play} data={data.value} onNext={() => setRound(round + 1)} />
         )
+      )}
+        </>
       )}
     </LiquidGlass>
   );

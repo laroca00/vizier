@@ -185,3 +185,37 @@ export function streak(records: QuizRecord[], mode: QuizMode, today: string): nu
   }
   return count;
 }
+
+export type ModeStats = {
+  played: number;
+  solved: number;
+  current: number;
+  best: number;
+  /** Solved days by number of guesses: index 0 is one guess, the last bucket is six or more. */
+  distribution: number[];
+};
+
+export const DISTRIBUTION_BUCKETS = 6;
+
+/** Longest run of consecutive solved days. */
+export function bestStreak(records: QuizRecord[], mode: QuizMode): number {
+  const days = [...new Set(records.filter((r) => r.mode === mode && r.solved).map((r) => r.day))].sort();
+  let best = 0;
+  let run = 0;
+  let previous: Date | null = null;
+  for (const day of days) {
+    const date = new Date(`${day}T12:00:00`);
+    const next = previous && dayKey(new Date(previous.getTime() + 36e5 * 24)) === day;
+    run = next ? run + 1 : 1;
+    best = Math.max(best, run);
+    previous = date;
+  }
+  return best;
+}
+
+export function modeStats(records: QuizRecord[], mode: QuizMode, today: string): ModeStats {
+  const own = records.filter((r) => r.mode === mode);
+  const distribution = new Array<number>(DISTRIBUTION_BUCKETS).fill(0);
+  for (const r of own) if (r.solved) distribution[Math.min(r.guesses.length, DISTRIBUTION_BUCKETS) - 1]++;
+  return { played: own.length, solved: own.filter((r) => r.solved).length, current: streak(records, mode, today), best: bestStreak(records, mode), distribution };
+}

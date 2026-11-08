@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Champion } from "../data/ddragon";
 import { EMOJI_HINTS } from "./emoji";
-import { attributesOf, mainRoles, classicGrid, itemBlur, itemPool, abilityView, recipePool, recipeParts, combineCost, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinView, streak, type QuizRecord } from "./logic";
+import { attributesOf, mainRoles, classicGrid, itemBlur, itemPool, abilityView, bestStreak, modeStats, recipePool, recipeParts, combineCost, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinView, streak, type QuizRecord } from "./logic";
 
 function champion(id: string, tags: string[], difficulty: number, partype: string, attackRange: number): Champion {
   return { id, key: id.length, name: id, magic: true, tank: false, tags, info: { attack: 5, defense: 5, magic: 5, difficulty }, partype, attackRange };
@@ -124,5 +124,21 @@ describe("ability disguise", () => {
 
   it("turns the other way on odd seeds", () => {
     expect(abilityView(1, 3).rotate).toBe(-120);
+  });
+});
+
+describe("statistics", () => {
+  const rec = (day: string, guesses: number, solved = true): QuizRecord => ({ day, mode: "classic", guesses: Array(guesses).fill(1), solved });
+  const records = [rec("2026-11-01", 3), rec("2026-11-02", 2), rec("2026-11-03", 7), rec("2026-11-05", 1), rec("2026-11-06", 4, false)];
+
+  it("finds the longest run of solved days", () => {
+    expect(bestStreak(records, "classic")).toBe(3);
+    expect(bestStreak(records, "emoji")).toBe(0);
+  });
+
+  it("counts games, solves and the guess distribution", () => {
+    const s = modeStats(records, "classic", "2026-11-06");
+    expect(s).toMatchObject({ played: 5, solved: 4, best: 3, current: 1 });
+    expect(s.distribution).toEqual([1, 1, 1, 0, 0, 1]);
   });
 });
