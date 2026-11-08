@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { championIconUrl, champions, latestVersion, type Champion } from "./data/ddragon";
 import { useT } from "./i18n";
+import { NavIcon, type IconName } from "./ui/NavIcon";
 import { useAsync } from "./useAsync";
 import "./SearchPalette.css";
 
@@ -16,14 +17,20 @@ export function fold(text: string) {
     .replace(/[^\p{L}\p{N}]/gu, "");
 }
 
-/** Names that start with the query come first. */
-function search(query: string, list: Champion[]): Champion[] {
+export type PaletteLink = { id: string; label: string; icon: IconName };
+
+type Result = { kind: "page"; link: PaletteLink } | { kind: "champion"; champion: Champion };
+
+/** Names that start with the query come first; matching pages lead. */
+function search(query: string, list: Champion[], links: PaletteLink[]): Result[] {
   const needle = fold(query);
   if (!needle) return [];
-  return list
+  const rank = (name: string) => Number(!fold(name).startsWith(needle));
+  const pages = links.filter((l) => fold(l.label).includes(needle)).sort((a, b) => rank(a.label) - rank(b.label));
+  const champs = list
     .filter((c) => fold(c.name).includes(needle))
-    .sort((a, b) => Number(!fold(a.name).startsWith(needle)) - Number(!fold(b.name).startsWith(needle)) || a.name.localeCompare(b.name, "tr"))
-    .slice(0, SHOWN);
+    .sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name, "tr"));
+  return [...pages.map((link) => ({ kind: "page" as const, link })), ...champs.map((champion) => ({ kind: "champion" as const, champion }))].slice(0, SHOWN);
 }
 
 async function loadStatic() {
@@ -35,9 +42,12 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onChampion: (championId: number) => void;
+  /** Sections of the app, already translated, reachable by name. */
+  links?: PaletteLink[];
+  onLink?: (id: string) => void;
 };
 
-export function SearchPalette({ open, onClose, onChampion }: Props) {
+export function SearchPalette({ open, onClose, onChampion, links = [], onLink }: Props) {
   const t = useT();
   const dialog = useRef<HTMLDialogElement>(null);
   const [query, setQuery] = useState("");
@@ -56,13 +66,14 @@ export function SearchPalette({ open, onClose, onChampion }: Props) {
     if (!open && element.open) element.close();
   }, [open]);
 
-  const results = data.status === "done" ? search(query, data.value.list) : [];
+  const results = search(query, data.status === "done" ? data.value.list : [], links);
   const version = data.status === "done" ? data.value.version : "";
 
-  function choose(champion: Champion | undefined) {
-    if (!champion) return;
+  function choose(result: Result | undefined) {
+    if (!result) return;
     onClose();
-    onChampion(champion.key);
+    if (result.kind === "champion") onChampion(result.champion.key);
+    else onLink?.(result.link.id);
   }
 
   function onKeyDown(event: React.KeyboardEvent) {
@@ -90,8 +101,8 @@ export function SearchPalette({ open, onClose, onChampion }: Props) {
         <input
           className="palette__input"
           type="search"
-          placeholder={t("Şampiyon ara")}
-          aria-label={t("Şampiyon ara")}
+          placeholder={t("Şampiyon ya da bölüm ara")}
+          aria-label={t("Şampiyon ya da bölüm ara")}
           autoFocus
           role="combobox"
           aria-expanded={results.length > 0}
@@ -112,22 +123,34 @@ export function SearchPalette({ open, onClose, onChampion }: Props) {
                   ? t("Şampiyon listesi yüklenemedi. İnternet bağlantını kontrol et.")
                   : data.status !== "done"
                     ? t("Şampiyonlar yükleniyor")
-                    : t("Bu adla bir şampiyon yok.")}
+                    : t("Bu adla bir şampiyon ya da bölüm yok.")}
               </li>
             ) : (
-              results.map((champion, i) => (
+              results.map((result, i) => (
                 <li
-                  key={champion.key}
+                  key={result.kind === "champion" ? `c${result.champion.key}` : `p${result.link.id}`}
                   id={optionId(i)}
                   role="option"
                   aria-selected={i === active}
                   className="palette__option"
                   onMouseMove={() => setActive(i)}
-                  onClick={() => choose(champion)}
+                  onClick={() => choose(result)}
                 >
-                  <img src={championIconUrl(version, champion.id)} alt="" width={28} height={28} />
-                  <span>{champion.name}</span>
-                  <span className="palette__kind">{t("Şampiyon")}</span>
+                  {result.kind === "champion" ? (
+                    <>
+                      <img src={championIconUrl(version, result.champion.id)} alt="" width={28} height={28} />
+                      <span>{result.champion.name}</span>
+                      <span className="palette__kind">{t("Şampiyon")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="palette__page-icon">
+                        <NavIcon name={result.link.icon} size={18} />
+                      </span>
+                      <span>{result.link.label}</span>
+                      <span className="palette__kind">{t("Bölüm")}</span>
+                    </>
+                  )}
                 </li>
               ))
             )}

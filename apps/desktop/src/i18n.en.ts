@@ -762,4 +762,7 @@ export const EN: Record<string, string> = {
   "Rakibe hazırlan": "Prepare for",
   "Rakip seçilmedi": "No opponent",
   "Bugün {solved}/{total} mod çözüldü": "{solved} of {total} modes solved today",
+  "Şampiyon ya da bölüm ara": "Search champions or sections",
+  "Bölüm": "Section",
+  "Bu adla bir şampiyon ya da bölüm yok.": "No champion or section by that name.",
 };

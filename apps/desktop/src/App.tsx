@@ -276,7 +276,13 @@ function App() {
           </ErrorBoundary>
         </main>
       </SplashProvider>
-      <SearchPalette open={searching} onClose={() => setSearching(false)} onChampion={(id) => openChampion(id)} />
+      <SearchPalette
+        open={searching}
+        onClose={() => setSearching(false)}
+        onChampion={(id) => openChampion(id)}
+        links={[...groups.flatMap((g) => g.items), ...footItems].map((item) => ({ id: item.id, label: t(item.label), icon: item.icon }))}
+        onLink={(id) => go({ page: id } as Route)}
+      />
     </div>
     </ToastProvider>
     </FlatGlass.Provider>

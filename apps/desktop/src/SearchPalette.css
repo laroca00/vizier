@@ -123,3 +123,13 @@
       transition: none;
     }
 }
+
+.palette__page-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--gilt);
+  background: rgb(214 180 106 / 0.12);
+}
