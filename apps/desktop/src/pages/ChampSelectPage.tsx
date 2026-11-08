@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getBans, getChampion, getCounters, getSynergies } from "../api";
+import { getChampion, getCounters, getSynergies } from "../api";
 import { BuildSuggestion } from "../BuildSuggestion";
 import { EnemyTips } from "../ChampionGuide";
 import { CompAnalysis } from "../CompAnalysis";
@@ -12,6 +12,7 @@ import {
   type Champion,
   type SummonerSpell,
 } from "../data/ddragon";
+import { BanPlanner } from "../draft/BanPlanner";
 import { autoView, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";
@@ -52,7 +53,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const t = useT();
   const lang = useLang();
   const [data] = useAsync("static", loadStatic);
-  const [bans] = useAsync("bans", getBans);
+  const { pool } = usePersonal();
   const seconds = useSecondsLeft(draft.phaseEndsAt);
   const me = draft.myTeam.find((m) => m.isLocal);
   const ready = data.status === "done" ? data.value : null;
@@ -80,6 +81,12 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
         .filter((c): c is Champion => c !== undefined)
     : [];
   const unavailable = new Set([...draft.bans, ...draft.myTeam.filter((m) => !m.isLocal).map((m) => m.championId), ...enemyPicks]);
+
+  // The hovered or locked champion; before that, the pool main for the role.
+  const banSubject = myChampion || pool.find((p) => p.rank === "main" && (!p.position || !role || p.position === role))?.championId || null;
+  const banAllies = draft.myTeam
+    .filter((m) => !m.isLocal && shownChampion(m) > 0 && m.position)
+    .map((m) => ({ championId: shownChampion(m), position: m.position.toUpperCase() }));
 
   function chooseOpponent(id: number) {
     // Pressing the current choice again hands the lane back to the guess.
@@ -127,10 +134,17 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                   />
                 </>
               )}
-              {draft.phase !== "FINALIZATION" && bans.status === "done" && bans.value.champions.length > 0 && (
+              {draft.phase !== "FINALIZATION" && ready && (
                 <>
                   <h2 className="draft__heading">{t("Yasak önerisi")}</h2>
-                  <ChampionStrip ids={bans.value.champions.map((c) => c.championId).filter((id) => !draft.bans.includes(id))} data={ready} empty={t("Öneri yok")} />
+                  <BanPlanner
+                    subject={banSubject}
+                    role={role}
+                    allies={banAllies}
+                    unavailable={new Set([...draft.bans, ...enemyPicks, ...allyIds])}
+                    champions={ready.champions}
+                    version={ready.version}
+                  />
                 </>
               )}
               {ready && enemyPicks.length > 0 && <ThreatsPanel enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c): c is Champion => c !== undefined)} />}

@@ -929,4 +929,7 @@ export const EN: Record<string, string> = {
   "İlk dakikalarda ve 3. seviyede tehlikeli": "Dangerous in the first minutes and at level 3",
   "6. seviyede ve ilk eşyada tehlikeli": "Dangerous at level 6 and the first item",
   "2-3 eşya tamamlanınca tehlikeli": "Dangerous with 2-3 finished items",
+  "Meta: {rate} kazanma, {games} maç": "Meta: {rate} win rate, {games} games",
+  "{champion} bu şampiyona karşı {rate} kazanıyor, {games} maç": "{champion} wins {rate} against it, {games} games",
+  "{allies} karşısında güçlü: {rate}, {games} maç": "Strong into {allies}: {rate}, {games} games",
 };
