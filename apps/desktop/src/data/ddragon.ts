@@ -107,11 +107,11 @@ export function runeIconUrl(icon: string) {
   return `${BASE}/cdn/img/${icon}`;
 }
 
-export type Item = { id: number; name: string; complete: boolean; gold: number; boots?: boolean };
+export type Item = { id: number; name: string; complete: boolean; gold: number; boots?: boolean; /** Component item ids, repeated when a recipe takes two of the same. */ from?: number[] };
 
 let itemsById: Promise<Map<number, Item>> | undefined;
 
-type RawItem = { name: string; into?: string[]; tags?: string[]; gold: { total: number }; consumed?: boolean };
+type RawItem = { name: string; into?: string[]; from?: string[]; tags?: string[]; gold: { total: number }; consumed?: boolean };
 
 export function items(): Promise<Map<number, Item>> {
   itemsById ??= latestVersion()
@@ -127,6 +127,7 @@ export function items(): Promise<Map<number, Item>> {
               name: item.name,
               gold: item.gold.total,
               boots: !!item.tags?.includes("Boots"),
+              from: item.from?.map(Number),
               // Nothing builds out of it and it isn't used up: a finished item.
               complete:
                 !item.into?.length && !item.consumed && !item.tags?.includes("Trinket") && item.gold.total >= 900,

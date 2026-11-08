@@ -5,36 +5,39 @@ import { Button } from "../ui/Button";
 import { ErrorState, Skeleton } from "../ui/States";
 import { useToast } from "../ui/Toast";
 import { useAsync } from "../useAsync";
-import { dailyPick, dayKey, hash, itemBlur, itemPool, streak } from "./logic";
+import { combineCost, dailyPick, dayKey, hash, itemBlur, itemPool, recipeParts, recipePool, streak } from "./logic";
 import { recordFor, saveRecord, useQuizRecords } from "./store";
+
+type ItemMode = "item" | "recipe";
 
 async function load() {
   const [version, all] = await Promise.all([latestVersion(), items()]);
-  return { version, pool: itemPool(all.values()) };
+  return { version, all, pool: itemPool(all.values()), recipes: recipePool(all.values()) };
 }
 
 // Wrong guesses before the price, then the first letter, show as hints.
 const PRICE_HINT_AFTER = 3;
 const LETTER_HINT_AFTER = 5;
 
-/** Guess a finished item from its icon, blurred and grey at first. */
-export function ItemGame({ play, onNext }: { play: "daily" | "free"; onNext: () => void }) {
+/** Guess a finished item from its icon, blurred and grey at first, or from its recipe. */
+export function ItemGame({ mode = "item", play, onNext }: { mode?: ItemMode; play: "daily" | "free"; onNext: () => void }) {
   const t = useT();
   const [data, retry] = useAsync("quiz-items", load);
   if (data.status === "error") return <ErrorState message={t("Oyun verisi alınamadı.")} onRetry={retry} />;
   if (data.status !== "done") return <Skeleton lines={4} label={t("Yükleniyor")} />;
-  return <Round play={play} version={data.value.version} pool={data.value.pool} onNext={onNext} />;
+  const { version, all, pool, recipes } = data.value;
+  return <Round mode={mode} play={play} version={version} all={all} pool={pool} answers={mode === "recipe" ? recipes : pool} onNext={onNext} />;
 }
 
-function Round({ play, version, pool, onNext }: { play: "daily" | "free"; version: string; pool: Item[]; onNext: () => void }) {
+function Round({ mode, play, version, all, pool, answers, onNext }: { mode: ItemMode; play: "daily" | "free"; version: string; all: Map<number, Item>; pool: Item[]; answers: Item[]; onNext: () => void }) {
   const t = useT();
   const lang = useLang();
   const toast = useToast();
   const records = useQuizRecords();
   const today = dayKey(new Date());
   const [freeSeed] = useState(() => Math.floor(Math.random() * 1e9));
-  const answer = play === "daily" ? dailyPick(pool, today, "item") : pool[(freeSeed ^ hash("item")) % pool.length];
-  const saved = play === "daily" ? recordFor(records, today, "item") : undefined;
+  const answer = play === "daily" ? dailyPick(answers, today, mode) : answers[(freeSeed ^ hash(mode)) % answers.length];
+  const saved = play === "daily" ? recordFor(records, today, mode) : undefined;
   const [guesses, setGuesses] = useState<number[]>(saved?.guesses ?? []);
   const [gaveUp, setGaveUp] = useState(false);
   const [query, setQuery] = useState("");
@@ -48,7 +51,7 @@ function Round({ play, version, pool, onNext }: { play: "daily" | "free"; versio
     const next = [...guesses, id];
     setGuesses(next);
     setQuery("");
-    if (play === "daily") saveRecord({ day: today, mode: "item", guesses: next, solved: next.includes(answer.id) });
+    if (play === "daily") saveRecord({ day: today, mode, guesses: next, solved: next.includes(answer.id) });
   }
 
   const needle = query.trim().toLocaleLowerCase(lang);
@@ -63,15 +66,27 @@ function Round({ play, version, pool, onNext }: { play: "daily" | "free"; versio
   return (
     <div className="quiz__game">
       <div className="quiz__ability">
-        <img
-          src={itemIconUrl(version, answer.id)}
-          alt={t("Tahmin edilecek eşya")}
-          width={96}
-          height={96}
-          style={{ filter: `blur(${blur}px)${!over && wrong < 2 ? " grayscale(1)" : ""}` }}
-        />
+        {mode === "recipe" ? (
+          <ul className="quiz__recipe" aria-label={t("Tarifin parçaları")}>
+            {recipeParts(answer.from ?? []).map(({ id, count }) => (
+              <li key={id}>
+                <img src={itemIconUrl(version, id)} alt={all.get(id)?.name ?? ""} title={all.get(id)?.name} width={56} height={56} />
+                {count > 1 && <span>×{count}</span>}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <img
+            src={itemIconUrl(version, answer.id)}
+            alt={t("Tahmin edilecek eşya")}
+            width={96}
+            height={96}
+            style={{ filter: `blur(${blur}px)${!over && wrong < 2 ? " grayscale(1)" : ""}` }}
+          />
+        )}
         <p className="build__note quiz__hint">
           {over || wrong >= PRICE_HINT_AFTER ? t("Fiyatı: {gold} altın", { gold: answer.gold.toLocaleString(lang === "tr" ? "tr" : "en-GB") }) : t("{count} yanlıştan sonra fiyatı açılır.", { count: PRICE_HINT_AFTER })}
+          {mode === "recipe" && (over || wrong >= PRICE_HINT_AFTER) && `. ${t("Birleştirme ücreti: {gold} altın", { gold: combineCost(answer.gold, (answer.from ?? []).map((id) => all.get(id)?.gold ?? 0)) })}`}
           {!over && wrong >= LETTER_HINT_AFTER && `. ${t("İlk harfi: {letter}", { letter: answer.name[0] })}`}
         </p>
       </div>
@@ -83,12 +98,12 @@ function Round({ play, version, pool, onNext }: { play: "daily" | "free"; versio
             <p className="quiz__answer">{solved ? t("Bildin: {champion}", { champion: answer.name }) : t("Cevap: {champion}", { champion: answer.name })}</p>
             <p className="build__note">
               {solved ? t("{count} tahminde", { count: guesses.length }) : t("Pes ettin.")}
-              {play === "daily" && solved && `. ${t("Seri: {days} gün", { days: streak(records, "item", today) })}`}
+              {play === "daily" && solved && `. ${t("Seri: {days} gün", { days: streak(records, mode, today) })}`}
             </p>
           </div>
           <Button
             onClick={() => {
-              const head = t("Vizier bilmecesi, {mode}, {day}: {count} tahmin", { mode: t("Eşya"), day: play === "daily" ? today : t("Serbest"), count: solved ? guesses.length : "X" });
+              const head = t("Vizier bilmecesi, {mode}, {day}: {count} tahmin", { mode: t(mode === "recipe" ? "Tarif" : "Eşya"), day: play === "daily" ? today : t("Serbest"), count: solved ? guesses.length : "X" });
               navigator.clipboard.writeText(`${head}\n${guesses.map((id) => (id === answer.id ? "🟩" : "🟥")).join("")}`).then(
                 () => toast("success", t("Sonuç panoya kopyalandı")),
                 () => toast("error", t("Panoya kopyalanamadı.")),

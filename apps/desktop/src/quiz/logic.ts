@@ -4,8 +4,8 @@ import { CHAMPION_FACTS, CHAMPION_TRAITS, type Gender, type Region, type Species
 // The champion riddle: one answer per mode per day, the same for every
 // player, or a random one in free play. Pure, so it is tested without a page.
 
-export type QuizMode = "classic" | "ability" | "emoji" | "skin" | "item";
-export const MODES: QuizMode[] = ["classic", "ability", "emoji", "skin", "item"];
+export type QuizMode = "classic" | "ability" | "emoji" | "skin" | "item" | "recipe";
+export const MODES: QuizMode[] = ["classic", "ability", "emoji", "skin", "item", "recipe"];
 
 /** FNV-1a: a small, stable hash so a day's answer doesn't depend on the JavaScript engine. */
 export function hash(text: string): number {
@@ -138,6 +138,23 @@ export function itemPool<T extends PoolItem>(items: Iterable<T>): T[] {
     if (!known || item.id < known.id) byName.set(item.name, item);
   }
   return [...byName.values()].sort((a, b) => a.id - b.id);
+}
+
+/** Items with at least two components, so the recipe is a real clue. */
+export function recipePool<T extends PoolItem & { from?: number[] }>(items: Iterable<T>): T[] {
+  return itemPool(items).filter((item) => (item.from?.length ?? 0) >= 2);
+}
+
+/** A recipe's parts with how many of each, in the order Data Dragon lists them. */
+export function recipeParts(from: number[]): { id: number; count: number }[] {
+  const counts = new Map<number, number>();
+  for (const id of from) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return [...counts].map(([id, count]) => ({ id, count }));
+}
+
+/** Gold paid on top of the components, a hint that narrows the recipe down. */
+export function combineCost(gold: number, partGold: number[]): number {
+  return gold - partGold.reduce((sum, g) => sum + g, 0);
 }
 
 /** Emoji hints revealed: one to start, one more for each wrong guess. */

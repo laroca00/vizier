@@ -37,6 +37,7 @@ const MODE_LABELS: Record<QuizMode, { label: string; hint: string }> = {
   ability: { label: "Yetenek", hint: "Bu yetenek kimin? Yanlış tahminlerde ikon renklenir, sonra tuşu ve adı açılır." },
   emoji: { label: "Emoji", hint: "Her yanlış tahminde bir emoji daha açılır." },
   skin: { label: "Kostüm", hint: "Bir kostüm görselinin yakın planı. Her yanlış tahminde görüntü uzaklaşır." },
+  recipe: { label: "Tarif", hint: "Bu parçalardan hangi eşya yapılır? Her yanlış tahminde fiyat ve ilk harf gibi ipuçları açılır." },
   item: { label: "Eşya", hint: "Bulanık bir eşya ikonu. Her yanlış tahminde netleşir; sonra fiyatı ve ilk harfi açılır." },
 };
 
@@ -72,8 +73,8 @@ export function QuizPage() {
       ) : data.status !== "done" ? (
         <Skeleton lines={5} label={t("Yükleniyor")} />
       ) : (
-        mode === "item" ? (
-          <ItemGame key={`item:${play}:${round}`} play={play} onNext={() => setRound(round + 1)} />
+        mode === "item" || mode === "recipe" ? (
+          <ItemGame key={`${mode}:${play}:${round}`} mode={mode} play={play} onNext={() => setRound(round + 1)} />
         ) : (
           <Game key={`${mode}:${play}:${round}`} mode={mode} play={play} data={data.value} onNext={() => setRound(round + 1)} />
         )

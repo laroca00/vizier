@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Champion } from "../data/ddragon";
 import { EMOJI_HINTS } from "./emoji";
-import { attributesOf, mainRoles, classicGrid, itemBlur, itemPool, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinView, streak, type QuizRecord } from "./logic";
+import { attributesOf, mainRoles, classicGrid, itemBlur, itemPool, recipePool, recipeParts, combineCost, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinView, streak, type QuizRecord } from "./logic";
 
 function champion(id: string, tags: string[], difficulty: number, partype: string, attackRange: number): Champion {
   return { id, key: id.length, name: id, magic: true, tank: false, tags, info: { attack: 5, defense: 5, magic: 5, difficulty }, partype, attackRange };
@@ -93,5 +93,24 @@ describe("champion riddle", () => {
 
   it("has at least four emoji hints per champion", () => {
     for (const hints of Object.values(EMOJI_HINTS)) expect(hints.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe("recipe mode", () => {
+  it("keeps finished items with at least two components", () => {
+    const pool = recipePool([
+      { id: 3089, name: "Rabadon", complete: true, gold: 3600, from: [1026, 1058] },
+      { id: 3006, name: "Boots", complete: true, gold: 2100, from: [1001] },
+      { id: 3031, name: "NoRecipe", complete: true, gold: 3400 },
+    ]);
+    expect(pool.map((i) => i.id)).toEqual([3089]);
+  });
+
+  it("counts repeated components", () => {
+    expect(recipeParts([1052, 1052, 1026])).toEqual([{ id: 1052, count: 2 }, { id: 1026, count: 1 }]);
+  });
+
+  it("works out the combine cost", () => {
+    expect(combineCost(3600, [1250, 1250])).toBe(1100);
   });
 });
