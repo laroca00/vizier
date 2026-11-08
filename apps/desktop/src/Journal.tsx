@@ -8,10 +8,14 @@ export function JournalNote({ noteKey, label, placeholder }: { noteKey: string; 
   const t = useT();
   const { notes } = usePersonal();
   const [text, setText] = useState(notes[noteKey] ?? "");
+  const [shownKey, setShownKey] = useState(noteKey);
   const [saved, setSaved] = useState(false);
 
   // Another note opened in the same spot, e.g. a different matchup.
-  useEffect(() => setText(notes[noteKey] ?? ""), [noteKey]);
+  if (shownKey !== noteKey) {
+    setShownKey(noteKey);
+    setText(notes[noteKey] ?? "");
+  }
 
   useEffect(() => {
     if (text === (notes[noteKey] ?? "")) return;
@@ -20,7 +24,7 @@ export function JournalNote({ noteKey, label, placeholder }: { noteKey: string; 
       setSaved(true);
     }, 500);
     return () => clearTimeout(timer);
-  }, [text, noteKey]);
+  }, [text, noteKey, notes]);
 
   return (
     <label className="journal">

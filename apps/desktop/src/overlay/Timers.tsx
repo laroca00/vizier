@@ -116,7 +116,7 @@ export function useAlerts(rows: TimerRow[], time: number) {
         }
       }
     }
-  }, [rows, Math.floor(time), settings.timerSound]);
+  }, [rows, time, settings.timerSound]);
   return (row: TimerRow) => {
     const left = row.at - time;
     return left <= 0 ? "now" : left <= SOON ? "soon" : undefined;

@@ -57,9 +57,10 @@ function useClientLocale() {
 function useGameClock(game: LiveGame | null) {
   const [now, setNow] = useState(() => performance.now());
   const [anchor, setAnchor] = useState({ gameTime: 0, at: performance.now() });
+  const gameTime = game?.gameTime;
   useEffect(() => {
-    if (game) setAnchor({ gameTime: game.gameTime, at: performance.now() });
-  }, [game?.gameTime]);
+    if (gameTime !== undefined) setAnchor({ gameTime, at: performance.now() });
+  }, [gameTime]);
   useEffect(() => {
     const timer = setInterval(() => setNow(performance.now()), 250);
     return () => clearInterval(timer);

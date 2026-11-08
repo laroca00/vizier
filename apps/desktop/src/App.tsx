@@ -104,7 +104,7 @@ function App() {
   const t = useT();
   const draft = useChampSelect() ?? fixture;
   const nav = useNavigation(devRoute() ?? { page: draft ? "draft" : "home" });
-  const { route } = nav;
+  const { route, navigate, replace } = nav;
   const [navigated, setNavigated] = useState(false);
   const [searching, setSearching] = useState(false);
   const [splash, setSplash] = useState<string | null>(null);
@@ -128,12 +128,12 @@ function App() {
   useEffect(() => {
     const active = draft !== null;
     if (active && !draftActive.current) {
-      nav.navigate({ page: "draft" });
+      navigate({ page: "draft" });
       if (settings.showOnChampSelect) bringToFront();
     }
-    if (!active && draftActive.current && route.page === "draft") nav.replace({ page: "home" });
+    if (!active && draftActive.current && route.page === "draft") replace({ page: "home" });
     draftActive.current = active;
-  }, [draft, settings.showOnChampSelect]);
+  }, [draft, settings.showOnChampSelect, navigate, replace, route.page]);
 
   useEffect(() => {
     if (isTauri()) invoke("set_overlay_enabled", { enabled: settings.overlay }).catch(() => {});
