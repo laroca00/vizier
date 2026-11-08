@@ -30,11 +30,11 @@ The page players open most. Make every minute of champ select useful.
 - [x] 1.3 Damage profile bar: AP / AD / true split for both teams, drawn from a per-champion profile table in `data/traits.ts` (hand-kept, tested so every current champion has an entry). (cbb6649)
 - [x] 1.4 Composition 2.0: add engage, disengage, peel, waveclear and objective control to `compDimensions` with who brings each; extend `traits.ts`. (cbb6649)
 - [x] 1.5 Game phase curve: early / mid / late strength per team from a per-champion curve in `traits.ts`, shown as three paired bars with a one-line read ("they outscale you; play for early dragons"). (cbb6649)
-- [ ] 1.6 Win conditions: detect the composition archetype for each team (dive, poke, protect-the-carry, split push, pick, teamfight) from the dimensions, and write two or three plain lines on how each team wants to play.
-- [ ] 1.7 Enemy threats list: for each enemy, the one ability to respect (longest-CD hard CC or the ultimate) with its cooldown at rank 1 and max, and their main power spike (level or item).
-- [ ] 1.8 Ban planner in the ban phase: suggest bans from three sources with the reason shown — meta (`/v1/bans`), the worst matchups of the champion the player is hovering or plans to play (pool main), and what is strong into the player's team so far.
-- [ ] 1.9 Pick suggestions "from my pool first" toggle and a score breakdown tooltip on each suggestion.
-- [ ] 1.10 Teammate picks: for each ally, the champion's win rate and games in that role, and a warning when the role looks off (champion rarely played there).
+- [x] 1.6 Win conditions: detect the composition archetype for each team (dive, poke, protect-the-carry, split push, pick, teamfight) from the dimensions, and write two or three plain lines on how each team wants to play. (7eed8fd)
+- [x] 1.7 Enemy threats list: for each enemy, the one ability to respect (longest-CD hard CC or the ultimate) with its cooldown at rank 1 and max, and their main power spike (level or item). (7eed8fd)
+- [x] 1.8 Ban planner in the ban phase: suggest bans from three sources with the reason shown — meta (`/v1/bans`), the worst matchups of the champion the player is hovering or plans to play (pool main), and what is strong into the player's team so far. (7eed8fd)
+- [x] 1.9 Pick suggestions "from my pool first" toggle and a score breakdown tooltip on each suggestion. (7eed8fd)
+- [x] 1.10 Teammate picks: for each ally, the champion's win rate and games in that role, and a warning when the role looks off (champion rarely played there). (7eed8fd)
 - [ ] 1.11 Duo synergy hint for bot lane and jungle–mid from `/synergies`, shown next to the relevant ally slot.
 - [ ] 1.12 Hover advice: when hovering a champion, show the matchup line against the guessed lane opponent before locking (win rate, games, difficulty) so the player can change their mind.
 
