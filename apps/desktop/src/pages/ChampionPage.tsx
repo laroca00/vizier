@@ -8,7 +8,7 @@ import { MatchupLink } from "../matchupLink";
 import { SkinGallery } from "../SkinGallery";
 import { similarChampions } from "../similar";
 import { groupAllies, MIN_ALLY_GAMES } from "../synergy";
-import { championNoteKey, inPool, toggleFavouriteChampion, togglePool, usePersonal } from "../personal";
+import { championNoteKey, inPool, matchupNoteKey, toggleFavouriteChampion, togglePool, usePersonal } from "../personal";
 import { ProBuildList } from "../ProBuildList";
 import { championIconUrl, champions, latestVersion, roleIconUrl, type Champion } from "../data/ddragon";
 import { POSITIONS } from "../labels";
@@ -362,6 +362,7 @@ function CounterLists({ championId, position, champions, version, onOpenChampion
 function Matchups({ counters, champions, version, onOpenChampion, championId, position }: { counters: Counters } & CounterProps) {
   const percent = percentIn(useLang());
   const t = useT();
+  const personal = usePersonal();
   const all = counters.matchups;
   const shown = Math.min(SHOWN_MATCHUPS, Math.floor(all.length / 2));
   const groups = [
@@ -383,6 +384,11 @@ function Matchups({ counters, champions, version, onOpenChampion, championId, po
               <button type="button" className="matchups__open" onClick={() => onOpenChampion(m.championId)}>
                 {opponent && version && <img src={championIconUrl(version, opponent.id)} alt="" width={26} height={26} />}
                 <span className="matchups__name">{opponent?.name ?? m.championId}</span>
+                {personal.notes[matchupNoteKey(championId, m.championId)] && (
+                  <span className="matchups__note" role="img" aria-label={t("Notun var")} title={personal.notes[matchupNoteKey(championId, m.championId)]}>
+                    ✎
+                  </span>
+                )}
               </button>
               <span className="matchups__bar" aria-hidden="true">
                 <span style={{ "--size": `${Math.abs(lean) * 50}%`, "--i": i } as React.CSSProperties} data-side={lean < 0 ? "loss" : "win"} />

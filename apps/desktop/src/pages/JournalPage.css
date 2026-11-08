@@ -1,0 +1,47 @@
+.journal-page__groups {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.journal-page__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.journal-page__head img {
+  border-radius: 10px;
+}
+
+.journal-page__notes {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  list-style: none;
+  padding: 0;
+}
+
+.journal-page__note {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.04);
+}
+
+.journal-page__label {
+  font-size: var(--text-small);
+  color: var(--text-muted, inherit);
+}
+
+.journal-page__text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.journal-page__actions {
+  display: flex;
+  gap: var(--space-2);
+}

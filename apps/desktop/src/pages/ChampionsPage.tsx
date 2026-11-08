@@ -21,7 +21,12 @@ import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
+<<<<<<< HEAD
 import { PoolMoves } from "../PoolMovesPanel";
+=======
+import { PoolMoves } from "../PoolMoves";
+import { PoolExportButton } from "../PoolExportButton";
+>>>>>>> auto/7-8-pool-export-and-journal
 import { PoolCoverage } from "./PoolCoverage";
 import { useAsync } from "../useAsync";
 
@@ -252,6 +257,7 @@ function PoolManager({ data, onOpenChampion }: { data: Data; onOpenChampion: Pro
         <Button variant="primary" type="submit">
           {t("Havuza ekle")}
         </Button>
+        <PoolExportButton />
       </form>
 
       {personal.pool.length === 0 ? (

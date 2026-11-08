@@ -71,7 +71,7 @@ export function fromPro(base: Base, pro: ProBuild, finished: (id: number) => boo
 export type ExportLabels = { start: string; core: string; more: string };
 
 /** The rune page and item set the client's importers take. */
-export function toClient(build: SavedBuild, labels: ExportLabels) {
+export function toClient(build: BuildDraft, labels: ExportLabels) {
   const title = build.name.slice(0, 40) || "Vizier";
   return {
     page: {
