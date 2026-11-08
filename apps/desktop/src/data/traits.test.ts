@@ -36,3 +36,94 @@ describe("composition analysis", () => {
     expect(adviceAgainst(enemy, analyzeComp([MALPHITE])).map((a) => a.title)).toContain("Rakip uzaktan yıpratıyor");
   });
 });
+
+describe("damage profiles", () => {
+  it("has an entry for every champion in the app", async () => {
+    const { CHAMPION_FACTS } = await import("../quiz/championFacts");
+    const { DAMAGE_PROFILES } = await import("./traits");
+    expect(Object.keys(CHAMPION_FACTS).filter((id) => !(id in DAMAGE_PROFILES))).toEqual([]);
+    expect(Object.keys(DAMAGE_PROFILES).filter((id) => !(id in CHAMPION_FACTS))).toEqual([]);
+  });
+
+  it("keeps every split within 100 percent", async () => {
+    const { DAMAGE_PROFILES } = await import("./traits");
+    for (const [id, [ap, fixed = 0]] of Object.entries(DAMAGE_PROFILES)) {
+      expect(ap + fixed, id).toBeLessThanOrEqual(100);
+      expect(ap, id).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("splits a team's damage and always sums to one", async () => {
+    const { damageProfile, teamDamage } = await import("./traits");
+    const veigar = champion("Veigar", ["Mage"]);
+    const draven = champion("Draven", ["Marksman"]);
+    const velkoz = champion("Velkoz", ["Mage"]);
+    expect(damageProfile(velkoz)).toEqual({ ap: 0.4, ad: 0, true: 0.6 });
+    const team = teamDamage([veigar, draven, velkoz]);
+    expect(team.ap).toBeCloseTo((1 + 0 + 0.4) / 3);
+    expect(team.ap + team.ad + team.true).toBeCloseTo(1);
+    expect(teamDamage([])).toEqual({ ap: 0, ad: 0, true: 0 });
+  });
+
+  it("falls back to Data Dragon's ratings for an unknown champion", async () => {
+    const { damageProfile } = await import("./traits");
+    const profile = damageProfile(champion("NewOne", ["Mage"], { attack: 2, magic: 6 }));
+    expect(profile.ap).toBeCloseTo(0.75);
+    expect(profile.true).toBe(0);
+  });
+});
+
+describe("composition 2.0 dimensions", () => {
+  it("reports engage, disengage, peel, waveclear and objectives with who brings them", () => {
+    const dims = Object.fromEntries(compDimensions([MALPHITE, ORIANNA, JINX, THRESH]).map((d) => [d.dimension, d]));
+    expect(Object.keys(dims)).toEqual(["frontline", "backline", "poke", "pick", "teamfight", "engage", "disengage", "peel", "waveclear", "objectives"]);
+    expect(dims.engage.names).toContain("Malphite");
+    expect(dims.waveclear.names).toEqual(["Orianna", "Jinx"]);
+    expect(dims.objectives.names).toEqual(["Jinx"]);
+    expect(dims.peel.names).toContain("Thresh");
+  });
+
+  it("has text for every dimension and level", () => {
+    for (const d of compDimensions([])) {
+      expect(dimensionText({ ...d, level: 0 })).toBeTruthy();
+      expect(dimensionText({ ...d, level: 1 })).toContain("{names}");
+      expect(dimensionText({ ...d, level: 2 })).toContain("{names}");
+    }
+  });
+});
+
+describe("game phase curve", () => {
+  const kayle = champion("Kayle", ["Fighter"]);
+  const draven = champion("Draven", ["Marksman"]);
+  const lux = champion("Lux", ["Mage"]);
+
+  it("gives lopsided champions steep curves and others a mid peak", async () => {
+    const { phaseCurve } = await import("./traits");
+    expect(phaseCurve(draven).early).toBeGreaterThan(phaseCurve(draven).late);
+    expect(phaseCurve(kayle).late).toBeGreaterThan(phaseCurve(kayle).early);
+    const mid = phaseCurve(lux);
+    expect(mid.mid).toBeGreaterThan(mid.early);
+  });
+
+  it("waits for three champions", async () => {
+    const { teamCurve } = await import("./traits");
+    expect(teamCurve([kayle, draven])).toBeNull();
+    expect(teamCurve([kayle, draven, lux])).not.toBeNull();
+  });
+
+  it("reads the matchup of two curves", async () => {
+    const { curveRead, teamCurve } = await import("./traits");
+    const late = teamCurve([kayle, champion("Vayne", ["Marksman"]), champion("Nasus", ["Fighter"])]);
+    const early = teamCurve([draven, champion("Pantheon", ["Fighter"]), champion("LeeSin", ["Fighter"])]);
+    expect(curveRead(late, early)).toContain("geç oyunda daha güçlüsün");
+    expect(curveRead(early, late)).toContain("Rakip geç oyunda");
+    expect(curveRead(late, late)).toContain("birbirine yakın");
+    expect(curveRead(null, late)).toBeNull();
+  });
+
+  it("calls an early lead when the late game is even", async () => {
+    const { curveRead } = await import("./traits");
+    expect(curveRead({ early: 3, mid: 2, late: 2 }, { early: 2, mid: 2, late: 2 })).toContain("Erken oyun senin");
+    expect(curveRead({ early: 2, mid: 2, late: 2 }, { early: 3, mid: 2, late: 2 })).toContain("Rakip erken");
+  });
+});

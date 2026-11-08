@@ -60,7 +60,106 @@ const TEAMFIGHT = new Set([
   "Gwen", "Kaisa", "Sett", "Nunu", "Ivern", "Zilean", "Karma", "Shen", "Sion", "Viktor", "Velkoz", "Lulu",
 ]);
 
+// Heals or sustains enough that a grievous wounds item pays off against it.
+const HEALING = new Set([
+  "Soraka", "Aatrox", "Vladimir", "Warwick", "Sylas", "DrMundo", "Swain", "Fiora", "Yuumi", "Nami", "Sona", "Briar",
+  "Seraphine", "Trundle", "Milio", "Samira", "Olaf", "Sett", "Illaoi", "Renekton", "Nasus", "Ivern", "Kayn", "Skarner",
+]);
+
+// Two or more hard crowd control effects (stun, root, suppress, knock-up, charm, fear) in one kit.
+const HARD_CC = new Set([
+  "Leona", "Nautilus", "Amumu", "Malphite", "Sejuani", "Alistar", "Blitzcrank", "Thresh", "Morgana", "Lissandra", "Rell",
+  "Ornn", "Skarner", "Zac", "Vi", "JarvanIV", "Lux", "Ashe", "Syndra", "Maokai", "Sion", "Galio", "Fiddlesticks", "Annie",
+  "Xerath", "Veigar", "Zyra", "Neeko", "Cassiopeia", "Warwick", "Pyke", "Rammus", "Bard", "Taric", "Braum", "Gragas",
+  "Nunu", "Poppy", "Rakan", "Kled", "Ahri", "Elise", "Vex", "Janna", "Yone", "Hecarim", "Camille", "Lulu",
+]);
+
+// Kills a squishy target in a couple of seconds before it can answer.
+const BURST = new Set([
+  "Zed", "Talon", "Khazix", "Qiyana", "Akali", "Leblanc", "Fizz", "Evelynn", "Rengar", "Naafiri", "Katarina", "Shaco",
+  "Ekko", "Veigar", "Annie", "Diana", "Nocturne", "Kayn", "Vex", "Syndra", "Pantheon", "Kassadin", "Samira", "Briar",
+  "Ambessa", "Fiddlesticks", "Sylas", "Nidalee", "Elise", "Pyke",
+]);
+
+// Share of each champion's damage dealt as magic (AP), and as true damage
+// (the rest is physical), in percent. Hand-kept from the kits; a test checks
+// that every champion in the app has an entry.
+export const DAMAGE_PROFILES: Record<string, [ap: number, trueDamage?: number]> = {
+  Aatrox: [0], Ahri: [100], Akali: [75], Akshan: [0], Alistar: [90], Ambessa: [0], Amumu: [100], Anivia: [100],
+  Annie: [100], Aphelios: [0], Ashe: [0], AurelionSol: [100], Aurora: [100], Azir: [85], Bard: [70],
+  Belveth: [0, 20], Blitzcrank: [80], Brand: [100], Braum: [50], Briar: [0], Caitlyn: [0, 5], Camille: [0, 15],
+  Cassiopeia: [100], Chogath: [80, 20], Corki: [50], Darius: [0, 20], Diana: [100], Draven: [0], DrMundo: [0],
+  Ekko: [100], Elise: [100], Evelynn: [100], Ezreal: [40], Fiddlesticks: [100], Fiora: [0, 25], Fizz: [100],
+  Galio: [100], Gangplank: [0, 20], Garen: [0, 25], Gnar: [0], Gragas: [100], Graves: [0], Gwen: [85, 10],
+  Hecarim: [0], Heimerdinger: [100], Hwei: [100], Illaoi: [0], Irelia: [0, 5], Ivern: [100], Janna: [100],
+  JarvanIV: [0], Jax: [50], Jayce: [0], Jhin: [0], Jinx: [0], Kaisa: [40], Kalista: [0], Karma: [100],
+  Karthus: [100], Kassadin: [100], Katarina: [70], Kayle: [50], Kayn: [0], Kennen: [100], Khazix: [0], Kindred: [0],
+  Kled: [0], KogMaw: [50], KSante: [0], Leblanc: [100], LeeSin: [0], Leona: [70], Lillia: [100], Lissandra: [100],
+  Lucian: [0], Lulu: [100], Lux: [100], Malphite: [85], Malzahar: [100], Maokai: [90], MasterYi: [0, 45], Mel: [100],
+  Milio: [100], MissFortune: [0], MonkeyKing: [0], Mordekaiser: [100], Morgana: [100], Naafiri: [0], Nami: [100],
+  Nasus: [40], Nautilus: [70], Neeko: [100], Nidalee: [100], Nilah: [0], Nocturne: [0], Nunu: [100], Olaf: [0, 40],
+  Orianna: [100], Ornn: [40], Pantheon: [0], Poppy: [30], Pyke: [0, 25], Qiyana: [15], Quinn: [0], Rakan: [100],
+  Rammus: [70], RekSai: [0], Rell: [70], Renata: [100], Renekton: [0], Rengar: [0], Riven: [0], Rumble: [100],
+  Ryze: [100], Samira: [0], Sejuani: [100], Senna: [0], Seraphine: [100], Sett: [0, 10], Shaco: [50], Shen: [40],
+  Shyvana: [50], Singed: [100], Sion: [15], Sivir: [0], Skarner: [70], Smolder: [0, 10], Sona: [100], Soraka: [100],
+  Swain: [100], Sylas: [100], Syndra: [100], TahmKench: [40], Taliyah: [100], Talon: [0], Taric: [70], Teemo: [90],
+  Thresh: [80], Tristana: [40], Trundle: [0], Tryndamere: [0], TwistedFate: [100], Twitch: [0, 40], Udyr: [50],
+  Urgot: [0], Varus: [40], Vayne: [0, 30], Veigar: [100], Velkoz: [40, 60], Vex: [100], Vi: [0], Viego: [0],
+  Viktor: [100], Vladimir: [100], Volibear: [50], Warwick: [40], Xayah: [0], Xerath: [100], XinZhao: [0], Yasuo: [0],
+  Yone: [50], Yorick: [30], Yunara: [0], Yuumi: [100], Zac: [100], Zed: [0], Zeri: [0], Ziggs: [100], Zilean: [100],
+  Zoe: [100], Zyra: [100],
+};
+
+export type DamageProfile = { ap: number; ad: number; true: number };
+
+/** Damage split for one champion; falls back to Data Dragon's ratings for one not in the table yet. */
+export function damageProfile(c: Champion): DamageProfile {
+  const row = DAMAGE_PROFILES[c.id];
+  if (!row) {
+    const sum = c.info.attack + c.info.magic;
+    const ap = sum > 0 ? c.info.magic / sum : 0.5;
+    return { ap, ad: 1 - ap, true: 0 };
+  }
+  const trueShare = (row[1] ?? 0) / 100;
+  const ap = Math.min(row[0] / 100, 1 - trueShare);
+  return { ap, ad: Math.max(0, 1 - ap - trueShare), true: trueShare };
+}
+
+/** The team's average split; zero everywhere for an empty team. */
+export function teamDamage(team: Champion[]): DamageProfile {
+  if (team.length === 0) return { ap: 0, ad: 0, true: 0 };
+  const sum = team.map(damageProfile).reduce((a, b) => ({ ap: a.ap + b.ap, ad: a.ad + b.ad, true: a.true + b.true }));
+  return { ap: sum.ap / team.length, ad: sum.ad / team.length, true: sum.true / team.length };
+}
+
+// Clears minion waves fast from range or with area damage, so the lane can be left alone.
+const WAVECLEAR = new Set([
+  "Anivia", "Cassiopeia", "Ziggs", "Xerath", "Malzahar", "Orianna", "Syndra", "Lux", "Karthus", "Brand", "Heimerdinger",
+  "Sivir", "Corki", "Hwei", "Viktor", "Swain", "Vladimir", "Morgana", "Zyra", "Neeko", "Fiddlesticks", "Kennen", "Lissandra",
+  "Ryze", "TwistedFate", "AurelionSol", "Smolder", "Jinx", "KogMaw", "Gangplank", "Tristana", "Nasus", "Gragas", "Singed",
+  "Annie", "Karma", "Velkoz", "Zilean", "Aurora", "Mel", "Rumble", "Teemo", "Yorick", "Kayle", "Varus", "Veigar", "Ashe",
+  "Vex", "Ezreal", "Nunu", "Sona", "Taliyah",
+]);
+
+// Takes dragon, herald and baron down fast or secures them with a strong smite fight.
+const OBJECTIVES = new Set([
+  "Smolder", "Jinx", "KogMaw", "Twitch", "Vayne", "Kayle", "Nasus", "Warwick", "Skarner", "Sivir", "Tristana", "Aphelios",
+  "Kindred", "Fiddlesticks", "Belveth", "Briar", "Udyr", "Olaf", "Shyvana", "Gwen", "Trundle", "Illaoi", "MasterYi", "Karthus",
+  "Nunu", "Rammus", "Lillia", "Volibear", "XinZhao", "Hecarim", "Graves", "Viego", "Diana", "Zac", "Sejuani", "Vi", "JarvanIV",
+  "Evelynn", "Brand", "Kaisa", "Ivern", "Tryndamere", "Yorick", "Fiora", "Ornn", "Zeri",
+]);
+
 export type Phase = "early" | "mid" | "late";
+
+// Champions whose power is lopsided enough to need more than the early/mid/late label.
+const EARLY_EXTREME = new Set([
+  "Draven", "Pantheon", "LeeSin", "Elise", "Renekton", "Lucian", "Kalista", "Leona", "Pyke", "Nidalee", "RekSai", "Olaf",
+  "Kled", "Darius", "XinZhao", "Jayce", "Shaco", "Talon", "Rengar", "Blitzcrank", "Nautilus",
+]);
+const LATE_EXTREME = new Set([
+  "Kayle", "Kassadin", "Vayne", "Veigar", "Nasus", "KogMaw", "Smolder", "Senna", "AurelionSol", "Zeri", "Jinx", "Aphelios",
+  "Belveth", "Ryze", "Karthus", "Yuumi", "Cassiopeia", "Mordekaiser", "Azir", "Twitch",
+]);
 
 export type Traits = {
   /** Share of the champion's damage that is magic, 0 to 1. */
@@ -77,13 +176,19 @@ export type Traits = {
   backline: boolean;
   pick: boolean;
   teamfight: boolean;
+  waveclear: boolean;
+  objectives: boolean;
+  healing: boolean;
+  hardCc: boolean;
+  burst: boolean;
 };
 
 export function traitsOf(c: Champion): Traits {
   const tagged = (tag: string) => c.tags.includes(tag);
-  const sum = c.info.attack + c.info.magic;
+  const damage = damageProfile(c);
   return {
-    magic: sum > 0 ? c.info.magic / sum : 0.5,
+    // True damage answers to neither resist, so only the split of the rest counts.
+    magic: damage.ap + damage.ad > 0 ? damage.ap / (damage.ap + damage.ad) : 0.5,
     tank: c.tank || (tagged("Tank") && c.info.defense >= 7),
     engage: ENGAGE.has(c.id) || (c.tags[0] === "Tank" && !DISENGAGE.has(c.id)),
     poke: POKE.has(c.id),
@@ -94,12 +199,62 @@ export function traitsOf(c: Champion): Traits {
     backline: c.tags[0] === "Marksman" || (c.tags[0] === "Mage" && !tagged("Tank")),
     pick: PICK.has(c.id),
     teamfight: TEAMFIGHT.has(c.id),
+    waveclear: WAVECLEAR.has(c.id),
+    objectives: OBJECTIVES.has(c.id),
+    healing: HEALING.has(c.id),
+    hardCc: HARD_CC.has(c.id),
+    burst: BURST.has(c.id),
   };
 }
 
-export type Dimension = "frontline" | "backline" | "poke" | "pick" | "teamfight";
+/** Strength in each phase, 0 (hopeless) to 4 (at its peak). */
+export type PhaseCurve = Record<Phase, number>;
 
-export const DIMENSIONS: Dimension[] = ["frontline", "backline", "poke", "pick", "teamfight"];
+export function phaseCurve(c: Champion): PhaseCurve {
+  if (EARLY_EXTREME.has(c.id)) return { early: 4, mid: 2, late: 1 };
+  if (LATE_EXTREME.has(c.id)) return { early: 1, mid: 2, late: 4 };
+  const phase = traitsOf(c).phase;
+  if (phase === "early") return { early: 3, mid: 2.5, late: 1.5 };
+  if (phase === "late") return { early: 1.5, mid: 2.5, late: 3 };
+  return { early: 2, mid: 3, late: 2.5 };
+}
+
+/** The team's average curve; null until three champions are known, as a smaller team says little. */
+export function teamCurve(team: Champion[]): PhaseCurve | null {
+  if (team.length < 3) return null;
+  const sum = team.map(phaseCurve).reduce((a, b) => ({ early: a.early + b.early, mid: a.mid + b.mid, late: a.late + b.late }));
+  return { early: sum.early / team.length, mid: sum.mid / team.length, late: sum.late / team.length };
+}
+
+const CURVE_GAP = 0.4;
+
+/** One plain line on how the two curves meet; null when either side is unknown. */
+export function curveRead(ours: PhaseCurve | null, theirs: PhaseCurve | null): string | null {
+  if (!ours || !theirs) return null;
+  const early = ours.early - theirs.early;
+  const late = ours.late - theirs.late;
+  if (late <= -CURVE_GAP && early >= -CURVE_GAP) return "Rakip geç oyunda daha güçlü; erken ejderler ve kulelerle farkı aç.";
+  if (late >= CURVE_GAP && early <= CURVE_GAP) return "Sen geç oyunda daha güçlüsün; erken kavgalardan kaçın ve oyunu uzat.";
+  if (early >= CURVE_GAP) return "Erken oyun senin; baskı kur ve ilk objeleri al.";
+  if (early <= -CURVE_GAP) return "Rakip erken oyunda güçlü; ilk dakikaları güvenli geç ve farkı ilerde kapat.";
+  return "İki takımın eğrisi birbirine yakın; oyun orta oyunda belli olur.";
+}
+
+export type Dimension =
+  | "frontline"
+  | "backline"
+  | "poke"
+  | "pick"
+  | "teamfight"
+  | "engage"
+  | "disengage"
+  | "peel"
+  | "waveclear"
+  | "objectives";
+
+export const DIMENSIONS: Dimension[] = [
+  "frontline", "backline", "poke", "pick", "teamfight", "engage", "disengage", "peel", "waveclear", "objectives",
+];
 
 export const DIMENSION_NAMES: Record<Dimension, string> = {
   frontline: "Ön hat",
@@ -107,6 +262,11 @@ export const DIMENSION_NAMES: Record<Dimension, string> = {
   poke: "Uzaktan yıpratma",
   pick: "Tek hedef yakalama",
   teamfight: "Takım savaşı",
+  engage: "Savaş başlatma",
+  disengage: "Geri çekilme",
+  peel: "Koruma",
+  waveclear: "Dalga temizleme",
+  objectives: "Obje kontrolü",
 };
 
 // One line per dimension and level: none, one champion, two or more.
@@ -135,6 +295,31 @@ const DIMENSION_TEXT: Record<Dimension, [string, string, string]> = {
     "Toplu savaşta birden çok rakibe vuran yetenek yok; dağınık savaşlar bu takıma uyar.",
     "{names} toplu savaşta birkaç rakibe birden vurabilir.",
     "{names} ile 5'e 5 savaş bu takımın güçlü yanı.",
+  ],
+  engage: [
+    "Savaşı başlatacak kimse yok; savaşı rakip açmazsa takım beklemek zorunda.",
+    "Savaşı açan tek isim {names}; o yakalanırsa plan çöker.",
+    "{names} savaşı istediği anda başlatabilir.",
+  ],
+  disengage: [
+    "Dalış yiyince kaçacak yol yok; geri çekilme araçları eksik.",
+    "{names} dalışı geri püskürtebilir.",
+    "{names} ile yakın dalışlar karşılanır ve savaştan temiz çıkılır.",
+  ],
+  peel: [
+    "Taşıyıcıyı koruyacak kimse yok; dalan rakip doğrudan arka hatta ulaşır.",
+    "{names} taşıyıcıyı koruyabilir ama tek başına.",
+    "{names} taşıyıcıyı rahatça korur.",
+  ],
+  waveclear: [
+    "Dalgaları hızlı temizleyen yok; yan koridorlar sıkışabilir.",
+    "{names} dalgaları hızlı temizler; diğerleri için zaman kazandırır.",
+    "{names} dalgaları hızla temizler; takım rahatça harekete geçebilir.",
+  ],
+  objectives: [
+    "Ejder ve baron'u hızlı alacak güçlü bir isim yok.",
+    "{names} objeleri hızlı alır.",
+    "{names} ile ejder, tur ve baron hızlı düşer.",
   ],
 };
 

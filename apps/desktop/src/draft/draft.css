@@ -511,3 +511,9 @@
 .lane-partner p {
   margin: 0;
 }
+
+.item-advice__items {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}

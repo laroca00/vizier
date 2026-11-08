@@ -1,28 +1,35 @@
 import type { Champion } from "./data/ddragon";
-import { adviceAgainst, analyzeComp, compDimensions, DIMENSION_NAMES, dimensionText, PHASE_TEXT, WEAKNESS_TEXT, type CompReport } from "./data/traits";
+import { adviceAgainst, analyzeComp, curveRead, teamCurve, teamDamage, compDimensions, DIMENSION_NAMES, dimensionText, PHASE_TEXT, WEAKNESS_TEXT, type CompReport } from "./data/traits";
 import { formatPercent, useLang, useT } from "./i18n";
 
 const PIPS = [0, 1, 2];
+const PHASES = ["early", "mid", "late"] as const;
 
 /** AP/AD split, frontline to teamfight with who brings each, and the team's gaps. */
 export function CompSummary({ team, report, label }: { team: Champion[]; report: CompReport; label: string }) {
   const t = useT();
   const lang = useLang();
   if (report.champions === 0) return null;
-  const extras = [
-    { name: "Savaş başlatma", count: report.engage },
-    { name: "Koruma", count: report.peel },
-    { name: "Geri çekilme", count: report.disengage },
-  ];
+  const damage = teamDamage(team);
   return (
     <div className="comp" aria-label={label}>
-      <div className="comp__damage" role="img" aria-label={t("Büyü hasarı {magic}, fiziksel hasar {physical}", { magic: formatPercent(report.magic, lang), physical: formatPercent(1 - report.magic, lang) })}>
-        <span style={{ width: `${report.magic * 100}%` }} />
-        <span style={{ width: `${(1 - report.magic) * 100}%` }} />
+      <div
+        className="comp__damage"
+        role="img"
+        aria-label={t("Büyü hasarı {magic}, fiziksel hasar {physical}, sabit hasar {fixed}", {
+          magic: formatPercent(damage.ap, lang),
+          physical: formatPercent(damage.ad, lang),
+          fixed: formatPercent(damage.true, lang),
+        })}
+      >
+        <span data-kind="ap" style={{ width: `${damage.ap * 100}%` }} />
+        <span data-kind="ad" style={{ width: `${damage.ad * 100}%` }} />
+        {damage.true >= 0.03 && <span data-kind="true" style={{ width: `${damage.true * 100}%` }} />}
       </div>
       <p className="comp__legend">
-        <span>{t("Büyü {rate}", { rate: formatPercent(report.magic, lang) })}</span>
-        <span>{t("Fiziksel {rate}", { rate: formatPercent(1 - report.magic, lang) })}</span>
+        <span>{t("Büyü {rate}", { rate: formatPercent(damage.ap, lang) })}</span>
+        <span>{t("Fiziksel {rate}", { rate: formatPercent(damage.ad, lang) })}</span>
+        {damage.true >= 0.03 && <span>{t("Sabit {rate}", { rate: formatPercent(damage.true, lang) })}</span>}
       </p>
       <ul className="comp__dims">
         {compDimensions(team).map((d) => (
@@ -37,14 +44,11 @@ export function CompSummary({ team, report, label }: { team: Champion[]; report:
           </li>
         ))}
       </ul>
-      <ul className="comp__traits">
-        {extras.map((trait) => (
-          <li key={trait.name} data-strong={trait.count >= 2 || undefined} data-none={trait.count === 0 || undefined}>
-            {t(trait.name)} {trait.count}
-          </li>
-        ))}
-        {report.phase && <li data-strong>{t("En güçlü: {phase}", { phase: t(PHASE_TEXT[report.phase]).toLocaleLowerCase(lang) })}</li>}
-      </ul>
+      {report.phase && (
+        <ul className="comp__traits">
+          <li data-strong>{t("En güçlü: {phase}", { phase: t(PHASE_TEXT[report.phase]).toLocaleLowerCase(lang) })}</li>
+        </ul>
+      )}
       {report.weaknesses.length > 0 && (
         <ul className="comp__weak">
           {report.weaknesses.map((w) => (
@@ -67,6 +71,10 @@ export function CompAnalysis({ allies, enemies, champions }: Props) {
   const ours = analyzeComp(ourTeam);
   const theirs = analyzeComp(theirTeam);
   const advice = adviceAgainst(theirs, ours);
+  const ourCurve = teamCurve(ourTeam);
+  const theirCurve = teamCurve(theirTeam);
+  const read = curveRead(ourCurve, theirCurve);
+  const curve = ourCurve && theirCurve && read ? { ours: ourCurve, theirs: theirCurve, read } : null;
   return (
     <section aria-label={t("Takım kompozisyonu")}>
       <h2 className="draft__heading">{t("Takımının kompozisyonu")}</h2>
@@ -75,6 +83,23 @@ export function CompAnalysis({ allies, enemies, champions }: Props) {
         <>
           <h2 className="draft__heading">{t("Rakibin kompozisyonu")}</h2>
           <CompSummary team={theirTeam} report={theirs} label={t("Rakip takım")} />
+        </>
+      )}
+      {curve && (
+        <>
+          <h2 className="draft__heading">{t("Oyun evreleri")}</h2>
+          <ul className="curve" aria-label={t("Oyun evreleri")}>
+            {PHASES.map((phase) => (
+              <li key={phase}>
+                <span className="curve__name">{t(PHASE_TEXT[phase])}</span>
+                <span className="curve__bars" role="img" aria-label={t("{phase}: sen {ours}, rakip {theirs} (4 üzerinden)", { phase: t(PHASE_TEXT[phase]), ours: curve.ours[phase].toFixed(1), theirs: curve.theirs[phase].toFixed(1) })}>
+                  <span data-side="ours" style={{ width: `${(curve.ours[phase] / 4) * 100}%` }} />
+                  <span data-side="theirs" style={{ width: `${(curve.theirs[phase] / 4) * 100}%` }} />
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="draft__empty">{t(curve.read)}</p>
         </>
       )}
       {advice.length > 0 && (
