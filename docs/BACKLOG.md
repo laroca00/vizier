@@ -157,7 +157,7 @@ Worlds and pro builds are a top priority for the EUW audience.
 - [x] 12.3 Undo and redo. (66bd2d4; Ctrl+Z and Ctrl+Y or the buttons; 100 steps)
 - [x] 12.4 The new champ select analysis in the simulator: damage profile, phase curve, win conditions, threats (epics 1.3–1.7). (66bd2d4; phase curves, win conditions and threats for both teams; damage split and dimensions were already there)
 - [x] 12.5 Keyboard flow: type to search, Enter to pick into the selected slot, Tab to the next slot. (66bd2d4; type anywhere to search, Enter picks the first result, Tab and Shift+Tab walk the slots)
-- [ ] 12.6 Clash planner: up to five players with their pools saved locally; the simulator suggests a draft that uses each player's pool and covers the team's needs.
+- [x] 12.6 Clash planner: up to five players with their pools saved locally; the simulator suggests a draft that uses each player's pool and covers the team's needs. (roles go to each player's first or second choice; picks weigh the role tier list against a frontline, engage, peel and mixed damage; red picks and bans are skipped; saved under `vizier.clash`, so the local data export carries it)
 
 ## 13. Patch tracker improvements
 
