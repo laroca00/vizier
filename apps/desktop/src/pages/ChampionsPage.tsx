@@ -41,9 +41,11 @@ export function difficultyOf(champion: Pick<Champion, "info">): Difficulty {
   return d <= 3 ? "easy" : d <= 7 ? "medium" : "hard";
 }
 
-type Data = { version: string; champions: Map<number, Champion>; roles: Map<number, Map<string, TierEntry>> };
+export type ChampionRoles = { version: string; champions: Map<number, Champion>; roles: Map<number, Map<string, TierEntry>> };
+type Data = ChampionRoles;
 
-async function load(): Promise<Data> {
+/** Every champion with the roles it is played in, from the five ranked tier lists. */
+export async function loadChampionRoles(): Promise<Data> {
   const [version, championList, ...lists] = await Promise.all([
     latestVersion(),
     champions(),
@@ -66,7 +68,7 @@ type Props = { onOpenChampion: (championId: number, position: string | null) => 
 export function ChampionsPage({ onOpenChampion }: Props) {
   const t = useT();
   const [view, setView] = useState<View>("all");
-  const [data, retry] = useAsync("champions-page", load);
+  const [data, retry] = useAsync("champion-roles", loadChampionRoles);
   return (
     <LiquidGlass className="panel tiers champions" radius={28} strength={2.5} scroll>
       <PageHeader

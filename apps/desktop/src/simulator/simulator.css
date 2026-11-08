@@ -1,0 +1,235 @@
+/* Draft simulator: blue team, champion picker, red team. Side colours stay
+   inside the palette: cobalt for blue, bole for red. */
+
+.sim {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(0, 1.6fr) minmax(200px, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.sim__team ol {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sim__slot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--radius-item);
+  box-shadow: inset 3px 0 0 var(--side-color);
+}
+
+.sim__team[data-side="blue"] {
+  --side-color: var(--cobalt);
+}
+
+.sim__team[data-side="red"] {
+  --side-color: var(--bole);
+}
+
+.sim__slot[data-active] {
+  background: var(--selected);
+  box-shadow:
+    inset 3px 0 0 var(--side-color),
+    inset 0 0 0 1px var(--gilt);
+}
+
+.sim__slot-main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 6px var(--space-2) 6px var(--space-3);
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  cursor: pointer;
+}
+
+.sim__slot-main img {
+  display: block;
+  border-radius: 8px;
+}
+
+.sim__role {
+  opacity: 0.6;
+}
+
+
+.sim__empty {
+  width: 36px;
+  height: 36px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+}
+
+.sim__slot-actions {
+  display: flex;
+  gap: 2px;
+  padding-right: 4px;
+}
+
+.sim__slot-actions button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  color: var(--glaze-faint);
+  background: none;
+  cursor: pointer;
+}
+
+.sim__slot-actions button:hover {
+  color: var(--glaze);
+  background: var(--hover);
+}
+
+.sim__picker-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+}
+
+.sim__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 4px;
+  max-height: 340px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.sim__grid button {
+  padding: 2px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+}
+
+.sim__grid button:hover:not(:disabled) {
+  box-shadow: 0 0 0 2px var(--gilt);
+}
+
+.sim__grid button:disabled {
+  cursor: default;
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
+.sim__grid img {
+  display: block;
+  border-radius: 8px;
+}
+
+.sim__analysis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.sim__saved {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.sim__saved-list,
+.sim__choose {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sim__saved-list li {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) minmax(0, 1fr) repeat(4, auto);
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px var(--space-2);
+  border-radius: var(--radius-item);
+}
+
+.sim__saved-list li[data-current] {
+  background: var(--selected);
+}
+
+.sim__mini {
+  display: flex;
+  gap: 2px;
+}
+
+.sim__mini img {
+  display: block;
+  border-radius: 5px;
+  box-shadow: 0 -2px 0 var(--cobalt);
+}
+
+.sim__mini img[data-red] {
+  box-shadow: 0 -2px 0 var(--bole);
+}
+
+.sim__mini-empty {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: var(--hover);
+}
+
+.sim__compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.sim__compare th,
+.sim__compare td {
+  padding: 6px var(--space-2);
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+
+.sim__compare th[scope="row"] {
+  font-weight: 350;
+  text-align: left;
+  color: var(--glaze-muted);
+}
+
+@media (max-width: 1100px) {
+  .sim {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sim__picker {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+@media (max-width: 700px) {
+  .sim,
+  .sim__analysis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

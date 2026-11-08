@@ -10,6 +10,7 @@ export type Route =
   | { page: "pros" }
   | { page: "builds" }
   | { page: "champions" }
+  | { page: "simulator" }
   | { page: "champion"; championId: number; position: string | null; queue: number }
   | { page: "overlay" }
   | { page: "settings" }

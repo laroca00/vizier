@@ -1,0 +1,410 @@
+import { useState } from "react";
+import { CompSummary } from "../CompAnalysis";
+import { championIconUrl, roleIconUrl, type Champion } from "../data/ddragon";
+import { adviceAgainst, analyzeComp, compDimensions, DIMENSION_NAMES } from "../data/traits";
+import { formatPercent, useLang, useT } from "../i18n";
+import { POSITIONS } from "../labels";
+import "../library/library.css";
+import {
+  deleteDraft,
+  duplicateDraft,
+  emptyDraft,
+  nextSlot,
+  place,
+  ROLES,
+  saveDraft,
+  swap,
+  useSavedDrafts,
+  type Draft,
+  type SavedDraft,
+  type Side,
+} from "../simulator/store";
+import "../simulator/simulator.css";
+import { Button } from "../ui/Button";
+import { SearchInput, Select, Toggle } from "../ui/Fields";
+import { LiquidGlass } from "../ui/LiquidGlass";
+import { ConfirmDialog, Modal } from "../ui/Modal";
+import { PageHeader } from "../ui/Page";
+import { ErrorState, Skeleton } from "../ui/States";
+import { useToast } from "../ui/Toast";
+import { useAsync } from "../useAsync";
+import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
+
+const ALL = "ALL";
+const SLOT_ROLE = "SLOT";
+
+export function SimulatorPage() {
+  const t = useT();
+  const [data, retry] = useAsync("champion-roles", loadChampionRoles);
+  return (
+    <LiquidGlass className="panel tiers simulator" radius={28} strength={2.5} scroll>
+      <PageHeader title={t("Draft simülatörü")} subtitle={t("İki takımı kur, kompozisyonları yan yana gör. Kazanma ihtimali tahmin edilmez.")} />
+      {data.status === "error" ? (
+        <ErrorState message={t("Oyun verisi alınamadı.")} onRetry={retry} />
+      ) : data.status !== "done" ? (
+        <Skeleton lines={8} label={t("Yükleniyor")} />
+      ) : (
+        <Simulator data={data.value} />
+      )}
+    </LiquidGlass>
+  );
+}
+
+function Simulator({ data }: { data: ChampionRoles }) {
+  const t = useT();
+  const lang = useLang();
+  const toast = useToast();
+  const saved = useSavedDrafts();
+  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  // Explicit when the player clicked the slot; otherwise Vizier may move the pick to its role.
+  const [active, setActive] = useState<{ side: Side; slot: number; explicit?: boolean } | null>({ side: "blue", slot: 0 });
+  const [pickOrder, setPickOrder] = useState(false);
+  const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState(SLOT_ROLE);
+  const [name, setName] = useState("");
+  const [currentId, setCurrentId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<SavedDraft | null>(null);
+  const [compare, setCompare] = useState<[string, string] | null>(null);
+  const [compareWith, setCompareWith] = useState<string>("");
+
+  const picked = new Set([...draft.blue, ...draft.red].filter((id) => id > 0));
+  const role = roleFilter === SLOT_ROLE ? (active ? ROLES[active.slot] : null) : roleFilter === ALL ? null : roleFilter;
+  const needle = query.trim().toLocaleLowerCase(lang);
+  const pool = [...data.champions.values()]
+    .filter((c) => (!needle || c.name.toLocaleLowerCase(lang).includes(needle)) && (!role || data.roles.get(c.key)?.has(role)))
+    .sort((a, b) => a.name.localeCompare(b.name, lang));
+
+  function choose(championId: number) {
+    if (!active) return;
+    let slot = active.slot;
+    if (!active.explicit) {
+      // Put the champion in the role it's played most, when that slot is free.
+      const roles = [...(data.roles.get(championId)?.entries() ?? [])].sort((a, b) => b[1].games - a[1].games);
+      const free = roles.map(([role]) => ROLES.indexOf(role as (typeof ROLES)[number])).find((i) => i >= 0 && draft[active.side][i] === 0);
+      if (free !== undefined) slot = free;
+    }
+    const next = place(draft, active.side, slot, championId);
+    setDraft(next);
+    setActive(nextSlot(next, pickOrder, active));
+  }
+
+  function clearSlot(side: Side, slot: number) {
+    setDraft({ ...draft, [side]: draft[side].map((id, i) => (i === slot ? 0 : id)) });
+    setActive({ side, slot, explicit: true });
+  }
+
+  function load(d: SavedDraft) {
+    setDraft({ blue: [...d.blue], red: [...d.red] });
+    setName(d.name);
+    setCurrentId(d.id);
+    setActive(nextSlot(d, pickOrder, { side: "blue", slot: 0 }));
+  }
+
+  function reset() {
+    setDraft(emptyDraft());
+    setCurrentId(null);
+    setName("");
+    setActive({ side: "blue", slot: 0 });
+  }
+
+  const team = (ids: number[]) => ids.map((id) => data.champions.get(id)).filter((c): c is Champion => c !== undefined);
+  const blue = team(draft.blue);
+  const red = team(draft.red);
+  const blueReport = analyzeComp(blue);
+  const redReport = analyzeComp(red);
+
+  return (
+    <>
+      <div className="library__filters">
+        <Toggle label={t("Dereceli seçim sırası")} hint={t("Boş yerler B1, R1, R2, B2... sırasıyla dolar.")} checked={pickOrder} onChange={setPickOrder} />
+        <Button variant="ghost" onClick={reset}>
+          {t("Sıfırla")}
+        </Button>
+      </div>
+
+      <div className="sim">
+        <TeamColumn
+          side="blue"
+          label={t("Mavi takım")}
+          ids={draft.blue}
+          data={data}
+          active={active}
+          onSelect={(slot) => setActive({ side: "blue", slot, explicit: true })}
+          onClear={(slot) => clearSlot("blue", slot)}
+          onSwap={(a, b) => setDraft(swap(draft, "blue", a, b))}
+        />
+
+        <section className="sim__picker" aria-label={t("Şampiyon seç")}>
+          <p className="build__note">
+            {active
+              ? active.explicit || !pickOrder
+                ? t("{side} takım, {role} için seç", { side: active.side === "blue" ? t("Mavi") : t("Kırmızı"), role: t(POSITIONS[ROLES[active.slot]]) })
+                : t("Sıra {side} takımda; şampiyon boşsa kendi rolüne yerleşir.", { side: active.side === "blue" ? t("Mavi") : t("Kırmızı") })
+              : t("İki takım da dolu. Değiştirmek için bir yere tıkla.")}
+          </p>
+          <div className="sim__picker-filters">
+            <SearchInput label={t("Şampiyon ara")} value={query} onChange={setQuery} placeholder={t("Şampiyon ara")} />
+            <Select
+              label={t("Rol")}
+              hideLabel
+              value={roleFilter}
+              options={[
+                { value: SLOT_ROLE, label: t("Seçili yerin rolü") },
+                { value: ALL, label: t("Tüm roller") },
+                ...ROLES.map((r) => ({ value: r, label: t(POSITIONS[r]) })),
+              ]}
+              onChange={setRoleFilter}
+            />
+          </div>
+          <ul className="sim__grid">
+            {pool.map((c) => (
+              <li key={c.key}>
+                <button type="button" disabled={!active || picked.has(c.key)} title={c.name} aria-label={c.name} onClick={() => choose(c.key)}>
+                  <img src={championIconUrl(data.version, c.id)} alt="" width={44} height={44} loading="lazy" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <TeamColumn
+          side="red"
+          label={t("Kırmızı takım")}
+          ids={draft.red}
+          data={data}
+          active={active}
+          onSelect={(slot) => setActive({ side: "red", slot, explicit: true })}
+          onClear={(slot) => clearSlot("red", slot)}
+          onSwap={(a, b) => setDraft(swap(draft, "red", a, b))}
+        />
+      </div>
+
+      <div className="sim__analysis">
+        <section aria-label={t("Mavi takım")}>
+          <h2 className="draft__heading">{t("Mavi takım")}</h2>
+          {blue.length === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary team={blue} report={blueReport} label={t("Mavi takım")} />}
+          <Plans advice={adviceAgainst(redReport, blueReport)} title={t("Kırmızıya karşı plan")} />
+        </section>
+        <section aria-label={t("Kırmızı takım")}>
+          <h2 className="draft__heading">{t("Kırmızı takım")}</h2>
+          {red.length === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary team={red} report={redReport} label={t("Kırmızı takım")} />}
+          <Plans advice={adviceAgainst(blueReport, redReport)} title={t("Maviye karşı plan")} />
+        </section>
+      </div>
+
+      <section className="sim__saved" aria-label={t("Kayıtlı draftlar")}>
+        <h2 className="draft__heading">{t("Kayıtlı draftlar")}</h2>
+        <form
+          className="library__collection-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const finalName = name.trim() || t("Draft {n}", { n: saved.length + 1 });
+            setCurrentId(saveDraft(draft, finalName, currentId));
+            setName(finalName);
+            toast("success", t("{name} kaydedildi", { name: finalName }));
+          }}
+        >
+          <input className="text-input" aria-label={t("Draft adı")} placeholder={t("Draft adı")} value={name} maxLength={40} onChange={(e) => setName(e.target.value)} />
+          <Button type="submit" variant="primary">
+            {currentId ? t("Güncelle") : t("Kaydet")}
+          </Button>
+          {currentId && (
+            <Button
+              onClick={() => {
+                setCurrentId(null);
+                setName("");
+              }}
+            >
+              {t("Yeni draft olarak ayır")}
+            </Button>
+          )}
+        </form>
+        {saved.length === 0 ? (
+          <p className="draft__empty">{t("Kaydettiğin draftlar burada listelenir.")}</p>
+        ) : (
+          <ul className="sim__saved-list">
+            {saved.map((d) => (
+              <li key={d.id} data-current={d.id === currentId || undefined}>
+                <span className="library__name">{d.name}</span>
+                <span className="sim__mini">
+                  {[...d.blue, ...d.red].map((id, i) => {
+                    const c = data.champions.get(id);
+                    return c ? <img key={i} src={championIconUrl(data.version, c.id)} alt={c.name} width={22} height={22} data-red={i >= 5 || undefined} /> : <span key={i} className="sim__mini-empty" />;
+                  })}
+                </span>
+                <Button size="small" onClick={() => load(d)}>
+                  {t("Aç")}
+                </Button>
+                <Button size="small" variant="ghost" onClick={() => duplicateDraft(d.id, (n) => t("{name} kopyası", { name: n }))}>
+                  {t("Kopyala")}
+                </Button>
+                <Button size="small" variant="ghost" disabled={saved.length < 2} onClick={() => setCompareWith(d.id)}>
+                  {t("Karşılaştır")}
+                </Button>
+                <Button size="small" variant="ghost" onClick={() => setDeleting(d)}>
+                  {t("Sil")}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {compareWith && !compare && (
+        <Modal open title={t("Neyle karşılaştırılsın?")} onClose={() => setCompareWith("")}>
+          <ul className="sim__choose">
+            {saved
+              .filter((d) => d.id !== compareWith)
+              .map((d) => (
+                <li key={d.id}>
+                  <Button onClick={() => setCompare([compareWith, d.id])}>{d.name}</Button>
+                </li>
+              ))}
+          </ul>
+        </Modal>
+      )}
+      {compare && (
+        <CompareModal
+          drafts={compare.map((id) => saved.find((d) => d.id === id)).filter((d): d is SavedDraft => !!d)}
+          data={data}
+          onClose={() => {
+            setCompare(null);
+            setCompareWith("");
+          }}
+        />
+      )}
+      <ConfirmDialog
+        open={deleting !== null}
+        title={t("Draft silinsin mi?")}
+        message={t("{name} bu bilgisayardan silinir. Bu geri alınamaz.", { name: deleting?.name ?? "" })}
+        confirmLabel={t("Sil")}
+        danger
+        onCancel={() => setDeleting(null)}
+        onConfirm={() => {
+          if (deleting) deleteDraft(deleting.id);
+          if (deleting?.id === currentId) setCurrentId(null);
+          setDeleting(null);
+        }}
+      />
+    </>
+  );
+}
+
+function Plans({ advice, title }: { advice: { title: string; detail: string }[]; title: string }) {
+  const t = useT();
+  if (advice.length === 0) return null;
+  return (
+    <>
+      <h3 className="draft__heading">{title}</h3>
+      <ul className="advice">
+        {advice.map((a) => (
+          <li key={a.title}>
+            <p>{t(a.title)}</p>
+            <p>{t(a.detail)}</p>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+type TeamProps = {
+  side: Side;
+  label: string;
+  ids: number[];
+  data: ChampionRoles;
+  active: { side: Side; slot: number } | null;
+  onSelect: (slot: number) => void;
+  onClear: (slot: number) => void;
+  onSwap: (a: number, b: number) => void;
+};
+
+function TeamColumn({ side, label, ids, data, active, onSelect, onClear, onSwap }: TeamProps) {
+  const t = useT();
+  return (
+    <section className="sim__team" data-side={side} aria-label={label}>
+      <h2 className="draft__heading">{label}</h2>
+      <ol>
+        {ids.map((id, slot) => {
+          const champion = data.champions.get(id);
+          const isActive = active?.side === side && active.slot === slot;
+          return (
+            <li key={slot} className="sim__slot" data-active={isActive || undefined}>
+              <button type="button" className="sim__slot-main" aria-pressed={isActive} onClick={() => onSelect(slot)}>
+                <img className="sim__role" src={roleIconUrl(ROLES[slot])} alt="" width={16} height={16} />
+                {champion ? <img src={championIconUrl(data.version, champion.id)} alt="" width={36} height={36} /> : <span className="sim__empty" />}
+                <span className="library__who">
+                  <span className="library__name">{champion?.name ?? t("Boş")}</span>
+                  <span className="build__stat">{t(POSITIONS[ROLES[slot]])}</span>
+                </span>
+              </button>
+              <span className="sim__slot-actions">
+                {slot > 0 && (
+                  <button type="button" aria-label={t("Bir yukarı taşı")} title={t("Bir yukarı taşı")} onClick={() => onSwap(slot, slot - 1)}>
+                    ↑
+                  </button>
+                )}
+                {champion && (
+                  <button type="button" aria-label={t("{champion} kaldır", { champion: champion.name })} title={t("Kaldır")} onClick={() => onClear(slot)}>
+                    ×
+                  </button>
+                )}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+function CompareModal({ drafts, data, onClose }: { drafts: SavedDraft[]; data: ChampionRoles; onClose: () => void }) {
+  const t = useT();
+  const lang = useLang();
+  const team = (ids: number[]) => ids.map((id) => data.champions.get(id)).filter((c): c is Champion => c !== undefined);
+  return (
+    <Modal open wide title={t("Draft karşılaştırması")} onClose={onClose}>
+      <table className="sim__compare">
+        <thead>
+          <tr>
+            <th />
+            {drafts.flatMap((d) => [
+              <th key={`${d.id}b`} scope="col">
+                {d.name}, {t("Mavi")}
+              </th>,
+              <th key={`${d.id}r`} scope="col">
+                {d.name}, {t("Kırmızı")}
+              </th>,
+            ])}
+          </tr>
+        </thead>
+        <tbody>
+          {(["frontline", "backline", "poke", "pick", "teamfight"] as const).map((dimension) => (
+            <tr key={dimension}>
+              <th scope="row">{t(DIMENSION_NAMES[dimension])}</th>
+              {drafts.flatMap((d) =>
+                [d.blue, d.red].map((ids, i) => {
+                  const report = compDimensions(team(ids)).find((r) => r.dimension === dimension)!;
+                  return (
+                    <td key={`${d.id}${i}`} title={report.names.join(", ")}>
+                      {report.names.length}
+                    </td>
+                  );
+                }),
+              )}
+            </tr>
+          ))}
+          <tr>
+            <th scope="row">{t("Büyü hasarı")}</th>
+            {drafts.flatMap((d) =>
+              [d.blue, d.red].map((ids, i) => {
+                const report = analyzeComp(team(ids));
+                return <td key={`${d.id}m${i}`}>{report.champions ? formatPercent(report.magic, lang) : "–"}</td>;
+              }),
+            )}
+          </tr>
+        </tbody>
+      </table>
+    </Modal>
+  );
+}
