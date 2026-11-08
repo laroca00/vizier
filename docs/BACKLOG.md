@@ -17,7 +17,7 @@ The work after `IMPLEMENTATION_ROADMAP.md` (phases 0–11 are done). Tasks are o
 
 - [ ] A1 Split `App.css` per page. Move every rule into the CSS file next to the component that uses it; delete rules nothing uses. Acceptance: `App.css` holds only shell-wide rules, the bundle CSS size is equal or smaller, every page looks the same.
 - [ ] A2 Fix the remaining ESLint hook-dependency warnings one file at a time, without changing behaviour. Where a dependency is left out on purpose, add a one-line comment saying why and a scoped disable.
-- [x] A3 Typed fetch layer: give `api.ts` a single `request<T>()` with timeout, abort signal and one retry on network errors (not on 4xx). Tests for timeout, abort and retry using a fake `fetch`.
+- [x] A3 Typed fetch layer: give `api.ts` a single `request<T>()` with timeout, abort signal and one retry on network errors (not on 4xx). Tests for timeout, abort and retry using a fake `fetch`. (5daaa8a)
 - [ ] A4 In-memory and `sessionStorage` cache for API answers with a per-route TTL (tier lists 30 min, builds 30 min, pro builds 5 min). Tests for expiry and key building.
 - [ ] A5 `useAsync`: add stale-while-revalidate (show cached data, refresh in background) and cancel on unmount. Tests.
 - [ ] A6 Data Dragon loader (`data/ddragon.ts`): cache static JSON per version in IndexedDB so a restart doesn't refetch `championFull.json`. Fallback to network when IndexedDB is missing. Tests with fake-indexeddb or an injected store.
