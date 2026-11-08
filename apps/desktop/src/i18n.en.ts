@@ -256,6 +256,7 @@ export const EN: Record<string, string> = {
   "Bu rol": "this role",
   "{games} maçtan azını gizle": "Hide rows under {games} games",
   "az maç": "few games",
+  "Kör seçim için en güvenlisi {champion}: {known} yaygın rakipten {bad} tanesine karşı %49'un altında, ortalama {rate}, {games} maç.": "Safest blind pick: {champion}, under 49% against {bad} of {known} common opponents, {rate} on average, {games} games.",
   "Boşluğu kapatabilecek şampiyonlar": "Champions that could fill the gap",
   "Karşı: {list}": "Against: {list}",
   "Hiçbirine karşı belirgin üstünlük yok": "No clear edge against any of them",

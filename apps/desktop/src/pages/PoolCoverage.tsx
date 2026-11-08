@@ -4,7 +4,7 @@ import { formatPercent, useLang, useT } from "../i18n";
 import { POSITIONS } from "../labels";
 import { MatchupLink } from "../matchupLink";
 import { suggestForGaps } from "../poolSuggest";
-import { COMMON_OPPONENTS, coverage, gaps, poolByRole, type CoverageRow, type Matchups } from "../poolCoverage";
+import { COMMON_OPPONENTS, coverage, gaps, poolByRole, safestBlind, type CoverageRow, type Matchups } from "../poolCoverage";
 import { usePersonal } from "../personal";
 import { useAsync } from "../useAsync";
 import type { ChampionRoles } from "./ChampionsPage";
@@ -42,6 +42,7 @@ function RoleCoverage({ role, ids, data }: { role: string; ids: number[]; data: 
   if (opponents.length === 0 || pool.size === 0) return null;
   const rows = coverage(opponents.map((o) => o.championId), pool);
   const open = gaps(rows);
+  const blind = ids.length > 1 ? safestBlind(rows.map((r) => r.opponentId), pool) : null;
   const nameOf = (id: number) => data.champions.get(id)?.name ?? String(id);
   const icon = (id: number, size: number) => {
     const champion = data.champions.get(id);
@@ -57,6 +58,20 @@ function RoleCoverage({ role, ids, data }: { role: string; ids: number[]; data: 
           covered: rows.filter((r) => r.status === "covered").length,
         })}
       </p>
+      {blind && (
+        <p className="coverage__blind">
+          {icon(blind.championId, 24)}
+          <span>
+            {t("Kör seçim için en güvenlisi {champion}: {known} yaygın rakipten {bad} tanesine karşı %49'un altında, ortalama {rate}, {games} maç.", {
+              champion: nameOf(blind.championId),
+              known: blind.known,
+              bad: blind.bad,
+              rate: percent(blind.winRate),
+              games: blind.games.toLocaleString(),
+            })}
+          </span>
+        </p>
+      )}
       {open.length > 0 && (
         <p className="coverage__gaps">
           <span className="build__stat">{t("Kimsenin rahat etmediği rakipler")}</span>

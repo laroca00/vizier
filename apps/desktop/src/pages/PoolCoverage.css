@@ -88,3 +88,17 @@
 .coverage__suggest {
   margin-bottom: 12px;
 }
+
+.coverage__blind {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 6px 10px;
+  border-radius: var(--radius-item);
+  background: rgb(214 180 106 / 0.12);
+}
+
+.coverage__blind img {
+  border-radius: 50%;
+}
