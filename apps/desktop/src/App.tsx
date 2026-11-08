@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useChampSelectMock } from "./dev/champSelectMock";
 import { champSelectFixture } from "./dev/fixtures";
 import { useChampSelect, useLcuStatus } from "./lcu";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
@@ -106,7 +107,8 @@ function App() {
   const lcu = useLcuStatus();
   const settings = useSettings();
   const t = useT();
-  const draft = useChampSelect() ?? fixture;
+  const mock = useChampSelectMock();
+  const draft = useChampSelect() ?? mock ?? fixture;
   const nav = useNavigation(devRoute() ?? { page: draft ? "draft" : "home" });
   const { route, navigate, replace } = nav;
   const [navigated, setNavigated] = useState(false);

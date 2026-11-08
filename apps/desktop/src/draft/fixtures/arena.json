@@ -1,0 +1,113 @@
+[
+  {
+    "myTeam": [
+      {
+        "cellId": 0,
+        "championId": 0,
+        "pickIntent": 0,
+        "position": "",
+        "spells": [
+          4,
+          14
+        ],
+        "isLocal": true
+      },
+      {
+        "cellId": 1,
+        "championId": 0,
+        "pickIntent": 0,
+        "position": "",
+        "spells": [
+          4,
+          14
+        ],
+        "isLocal": false
+      }
+    ],
+    "theirTeam": [
+      {
+        "cellId": 2,
+        "championId": 0,
+        "pickIntent": 0,
+        "position": "",
+        "spells": [
+          4,
+          14
+        ],
+        "isLocal": false
+      },
+      {
+        "cellId": 3,
+        "championId": 0,
+        "pickIntent": 0,
+        "position": "",
+        "spells": [
+          4,
+          14
+        ],
+        "isLocal": false
+      }
+    ],
+    "bans": [],
+    "phase": "BAN_PICK",
+    "turn": {
+      "kind": "pick",
+      "mine": true
+    },
+    "phaseEndsAt": 30000
+  },
+  {
+    "myTeam": [
+      {
+        "cellId": 0,
+        "championId": 157,
+        "pickIntent": 0,
+        "position": "",
+        "spells": [
+          4,
+          14
+        ],
+        "isLocal": true
+      },
+      {
+        "cellId": 1,
+        "championId": 412,
+        "pickIntent": 0,
+        "position": "",
+        "spells": [
+          4,
+          14
+        ],
+        "isLocal": false
+      }
+    ],
+    "theirTeam": [
+      {
+        "cellId": 2,
+        "championId": 0,
+        "pickIntent": 0,
+        "position": "",
+        "spells": [
+          4,
+          14
+        ],
+        "isLocal": false
+      },
+      {
+        "cellId": 3,
+        "championId": 0,
+        "pickIntent": 0,
+        "position": "",
+        "spells": [
+          4,
+          14
+        ],
+        "isLocal": false
+      }
+    ],
+    "bans": [],
+    "phase": "FINALIZATION",
+    "turn": null,
+    "phaseEndsAt": 30000
+  }
+]
