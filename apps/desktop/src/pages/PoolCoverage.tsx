@@ -3,6 +3,7 @@ import { championIconUrl } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
 import { POSITIONS } from "../labels";
 import { MatchupLink } from "../matchupLink";
+import { suggestForGaps } from "../poolSuggest";
 import { COMMON_OPPONENTS, coverage, gaps, poolByRole, type CoverageRow, type Matchups } from "../poolCoverage";
 import { usePersonal } from "../personal";
 import { useAsync } from "../useAsync";
@@ -67,12 +68,75 @@ function RoleCoverage({ role, ids, data }: { role: string; ids: number[]; data: 
           ))}
         </p>
       )}
+      <Suggestions role={role} gapIds={open.map((r) => r.opponentId)} poolIds={ids} data={data} nameOf={nameOf} icon={icon} percent={percent} />
       <ul className="coverage__list">
         {rows.map((row) => (
           <CoverageItem key={row.opponentId} row={row} role={role} nameOf={nameOf} icon={icon} percent={percent} pickRate={opponents.find((o) => o.championId === row.opponentId)?.pickRate ?? 0} />
         ))}
       </ul>
     </section>
+  );
+}
+
+const CANDIDATES = 12;
+
+/** Champions from the role's tier list that would answer the gaps. */
+function Suggestions({
+  role,
+  gapIds,
+  poolIds,
+  data,
+  nameOf,
+  icon,
+  percent,
+}: {
+  role: string;
+  gapIds: number[];
+  poolIds: number[];
+  data: ChampionRoles;
+  nameOf: (id: number) => string;
+  icon: (id: number, size: number) => React.ReactNode;
+  percent: (n: number) => string;
+}) {
+  const t = useT();
+  const [state] = useAsync(gapIds.length ? `pool-suggest:${role}:${poolIds.join(",")}:${gapIds.join(",")}` : null, async () => {
+    const tiers = await getTierList(role);
+    const candidates = tiers.champions
+      .filter((c) => !poolIds.includes(c.championId) && data.champions.has(c.championId) && c.games >= 100)
+      .slice(0, CANDIDATES)
+      .map((c) => ({ championId: c.championId, tier: c.tier, tags: data.champions.get(c.championId)!.tags }));
+    const counters = new Map<number, Matchups>();
+    await Promise.all(candidates.map((c) => getCounters(c.championId, role).then((r) => counters.set(c.championId, r.matchups), () => {})));
+    const poolTags = poolIds.flatMap((id) => data.champions.get(id)?.tags[0] ?? []);
+    return suggestForGaps(gapIds, candidates, counters, poolTags);
+  });
+  if (state.status !== "done" || state.value.length === 0) return null;
+  return (
+    <div className="coverage__suggest">
+      <h3 className="coverage__heading">{t("Boşluğu kapatabilecek şampiyonlar")}</h3>
+      <ul className="coverage__list">
+        {state.value.map((s) => (
+          <li key={s.championId} className="coverage__row coverage__row--suggest">
+            <span className="coverage__opponent">
+              {icon(s.championId, 24)}
+              {nameOf(s.championId)}
+              <span className="tier" data-tier={s.tier}>
+                {s.tier}
+              </span>
+            </span>
+            <span className="coverage__rate">{percent(s.winRate)}</span>
+            <span className="build__stat">{t("{games} maç", { games: s.games })}</span>
+            <span className="build__stat coverage__beats">
+              {s.beats.length > 0
+                ? t("Karşı: {list}", { list: s.beats.map((b) => `${nameOf(b.opponentId)} ${percent(b.winRate)} (${b.games})`).join(", ") })
+                : t("Hiçbirine karşı belirgin üstünlük yok")}
+            </span>
+            <MatchupLink championId={s.championId} opponentId={s.beats[0]?.opponentId ?? null} position={role} label={t("Aç")} />
+          </li>
+        ))}
+      </ul>
+      <p className="build__note">{t("Sıra: boşluk rakiplerine karşı kazanma oranı, tier ve havuzundakilere benzerlik küçük bir ek puan.")}</p>
+    </div>
   );
 }
 

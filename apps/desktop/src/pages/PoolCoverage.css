@@ -73,3 +73,18 @@
 .coverage__row[data-status="gap"] .coverage__rate {
   color: #f08a7c;
 }
+
+.coverage__heading {
+  margin: 12px 0 6px;
+  font-size: var(--text-small);
+  font-weight: 400;
+  color: var(--glaze-muted);
+}
+
+.coverage__row--suggest {
+  grid-template-columns: minmax(180px, 1.2fr) 60px 70px minmax(0, 2fr) auto;
+}
+
+.coverage__suggest {
+  margin-bottom: 12px;
+}
