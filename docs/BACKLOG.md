@@ -75,11 +75,11 @@ A dedicated place to study any matchup before the game, not only during champ se
 - [x] 5.3 Boots and summoner spells comparison tables with pick rate, win rate and games. (d8a0f1e)
 - [x] 5.4 Skill order: the common first-three and max orders with their win rate and play rate (crawler rollup), on top of the existing grid. (d8a0f1e; skill option rollup reuses the existing skill counts)
 - [x] 5.5 Ability details: cooldown, cost and range per rank from `championFull.json`, with "–" where Data Dragon doesn't publish a value. (d8a0f1e)
-- [ ] 5.6 Item completion times: the minute each core item is usually finished (crawler rollup from timeline purchase events).
-- [ ] 5.7 Synergies tab: best duo partners (bot + support, jungle + mid) with games.
-- [ ] 5.8 Similar champions: same class and damage type, closest base stats; quick links.
-- [ ] 5.9 Skins gallery from CommunityDragon, lazy-loaded.
-- [ ] 5.10 Queue picker in the header: ranked, ARAM, Mayhem, Arena, using each queue's docs.
+- [x] 5.6 Item completion times: the minute each core item is usually finished (crawler rollup from timeline purchase events). (2bdb429; crawler rollup of first purchase times; needs migration 0014)
+- [x] 5.7 Synergies tab: best duo partners (bot + support, jungle + mid) with games. (2bdb429; teammates grouped by role, duo partner role first, pairings under 20 games hidden)
+- [x] 5.8 Similar champions: same class and damage type, closest base stats; quick links. (2bdb429; same main class and damage type, nearest level-one stats)
+- [x] 5.9 Skins gallery from CommunityDragon, lazy-loaded. (2bdb429; skins and splash art come from Data Dragon, already used for the page background)
+- [x] 5.10 Queue picker in the header: ranked, ARAM, Mayhem, Arena, using each queue's docs. (2bdb429; the mode tabs existed; they moved into the header)
 
 ## 6. Tier list improvements
 
@@ -193,4 +193,5 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 - Pull and restart the crawler on the VM (Arena duo and item docs appear after the next rollup and publish; duo counts start from games crawled after the update).
 - Apply D1 migration 0013 (lane stats) remotely before the next crawler run on the VM; lane docs fill as timelines are crawled.
 - After the Worker and crawler update, the build docs gain `perks`, `perkGames` and `skillOptions` on the next publish; single-rune counts only cover games rolled up after the crawler update.
+- Apply D1 migration 0014 (item completion times) remotely before the next crawler run on the VM; times fill as timelines are crawled.
 - Optional: set `ARENA_ITEMS=off` on the Worker to hide Arena item stats; they are on by default.
