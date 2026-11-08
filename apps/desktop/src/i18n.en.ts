@@ -770,4 +770,5 @@ export const EN: Record<string, string> = {
   "Sonuç panoya kopyalandı": "Result copied to the clipboard",
   "Panoya kopyalanamadı.": "Couldn't copy to the clipboard.",
   "Sonucu kopyala": "Copy result",
+  "Yama {patch}, TR ve EUW Emerald+ ile KR Challenger'dan {games} maç, kazanma oranı {rate}": "Patch {patch}, {games} games from TR and EUW Emerald+ and KR Challenger, {rate} win rate",
 };

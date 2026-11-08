@@ -290,7 +290,12 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
       )}
 
       <p className="build__summary">
-        {t("Yama {patch}, {games} maç, kazanma oranı {rate}", { patch: build.patches[0], games: shown.games, rate: percent(shown.winRate) })}
+        {/* Builds also count KR Challenger games, so this differs from the tier list's Emerald+ numbers. */}
+        {t(queue === 420 ? "Yama {patch}, TR ve EUW Emerald+ ile KR Challenger'dan {games} maç, kazanma oranı {rate}" : "Yama {patch}, {games} maç, kazanma oranı {rate}", {
+          patch: build.patches[0],
+          games: shown.games,
+          rate: percent(shown.winRate),
+        })}
         {vs && !versus ? `. ${t("{opponent} eşleşmesi için yeterli maç yok; genel build gösteriliyor", { opponent: opponentName })}` : ""}
       </p>
 
