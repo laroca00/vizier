@@ -138,7 +138,10 @@ export type PickReason =
   | { kind: "need"; need: Need }
   | { kind: "meta"; tier: string; winRate: number; games: number };
 
-export type PickSuggestion = { championId: number; score: number; reasons: PickReason[] };
+/** Points behind a score: the champion's own rate, the matchup and the team's gaps. */
+export type ScoreBreakdown = { meta: number; counter: number; needs: number };
+
+export type PickSuggestion = { championId: number; score: number; reasons: PickReason[]; breakdown: ScoreBreakdown; inPool: boolean };
 
 const MIN_TIER_GAMES = 150;
 const MIN_MATCHUP_GAMES = 40;
@@ -155,6 +158,8 @@ type SuggestInput = {
   champions: Map<number, Champion>;
   /** Banned or already picked. */
   unavailable: Set<number>;
+  /** Champions of the player's pool; they are always listed and come first. */
+  pool?: Set<number>;
 };
 
 /**
@@ -162,7 +167,7 @@ type SuggestInput = {
  * win rate: the champion's own rate above 50%, how much better it does
  * against the lane opponent, and a flat bonus for each gap it fills.
  */
-export function suggestPicks({ tierList, opponentCounters, opponentId, allies, champions, unavailable }: SuggestInput): PickSuggestion[] {
+export function suggestPicks({ tierList, opponentCounters, opponentId, allies, champions, unavailable, pool }: SuggestInput): PickSuggestion[] {
   const needs = teamNeeds(allies);
   const against = new Map((opponentCounters?.matchups ?? []).filter((m) => m.games >= MIN_MATCHUP_GAMES).map((m) => [m.championId, m]));
   return tierList
@@ -171,26 +176,28 @@ export function suggestPicks({ tierList, opponentCounters, opponentId, allies, c
       const champion = champions.get(entry.championId);
       if (!champion) return [];
       const reasons: PickReason[] = [];
-      let score = (entry.winRate - 0.5) * 100;
+      const breakdown: ScoreBreakdown = { meta: (entry.winRate - 0.5) * 100, counter: 0, needs: 0 };
       const matchup = opponentId ? against.get(entry.championId) : undefined;
       if (matchup && opponentId) {
         const ours = 1 - matchup.winRate;
-        score += (ours - 0.5) * 100 * COUNTER_WEIGHT;
+        breakdown.counter = (ours - 0.5) * 100 * COUNTER_WEIGHT;
         if (ours >= 0.51) reasons.push({ kind: "counter", vs: opponentId, winRate: ours, games: matchup.games });
       }
       for (const need of needs) {
         if (fills(need, champion)) {
-          score += NEED_POINTS;
+          breakdown.needs += NEED_POINTS;
           reasons.push({ kind: "need", need });
         }
       }
       // Every row shows its own numbers, but a B tier pick needs another reason to be listed.
       const strong = entry.tier === "S" || entry.tier === "A";
-      if (!strong && reasons.length === 0) return [];
+      const inPool = pool?.has(entry.championId) ?? false;
+      if (!strong && reasons.length === 0 && !inPool) return [];
       reasons.push({ kind: "meta", tier: entry.tier, winRate: entry.winRate, games: entry.games });
-      return [{ championId: entry.championId, score, reasons }];
+      const score = breakdown.meta + breakdown.counter + breakdown.needs;
+      return [{ championId: entry.championId, score, reasons, breakdown, inPool }];
     })
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => Number(b.inPool) - Number(a.inPool) || b.score - a.score)
     .slice(0, SHOWN_SUGGESTIONS);
 }
 

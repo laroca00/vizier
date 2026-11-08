@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { getCounters, getTierList } from "../api";
 import { championIconUrl, type Champion } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
+import { usePersonal } from "../personal";
 import { useAsync } from "../useAsync";
-import { suggestPicks, type Need, type PickReason } from "./logic";
+import { suggestPicks, type Need, type PickReason, type ScoreBreakdown } from "./logic";
 
 const NEED_TEXT: Record<Need, string> = {
   ap: "Takıma büyü hasarı katar",
@@ -37,6 +39,8 @@ type Props = {
 export function PickSuggestions({ role, opponentId, allies, unavailable, champions, version, onPick, limit }: Props) {
   const t = useT();
   const lang = useLang();
+  const { pool } = usePersonal();
+  const [poolFirst, setPoolFirst] = useState(false);
   const [tiers] = useAsync(`tiers:${role}`, () => getTierList(role));
   const [counters] = useAsync(opponentId ? `counters:${opponentId}:${role}` : null, () => getCounters(opponentId!, role));
 
@@ -50,6 +54,7 @@ export function PickSuggestions({ role, opponentId, allies, unavailable, champio
     allies,
     champions,
     unavailable,
+    pool: poolFirst ? new Set(pool.filter((p) => !p.position || p.position === role).map((p) => p.championId)) : undefined,
   }).slice(0, limit);
   if (picks.length === 0) return <p className="draft__empty">{t("Şu an öne çıkan bir seçim yok.")}</p>;
 
@@ -72,8 +77,18 @@ export function PickSuggestions({ role, opponentId, allies, unavailable, champio
     }
   }
 
+  function breakdownText(b: ScoreBreakdown) {
+    const sign = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}`;
+    return t("Puan: meta {meta}, eşleşme {counter}, takım ihtiyacı {needs}", { meta: sign(b.meta), counter: sign(b.counter), needs: sign(b.needs) });
+  }
+
   return (
     <>
+      {pool.length > 0 && (
+        <label className="picks__toggle">
+          <input type="checkbox" checked={poolFirst} onChange={(e) => setPoolFirst(e.target.checked)} /> {t("Önce havuzum")}
+        </label>
+      )}
       {shared.length > 0 && (
         <p className="picks__shared">{t("Takımın ihtiyacı: {needs}", { needs: shared.map((need) => t(NEED_SHORT[need])).join(", ") })}</p>
       )}
@@ -82,7 +97,7 @@ export function PickSuggestions({ role, opponentId, allies, unavailable, champio
           const champion = champions.get(pick.championId);
           if (!champion) return null;
           return (
-            <li key={pick.championId} className="picks__row" data-pickable={onPick ? true : undefined}>
+            <li key={pick.championId} className="picks__row" title={breakdownText(pick.breakdown)} data-pool={pick.inPool || undefined} data-pickable={onPick ? true : undefined}>
               {onPick ? (
                 <button type="button" className="picks__pick" aria-label={t("{champion} seç", { champion: champion.name })} onClick={() => onPick(pick.championId)}>
                   <img src={championIconUrl(version, champion.id)} alt="" width={40} height={40} />
@@ -91,7 +106,7 @@ export function PickSuggestions({ role, opponentId, allies, unavailable, champio
                 <img src={championIconUrl(version, champion.id)} alt="" width={40} height={40} />
               )}
               <div className="picks__body">
-                <p className="picks__name">{champion.name}</p>
+                <p className="picks__name">{champion.name}{pick.inPool && <span className="picks__pool"> · {t("Havuzunda")}</span>}</p>
                 <ul className="picks__reasons">
                   {pick.reasons.filter((reason) => reason.kind !== "need" || !shared.includes(reason.need)).map((reason) => (
                     <li key={reason.kind === "need" ? reason.need : reason.kind} data-kind={reason.kind}>

@@ -517,3 +517,17 @@
   gap: 6px;
   margin-top: 6px;
 }
+
+.picks__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--ink-soft, inherit);
+}
+
+.picks__pool {
+  font-weight: 400;
+  opacity: 0.7;
+}

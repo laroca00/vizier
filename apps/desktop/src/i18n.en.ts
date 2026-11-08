@@ -932,4 +932,6 @@ export const EN: Record<string, string> = {
   "Meta: {rate} kazanma, {games} maç": "Meta: {rate} win rate, {games} games",
   "{champion} bu şampiyona karşı {rate} kazanıyor, {games} maç": "{champion} wins {rate} against it, {games} games",
   "{allies} karşısında güçlü: {rate}, {games} maç": "Strong into {allies}: {rate}, {games} games",
+  "Puan: meta {meta}, eşleşme {counter}, takım ihtiyacı {needs}": "Score: meta {meta}, matchup {counter}, team need {needs}",
+  "Önce havuzum": "My pool first",
 };
