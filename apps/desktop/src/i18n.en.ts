@@ -829,4 +829,6 @@ export const EN: Record<string, string> = {
   "Havuzundaki şampiyonların Data Dragon değerleri bu yamada değişmedi.": "None of your pool's Data Dragon values changed this patch.",
   "ve {count} değişiklik daha": "and {count} more changes",
   "Tüm değişiklikler": "All changes",
+  "Toplam {total} altın: başlangıç {start}, ana eşyalar {core}, duruma göre {rest}.": "{total} gold in total: {start} starting, {core} core, {rest} situational.",
+  "Güç zirvesi {count} ana eşyada, yaklaşık {gold} altında.": "Power spike at {count} core items, about {gold} gold in.",
 };

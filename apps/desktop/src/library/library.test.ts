@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Picks, ProBuild } from "../api";
 import { fromPicks, fromPro, maxOrderOf, parseRuneKey, runesComplete, toClient } from "./convert";
+import { buildGold } from "./gold";
 import { readShareCode, shareCode } from "./share";
 import { parseLibrary, type SavedBuild } from "./store";
 
@@ -94,5 +95,17 @@ describe("saved builds", () => {
     expect(readShareCode("hello")).toBeNull();
     expect(readShareCode("VZB1:not-base64!!")).toBeNull();
     expect(readShareCode("VZB1:" + btoa(JSON.stringify({ n: "x", c: 1 })))).toBeNull();
+  });
+
+  it("adds up a build's gold and its two-item spike", () => {
+    const price = (id: number) => ({ 1056: 400, 3020: 1100, 6655: 2900, 3089: 3600 })[id] ?? 0;
+    expect(buildGold({ startItems: [1056], coreItems: [6655, 3020, 3089], items: [3089] }, price)).toEqual({
+      start: 400,
+      core: 7600,
+      rest: 3600,
+      total: 11600,
+      spike: { items: 2, gold: 4400 },
+    });
+    expect(buildGold({ startItems: [], coreItems: [], items: [] }, price).spike).toBeNull();
   });
 });

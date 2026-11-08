@@ -1,12 +1,13 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { championIconUrl, itemIconUrl, runeIconUrl, spellIconUrl } from "../data/ddragon";
-import { useT } from "../i18n";
+import { useLang, useT } from "../i18n";
 import { positionLabel } from "../labels";
 import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/Modal";
 import { useToast } from "../ui/Toast";
 import { useBuildExport } from "./useBuildExport";
+import { buildGold } from "./gold";
 import { shareCode } from "./share";
 import { skillOrderLabel, type LibraryData } from "./data";
 import { shardName } from "./RuneEditor";
@@ -30,6 +31,9 @@ export function SavedBuildView({ build, data, onEdit, onSelect }: Props) {
   const primary = data.styles.get(build.runes.primaryStyle);
   const secondary = data.styles.get(build.runes.subStyle);
   const [keystone, ...rest] = build.runes.perks;
+  const lang = useLang();
+  const money = (n: number) => n.toLocaleString(lang === "tr" ? "tr" : "en-GB");
+  const gold = buildGold(build, (id) => data.items.get(id)?.gold ?? 0);
 
 
   return (
@@ -150,6 +154,18 @@ export function SavedBuildView({ build, data, onEdit, onSelect }: Props) {
             })}
           </div>
         ))}
+
+      {gold.total > 0 && (
+        <p className="build__note saved__gold">
+          {t("Toplam {total} altın: başlangıç {start}, ana eşyalar {core}, duruma göre {rest}.", {
+            total: money(gold.total),
+            start: money(gold.start),
+            core: money(gold.core),
+            rest: money(gold.rest),
+          })}
+          {gold.spike && ` ${t("Güç zirvesi {count} ana eşyada, yaklaşık {gold} altında.", { count: gold.spike.items, gold: money(gold.spike.gold) })}`}
+        </p>
+      )}
 
       {build.notes && <p className="saved__notes">{build.notes}</p>}
       {build.collections.length > 0 && (
