@@ -100,14 +100,14 @@ Help players build a pool that covers their role, not only store it.
 - [x] 7.2 Pool suggestions: champions that would fill those gaps, ranked by matchup win rate against the gap opponents, tier and similarity to what the player already plays. (847a7be; candidates are the role's 12 best-tier champions outside the pool)
 - [x] 7.3 Blind pick pick: mark which pool champion is safest blind (fewest bad matchups among common opponents). (847a7be; shown when the role has two or more pool champions)
 - [x] 7.4 Pool patch watch: on Home and the pool page, which pool champions changed in the latest patch and how their win rate moved. (847a7be; win rate moves come from the role tier lists; the patch-changed tag reads the patch tracker cache)
-- [ ] 7.5 Pool export: one button to write item sets for every pool champion into the client (reuses the item set importer), with a summary toast.
+- [x] 7.5 Pool export: one button to write item sets for every pool champion into the client (reuses the item set importer), with a summary toast. (0da66ec; one button on the pool page; picks use their chosen saved build or the recommended one)
 
 ## 8. Champion journal
 
-- [ ] 8.1 Journal page: every champion note and matchup note in one place, searchable, grouped by champion, with jump links.
-- [ ] 8.2 Note templates: a matchup note starts with optional headings (lane plan, all-in window, what to avoid) the player can delete.
-- [ ] 8.3 Notes show up where they matter: the matchup note in champ select and on the matchup page, the champion note on the champion page and in champ select.
-- [ ] 8.4 Notes export and import as part of the existing local data export.
+- [x] 8.1 Journal page: every champion note and matchup note in one place, searchable, grouped by champion, with jump links. (0da66ec; new Journal page in the menu; notes are opened or removed from there)
+- [x] 8.2 Note templates: a matchup note starts with optional headings (lane plan, all-in window, what to avoid) the player can delete. (0da66ec; headings show in an empty matchup note and are never saved untouched)
+- [x] 8.3 Notes show up where they matter: the matchup note in champ select and on the matchup page, the champion note on the champion page and in champ select. (0da66ec; the matchup note previews at the top of champ select and the counters mark opponents you wrote a note for; the editors already existed on the other pages)
+- [x] 8.4 Notes export and import as part of the existing local data export. (0da66ec; the full local data export already held the notes; the journal adds a notes-only file that merges without overwriting)
 
 ## 9. Build library improvements
 
