@@ -1,206 +1,185 @@
 # Backlog
 
-The work after `IMPLEMENTATION_ROADMAP.md` (phases 0–11 are done). Tasks are ordered inside each track; tracks can run in parallel, but take them roughly top to bottom. Product scope is unchanged: prepare, explore, customize. No post-game analysis, coaching or performance tracking, and no overlay redesign (the owner designs that).
+The work after `IMPLEMENTATION_ROADMAP.md` (phases 0–11 are done). This list is about features a player sees: new tools and real improvements to the existing pages. Code health work only happens when a feature needs it.
+
+Product scope: prepare, explore, customize. No post-game analysis, coaching or personal performance tracking (aggregate stats from the crawler are fine). The in-game overlay's design belongs to the owner; don't redesign it.
 
 ## How to work through this file
 
-- Pick the first unchecked task whose dependencies are checked. Mark it `[x]` with the merge commit hash when it lands, e.g. `- [x] B3 ... (a1b2c3d)`.
-- A task that is too big gets split in place: add `B3a`, `B3b` under it and do the first slice.
-- A task that can't be done (missing data, needs a live client, a decision from the owner) gets `[-]` and one line saying why. Move on.
-- Every task ends with `pnpm --filter @vizier/desktop test`, `pnpm --filter @vizier/desktop lint` and `pnpm build:web` passing. API and crawler tasks also run `pnpm --filter @vizier/api test`.
-- New logic gets Vitest tests. New Turkish strings get an English entry in `i18n.en.ts`.
-- Anything that needs a Worker deploy, a D1 migration on the remote database or a VM restart is written so it is backward compatible, and the deploy step is added to "Owner deploy queue" at the bottom instead of being run.
+- Epics are in priority order. Inside an epic, slices are in order. Take the first unchecked slice of the highest epic that isn't blocked.
+- Each slice is a shippable, user-visible step. Mark it `[x]` with the merge commit hash when it lands, e.g. `- [x] 3.2 ... (a1b2c3d)`.
+- A slice that is too big gets split in place (`3.2a`, `3.2b`) and you do the first part.
+- A slice that can't be done (missing data, needs a live client, needs an owner decision) gets `[-]` and one line saying why. Move on.
+- Every slice ends with `pnpm --filter @vizier/desktop test`, `pnpm --filter @vizier/desktop lint` and `pnpm build:web` passing; API and crawler slices also run `pnpm --filter @vizier/api test`.
+- New logic gets Vitest tests. New Turkish strings get an English entry in `i18n.en.ts`. UI copy is short and plain.
+- Every number shown to a player comes with its game count. Hide or grey out values with too few games instead of showing noise.
+- New pages: add the route in `router.ts`, a lazy import in `App.tsx`, a menu entry in `Sidebar.tsx`, an entry in the search palette, and a `?view=` id for dev.
+- Champ select work can't be tested against a real client in the cloud. Build it against recorded session fixtures (epic 1.1 adds the mock) and keep the LCU calls behind the existing Rust commands.
+- Anything that needs a Worker deploy, a remote D1 migration or a VM restart must stay backward compatible; add the step to "Owner deploy queue" at the bottom instead of running it.
 
 ---
 
-## A. Foundations and code health
+## 1. Champ select: smarter preparation
 
-- [ ] A1 Split `App.css` per page. Move every rule into the CSS file next to the component that uses it; delete rules nothing uses. Acceptance: `App.css` holds only shell-wide rules, the bundle CSS size is equal or smaller, every page looks the same.
-- [ ] A2 Fix the remaining ESLint hook-dependency warnings one file at a time, without changing behaviour. Where a dependency is left out on purpose, add a one-line comment saying why and a scoped disable.
-- [x] A3 Typed fetch layer: give `api.ts` a single `request<T>()` with timeout, abort signal and one retry on network errors (not on 4xx). Tests for timeout, abort and retry using a fake `fetch`. (5daaa8a)
-- [x] A4 In-memory and `sessionStorage` cache for API answers with a per-route TTL (tier lists 30 min, builds 30 min, pro builds 5 min). Tests for expiry and key building. (6460c65)
-- [x] A5 `useAsync`: add stale-while-revalidate (show cached data, refresh in background) and cancel on unmount. Tests. (ca57caa)
-- [ ] A6 Data Dragon loader (`data/ddragon.ts`): cache static JSON per version in IndexedDB so a restart doesn't refetch `championFull.json`. Fallback to network when IndexedDB is missing. Tests with fake-indexeddb or an injected store.
-- [ ] A7 Versioned local storage: one `migrate()` per store (`settings`, `personal`, `library`, `drafts`, `quiz`) with a schema version number and tests that load every older shape.
-- [ ] A8 Export/import of local data: validate the file before writing anything, show what will be replaced (counts per store), keep a one-step undo of the last import.
-- [ ] A9 Error reporting to the user: one place that turns `ApiError`, network failures and LCU failures into a short message plus a retry action. Replace ad-hoc messages page by page.
-- [ ] A10 Remove dead exports and unused files (`ts-prune` style search by hand or with a small script under `apps/desktop/scripts/`). Delete only what has no imports.
-- [ ] A11 Bundle report: add a `pnpm --filter @vizier/desktop analyze` script (rollup-plugin-visualizer as a dev dependency) and write the current per-chunk sizes into this file under "Numbers".
-- [ ] A12 Lazy-load Data Dragon champion text (lore, tips) only on the champion page; the list pages need names and images only.
-- [ ] A13 Strict TypeScript flags one at a time: `noUncheckedIndexedAccess` in `src/draft`, `src/library`, `src/patches` first. Fix the errors it raises.
-- [ ] A14 Shared constants: positions, queue ids and role labels live in one module (`queues.ts`/`labels.ts`); remove duplicates across pages.
-- [ ] A15 API tests: cover every route in `app.ts` with the node:sqlite stand-in, including bad input (unknown position, non-numeric champion id, unknown queue).
-- [ ] A16 Crawler tests: rollup of a fixture match into `stat_counts` for every queue the crawler follows (ranked, ARAM, Mayhem, Arena), checked against hand-counted values.
-- [ ] A17 `packages/shared`: create the workspace package with the types both sides use (`Build`, `TierEntry`, `BuildIndexEntry`, `ProBuild`, `docKey`). Switch `services/api` and `apps/desktop` to import them. No behaviour change.
+The page players open most. Make every minute of champ select useful.
 
-## B. Tier list
+- [ ] 1.1 Champ select mock: `src/dev/champSelectMock.ts` replays recorded session fixtures (`src/draft/fixtures/*.json`: blind, draft with bans, ARAM, Arena) step by step. `?view=draft&mock=draft` drives the real page with it. Needed by every slice below.
+- [ ] 1.2 Situational item advisor: from the enemy team, recommend item answers with the reason — heavy healing → anti-heal, 3+ AP → MR item, 3+ AD/crit → armor or Randuin's, lots of hard CC → Mercury's/QSS, burst assassins → Zhonya's/GA, many tanks → %HP or armor pen. Rules in `draft/itemAdvice.ts` using `data/traits.ts` damage and CC profiles; only suggest items the champion's class actually buys (check against its build's item pool). Tests per rule.
+- [ ] 1.3 Damage profile bar: AP / AD / true split for both teams, drawn from a per-champion profile table in `data/traits.ts` (hand-kept, tested so every current champion has an entry).
+- [ ] 1.4 Composition 2.0: add engage, disengage, peel, waveclear and objective control to `compDimensions` with who brings each; extend `traits.ts`.
+- [ ] 1.5 Game phase curve: early / mid / late strength per team from a per-champion curve in `traits.ts`, shown as three paired bars with a one-line read ("they outscale you; play for early dragons").
+- [ ] 1.6 Win conditions: detect the composition archetype for each team (dive, poke, protect-the-carry, split push, pick, teamfight) from the dimensions, and write two or three plain lines on how each team wants to play.
+- [ ] 1.7 Enemy threats list: for each enemy, the one ability to respect (longest-CD hard CC or the ultimate) with its cooldown at rank 1 and max, and their main power spike (level or item).
+- [ ] 1.8 Ban planner in the ban phase: suggest bans from three sources with the reason shown — meta (`/v1/bans`), the worst matchups of the champion the player is hovering or plans to play (pool main), and what is strong into the player's team so far.
+- [ ] 1.9 Pick suggestions "from my pool first" toggle and a score breakdown tooltip on each suggestion.
+- [ ] 1.10 Teammate picks: for each ally, the champion's win rate and games in that role, and a warning when the role looks off (champion rarely played there).
+- [ ] 1.11 Duo synergy hint for bot lane and jungle–mid from `/synergies`, shown next to the relevant ally slot.
+- [ ] 1.12 Hover advice: when hovering a champion, show the matchup line against the guessed lane opponent before locking (win rate, games, difficulty) so the player can change their mind.
 
-- [ ] B1 Tier from a score that weighs win rate by sample size (Wilson lower bound or Bayesian shrink toward the role average), so a 536-game champion can't be S on win rate alone. Change in `services/api/src/stats.ts`, tests with fixed counts. Old clients keep working (same fields).
-- [ ] B2 Minimum games threshold per role scaled to the role's total games (e.g. 0.5% of role games), so low-pick off-role rows show with a "low sample" mark instead of being dropped.
-- [ ] B3 Win rate change versus the previous patch (`winRateChange` is always null now): fill it in the crawler when both patches have enough games.
-- [ ] B4 Tier list UI: show win rate change with an arrow and colour, sortable.
-- [ ] B5 Tier list UI: "low sample" badge and a toggle to hide those rows.
-- [ ] B6 Tier list UI: column sorting for every numeric column, kept in the route state.
-- [ ] B7 Tier list UI: search box filtering by champion name (Turkish and English names both match).
-- [ ] B8 Tier list UI: pool filter — show only champions in my pool / my favourites.
-- [ ] B9 Tier list UI: compact and comfortable density, saved in settings.
-- [ ] B10 Tier list for ARAM, Mayhem and Arena with the same component, queue picker in the toolbar (the API already accepts `queue`).
-- [ ] B11 Tier list explainer: a small "how tiers are made" popover with the actual rule and the game count.
-- [ ] B12 Copy tier list as text (role, tier, champion, WR, games) for sharing in chat.
+## 2. ARAM and Mayhem companion
 
-## C. Champion pages
+ARAM players get almost nothing from current tools. Make Vizier the best ARAM helper.
 
-- [ ] C1 Ability panel: cooldowns, costs and ranges per rank in a small table from `championFull.json`, with placeholders resolved where Data Dragon gives the values and an honest "–" where not.
-- [ ] C2 Skill order visual: first-three levels and max order, plus the full 18-level grid already in `SkillGrid`, and how often that order is played.
-- [ ] C3 Rune page visual: full tree layout (both trees and shards) with the chosen runes lit, others dimmed, and the pick rate of each chosen rune.
-- [ ] C4 Item build path: starting items → first back → core 3 → situational, each with games and win rate, laid out as a timeline.
-- [ ] C5 Boots comparison: each boots option with pick rate and win rate.
-- [ ] C6 Summoner spells comparison table.
-- [ ] C7 Counters tab: best and worst lane matchups with game counts, sortable, with a minimum games slider.
-- [ ] C8 Synergies tab: best duo partners by role (bot + support, jungle + mid) from `/synergies`.
-- [ ] C9 Matchup page: two champions side by side — base stats difference at levels 1, 6, 11, 18 computed from Data Dragon per-level stats, the matchup win rate, and the items bought more often in that matchup.
-- [ ] C10 Base stats calculator: level slider 1–18 showing HP, AD, armor, MR, attack speed, with the per-level growth formula Riot uses. Tests against known values.
-- [ ] C11 Champion page share: copy a link-free text summary (runes, items, skill order) for chat.
-- [ ] C12 Skins gallery from CommunityDragon with chromas count, lazy-loaded.
-- [ ] C13 Champion page for every queue: ARAM/Mayhem/Arena builds where the docs exist, queue picker in the header.
-- [ ] C14 "Similar champions" list: same class and damage type, closest base stats; links to their pages.
-- [ ] C15 Recently viewed champions list on Home gets the role that was open.
-- [ ] C16 Personal note editor on the champion page: markdown-free plain text, autosave with a debounce, character count.
-- [ ] C17 Per-matchup notes list on the champion page (`matchupNoteKey`), with jump to that matchup.
+- [ ] 2.1 LCU: read the ARAM bench (`benchChampions` in the champ select session) and the player's reroll count in the Rust champ select state; expose them to the frontend. Rust tests with a recorded session.
+- [ ] 2.2 Bench helper: rank the player's current champion, the bench and teammates' champions by ARAM win rate (queue 450) with game counts, and highlight "take this from the bench" when a bench champion is clearly better.
+- [ ] 2.3 Reroll advice: when the current champion is in the bottom part of the ARAM tier list and rerolls are left, say so.
+- [ ] 2.4 ARAM team composition: the same composition analysis tuned for ARAM (poke and sustain matter more, split push doesn't), with one line on the team's plan.
+- [ ] 2.5 ARAM builds in champ select: when the queue is ARAM or Mayhem, the build tab uses the queue's build docs and imports the ARAM item set.
+- [ ] 2.6 Mayhem augments in champ select: the champion's best augments for Mayhem (from the existing augment docs; respects the `AUGMENTS` switch), shown as a short pick order.
+- [ ] 2.7 ARAM tier list page tab with its own sorting by win rate and pick rate.
 
-## D. Builds and Build Library
+## 3. Arena companion
 
-- [ ] D1 Build comparison 2.0: most popular vs highest win rate (with a minimum games bar) vs "against AP / AD / tank teams" side by side, every number with its game count.
-- [ ] D2 Situational items: for each core item slot, the alternatives with how often they replace it and their win rate.
-- [ ] D3 Item explorer page: every item with stats, cost, build path and the champions that buy it most (from the build index).
-- [ ] D4 Item explorer: filters by stat (AP, AD, armor, MR, haste, crit), price range, map.
-- [ ] D5 Item gold efficiency: gold value of stats per item using base-item stat prices, with a short explanation. Tests against hand-computed values.
-- [ ] D6 Build editor: drag to reorder items, item search with stat filters, duplicate warning.
-- [ ] D7 Rune editor: validation (one keystone, valid shard rows), and "copy from recommended" button.
-- [ ] D8 Build library: tags (free text) besides collections, filter by tag.
-- [ ] D9 Build library: sort by last edited, champion name, collection.
-- [ ] D10 Share codes v2: shorter codes (base64url of a compact binary), still able to read v1 codes. Tests both ways.
-- [ ] D11 Import a build from a share code pasted anywhere in the app (global paste detection with a toast "Build code found — open?").
-- [ ] D12 Build diff: compare two saved builds and show added/removed items and runes.
-- [ ] D13 Build library: bulk export/import of a collection as a file.
-- [ ] D14 Build index search: search by item name ("champions that build Rabadon") and by keystone name.
-- [ ] D15 Build gold timeline: when each core item is usually finished (needs crawler support; see F5).
+- [ ] 3.1 Arena champion page: best augments per champion (existing data), best items once available, and the champion's Arena win rate.
+- [ ] 3.2 Arena duo helper: in Arena champ select, show the partner's champion and suggest picks that pair well (from Arena games where both champions were on the same team; needs a crawler rollup of duo pairs for queue 1700, backward compatible).
+- [ ] 3.3 Arena augment tier list page with filters by rarity tier (silver, gold, prismatic) and by champion class.
+- [ ] 3.4 Arena items: crawler rollup of item win rates for queue 1700 (same `AUGMENTS`-style switch, named `ARENA_ITEMS`, default on), then the item list on the Arena champion page.
 
-## E. Champion select
+## 4. Matchup explorer
 
-- [ ] E1 Draft logic tests: cover `autoView`, opponent guessing and pick suggestion scoring with recorded champ select sessions (fixtures under `src/draft/fixtures/`).
-- [ ] E2 Dev mock: a champ select session player under `src/dev/` that replays a fixture step by step, so champ select can be worked on without a client (`?view=champselect&mock=1`).
-- [ ] E3 Team stats: for each ally pick, the champion's win rate in that role and its game count, from data already fetched.
-- [ ] E4 AP/AD/true damage split bar for both teams, from a per-champion damage profile table in `data/traits.ts`.
-- [ ] E5 Composition: engage, disengage, peel and waveclear dimensions added to `compDimensions`, with who brings each. Extend `traits.ts` and its tests.
-- [ ] E6 Composition: game phase strength (early / mid / late) from a hand-kept per-champion curve in `traits.ts`, shown as three bars per team.
-- [ ] E7 Composition: weaknesses list ("no frontline", "all AD", "no waveclear") with one-line advice each.
-- [ ] E8 Ban suggestions in champ select from `/v1/bans`, filtered to the player's role opponents and their pool-relevant counters.
-- [ ] E9 Pick suggestions: "from my pool first" toggle.
-- [ ] E10 Pick suggestions: explain each suggestion's score breakdown in a tooltip.
-- [ ] E11 Matchup guide: power spike levels for both champions (level 2/3/6 from ability data, item spikes from the build).
-- [ ] E12 Matchup guide: "what to watch" — the opponent's key abilities with cooldowns at rank 1 and at max.
-- [ ] E13 Duo synergy hint in champ select for bot lane and jungle–mid using `/synergies`.
-- [ ] E14 Champ select layout check at 1280×720 and 1024×640 in the real window (needs a person; mark `[-]` if no window is available).
+A dedicated place to study any matchup before the game, not only during champ select.
 
-## F. API and crawler
+- [ ] 4.1 Matchup page (`{ page: "matchup", championId, opponentId, position }`): pick two champions and a role. Shows win rate and games, difficulty, the matchup build and runes, items bought more often in this matchup, and the player's own note for it.
+- [ ] 4.2 Base stats duel: both champions' HP, AD, armor, MR, attack speed and range at levels 1, 3, 6, 11, 18 from Data Dragon growth formulas, with who is ahead at each level. Tests against known values.
+- [ ] 4.3 Ability comparison: cooldowns of each basic ability and ultimate at rank 1 and max side by side, with the "window" lines ("their E is on a 14 s cooldown at level 3: trade when it's down").
+- [ ] 4.4 Power spikes timeline: level 2/3/6/11/16 and core item completions for both champions on one horizontal timeline.
+- [ ] 4.5 Lane stats from the crawler: average gold and CS difference at 10 and 15 minutes, first blood rate and lane kill rate for this matchup (new aggregate rollup from timelines; backward compatible doc).
+- [ ] 4.6 Entry points: open the matchup page from the champion page counters list, from champ select, from the tier list (right-click or a button) and from the search palette ("Ahri vs Zed").
 
-- [ ] F1 Ban rate is a bit lower than other sites; check how bans are counted (per game vs per team, duplicates) and fix with tests.
-- [ ] F2 Seed: add more Diamond and Emerald pages so the pool isn't apex-heavy; keep within the 70% key share. Config in one place.
-- [ ] F3 Region and tier columns in `stat_counts` (new migration, backward compatible) so tier lists can later be split by region and rank.
-- [ ] F4 Tier list by rank band (Emerald, Diamond, Master+) using F3, behind a query parameter; old clients get the pooled list.
-- [ ] F5 Item completion times: record the minute each finished item is bought (from timelines) and roll it up per champion build.
-- [ ] F6 Skill order win rates: roll up first-three and max-order variants with their win rate.
-- [ ] F7 Rune pick rates per slot so the rune page can show per-rune pick rates (C3).
-- [ ] F8 Matchup builds: lower the game threshold for popular matchups using a shrink toward the overall build.
-- [ ] F9 Publish only docs whose content hash changed (check it's already the case and add a test); log D1 writes per publish.
-- [ ] F10 `/health` returns the newest `stat_docs.updated_at` and total games so freshness can be checked from outside.
-- [ ] F11 API: `ETag`/`If-None-Match` on doc routes so the desktop can revalidate cheaply.
-- [ ] F12 Crawler metrics line every hour: games saved per host, requests used, 429 count.
-- [ ] F13 Crawler: drop games shorter than the remake threshold and with early surrender from every rollup (check and test).
-- [ ] F14 Pro builds: add LCK, LPL, LEC, LCS team lists to `proPlayers.ts` where the players' accounts are public, with tests for name matching.
+## 5. Champion page improvements
 
-## G. Pro builds
+- [ ] 5.1 Rune page visual: both trees and shards laid out like the client, chosen runes lit, alternatives dimmed with their pick rates (needs per-rune pick rates from the crawler; backward compatible field in the build doc).
+- [ ] 5.2 Build path timeline: starting items → first back → three core items → situational, with games and win rate on each step.
+- [ ] 5.3 Boots and summoner spells comparison tables with pick rate, win rate and games.
+- [ ] 5.4 Skill order: the common first-three and max orders with their win rate and play rate (crawler rollup), on top of the existing grid.
+- [ ] 5.5 Ability details: cooldown, cost and range per rank from `championFull.json`, with "–" where Data Dragon doesn't publish a value.
+- [ ] 5.6 Item completion times: the minute each core item is usually finished (crawler rollup from timeline purchase events).
+- [ ] 5.7 Synergies tab: best duo partners (bot + support, jungle + mid) with games.
+- [ ] 5.8 Similar champions: same class and damage type, closest base stats; quick links.
+- [ ] 5.9 Skins gallery from CommunityDragon, lazy-loaded.
+- [ ] 5.10 Queue picker in the header: ranked, ARAM, Mayhem, Arena, using each queue's docs.
 
-- [ ] G1 Pro player pages: a player's recent games, most played champions and their usual runes.
-- [ ] G2 Follow a pro: followed players' newest games on Home.
-- [ ] G3 Pro games by champion on the champion page, with "same opponent" first (reuse the champ select logic).
-- [ ] G4 Pro build to library: save any pro game build as a personal build in one click (exists for some views; make it everywhere).
-- [ ] G5 Pro filters in the route state so back/forward keeps them.
-- [ ] G6 Pro builds empty states per filter combination with a "clear this filter" action.
+## 6. Tier list improvements
 
-## H. Draft simulator
+- [ ] 6.1 Honest tiers: tier from a score that shrinks win rate toward the role average by sample size (Bayesian or Wilson), so a champion with few games can't reach S on win rate alone. Same response fields, so old clients keep working. Tests with fixed counts.
+- [ ] 6.2 Win rate change versus the previous patch (fill `winRateChange` in the crawler when both patches have enough games) shown with an arrow and colour.
+- [ ] 6.3 Low-sample rows: lower the cut-off but mark rows under the threshold with a badge and a toggle to hide them.
+- [ ] 6.4 Sorting by every column, search by name, a "my pool only" filter, all kept in the route state.
+- [ ] 6.5 Meta movers card on the tier list and Home: biggest win rate and pick rate risers and fallers this patch.
+- [ ] 6.6 Tier list by rank band (Emerald, Diamond, Master+): add region and tier to the crawler's counts (new migration, backward compatible) and a query parameter; old clients keep the pooled list.
+- [ ] 6.7 "How tiers are made" popover with the real rule and the game count.
 
-- [ ] H1 Simulator: import the current champ select as a draft (when the client is running).
-- [ ] H2 Simulator: export a draft as text and as a share code; import from a code.
-- [ ] H3 Simulator: undo/redo for picks, bans and swaps.
-- [ ] H4 Simulator: role assignment check — warn when a pick is far from its usual roles.
-- [ ] H5 Simulator: show both teams' AP/AD split and phase curves (E4, E6).
-- [ ] H6 Simulator: keyboard flow — type to search, Enter to pick into the selected slot, Tab to the next slot.
-- [ ] H7 Simulator: pro draft presets (recent pro games' drafts loaded as read-only examples).
+## 7. Champion pool builder
 
-## I. Patch tracker
+Help players build a pool that covers their role, not only store it.
 
-- [ ] I1 Patch diff: per-level stat changes shown as "at level 1 / at level 18" values, not only the raw growth number.
-- [ ] I2 Patch diff: ability cooldown and cost changes per rank where Data Dragon has them.
-- [ ] I3 Patch diff: item build path and recipe cost changes.
-- [ ] I4 Patch diff: champions in my pool first, with a badge on Home when one of them changed.
-- [ ] I5 Patch diff: buff/nerf label per change from a simple rule (higher base stat = buff, longer cooldown = nerf), with "mixed" when both.
-- [ ] I6 Patch history: a champion's changes over the last N cached versions on its page.
-- [ ] I7 Patch tracker: win rate before/after the patch for changed champions, from B3 data.
+- [ ] 7.1 Pool coverage: for the role's 20 most played opponents, which pool champion has the best matchup against each, and the opponents nobody in the pool handles well.
+- [ ] 7.2 Pool suggestions: champions that would fill those gaps, ranked by matchup win rate against the gap opponents, tier and similarity to what the player already plays.
+- [ ] 7.3 Blind pick pick: mark which pool champion is safest blind (fewest bad matchups among common opponents).
+- [ ] 7.4 Pool patch watch: on Home and the pool page, which pool champions changed in the latest patch and how their win rate moved.
+- [ ] 7.5 Pool export: one button to write item sets for every pool champion into the client (reuses the item set importer), with a summary toast.
 
-## J. Home and navigation
+## 8. Champion journal
 
-- [ ] J1 Home: "for your pool this patch" card — each pool champion's tier, win rate change, and whether it was changed in the patch.
-- [ ] J2 Home: quick search field that opens the search palette.
-- [ ] J3 Home: customise which cards show and their order (saved in settings).
-- [ ] J4 Search palette: items, runes, pro players and saved builds as result types.
-- [ ] J5 Search palette: recent searches and keyboard hints.
-- [ ] J6 Keyboard shortcut help modal (`?`) listing every shortcut in the app.
-- [ ] J7 Breadcrumbs for detail pages (Champions › Ahri › Matchup vs Zed).
-- [ ] J8 Deep links: `vizier://champion/103?role=MIDDLE` handled by Tauri and the router (Rust side with tests; frontend parsing with tests).
+- [ ] 8.1 Journal page: every champion note and matchup note in one place, searchable, grouped by champion, with jump links.
+- [ ] 8.2 Note templates: a matchup note starts with optional headings (lane plan, all-in window, what to avoid) the player can delete.
+- [ ] 8.3 Notes show up where they matter: the matchup note in champ select and on the matchup page, the champion note on the champion page and in champ select.
+- [ ] 8.4 Notes export and import as part of the existing local data export.
 
-## K. Quiz and fun
+## 9. Build library improvements
 
-- [ ] K1 Riddle: ability-icon mode with rotation/greyscale difficulty steps.
-- [ ] K2 Riddle: quote mode from CommunityDragon champion voice-line text where available.
-- [ ] K3 Riddle: item recipe mode ("which item is built from these?").
-- [ ] K4 Riddle: statistics page — streaks, guess distribution chart, per-mode history.
-- [ ] K5 Riddle: hard mode settings per mode (fewer hints).
-- [ ] K6 Item game: timed mode and a local best score.
+- [ ] 9.1 Build comparison 2.0: most popular vs highest win rate (with a minimum games bar) vs against AP / AD / tank teams, side by side with game counts.
+- [ ] 9.2 Item explorer page: every item with stats, cost, build path, gold efficiency (base stat prices, tested) and the champions that build it most (from the build index). Filters by stat and price.
+- [ ] 9.3 Rune explorer page: every keystone with the champions that use it most and their win rate with it.
+- [ ] 9.4 Build editor: drag to reorder items, item search with stat filters, duplicate warning; rune editor validation and "copy from recommended".
+- [ ] 9.5 Tags and sorting in the library (last edited, champion, collection).
+- [ ] 9.6 Share codes v2: shorter codes that still read v1; pasting a code anywhere in the app offers to open it.
+- [ ] 9.7 Build diff between two saved builds.
+- [ ] 9.8 Search the build index by item ("who builds Rabadon's") and keystone.
 
-## L. Settings, i18n and accessibility
+## 10. Queue and lobby companion
 
-- [ ] L1 Full English pass: every page in English with no Turkish left, checked by a test that renders keys through `t()` for every page's key list.
-- [ ] L2 Third language scaffold (e.g. German) behind a setting, with fallback to English, so translations can be added later. Test that missing keys fall back.
-- [ ] L3 Number and percent formatting per language (`Intl.NumberFormat`), one helper used everywhere.
-- [ ] L4 Focus order pass on every page; visible focus rings using the existing token.
-- [ ] L5 Contrast check of every text/background token pair (script that reads `styles.css` and reports WCAG ratios); fix failures.
-- [ ] L6 Reduced motion: every animation respects `prefers-reduced-motion` and the app's own setting.
-- [ ] L7 Screen reader labels for icon-only buttons (champion, item and rune icons get names).
-- [ ] L8 Settings search: filter settings by text.
-- [ ] L9 Font size setting (90 / 100 / 110 %) applied through a root variable.
+- [ ] 10.1 LCU gameflow phases (lobby, matchmaking, ready check) in the frontend state; Rust tests with recorded events.
+- [ ] 10.2 Queue view: while in queue, show the selected roles' pool champions with their current tier, a patch change badge and their saved build, plus "if you get autofilled" picks for the other roles (easiest high win rate champions).
+- [ ] 10.3 Ready check: optional sound and taskbar flash when a match is found (setting, off by default).
+- [ ] 10.4 Lobby: when the player sets roles, preload the data champ select will need so it opens instantly.
 
-## M. Performance
+## 11. Pro play
 
-- [ ] M1 Virtualised lists for the champion list, item explorer and build library when they pass 100 rows.
-- [ ] M2 Image loading: `loading="lazy"`, explicit sizes and a shared image cache for champion/item/rune icons.
-- [ ] M3 Measure memory of the main window after visiting every page; write numbers here and fix any page that holds large data after leaving it.
-- [ ] M4 Debounce every search input (150 ms) and move heavy filtering into `useDeferredValue`.
-- [ ] M5 Startup: measure time to first paint and to Home ready; defer anything not needed for Home.
+Worlds and pro builds are a top priority for the EUW audience.
 
-## N. Documentation
+- [ ] 11.1 Pro player pages: recent games, most played champions, usual runes and items, team and region.
+- [ ] 11.2 Pro meta page: most picked and banned champions in pro games this patch, by role, with their win rate in pro games.
+- [ ] 11.3 Followed pros on Home: their newest games.
+- [ ] 11.4 Pro games on the champion page and matchup page, same opponent first.
+- [ ] 11.5 Save any pro build to the library in one click from every view.
+- [ ] 11.6 More pro accounts: LCK, LPL, LEC and LCS players whose solo queue accounts are public, with name-matching tests.
 
-- [ ] N1 README: current feature list, screenshots placeholders, how to build, how data is collected.
-- [ ] N2 `docs/ARCHITECTURE.md`: data flow crawler → D1 → Worker → desktop, the doc keys, caching layers.
-- [ ] N3 `services/api/README.md`: routes with example responses.
-- [ ] N4 Contributor notes for adding a translation and a new page.
+## 12. Draft simulator improvements
+
+- [ ] 12.1 Load the current champ select into the simulator.
+- [ ] 12.2 Share a draft as text and as a code; import from a code.
+- [ ] 12.3 Undo and redo.
+- [ ] 12.4 The new champ select analysis in the simulator: damage profile, phase curve, win conditions, threats (epics 1.3–1.7).
+- [ ] 12.5 Keyboard flow: type to search, Enter to pick into the selected slot, Tab to the next slot.
+- [ ] 12.6 Clash planner: up to five players with their pools saved locally; the simulator suggests a draft that uses each player's pool and covers the team's needs.
+
+## 13. Patch tracker improvements
+
+- [ ] 13.1 Per-level stat changes shown at level 1 and level 18, not only the raw growth number.
+- [ ] 13.2 Ability cooldown and cost changes per rank, item recipe and build path changes.
+- [ ] 13.3 Buff / nerf / mixed label per champion and item from simple rules.
+- [ ] 13.4 Pool champions first and a Home badge when one changed.
+- [ ] 13.5 Win rate before and after the patch for each changed champion (uses 6.2).
+- [ ] 13.6 A champion's change history over the cached versions on its page.
+
+## 14. Home
+
+- [ ] 14.1 "This patch for you" card: pool champions' tier, win rate change and patch changes in one glance.
+- [ ] 14.2 Meta movers card (6.5) and followed pros card (11.3).
+- [ ] 14.3 Customisable Home: show, hide and reorder cards; saved in settings.
+- [ ] 14.4 Search palette: items, runes, pro players, saved builds and "X vs Y" matchups as result types.
+
+## 15. Riddle and fun
+
+- [ ] 15.1 Item recipe mode: guess the item from its components.
+- [ ] 15.2 Ability icon mode with rotation and greyscale difficulty steps.
+- [ ] 15.3 Stats page: streaks, guess distribution, history per mode.
+- [ ] 15.4 Item game timed mode with a local best score.
+
+## 16. Only when a feature needs it
+
+Code health tasks. Do one only when a feature above depends on it.
+
+- [x] A3 `request<T>()` with timeout, abort and one network retry. (c367dba)
+- [x] A4 Per-route TTL cache for API answers. (d0150a6)
+- [x] A5 `useAsync` stale-while-revalidate. (5d36863)
+- [ ] A1 Split `App.css` per page.
+- [ ] A6 Cache Data Dragon JSON per version in IndexedDB.
+- [ ] A7 Versioned migrations for every local store.
+- [ ] A17 `packages/shared` for types used by both the API and the desktop app.
 
 ---
-
-## Numbers
-
-(filled in by A11, M3, M5)
 
 ## Owner deploy queue
 
