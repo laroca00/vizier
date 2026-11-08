@@ -21,7 +21,7 @@ import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
-import { PoolMoves } from "../PoolMoves";
+import { PoolMoves } from "../PoolMovesPanel";
 import { PoolCoverage } from "./PoolCoverage";
 import { useAsync } from "../useAsync";
 

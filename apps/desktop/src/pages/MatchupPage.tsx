@@ -2,7 +2,7 @@ import { useId } from "react";
 import { BuildSuggestion } from "../BuildSuggestion";
 import { championIconUrl, champions, latestVersion, type Champion } from "../data/ddragon";
 import { AbilityCompare } from "../draft/AbilityCompare";
-import { LaneStats } from "../draft/LaneStats";
+import { LaneStats } from "../draft/LaneStatsPanel";
 import { PowerSpikes } from "../draft/PowerSpikes";
 import { StatsDuel } from "../draft/StatsDuel";
 import { MatchupGuide } from "../draft/MatchupGuide";

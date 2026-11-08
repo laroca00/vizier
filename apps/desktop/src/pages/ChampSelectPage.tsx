@@ -19,7 +19,7 @@ import { isArena } from "../draft/arena";
 import { BenchHelper } from "../draft/BenchHelper";
 import { HoverMatchup } from "../draft/HoverMatchup";
 import { ChampionAugments } from "../augments/ChampionAugments";
-import { BanPlanner } from "../draft/BanPlanner";
+import { BanPlanner } from "../draft/BanPlannerPanel";
 import { autoView, draftQueue, duoPartnerRole, hasBench, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";

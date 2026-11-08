@@ -17,7 +17,7 @@ import { dayKey, MODES } from "../quiz/logic";
 import { useQuizRecords } from "../quiz/store";
 import "./Home.css";
 import { PoolPatch } from "./PoolPatch";
-import { PoolMoves } from "../PoolMoves";
+import { PoolMoves } from "../PoolMovesPanel";
 
 type Props = {
   lcu: LcuStatus;

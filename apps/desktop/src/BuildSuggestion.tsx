@@ -1,5 +1,5 @@
 import { BootsSpells } from "./BootsSpells";
-import { BuildPath } from "./BuildPath";
+import { BuildPath } from "./BuildPathPanel";
 import { RunePageView } from "./RunePageView";
 import { formatPercent, useLang, useT, type Lang } from "./i18n";
 import { shardName } from "./library/RuneEditor";
