@@ -151,6 +151,11 @@ export function notedMatchups(p: Personal, championId: number): number[] {
     .map((k) => Number(k.slice(prefix.length)));
 }
 
+/** Replaces the notes with a merged set, e.g. after importing a notes file. */
+export function replaceNotes(notes: Record<string, string>) {
+  update(() => ({ notes }));
+}
+
 export function noteRecent(championId: number) {
   update((p) => ({ recent: [championId, ...p.recent.filter((id) => id !== championId)].slice(0, MAX_RECENT) }));
 }

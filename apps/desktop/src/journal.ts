@@ -50,3 +50,45 @@ export function groupJournal(entries: JournalEntry[], nameOf: (id: number) => st
 export function noteToStore(text: string, template?: string): string {
   return template !== undefined && text === template ? "" : text;
 }
+
+const NOTES_FORMAT = "vizier-notes";
+
+export function notesFile(notes: Record<string, string>): string {
+  const valid = Object.fromEntries(journalEntries(notes).map((e) => [e.key, e.text]));
+  return JSON.stringify({ format: NOTES_FORMAT, version: 1, notes: valid }, null, 2);
+}
+
+/** Reads a notes file, or the notes inside a full local data export; throws on anything else. */
+export function readNotesFile(text: string): Record<string, string> {
+  let data: { format?: unknown; notes?: unknown; entries?: Record<string, unknown> };
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error("not-json");
+  }
+  let notes: unknown;
+  if (data?.format === NOTES_FORMAT) notes = data.notes;
+  else if (data?.format === "vizier-local-data" && typeof data.entries?.["vizier.personal"] === "string") {
+    try {
+      notes = (JSON.parse(data.entries["vizier.personal"]) as { notes?: unknown }).notes;
+    } catch {
+      throw new Error("not-vizier");
+    }
+  }
+  if (!notes || typeof notes !== "object") throw new Error("not-vizier");
+  return Object.fromEntries(journalEntries(notes as Record<string, string>).map((e) => [e.key, e.text]));
+}
+
+/** Keeps the player's own text where both sides have a different note for the same key. */
+export function mergeNotes(current: Record<string, string>, incoming: Record<string, string>) {
+  const merged = { ...current };
+  let added = 0;
+  let kept = 0;
+  for (const [key, text] of Object.entries(incoming)) {
+    if (!current[key]?.trim()) {
+      merged[key] = text;
+      added += 1;
+    } else if (current[key] !== text) kept += 1;
+  }
+  return { merged, added, kept };
+}

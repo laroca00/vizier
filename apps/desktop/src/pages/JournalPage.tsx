@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { championIconUrl, champions, latestVersion } from "../data/ddragon";
 import { useLang, useT } from "../i18n";
-import { groupJournal, journalEntries, type JournalEntry } from "../journal";
-import { setNote, usePersonal } from "../personal";
+import { groupJournal, journalEntries, mergeNotes, notesFile, readNotesFile, type JournalEntry } from "../journal";
+import { replaceNotes, setNote, usePersonal } from "../personal";
+import { useToast } from "../ui/Toast";
 import { Button } from "../ui/Button";
 import { SearchInput } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
@@ -25,13 +26,55 @@ export function JournalPage({ onOpenChampion, onOpenMatchup }: Props) {
   const [query, setQuery] = useState("");
   const [data, retry] = useAsync("journal-data", async () => ({ version: await latestVersion(), champions: await champions() }));
   const entries = journalEntries(notes);
+  const toast = useToast();
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  function download() {
+    const url = URL.createObjectURL(new Blob([notesFile(notes)], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `vizier-notes-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function upload(file: File | undefined) {
+    if (!file) return;
+    try {
+      const { merged, added, kept } = mergeNotes(notes, readNotesFile(await file.text()));
+      replaceNotes(merged);
+      toast("success", t("{added} not eklendi, {kept} not senin notunu korumak için atlandı", { added, kept }));
+    } catch {
+      toast("error", t("Bu dosya bir Vizier not dosyası değil."));
+    }
+  }
 
   return (
     <LiquidGlass className="panel tiers journal-page" radius={28} strength={2.5} scroll>
       <PageHeader
         title={t("Günlük")}
         subtitle={t("Şampiyon ve eşleşme notların, yalnızca bu bilgisayarda · {count} not", { count: entries.length })}
-        toolbar={<SearchInput label={t("Notlarda ara")} value={query} onChange={setQuery} />}
+        toolbar={
+          <>
+            <SearchInput label={t("Notlarda ara")} value={query} onChange={setQuery} />
+            <Button size="small" variant="ghost" disabled={entries.length === 0} onClick={download}>
+              {t("Notları dışa aktar")}
+            </Button>
+            <Button size="small" variant="ghost" onClick={() => fileInput.current?.click()}>
+              {t("Notları içe aktar")}
+            </Button>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => {
+                void upload(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+          </>
+        }
       />
       {data.status !== "done" && data.status !== "error" ? (
         <Skeleton lines={5} label={t("Yükleniyor")} />
