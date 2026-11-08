@@ -27,7 +27,7 @@ import {
   type SummonerSpell,
 } from "./data/ddragon";
 import { useSettings } from "./settings";
-import { SkillGrid } from "./SkillGrid";
+import { SkillOptions } from "./SkillOptions";
 import { useAsync } from "./useAsync";
 import { Button } from "./ui/Button";
 import { ErrorState } from "./ui/States";
@@ -115,7 +115,6 @@ type Props = {
   enemies?: number[];
 };
 
-const SKILL_KEYS = ["", "Q", "W", "E", "R"];
 
 export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs, showPros = false, inDraft = true, queue = 420, enemies = [] }: Props) {
   const lang = useLang();
@@ -322,17 +321,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
 
       {preview && <p className="build__note build__preview">{t("Önizleme. Şampiyonu kilitleyince aktarabilirsin.")}</p>}
 
-      {picks.skills && (
-        <section className="build__block" aria-label={t("Yetenek sırası")}>
-          <p className="build__stat">
-            {t("Yetenek sırası: önce {first}, en çok {max}", {
-              first: picks.skills.firstLevels.map((s) => SKILL_KEYS[s]).join(", "),
-              max: picks.skills.maxOrder.map((s) => SKILL_KEYS[s]).join(" > "),
-            })}
-          </p>
-          <SkillGrid skills={picks.skills} />
-        </section>
-      )}
+      {picks.skills && <SkillOptions key={`${championId}:${position}:${tab}`} skills={picks.skills} options={shown === build ? build.skillOptions : undefined} />}
 
       <section className="build__block" aria-label={t("Önerilen rünler")}>
         <RunePageView
