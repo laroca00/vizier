@@ -791,4 +791,6 @@ export const EN: Record<string, string> = {
   "Takip ettiklerin": "Following",
   "Benzer şampiyonlar": "Similar champions",
   "Bu rolde benzer şampiyonlar": "Similar champions in this role",
+  "{partner} ile birlikte {rate} kazanma, {games} maç": "{rate} win rate together with {partner}, {games} games",
+  "{partner} ile birlikte yeterli maç yok.": "Not enough games together with {partner}.",
 };

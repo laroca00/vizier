@@ -4,7 +4,7 @@ import type { LiveGame } from "../overlay/live";
 
 /**
  * Dev only: `?fixture=champ-select` renders the draft page without a client.
- * `&draft=ban`, `&draft=locked` and `&draft=planning` show the other moments.
+ * `&draft=ban`, `&draft=locked`, `&draft=planning` and `&draft=duo` (bot lane) show the other moments.
  */
 export function champSelectFixture(): ChampSelect | null {
   const params = new URLSearchParams(location.search);
@@ -32,6 +32,17 @@ export function champSelectFixture(): ChampSelect | null {
   };
   if (moment === "planning") return { ...draft, phase: "PLANNING", turn: null, theirTeam: draft.theirTeam.map((m) => ({ ...m, championId: 0 })) };
   if (moment === "ban") return { ...draft, turn: { kind: "ban", mine: true } };
+  if (moment === "duo") {
+    // Bot lane: the player locked Jinx, the support has Thresh.
+    return {
+      ...draft,
+      phase: "FINALIZATION",
+      turn: null,
+      myTeam: draft.myTeam.map((m) =>
+        m.isLocal ? { ...m, position: "bottom", championId: 222, pickIntent: 222 } : m.position === "utility" ? { ...m, championId: 412 } : m.position === "bottom" ? { ...m, position: "middle", championId: 103 } : m,
+      ),
+    };
+  }
   if (moment === "locked") {
     return {
       ...draft,

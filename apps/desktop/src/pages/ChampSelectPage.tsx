@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getBans, getChampion, getCounters } from "../api";
+import { getBans, getChampion, getCounters, getSynergies } from "../api";
 import { BuildSuggestion } from "../BuildSuggestion";
 import { EnemyTips } from "../ChampionGuide";
 import { CompAnalysis } from "../CompAnalysis";
@@ -178,6 +178,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 {vs && role && ready.champions.get(vs) && (
                   <MatchupGuide championId={myChampion} position={role} opponent={ready.champions.get(vs)!} version={ready.version} />
                 )}
+                <LanePartner championId={myChampion} position={me.position} team={draft.myTeam} data={ready} />
                 <DraftMatchups championId={myChampion} position={me.position} data={ready} />
                 <JournalNote
                   noteKey={championNoteKey(myChampion)}
@@ -422,5 +423,33 @@ function PoolStrip({ position, data, opponentId }: { position: string; data: Sta
         })}
       </ul>
     </>
+  );
+}
+
+// Bot lane is played in pairs; the jungler roams with everyone.
+const PARTNER: Record<string, string> = { BOTTOM: "UTILITY", UTILITY: "BOTTOM" };
+
+/** How the pick does next to the lane partner already chosen, from games where both played together. */
+function LanePartner({ championId, position, team, data }: { championId: number; position: string; team: DraftMember[]; data: StaticData }) {
+  const t = useT();
+  const lang = useLang();
+  const role = position.toUpperCase();
+  const partnerRole = PARTNER[role];
+  const partner = partnerRole ? team.find((m) => !m.isLocal && m.position.toUpperCase() === partnerRole) : undefined;
+  const partnerId = partner ? shownChampion(partner) : 0;
+  const [state] = useAsync(partnerId ? `allies:${championId}:${role}` : null, () => getSynergies(championId, role));
+  if (!partnerId || state.status !== "done") return null;
+  const champion = data.champions.get(partnerId);
+  const pair = state.value.allies.find((a) => a.championId === partnerId && a.position === partnerRole);
+  if (!champion) return null;
+  return (
+    <div className="lane-partner">
+      <img src={championIconUrl(data.version, champion.id)} alt="" width={32} height={32} />
+      <p className="build__note">
+        {pair
+          ? t("{partner} ile birlikte {rate} kazanma, {games} maç", { partner: champion.name, rate: formatPercent(pair.winRate, lang, 1), games: pair.games })
+          : t("{partner} ile birlikte yeterli maç yok.", { partner: champion.name })}
+      </p>
+    </div>
   );
 }
