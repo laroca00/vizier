@@ -375,7 +375,7 @@ function Mine({ data }: { data: LibraryData }) {
               );
             })}
           </ul>
-          {current && <SavedBuildView key={current.id} build={current} data={data} onEdit={() => setEditing(current)} onSelect={setSelected} />}
+          {current && <SavedBuildView key={current.id} build={current} data={data} others={library.builds} onEdit={() => setEditing(current)} onSelect={setSelected} />}
         </div>
       )}
 

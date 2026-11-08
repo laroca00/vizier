@@ -6,6 +6,7 @@ import { positionLabel } from "../labels";
 import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/Modal";
 import { useToast } from "../ui/Toast";
+import { BuildDiffView } from "./BuildDiffView";
 import { useBuildExport } from "./useBuildExport";
 import { buildGold } from "./gold";
 import { shareCode } from "./share";
@@ -19,10 +20,10 @@ const SOURCES: Record<SavedBuild["source"], string> = {
   custom: "Sıfırdan",
 };
 
-type Props = { build: SavedBuild; data: LibraryData; onEdit: () => void; onSelect: (id: string | null) => void };
+type Props = { build: SavedBuild; data: LibraryData; others?: SavedBuild[]; onEdit: () => void; onSelect: (id: string | null) => void };
 
 /** One saved build in full: runes, spells, items, skill order and notes, with its actions. */
-export function SavedBuildView({ build, data, onEdit, onSelect }: Props) {
+export function SavedBuildView({ build, data, others = [], onEdit, onSelect }: Props) {
   const t = useT();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
@@ -175,6 +176,8 @@ export function SavedBuildView({ build, data, onEdit, onSelect }: Props) {
           ))}
         </ul>
       )}
+
+      <BuildDiffView build={build} others={others} data={data} />
 
       <ConfirmDialog
         open={confirming}
