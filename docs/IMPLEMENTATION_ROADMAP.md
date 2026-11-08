@@ -273,6 +273,16 @@ Acceptance:
 - Typecheck, lint, all tests and the production build pass.
 - The README and the policy review match what shipped.
 
+## Added after the plan (2026-11-08)
+
+- Champion riddle: classic, ability, emoji and skin modes, a daily riddle per mode and free play, local streaks and a copyable result. Emoji hints are Vizier's own.
+- Draft simulator: ten bans and pick suggestions for the selected slot, using champ select's scoring.
+- Champion page: a lane opponent picker that opens the matchup guide, the matchup build and the closest pro games.
+- Champ select: a saved build attached to the pick in the player's pool, ready to import.
+- Search palette: sections as well as champions.
+- Pro games: one row per game and player even after a key change, and a fifteen-day lookback.
+- Sections load on first use; the main bundle went from 501 KB to 334 KB.
+
 ## Not planned
 
 - Accounts or cloud sync.

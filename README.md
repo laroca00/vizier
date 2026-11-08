@@ -6,7 +6,8 @@ A lightweight League of Legends companion for Windows, for preparing games rathe
 - Build library: search every champion's recommended build by role, style, keystone and item, and keep your own builds in collections.
 - Champions: the full list with roles and difficulty, a page per champion with stats, abilities, lore and base stats, and a champion pool of main and backup picks.
 - Pro builds from Worlds players, Turkish pros and the Challenger ladders, filtered by champion, team, player, region and patch.
-- A draft simulator and a patch tracker that compares any two recent Data Dragon versions.
+- A draft simulator with bans and pick suggestions, and a patch tracker that compares any two recent Data Dragon versions.
+- A daily champion riddle in four modes: classic, ability, emoji and skin.
 
 Your own builds, drafts, pool and notes stay on your computer.
 
