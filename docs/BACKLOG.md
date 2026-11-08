@@ -9,7 +9,7 @@ Product scope: prepare, explore, customize. No post-game analysis, coaching or p
 - Epics are in priority order. Inside an epic, slices are in order.
 - **One run is one job: the next 4–5 unchecked slices of the highest epic that isn't blocked**, built together as one feature on one branch (`auto/<epic>-<topic>`), one commit per slice. If the epic has fewer slices left, take the rest of it plus the start of the next epic. Don't stop after a single slice; a run should be long, finishing the whole job, and then start the next job if time is left.
 - Merge the branch into main when the whole job is done and green. If time runs out mid-job, merge the slices that are finished and green, and leave a `<!-- in progress: ... -->` line under the next slice saying where you stopped.
-- Mark each slice `[x]` with the merge commit hash when it lands, e.g. `- [x] 3.2 ... (a1b2c3d)`.
+- Mark each slice `[x]` with the merge commit hash when it lands, e.g. `- [x] 3.2 ... (a1b2c3d)`. (949d3b2; the rollup pairs Arena players by subteam, docs `duos:1700:<champion>`, route `/v1/arena/duos/:championId`)
 - Don't split slices into smaller ones unless one is genuinely too big for a run.
 - A slice that can't be done (missing data, needs a live client, needs an owner decision) gets `[-]` and one line saying why. Move on.
 - Every slice ends with `pnpm --filter @vizier/desktop test`, `pnpm --filter @vizier/desktop lint` and `pnpm build:web` passing; API and crawler slices also run `pnpm --filter @vizier/api test`.
@@ -53,16 +53,16 @@ ARAM players get almost nothing from current tools. Make Vizier the best ARAM he
 ## 3. Arena companion
 
 - [x] 3.1 Arena champion page: best augments per champion (existing data), best items once available, and the champion's Arena win rate. (54179bf; augments and the Arena rate were already on the page, the item list follows with 3.4)
-- [ ] 3.2 Arena duo helper: in Arena champ select, show the partner's champion and suggest picks that pair well (from Arena games where both champions were on the same team; needs a crawler rollup of duo pairs for queue 1700, backward compatible).
-- [ ] 3.3 Arena augment tier list page with filters by rarity tier (silver, gold, prismatic) and by champion class.
-- [ ] 3.4 Arena items: crawler rollup of item win rates for queue 1700 (same `AUGMENTS`-style switch, named `ARENA_ITEMS`, default on), then the item list on the Arena champion page.
+- [x] 3.2 Arena duo helper: in Arena champ select, show the partner's champion and suggest picks that pair well (from Arena games where both champions were on the same team; needs a crawler rollup of duo pairs for queue 1700, backward compatible).
+- [x] 3.3 Arena augment tier list page with filters by rarity tier (silver, gold, prismatic) and by champion class. (949d3b2; class view merges the most played champions of the class)
+- [x] 3.4 Arena items: crawler rollup of item win rates for queue 1700 (same `AUGMENTS`-style switch, named `ARENA_ITEMS`, default on), then the item list on the Arena champion page. (949d3b2; item counts were already rolled up, the new doc is `arenaitems:1700:<champion>`)
 
 ## 4. Matchup explorer
 
 A dedicated place to study any matchup before the game, not only during champ select.
 
-- [ ] 4.1 Matchup page (`{ page: "matchup", championId, opponentId, position }`): pick two champions and a role. Shows win rate and games, difficulty, the matchup build and runes, items bought more often in this matchup, and the player's own note for it.
-- [ ] 4.2 Base stats duel: both champions' HP, AD, armor, MR, attack speed and range at levels 1, 3, 6, 11, 18 from Data Dragon growth formulas, with who is ahead at each level. Tests against known values.
+- [x] 4.1 Matchup page (`{ page: "matchup", championId, opponentId, position }`): pick two champions and a role. Shows win rate and games, difficulty, the matchup build and runes, items bought more often in this matchup, and the player's own note for it. (949d3b2; the page is reachable from the menu and the search palette, the other entry points follow with 4.6)
+- [x] 4.2 Base stats duel: both champions' HP, AD, armor, MR, attack speed and range at levels 1, 3, 6, 11, 18 from Data Dragon growth formulas, with who is ahead at each level. Tests against known values. (949d3b2)
 - [ ] 4.3 Ability comparison: cooldowns of each basic ability and ultimate at rank 1 and max side by side, with the "window" lines ("their E is on a 14 s cooldown at level 3: trade when it's down").
 - [ ] 4.4 Power spikes timeline: level 2/3/6/11/16 and core item completions for both champions on one horizontal timeline.
 - [ ] 4.5 Lane stats from the crawler: average gold and CS difference at 10 and 15 minutes, first blood rate and lane kill rate for this matchup (new aggregate rollup from timelines; backward compatible doc).
@@ -190,4 +190,5 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 - Release a desktop version (`pnpm release`) after bumping the patch version.
 - Deploy the Worker (`pnpm --filter @vizier/api deploy`).
 - Apply pending D1 migrations remotely.
-- Pull and restart the crawler on the VM.
+- Pull and restart the crawler on the VM (Arena duo and item docs appear after the next rollup and publish; duo counts start from games crawled after the update).
+- Optional: set `ARENA_ITEMS=off` on the Worker to hide Arena item stats; they are on by default.
