@@ -923,4 +923,10 @@ export const EN: Record<string, string> = {
   "Birlikte dur, savaşı objeye yakın aç ve yeteneklerini üst üste kullan.": "Stay together, fight near the objective and stack your abilities.",
   "Takımın nasıl oynamak istediği": "How your team wants to play",
   "Rakibin nasıl oynamak istediği": "How their team wants to play",
+  "Rakip tehditleri": "Enemy threats",
+  "Bekleme: 1. seviyede {first} sn, son seviyede {max} sn": "Cooldown: {first} s at rank 1, {max} s at max rank",
+  "Bekleme süresi yok": "No cooldown listed",
+  "İlk dakikalarda ve 3. seviyede tehlikeli": "Dangerous in the first minutes and at level 3",
+  "6. seviyede ve ilk eşyada tehlikeli": "Dangerous at level 6 and the first item",
+  "2-3 eşya tamamlanınca tehlikeli": "Dangerous with 2-3 finished items",
 };

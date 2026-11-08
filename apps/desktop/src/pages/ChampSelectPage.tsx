@@ -15,6 +15,7 @@ import {
 import { autoView, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";
+import { ThreatsPanel } from "../draft/ThreatsPanel";
 import { ItemAdvicePanel } from "../draft/ItemAdvicePanel";
 import { PoolBuild } from "../draft/PoolBuild";
 import { useOpponent, type Opponent } from "../draft/useOpponent";
@@ -132,6 +133,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                   <ChampionStrip ids={bans.value.champions.map((c) => c.championId).filter((id) => !draft.bans.includes(id))} data={ready} empty={t("Öneri yok")} />
                 </>
               )}
+              {ready && enemyPicks.length > 0 && <ThreatsPanel enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c): c is Champion => c !== undefined)} />}
               {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} />}
               {ready && me && <PoolStrip position={me.position} data={ready} opponentId={vs} />}
             </>
