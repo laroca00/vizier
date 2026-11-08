@@ -1,3 +1,4 @@
+import { ClashPlanner } from "../simulator/ClashPlanner";
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { cycleSlot, firstPickable } from "../simulator/keys";
 import { useDraftHistory } from "../simulator/history";
@@ -395,6 +396,8 @@ function Simulator({ data }: { data: ChampionRoles }) {
           <ThreatsPanel enemies={blue} title={t("Mavi takımın tehditleri")} />
         </section>
       </div>
+
+      <ClashPlanner data={data} unavailable={new Set([...draft.red, ...draft.bans].filter((id) => id > 0))} onApply={(team) => setDraft({ ...draft, blue: team })} />
 
       <section className="sim__saved" aria-label={t("Kayıtlı draftlar")}>
         <h2 className="draft__heading">{t("Kayıtlı draftlar")}</h2>
