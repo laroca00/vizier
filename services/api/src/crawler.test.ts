@@ -166,6 +166,18 @@ describe("Other modes", () => {
     expect(sqlite.prepare("SELECT queue_id FROM mode_players").all()).toEqual([{ queue_id: 1700 }]);
   });
 
+  it("stores ARAM games with augments as Mayhem", async () => {
+    const { db, sqlite } = fakeD1();
+    const options = { region: "asia", platforms: ["kr"], leagues: "challenger", playersPerRun: 0, matchesPerRun: 5, extraMatchesPerRun: 2, timelinesPerRun: 0 } as const;
+    const crawler = new Crawler(db, {} as RiotClient, () => 30 * DAY, { ...options, platforms: [...options.platforms] });
+    await crawler.save(match("KR_6", [participant(64, true, { puuid: "kiwi2", playerAugment1: 7 })], { queueId: 450 }));
+    await crawler.save(match("KR_7", [participant(103, true, { puuid: "aram2" })], { queueId: 450 }));
+    expect(sqlite.prepare("SELECT match_id, queue_id FROM crawled_matches ORDER BY match_id").all()).toEqual([
+      { match_id: "KR_6", queue_id: 2400 },
+      { match_id: "KR_7", queue_id: 450 },
+    ]);
+  });
+
   it("stores every ARAM Mayhem queue as Mayhem", async () => {
     const { db, sqlite } = fakeD1();
     const options = { region: "asia", platforms: ["kr"], leagues: "challenger", playersPerRun: 0, matchesPerRun: 5, extraMatchesPerRun: 2, timelinesPerRun: 0 } as const;

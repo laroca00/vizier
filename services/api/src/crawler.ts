@@ -17,6 +17,15 @@ export function storedQueue(queueId: number): number {
   if (queueId === ARENA_LIVE) return ARENA;
   return MAYHEM_QUEUES.includes(queueId) ? MAYHEM : queueId;
 }
+
+/**
+ * The stored queue of a whole game. Mayhem may also run on ARAM's own queue
+ * id; plain ARAM never hands out augments, so an ARAM game with them is Mayhem.
+ */
+export function gameQueue(match: Match): number {
+  const augmented = match.info.participants.some((p) => p.playerAugment1);
+  return match.info.queueId === ARAM && augmented ? MAYHEM : storedQueue(match.info.queueId);
+}
 // URF and ARURF come and go with rotations; their games are kept when they show up.
 const URF = [900, 1900];
 /** Queues whose games are stored. Only ranked solo has roles, timelines and bans. */
@@ -251,7 +260,8 @@ export class Crawler {
 
   /** Returns false for games that carry no build signal. */
   async save(match: Match, timeline: Timeline | null = null): Promise<boolean> {
-    const info = storedQueue(match.info.queueId) === match.info.queueId ? match.info : { ...match.info, queueId: storedQueue(match.info.queueId) };
+    const queue = gameQueue(match);
+    const info = queue === match.info.queueId ? match.info : { ...match.info, queueId: queue };
     const matchId = match.metadata.matchId;
     const patch = patchOf(info.gameVersion);
     const ranked = info.queueId === RANKED_SOLO;
@@ -336,7 +346,7 @@ export class Crawler {
 
   /** Remembers a mode game's players so their next games of that mode are found. */
   private async follow(match: Match): Promise<D1PreparedStatement[]> {
-    const queue = FOLLOW[storedQueue(match.info.queueId)];
+    const queue = FOLLOW[gameQueue(match)];
     if (!queue) return [];
     const count = await this.db.prepare("SELECT COUNT(*) AS n FROM mode_players").first<{ n: number }>();
     if ((count?.n ?? 0) >= MODE_PLAYERS_MAX) return [];
