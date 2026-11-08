@@ -1146,4 +1146,9 @@ export const EN: Record<string, string> = {
   "Sık kullandığı rünler ve büyüler": "Usual runes and spells",
   "Sık bitirdiği eşyalar": "Items finished most often",
   "Son maçlar": "Latest games",
+  "Maçlar": "Games",
+  "Pro meta": "Pro meta",
+  "Seçilme oranı pro maçlarına göre; yasaklar kaydedilmiyor. {min} maçın altındaki kazanma oranları soluk.": "Pick rate is out of pro games; bans are not saved. Win rates under {min} games are dimmed.",
+  "%{share} seçilme, {games} maç": "{share}% picked, {games} games",
+  "%{rate} kazanma, {games} maç": "{rate}% win rate, {games} games",
 };

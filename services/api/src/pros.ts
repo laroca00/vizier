@@ -348,6 +348,26 @@ export async function proTeams(db: D1Database): Promise<{ team: string; group: P
   return [...teams.entries()].map(([key, { group, players }]) => ({ team: key.slice(group.length + 1), group, players }));
 }
 
+export type ProMetaEntry = { championId: number; position: string; games: number; wins: number };
+
+/**
+ * Picks per champion and role in stored pro games, with wins. Bans are not
+ * stored: only the pro's own row of each game is kept.
+ */
+export async function proMeta(db: D1Database, { group, patch }: { group?: ProGroup; patch?: string } = {}): Promise<ProMetaEntry[]> {
+  const where = [group ? "grp = ?" : "", patch ? "patch = ?" : ""].filter(Boolean);
+  const { results } = await db
+    .prepare(
+      // DISTINCT drops rows stored twice under an older puuid.
+      `SELECT champion_id, team_position, COUNT(*) AS games, SUM(win) AS wins FROM
+        (SELECT DISTINCT match_id, player, champion_id, team_position, win FROM pro_matches ${where.length ? `WHERE ${where.join(" AND ")}` : ""})
+        GROUP BY champion_id, team_position ORDER BY games DESC, champion_id LIMIT 300`,
+    )
+    .bind(...[group, patch].filter((v) => v !== undefined))
+    .all<{ champion_id: number; team_position: string; games: number; wins: number }>();
+  return results.map((r) => ({ championId: r.champion_id, position: r.team_position, games: r.games, wins: r.wins }));
+}
+
 // Builds older than this describe last month's game.
 const KEEP = 30 * DAY;
 

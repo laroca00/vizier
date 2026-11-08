@@ -5,7 +5,7 @@ import type { Catalog } from "./archetypes.ts";
 import { POSITIONS, type Build } from "./builds.ts";
 import { AUGMENT_QUEUES, docKey, readDoc } from "./statDocs.ts";
 import { STORED_QUEUES } from "./crawler.ts";
-import { proBuilds, proPatches, proTeams } from "./pros.ts";
+import { proBuilds, proMeta, proPatches, proTeams } from "./pros.ts";
 import type { Store } from "./store.ts";
 
 const MINUTE = 60_000;
@@ -204,6 +204,16 @@ export function createApp(store: Store, { statsDb, catalog, augments = false, ar
     if (championId !== null && (!Number.isInteger(championId) || championId <= 0)) badRequest("Invalid champion id");
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json((await readDoc(statsDb, docKey.augments(queue, championId))) ?? { patches: [], games: 0, augments: [] });
+  });
+
+  app.get("/v1/pros/meta", async (c) => {
+    const group = c.req.query("group");
+    if (group !== undefined && group !== "worlds" && group !== "turkey" && group !== "challenger") badRequest("Unsupported group");
+    const patch = c.req.query("patch");
+    if (patch !== undefined && !/^\d{1,2}\.\d{1,2}$/.test(patch)) badRequest("Invalid patch");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    const key = `pro-meta:${group ?? "ANY"}:${patch ?? "ANY"}`;
+    return c.json({ champions: await cached(key, 30 * MINUTE, () => proMeta(statsDb, { group, patch })) });
   });
 
   app.get("/v1/pros/patches", async (c) => {

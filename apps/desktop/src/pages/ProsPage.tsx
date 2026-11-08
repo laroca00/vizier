@@ -11,6 +11,7 @@ import { Tabs } from "../ui/Tabs";
 import { useAsync } from "../useAsync";
 import { usePersonal } from "../personal";
 import "./ProsPage.css";
+import { ProMeta } from "./ProMeta";
 
 const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
 const ALL = "ALL";
@@ -28,8 +29,11 @@ const REGIONS = [
 
 const pick = (value: string) => (value === ALL ? undefined : value);
 
-export function ProsPage() {
+type Props = { onOpenChampion: (championId: number, position: string | null) => void };
+
+export function ProsPage({ onOpenChampion }: Props) {
   const t = useT();
+  const [view, setView] = useState<"games" | "meta">("games");
   const [position, setPosition] = useState<string>(ALL);
   const [group, setGroup] = useState<ProGroup>("worlds");
   const [team, setTeam] = useState<string>(ALL);
@@ -66,6 +70,17 @@ export function ProsPage() {
       />
 
       <Tabs
+        label={t("Görünüm")}
+        size="small"
+        items={[
+          { id: "games" as const, label: t("Maçlar") },
+          { id: "meta" as const, label: t("Pro meta") },
+        ]}
+        value={view}
+        onChange={setView}
+      />
+
+      <Tabs
         label={t("Rol")}
         size="small"
         items={[
@@ -76,7 +91,7 @@ export function ProsPage() {
         onChange={setPosition}
       />
 
-      {personal.followed.length > 0 && (
+      {view === "games" && personal.followed.length > 0 && (
         <div className="pros__followed" role="group" aria-label={t("Takip ettiklerin")}>
           <span className="build__stat">{t("Takip ettiklerin")}</span>
           {personal.followed.map((p) => (
@@ -87,6 +102,17 @@ export function ProsPage() {
         </div>
       )}
 
+      {view === "meta" ? (
+        <>
+          <div className="pros__filters">
+            {patches.status === "done" && patches.value.length > 0 && (
+              <Select label={t("Yama")} value={patch} options={[all, ...patches.value.map((p) => ({ value: p, label: p }))]} onChange={setPatch} />
+            )}
+          </div>
+          <ProMeta group={group} patch={pick(patch)} position={pick(position) ?? null} onOpenChampion={onOpenChampion} />
+        </>
+      ) : (
+      <>
       <div className="pros__filters">
         <Select label={t("Şampiyon")} value={champion} options={[all, ...championOptions.map((c) => ({ value: String(c.key), label: c.name }))]} onChange={setChampion} />
         {groupTeams.length > 1 && (
@@ -123,6 +149,8 @@ export function ProsPage() {
         }}
         emptyText={t("Bu filtrelerle pro maçı yok. Bir filtreyi kaldır ya da başka bir grup seç.")}
       />
+      </>
+      )}
     </LiquidGlass>
   );
 }

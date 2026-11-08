@@ -335,7 +335,7 @@ function App() {
             ) : route.page === "builds" ? (
               <BuildsPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "pros" ? (
-              <ProsPage />
+              <ProsPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "pro" ? (
               <ProPlayerPage player={route.player} />
             ) : route.page === "champion" ? (

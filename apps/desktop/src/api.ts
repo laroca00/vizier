@@ -262,6 +262,20 @@ export async function getProPatches(): Promise<string[]> {
   }
 }
 
+export type ProMetaEntry = { championId: number; position: string; games: number; wins: number };
+
+/** Picks and wins per champion and role in pro games; empty when the Worker predates the route. */
+export async function getProMeta(group?: ProGroup, patch?: string): Promise<ProMetaEntry[]> {
+  const params = new URLSearchParams();
+  if (group) params.set("group", group);
+  if (patch) params.set("patch", patch);
+  try {
+    return (await get<{ champions: ProMetaEntry[] }>(`/v1/pros/meta${params.size ? `?${params}` : ""}`)).champions;
+  } catch {
+    return [];
+  }
+}
+
 export async function getProBuilds(filter: ProFilter): Promise<ProBuild[]> {
   const params = new URLSearchParams();
   if (filter.championId) params.set("champion", String(filter.championId));

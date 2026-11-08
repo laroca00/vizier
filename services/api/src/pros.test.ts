@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ProCrawler, proBuilds, proPatches, proTeams, syncChallengers } from "./pros.ts";
+import { ProCrawler, proBuilds, proMeta, proPatches, proTeams, syncChallengers } from "./pros.ts";
 import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
@@ -82,6 +82,9 @@ describe("ProCrawler", () => {
     const [patch] = await proPatches(db);
     expect((await proBuilds(db, { patch })).length).toBeGreaterThan(0);
     expect(await proBuilds(db, { patch: "1.1" })).toEqual([]);
+    expect(await proMeta(db)).toEqual([{ championId: 103, position: "MIDDLE", games: 3, wins: 3 }]);
+    expect(await proMeta(db, { group: "turkey" })).toEqual([]);
+    expect(await proMeta(db, { patch: "1.1" })).toEqual([]);
   });
 
   it("keeps one row per game and player when the account's puuid changes", async () => {
