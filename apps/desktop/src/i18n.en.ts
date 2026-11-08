@@ -934,4 +934,7 @@ export const EN: Record<string, string> = {
   "{allies} karşısında güçlü: {rate}, {games} maç": "Strong into {allies}: {rate}, {games} games",
   "Puan: meta {meta}, eşleşme {counter}, takım ihtiyacı {needs}": "Score: meta {meta}, matchup {counter}, team need {needs}",
   "Önce havuzum": "My pool first",
+  "{role} rolünde nadir oynanıyor; genelde {usual} oynanıyor": "Rarely played in {role}; usually played in {usual}",
+  "{role} rolünde nadir oynanıyor": "Rarely played in {role}",
+  "Rol dışı": "Off role",
 };

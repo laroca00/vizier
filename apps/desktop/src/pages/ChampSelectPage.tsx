@@ -12,6 +12,7 @@ import {
   type Champion,
   type SummonerSpell,
 } from "../data/ddragon";
+import { checkRole } from "../draft/allyRole";
 import { BanPlanner } from "../draft/BanPlanner";
 import { autoView, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
@@ -366,13 +367,32 @@ function AllyRate({ championId, position }: { championId: number; position: stri
   const lang = useLang();
   const role = position ? position.toUpperCase() : null;
   const [state] = useAsync(`ally:${championId}:${role}`, () => getChampion(championId, role));
-  if (state.status !== "done" || !state.value) return null;
-  const { winRate, games, tier } = state.value;
+  // A role the champion has no games in answers 404, so the usual roles come from the plain overview.
+  const [overall] = useAsync(role && state.status === "done" && !state.value ? `ally:${championId}:any` : null, () => getChampion(championId, null));
+  const overview = state.status === "done" ? (state.value ?? (overall.status === "done" ? overall.value : null)) : null;
+  const check = overview && role ? checkRole(overview, role) : null;
+  const own = state.status === "done" ? state.value : null;
   return (
-    <span className="team__stat" title={t("{games} maç", { games })} data-thin={games < 100 || undefined}>
-      {tier ? `${tier}, ` : ""}
-      {formatPercent(winRate, lang, 1)}
-    </span>
+    <>
+      {own && (
+        <span className="team__stat" title={t("{games} maç", { games: own.games })} data-thin={own.games < 100 || undefined}>
+          {own.tier ? `${own.tier}, ` : ""}
+          {formatPercent(own.winRate, lang, 1)} · {t("{games} maç", { games: own.games })}
+        </span>
+      )}
+      {check?.kind === "off" && (
+        <span
+          className="team__warn"
+          title={
+            check.usual
+              ? t("{role} rolünde nadir oynanıyor; genelde {usual} oynanıyor", { role: positionLabel(role!, lang) ?? "", usual: positionLabel(check.usual, lang) ?? "" })
+              : t("{role} rolünde nadir oynanıyor", { role: positionLabel(role!, lang) ?? "" })
+          }
+        >
+          {t("Rol dışı")}
+        </span>
+      )}
+    </>
   );
 }
 

@@ -106,3 +106,12 @@
   font-size: 13px;
   color: var(--turquoise);
 }
+
+.team__warn {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  background: color-mix(in srgb, var(--data-loss) 22%, transparent);
+  color: var(--data-loss);
+}
