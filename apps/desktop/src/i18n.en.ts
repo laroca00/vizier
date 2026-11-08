@@ -256,6 +256,8 @@ export const EN: Record<string, string> = {
   "Bu rol": "this role",
   "{games} maçtan azını gizle": "Hide rows under {games} games",
   "az maç": "few games",
+  "Sadece havuzum": "My pool only",
+  "Bu süzgeçle şampiyon yok.": "No champions match this filter.",
   "Önceki yamada yeterli maç yok.": "Not enough games on the previous patch.",
   "Önceki yamaya göre {change} puan": "{change} points since the previous patch",
   Değişim: "Change",

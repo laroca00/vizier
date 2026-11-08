@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import type { TierView } from "./pages/tierSort";
 
 // The app has no URLs, so navigation is a typed route and a history stack.
 // Mouse back and forward buttons and Alt+Left and Alt+Right walk the stack.
@@ -6,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 export type Route =
   | { page: "home" }
   | { page: "draft" }
-  | { page: "tiers" }
+  | { page: "tiers"; view?: TierView }
   | { page: "pros" }
   | { page: "builds" }
   | { page: "champions" }

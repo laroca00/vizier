@@ -1,5 +1,4 @@
 import { MatchupLink } from "../matchupLink";
-import { useState } from "react";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { getBans, getTierList } from "../api";
 import { championIconUrl, champions, latestVersion, roleIconUrl } from "../data/ddragon";
@@ -12,9 +11,9 @@ import { Scatter } from "../charts";
 import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
-import { Toggle } from "../ui/Fields";
+import { SearchInput, Toggle } from "../ui/Fields";
 import { changeText, trendOf } from "./trend";
-import { isThin, sortTiers, THIN_GAMES, withoutThin, type TierSort } from "./tierSort";
+import { DEFAULT_TIER_VIEW, isThin, THIN_GAMES, viewTiers, type TierColumn, type TierSort, type TierView } from "./tierSort";
 import "./TierListPage.css";
 
 // The most picked champions only; past this the plot turns into a pile of icons.
@@ -39,18 +38,39 @@ async function load(queue: number, position: string) {
   return { list, bans, version, champions: championList };
 }
 
-export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: number, position: string | null, queue: number) => void }) {
+type Props = {
+  view?: TierView;
+  /** Called on every change so the route can keep the view for Back. */
+  onView: (view: TierView) => void;
+  onOpenChampion: (championId: number, position: string | null, queue: number) => void;
+};
+
+export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion }: Props) {
   const lang = useLang();
   const percent = percentIn(lang);
   const t = useT();
-  const [queue, setQueue] = useState(RANKED);
-  const [position, setPosition] = useState("MIDDLE");
-  const [sort, setSort] = useState<TierSort>("tier");
-  const [hideThin, setHideThin] = useState(false);
+  const { queue, position, sort, desc, query, poolOnly, hideThin } = view;
+  const change = (next: Partial<TierView>) => onView({ ...view, ...next });
+  const setQueue = (next: number) => change({ queue: next });
+  const setPosition = (next: string) => change({ position: next });
+  const setHideThin = (next: boolean) => change({ hideThin: next });
   const [state, retry] = useAsync(`${queue}:${position}`, () => load(queue, position));
   const ranked = queue === RANKED;
   const personal = usePersonal();
   const poolIds = new Set(personal.pool.filter((p) => !ranked || !p.position || p.position === position).map((p) => p.championId));
+
+  const rows =
+    state.status === "done"
+      ? viewTiers(state.value.list.champions, view, (id) => state.value.champions.get(id)?.name ?? "", poolIds)
+      : [];
+  const sortHeader = (column: TierColumn, label: string) => (
+    <th scope="col" aria-sort={sort === column ? (desc ? "descending" : "ascending") : undefined}>
+      <button type="button" className="tiers__sort" onClick={() => change(sort === column ? { desc: !desc } : { sort: column, desc: column !== "name" })}>
+        {label}
+        {sort === column && <span aria-hidden="true">{desc ? " ↓" : " ↑"}</span>}
+      </button>
+    </th>
+  );
 
   return (
     <LiquidGlass className="panel tiers" radius={28} strength={2.5} scroll>
@@ -88,7 +108,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
             { id: "pickRate" as TierSort, label: t("Seçilme") },
           ]}
           value={sort}
-          onChange={setSort}
+          onChange={(next) => change({ sort: next, desc: true })}
         />
       )}
 
@@ -153,8 +173,14 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
             </section>
           )}
           <div className="tiers__list">
-            {state.value.list.champions.some(isThin) && (
-              <Toggle label={t("{games} maçtan azını gizle", { games: THIN_GAMES })} checked={hideThin} onChange={setHideThin} />
+            {state.value.list.champions.length > 0 && (
+              <div className="tiers__filters">
+                <SearchInput label={t("Şampiyon ara")} placeholder={t("Şampiyon ara")} value={query} onChange={(next) => change({ query: next })} />
+                {poolIds.size > 0 && <Toggle label={t("Sadece havuzum")} checked={poolOnly} onChange={(next) => change({ poolOnly: next })} />}
+                {state.value.list.champions.some(isThin) && (
+                  <Toggle label={t("{games} maçtan azını gizle", { games: THIN_GAMES })} checked={hideThin} onChange={setHideThin} />
+                )}
+              </div>
             )}
             {state.value.list.champions.length === 0 ? (
               <p className="coach__note">
@@ -166,18 +192,18 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
               <table className="tiers__table">
                 <thead>
                   <tr>
-                    <th scope="col">Tier</th>
-                    <th scope="col">{t("Şampiyon")}</th>
-                    <th scope="col">{t(winLabel(queue))}</th>
-                    <th scope="col">{t("Değişim")}</th>
-                    <th scope="col">{t("Seçilme")}</th>
-                    {ranked && <th scope="col">{t("Yasaklanma")}</th>}
-                    <th scope="col">{t("Maç")}</th>
+                    {sortHeader("tier", "Tier")}
+                    {sortHeader("name", t("Şampiyon"))}
+                    {sortHeader("winRate", t(winLabel(queue)))}
+                    {sortHeader("change", t("Değişim"))}
+                    {sortHeader("pickRate", t("Seçilme"))}
+                    {ranked && sortHeader("banRate", t("Yasaklanma"))}
+                    {sortHeader("games", t("Maç"))}
                     {ranked && <th scope="col">{t("Eşleşme")}</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {withoutThin(sortTiers(state.value.list.champions, ranked ? "tier" : sort), hideThin).map((c) => {
+                  {rows.map((c) => {
                     const champion = state.value.champions.get(c.championId);
                     const mine = poolIds.has(c.championId) ? "pool" : personal.favourites.includes(c.championId) ? "favourite" : undefined;
                     return (
@@ -219,6 +245,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
                 </tbody>
               </table>
             )}
+            {state.value.list.champions.length > 0 && rows.length === 0 && <p className="coach__note">{t("Bu süzgeçle şampiyon yok.")}</p>}
           </div>
 
           {state.value.bans && (

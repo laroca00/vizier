@@ -285,7 +285,7 @@ function App() {
             ) : route.page === "overlay" ? (
               <OverlayPage />
             ) : route.page === "tiers" ? (
-              <TierListPage onOpenChampion={openChampion} />
+              <TierListPage view={route.view} onView={(view) => replace({ page: "tiers", view })} onOpenChampion={openChampion} />
             ) : route.page === "augments" ? (
               <AugmentsPage />
             ) : route.page === "matchup" ? (
