@@ -3,8 +3,8 @@ import type { Champion } from "../data/ddragon";
 // The champion riddle: one answer per mode per day, the same for every
 // player, or a random one in free play. Pure, so it is tested without a page.
 
-export type QuizMode = "classic" | "ability" | "emoji" | "skin";
-export const MODES: QuizMode[] = ["classic", "ability", "emoji", "skin"];
+export type QuizMode = "classic" | "ability" | "emoji" | "skin" | "item";
+export const MODES: QuizMode[] = ["classic", "ability", "emoji", "skin", "item"];
 
 /** FNV-1a: a small, stable hash so a day's answer doesn't depend on the JavaScript engine. */
 export function hash(text: string): number {
@@ -82,6 +82,28 @@ export function classicGrid(results: ClassicResult[]): string {
 export function skinZoom(wrongGuesses: number): number {
   const steps = [6, 4.5, 3.2, 2.2, 1.5, 1];
   return steps[Math.min(wrongGuesses, steps.length - 1)];
+}
+
+/** Pixels of blur on the item icon: heavy at first, sharp after five wrong guesses. */
+export function itemBlur(wrongGuesses: number): number {
+  const steps = [10, 7, 5, 3, 1.5, 0];
+  return steps[Math.min(wrongGuesses, steps.length - 1)];
+}
+
+type PoolItem = { id: number; name: string; complete: boolean; gold: number };
+
+/**
+ * Finished Summoner's Rift items worth guessing, one per name: Data Dragon
+ * repeats items for other modes under ids from 10000 up.
+ */
+export function itemPool<T extends PoolItem>(items: Iterable<T>): T[] {
+  const byName = new Map<string, T>();
+  for (const item of items) {
+    if (!item.complete || item.id >= 10000 || item.gold < 2000) continue;
+    const known = byName.get(item.name);
+    if (!known || item.id < known.id) byName.set(item.name, item);
+  }
+  return [...byName.values()].sort((a, b) => a.id - b.id);
 }
 
 /** Emoji hints revealed: one to start, one more for each wrong guess. */

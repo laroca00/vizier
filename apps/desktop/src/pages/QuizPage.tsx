@@ -27,6 +27,7 @@ import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
 import { useAsync } from "../useAsync";
 import { useToast } from "../ui/Toast";
+import { ItemGame } from "../quiz/ItemGame";
 import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
 
 const MODE_LABELS: Record<QuizMode, { label: string; hint: string }> = {
@@ -34,6 +35,7 @@ const MODE_LABELS: Record<QuizMode, { label: string; hint: string }> = {
   ability: { label: "Yetenek", hint: "Bu yetenek kimin? Yanlış tahminlerde ikon renklenir, sonra tuşu ve adı açılır." },
   emoji: { label: "Emoji", hint: "Her yanlış tahminde bir emoji daha açılır." },
   skin: { label: "Kostüm", hint: "Bir kostüm görselinin yakın planı. Her yanlış tahminde görüntü uzaklaşır." },
+  item: { label: "Eşya", hint: "Bulanık bir eşya ikonu. Her yanlış tahminde netleşir; sonra fiyatı ve ilk harfi açılır." },
 };
 
 type Play = "daily" | "free";
@@ -68,7 +70,11 @@ export function QuizPage() {
       ) : data.status !== "done" ? (
         <Skeleton lines={5} label={t("Yükleniyor")} />
       ) : (
-        <Game key={`${mode}:${play}:${round}`} mode={mode} play={play} data={data.value} onNext={() => setRound(round + 1)} />
+        mode === "item" ? (
+          <ItemGame key={`item:${play}:${round}`} play={play} onNext={() => setRound(round + 1)} />
+        ) : (
+          <Game key={`${mode}:${play}:${round}`} mode={mode} play={play} data={data.value} onNext={() => setRound(round + 1)} />
+        )
       )}
     </LiquidGlass>
   );

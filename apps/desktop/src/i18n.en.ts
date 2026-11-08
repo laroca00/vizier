@@ -815,4 +815,11 @@ export const EN: Record<string, string> = {
   "Bu şampiyonla bu modda henüz yeterli maç yok.": "Not enough games with this champion in this mode yet.",
   "{pick} seçilme, {rate} ilk 4": "{pick} picked, {rate} top four",
   "{pick} seçilme, {rate} kazanma": "{pick} picked, {rate} win rate",
+  "Bulanık bir eşya ikonu. Her yanlış tahminde netleşir; sonra fiyatı ve ilk harfi açılır.": "A blurred item icon. Each wrong guess sharpens it, then its price and first letter show.",
+  "Tahmin edilecek eşya": "The item to guess",
+  "Fiyatı: {gold} altın": "Price: {gold} gold",
+  "{count} yanlıştan sonra fiyatı açılır.": "The price shows after {count} wrong guesses.",
+  "İlk harfi: {letter}": "First letter: {letter}",
+  "Eşya tahmin et": "Guess an item",
+  "Eşya adı yaz": "Type an item name",
 };

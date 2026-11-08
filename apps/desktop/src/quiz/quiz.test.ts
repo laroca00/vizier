@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Champion } from "../data/ddragon";
 import { EMOJI_HINTS } from "./emoji";
-import { attributesOf, classicGrid, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinZoom, streak, type QuizRecord } from "./logic";
+import { attributesOf, classicGrid, itemBlur, itemPool, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinZoom, streak, type QuizRecord } from "./logic";
 
 function champion(id: string, tags: string[], difficulty: number, partype: string, attackRange: number): Champion {
   return { id, key: id.length, name: id, magic: true, tank: false, tags, info: { attack: 5, defense: 5, magic: 5, difficulty }, partype, attackRange };
@@ -54,6 +54,19 @@ describe("champion riddle", () => {
     expect(streak(records, "classic", "2026-11-08")).toBe(2);
     expect(streak([...records, solved("2026-11-08")], "classic", "2026-11-08")).toBe(3);
     expect(streak(records, "classic", "2026-11-10")).toBe(0);
+  });
+
+  it("guesses finished Rift items once each, clearer after each miss", () => {
+    const pool = itemPool([
+      { id: 3031, name: "Infinity Edge", complete: true, gold: 3450 },
+      { id: 223031, name: "Infinity Edge", complete: true, gold: 3450 },
+      { id: 1038, name: "B. F. Sword", complete: false, gold: 1300 },
+      { id: 3006, name: "Berserker's Greaves", complete: true, gold: 1100 },
+      { id: 6672, name: "Kraken Slayer", complete: true, gold: 3100 },
+    ]);
+    expect(pool.map((i) => i.id)).toEqual([3031, 6672]);
+    expect(itemBlur(0)).toBeGreaterThan(itemBlur(2));
+    expect(itemBlur(9)).toBe(0);
   });
 
   it("has at least four emoji hints per champion", () => {
