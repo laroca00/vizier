@@ -70,11 +70,11 @@ A dedicated place to study any matchup before the game, not only during champ se
 
 ## 5. Champion page improvements
 
-- [ ] 5.1 Rune page visual: both trees and shards laid out like the client, chosen runes lit, alternatives dimmed with their pick rates (needs per-rune pick rates from the crawler; backward compatible field in the build doc).
-- [ ] 5.2 Build path timeline: starting items → first back → three core items → situational, with games and win rate on each step.
-- [ ] 5.3 Boots and summoner spells comparison tables with pick rate, win rate and games.
-- [ ] 5.4 Skill order: the common first-three and max orders with their win rate and play rate (crawler rollup), on top of the existing grid.
-- [ ] 5.5 Ability details: cooldown, cost and range per rank from `championFull.json`, with "–" where Data Dragon doesn't publish a value.
+- [x] 5.1 Rune page visual: both trees and shards laid out like the client, chosen runes lit, alternatives dimmed with their pick rates (needs per-rune pick rates from the crawler; backward compatible field in the build doc). (d8a0f1e; per-rune counts are new, so rates fill in as games are rolled up)
+- [x] 5.2 Build path timeline: starting items → first back → three core items → situational, with games and win rate on each step. (d8a0f1e; no first-back step, the match data has no recall timing)
+- [x] 5.3 Boots and summoner spells comparison tables with pick rate, win rate and games. (d8a0f1e)
+- [x] 5.4 Skill order: the common first-three and max orders with their win rate and play rate (crawler rollup), on top of the existing grid. (d8a0f1e; skill option rollup reuses the existing skill counts)
+- [x] 5.5 Ability details: cooldown, cost and range per rank from `championFull.json`, with "–" where Data Dragon doesn't publish a value. (d8a0f1e)
 - [ ] 5.6 Item completion times: the minute each core item is usually finished (crawler rollup from timeline purchase events).
 - [ ] 5.7 Synergies tab: best duo partners (bot + support, jungle + mid) with games.
 - [ ] 5.8 Similar champions: same class and damage type, closest base stats; quick links.
@@ -192,4 +192,5 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 - Apply pending D1 migrations remotely.
 - Pull and restart the crawler on the VM (Arena duo and item docs appear after the next rollup and publish; duo counts start from games crawled after the update).
 - Apply D1 migration 0013 (lane stats) remotely before the next crawler run on the VM; lane docs fill as timelines are crawled.
+- After the Worker and crawler update, the build docs gain `perks`, `perkGames` and `skillOptions` on the next publish; single-rune counts only cover games rolled up after the crawler update.
 - Optional: set `ARENA_ITEMS=off` on the Worker to hide Arena item stats; they are on by default.
