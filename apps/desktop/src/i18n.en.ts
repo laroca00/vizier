@@ -1001,4 +1001,8 @@ export const EN: Record<string, string> = {
   "Eşleşme sayfasında incele": "Study on the matchup page",
   "{a} - {b}": "{a} vs {b}",
   "{rune}: {rate} seçilme, {games} maç": "{rune}: {rate} taken, {games} games",
+  "Eşya yolu": "Item path",
+  "Sonra en sık": "Most common after",
+  "{item}: {rate} kazanma, {games} maç": "{item}: {rate} win rate, {games} games",
+  "{games} maça kadar": "Up to {games} games",
 };

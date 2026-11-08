@@ -1,5 +1,6 @@
+import { BuildPath } from "./BuildPath";
 import { RunePageView } from "./RunePageView";
-import { formatPercent, intlLocale, useLang, useT, type Lang } from "./i18n";
+import { formatPercent, useLang, useT, type Lang } from "./i18n";
 import { shardName } from "./library/RuneEditor";
 import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
@@ -396,26 +397,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
         </section>
       )}
 
-      {(picks.startItems || picks.coreItems) && (
-        <section className="build__block" aria-label={t("Başlangıç ve ana eşyalar")}>
-          {[picks.startItems && { label: t("Başlangıç"), ids: picks.startItems.ids, core: false }, picks.coreItems && { label: t("Ana eşyalar"), ids: picks.coreItems.ids, core: true }]
-            .filter((row): row is { label: string; ids: number[]; core: boolean } => !!row)
-            .map((row) => (
-              <div className="build__row" key={row.label}>
-                <span className="build__stat build__row-label">{row.label}</span>
-                {row.ids.map((id, i) => {
-                  const info = state.value.items.get(id);
-                  return <img key={`${id}-${i}`} src={itemIconUrl(version, id)} alt={info?.name ?? ""} title={info?.name} width={28} height={28} />;
-                })}
-                {row.core && (
-                  <span className="build__stat build__gold">
-                    {t("toplam {gold} altın", { gold: row.ids.reduce((sum, id) => sum + (state.value.items.get(id)?.gold ?? 0), 0).toLocaleString(intlLocale(lang)) })}
-                  </span>
-                )}
-              </div>
-            ))}
-        </section>
-      )}
+      <BuildPath picks={picks} items={state.value.items} version={version} />
 
       {shownItems.length > 0 && (
         <section className="build__block" aria-label={t("Sık alınan eşyalar")}>

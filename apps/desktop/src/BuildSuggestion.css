@@ -91,3 +91,33 @@
   margin-left: var(--space-2);
   font-variant-numeric: tabular-nums;
 }
+
+.path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.path__step {
+  display: grid;
+  gap: 4px;
+}
+
+.path__step + .path__step::before {
+  content: "›";
+  position: absolute;
+  margin-left: calc(var(--space-4) * -0.75);
+  color: var(--glaze-muted);
+}
+
+.path__step {
+  position: relative;
+}
+
+.path__label,
+.path__meta {
+  margin: 0;
+}
