@@ -7,7 +7,7 @@ import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { pruneRaw, rollup } from "./rollup.ts";
 import { docKey, statDocs } from "./statDocs.ts";
-import { arenaDuos, arenaItems, augmentStats, laneStats, sampleLimits, tierList } from "./stats.ts";
+import { arenaDuos, arenaItems, augmentStats, itemTimes, laneStats, sampleLimits, tierList } from "./stats.ts";
 import { MemoryStore } from "./store.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
@@ -169,6 +169,28 @@ describe("lane stats", () => {
     await seed(db, 1, 12);
     await rollup(db, noCatalog);
     expect(await laneStats(db, 103, "MIDDLE")).toEqual({});
+  });
+});
+
+describe("item completion times", () => {
+  it("averages the first time a finished item was bought", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, noRiot);
+    const finishedCatalog = async () => ({ ...emptyCatalog(), finished: new Set([3157]) });
+    for (let n = 1; n <= 12; n++) {
+      const match = game(n, true);
+      match.metadata.matchId = `TR1_T${n}`;
+      match.info.participants = [player(1, 100, 103, true)];
+      const events = [
+        { type: "ITEM_PURCHASED", timestamp: 100_000, participantId: 1, itemId: 1052 },
+        { type: "ITEM_PURCHASED", timestamp: (n % 2 ? 600_000 : 720_000), participantId: 1, itemId: 3157 },
+        { type: "ITEM_PURCHASED", timestamp: 900_000, participantId: 1, itemId: 3157 },
+      ];
+      await crawler.save(match, { info: { frames: [{ timestamp: 0, participantFrames: {}, events }] } });
+    }
+    await rollup(db, finishedCatalog);
+    expect(await itemTimes(db, 103, "MIDDLE")).toEqual({ 3157: { games: 12, minute: 11 } });
+    expect(await itemTimes(db, 103, "TOP")).toEqual({});
   });
 });
 

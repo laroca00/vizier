@@ -5,6 +5,9 @@ import { BuildSuggestion } from "../BuildSuggestion";
 import { Abilities, ChampionReference, ChampionTitle, StrengthsWeaknesses } from "../ChampionGuide";
 import { JournalNote, MatchupNotes } from "../Journal";
 import { MatchupLink } from "../matchupLink";
+import { SkinGallery } from "../SkinGallery";
+import { similarChampions } from "../similar";
+import { groupAllies, MIN_ALLY_GAMES } from "../synergy";
 import { championNoteKey, inPool, toggleFavouriteChampion, togglePool, usePersonal } from "../personal";
 import { ProBuildList } from "../ProBuildList";
 import { championIconUrl, champions, latestVersion, roleIconUrl, type Champion } from "../data/ddragon";
@@ -78,6 +81,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
               })}
             </p>
           )}
+          <Tabs className="champion__queues" size="small" label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
         </div>
         <button
           type="button"
@@ -96,8 +100,6 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           {pooled ? t("Havuzunda") : t("Havuzuna ekle")}
         </button>
       </header>
-
-      <Tabs label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
 
       {state.status === "error" ? (
         <ErrorState message={t("Şampiyon istatistikleri alınamadı. Vizier sunucusuna şu an ulaşılamıyor.")} onRetry={retry} />
@@ -134,6 +136,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           <div>
             <StrengthsWeaknesses champion={champion} />
             <ChampionReference champion={champion} />
+            <SkinGallery champion={champion} />
             <JournalNote noteKey={championNoteKey(championId)} label={t("{champion} notların", { champion: champion.name })} />
             {data.status === "done" && <MatchupNotes championId={championId} champions={data.value.champions} version={version} />}
           </div>
@@ -395,14 +398,13 @@ function Matchups({ counters, champions, version, onOpenChampion, championId, po
   ));
 }
 
-const SHOWN_ALLIES = 5;
-
 const SHOWN_SIMILAR = 5;
-const TIER_ORDER = ["S", "A", "B", "C", "D"];
+// Fewer games than this and the win rate says more about luck than the champion.
+const SIMILAR_MIN_GAMES = 100;
 
 /**
- * Other champions played in this role that share the main Data Dragon class,
- * best tier first: alternatives when this one is banned or out of the pool.
+ * Champions with the same main class and damage type and the closest level-one
+ * stats, with their role's tier and win rate where they have enough games.
  */
 function SimilarList({ championId, position, champions, version, onOpenChampion }: CounterProps) {
   const percent = percentIn(useLang());
@@ -410,23 +412,20 @@ function SimilarList({ championId, position, champions, version, onOpenChampion 
   const [state] = useAsync(`tiers:${position}`, () => getTierList(position));
   const self = champions.get(championId);
   if (state.status !== "done" || !self) return null;
-  const similar = state.value.champions
-    .filter((e) => e.championId !== championId && champions.get(e.championId)?.tags[0] === self.tags[0] && e.games >= SIMILAR_MIN_GAMES)
-    // Tier first: it already weighs how many games a rate rests on.
-    .sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier) || b.winRate - a.winRate)
-    .slice(0, SHOWN_SIMILAR);
+  const played = new Map(state.value.champions.filter((e) => e.games >= SIMILAR_MIN_GAMES).map((e) => [e.championId, e]));
+  const similar = similarChampions(self, [...champions.values()].filter((c) => played.has(c.key)), SHOWN_SIMILAR);
   if (similar.length === 0) return null;
   return (
     <section className="matchups" aria-label={t("Benzer şampiyonlar")}>
       <h2 className="draft__heading">{t("Bu rolde benzer şampiyonlar")}</h2>
       <ul className="matchups__list matchups__list--plain">
-        {similar.map((e) => {
-          const c = champions.get(e.championId);
+        {similar.map((c) => {
+          const e = played.get(c.key)!;
           return (
-            <li key={e.championId}>
-              <button type="button" className="matchups__open" onClick={() => onOpenChampion(e.championId)}>
-                {c && version && <img src={championIconUrl(version, c.id)} alt="" width={26} height={26} />}
-                <span className="matchups__name">{c?.name ?? e.championId}</span>
+            <li key={c.key}>
+              <button type="button" className="matchups__open" onClick={() => onOpenChampion(c.key)}>
+                {version && <img src={championIconUrl(version, c.id)} alt="" width={26} height={26} />}
+                <span className="matchups__name">{c.name}</span>
               </button>
               <span className="matchups__games">{t("{tier} tier", { tier: e.tier })}</span>
               <span className="matchups__rate">{percent(e.winRate)}</span>
@@ -435,12 +434,10 @@ function SimilarList({ championId, position, champions, version, onOpenChampion 
           );
         })}
       </ul>
+      <p className="build__note">{t("Aynı sınıf ve hasar türü, en yakın temel statlar.")}</p>
     </section>
   );
 }
-
-// Fewer games than this and the win rate says more about luck than the champion.
-const SIMILAR_MIN_GAMES = 100;
 
 function AllyList({
   championId,
@@ -451,28 +448,37 @@ function AllyList({
 }: Omit<CounterProps, "onOpenChampion"> & { onOpenChampion: (championId: number, position: string) => void }) {
   const percent = percentIn(useLang());
   const t = useT();
-  const lang = useLang();
   const [state] = useAsync(`allies:${championId}:${position}`, () => getSynergies(championId, position));
-  if (state.status !== "done" || state.value.allies.length === 0) return null;
+  if (state.status !== "done") return null;
+  const groups = groupAllies(state.value.allies, position);
+  if (groups.length === 0) return null;
   return (
     <section className="matchups" aria-label={t("Takım arkadaşları")}>
       <h2 className="draft__heading">{t("En iyi anlaştığı takım arkadaşları")}</h2>
-      <ul className="matchups__list matchups__list--plain">
-        {state.value.allies.slice(0, SHOWN_ALLIES).map((a) => {
-          const ally = champions.get(a.championId);
-          return (
-            <li key={`${a.championId}-${a.position}`}>
-              <button type="button" className="matchups__open" onClick={() => onOpenChampion(a.championId, a.position)}>
-                {ally && version && <img src={championIconUrl(version, ally.id)} alt="" width={26} height={26} />}
-                <span className="matchups__name">{ally?.name ?? a.championId}</span>
-              </button>
-              <span className="matchups__games">{t(POSITIONS[a.position] ?? "").toLocaleLowerCase(lang)}</span>
-              <span className="matchups__rate">{percent(a.winRate)}</span>
-              <span className="matchups__games">{t("{games} maç", { games: a.games })}</span>
-            </li>
-          );
-        })}
-      </ul>
+      {groups.map((group) => (
+        <div key={group.position}>
+          <p className="build__stat">
+            {t(POSITIONS[group.position] ?? "")}
+            {group.duo && ` · ${t("ikili")}`}
+          </p>
+          <ul className="matchups__list matchups__list--plain">
+            {group.allies.map((a) => {
+              const ally = champions.get(a.championId);
+              return (
+                <li key={`${a.championId}-${a.position}`}>
+                  <button type="button" className="matchups__open" onClick={() => onOpenChampion(a.championId, a.position)}>
+                    {ally && version && <img src={championIconUrl(version, ally.id)} alt="" width={26} height={26} />}
+                    <span className="matchups__name">{ally?.name ?? a.championId}</span>
+                  </button>
+                  <span className="matchups__rate">{percent(a.winRate)}</span>
+                  <span className="matchups__games">{t("{games} maç", { games: a.games })}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+      <p className="build__note">{t("{games} maçtan azı gösterilmez.", { games: MIN_ALLY_GAMES })}</p>
     </section>
   );
 }

@@ -36,6 +36,7 @@ type Raw = {
   gold10: number | null;
   gold15: number | null;
   first_blood: number | null;
+  purchase_times: string | null;
 };
 
 type Count = { patch: string; queue: number; position: string; champion: number; kind: string; value: string; games: number; wins: number };
@@ -75,6 +76,33 @@ function laneUpserts(db: D1Database, sums: Map<string, LaneSum>) {
         gold10 = gold10 + excluded.gold10, gold15 = gold15 + excluded.gold15, first_bloods = first_bloods + excluded.first_bloods`,
   );
   return [...sums.values()].map((l) => statement.bind(l.patch, l.position, l.champion, l.opponent, l.games, l.cs10, l.cs15, l.gold10, l.gold15, l.firstBloods));
+}
+
+type ItemTime = { patch: string; position: string; champion: number; item: number; games: number; seconds: number };
+
+/** The first time each finished item was bought, as seconds into the game. */
+function addItemTimes(sums: Map<string, ItemTime>, row: Raw, finished: Set<number>) {
+  if (!row.team_position || row.queue_id !== RANKED_SOLO || !row.purchase_times) return;
+  const bought = ids(row.purchase_order ?? "");
+  const times = ids(row.purchase_times);
+  const seen = new Set<number>();
+  bought.forEach((item, at) => {
+    if (!finished.has(item) || seen.has(item) || times[at] === undefined) return;
+    seen.add(item);
+    const key = [row.patch, row.team_position, row.champion_id, item].join("\t");
+    const sum = sums.get(key) ?? { patch: row.patch, position: row.team_position, champion: row.champion_id, item, games: 0, seconds: 0 };
+    sum.games++;
+    sum.seconds += times[at];
+    sums.set(key, sum);
+  });
+}
+
+function itemTimeUpserts(db: D1Database, sums: Map<string, ItemTime>) {
+  const statement = db.prepare(
+    `INSERT INTO item_time_sums (patch, team_position, champion_id, item_id, games, seconds) VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT DO UPDATE SET games = games + excluded.games, seconds = seconds + excluded.seconds`,
+  );
+  return [...sums.values()].map((s) => statement.bind(s.patch, s.position, s.champion, s.item, s.games, s.seconds));
 }
 
 class Tally {
@@ -162,7 +190,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const { results } = await db
       .prepare(
         `SELECT rowid, match_id, patch, queue_id, team_position, champion_id, win, runes, spells, items, start_items,
-            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood
+            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times
           FROM participant_stats WHERE rowid > ? ORDER BY rowid LIMIT ?`,
       )
       .bind(from, CHUNK)
@@ -180,10 +208,12 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const teams = new Map<string, Raw[]>();
     const duos = new Map<string, Raw[]>();
     const lanes = new Map<string, LaneSum>();
+    const itemTimes = new Map<string, ItemTime>();
     for (const row of rows) {
       tally.add(row, "games", "", row.win);
       if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
       const choices = buildChoices(row, catalog.finished);
+      addItemTimes(itemTimes, row, catalog.finished);
       for (const [kind, value] of choices) tally.add(row, kind, value, row.win);
       // Single runes, for pick rates inside a rune page.
       // Perk 0 counts the games these rows come from; older games were rolled up before single runes were counted.
@@ -236,7 +266,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
         }
       }
     }
-    await db.batch([...upserts(db, tally), ...laneUpserts(db, lanes), setWatermark(db, "rolled_participants", rows[rows.length - 1].rowid)]);
+    await db.batch([...upserts(db, tally), ...laneUpserts(db, lanes), ...itemTimeUpserts(db, itemTimes), setWatermark(db, "rolled_participants", rows[rows.length - 1].rowid)]);
     rolled += rows.length;
   }
 }
@@ -330,5 +360,6 @@ export async function pruneRaw(db: D1Database, now = Date.now()) {
     db.prepare("DELETE FROM stat_counts WHERE patch NOT IN (?, ?)").bind(...keep),
     db.prepare("DELETE FROM stat_matches WHERE patch NOT IN (?, ?)").bind(...keep),
     db.prepare("DELETE FROM lane_sums WHERE patch NOT IN (?, ?)").bind(...keep),
+    db.prepare("DELETE FROM item_time_sums WHERE patch NOT IN (?, ?)").bind(...keep),
   ]);
 }

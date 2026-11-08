@@ -235,3 +235,7 @@
 .champion__build-head .draft__heading {
   margin: 0;
 }
+
+.champion__queues {
+  margin-top: 10px;
+}

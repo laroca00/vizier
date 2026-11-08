@@ -183,6 +183,13 @@ export function getLaneStats(championId: number, position: string, vs: number) {
   return get<LaneStat>(`/v1/champions/${championId}/lane?position=${position}&vs=${vs}`);
 }
 
+export type ItemTimes = Record<number, { games: number; minute: number }>;
+
+/** Average minute each finished item is completed; empty until enough timelines are in. */
+export function getItemTimes(championId: number, position: string) {
+  return get<ItemTimes>(`/v1/champions/${championId}/item-times?position=${position}`);
+}
+
 export type Counters = { patches: string[]; games: number; matchups: { championId: number; games: number; winRate: number }[] };
 
 export function getCounters(championId: number, position: string) {

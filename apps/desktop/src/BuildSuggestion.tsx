@@ -5,7 +5,7 @@ import { formatPercent, useLang, useT, type Lang } from "./i18n";
 import { shardName } from "./library/RuneEditor";
 import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import { getBuild, type Build, type BuildStyle, type Foe, type Picks } from "./api";
+import { getBuild, getItemTimes, type Build, type ItemTimes, type BuildStyle, type Foe, type Picks } from "./api";
 import { ProMatchups } from "./draft/ProMatchups";
 import { fromPicks } from "./library/convert";
 import { createBuild } from "./library/store";
@@ -46,10 +46,11 @@ type Data = {
   spells: Map<number, SummonerSpell>;
   items: Map<number, Item>;
   champions: Map<number, Champion>;
+  itemTimes: ItemTimes;
 };
 
 async function load(championId: number, position: string | null, vs: number | null, queue: number): Promise<Data> {
-  const [build, versus, version, runeStyles, spells, itemList, championList] = await Promise.all([
+  const [build, versus, version, runeStyles, spells, itemList, championList, itemTimes] = await Promise.all([
     getBuild(championId, position, null, queue),
     vs ? getBuild(championId, position, vs, queue) : null,
     latestVersion(),
@@ -57,8 +58,10 @@ async function load(championId: number, position: string | null, vs: number | nu
     summonerSpells(),
     items(),
     champions(),
+    // Times are an extra: an older Worker without the route must not break the build.
+    position && queue === 420 ? getItemTimes(championId, position).catch((): ItemTimes => ({})) : ({} as ItemTimes),
   ]);
-  return { build, versus, version, runes: runeStyles, spells, items: itemList, champions: championList };
+  return { build, versus, version, runes: runeStyles, spells, items: itemList, champions: championList, itemTimes };
 }
 
 const FOE_LABELS: Record<Foe, string> = {
@@ -389,7 +392,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
 
       <BootsSpells picks={picks} total={shown.games} items={state.value.items} spells={state.value.spells} version={version} />
 
-      <BuildPath picks={picks} items={state.value.items} version={version} />
+      <BuildPath picks={picks} items={state.value.items} version={version} times={state.value.itemTimes} />
 
       {shownItems.length > 0 && (
         <section className="build__block" aria-label={t("Sık alınan eşyalar")}>

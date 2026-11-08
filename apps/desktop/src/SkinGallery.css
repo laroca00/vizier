@@ -1,0 +1,32 @@
+.skins { margin-top: 16px; }
+.skins__grid {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+.skins__tile {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-meta);
+  text-align: left;
+  cursor: pointer;
+}
+.skins__tile img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 120 / 218;
+  object-fit: cover;
+  border-radius: var(--radius-item);
+}
+.skins__tile:hover img,
+.skins__tile:focus-visible img { outline: 2px solid var(--gilt); }
+.skins__splash { width: 100%; height: auto; border-radius: var(--radius-item); }
