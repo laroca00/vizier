@@ -243,6 +243,8 @@ export const EN: Record<string, string> = {
   "Koridor rakiplerine göre ayırmak için henüz yeterli maç yok.": "Not enough games yet to split by lane opponent.",
   "Takım arkadaşları": "Teammates",
   "En iyi anlaştığı takım arkadaşları": "Best teammates",
+  "ikili": "duo",
+  "{games} maçtan azı gösterilmez.": "Pairings under {games} games are hidden.",
   "Zorlandığı rakipler": "Hardest matchups",
   "Rahat ettiği rakipler": "Easiest matchups",
 

@@ -5,6 +5,7 @@ import { BuildSuggestion } from "../BuildSuggestion";
 import { Abilities, ChampionReference, ChampionTitle, StrengthsWeaknesses } from "../ChampionGuide";
 import { JournalNote, MatchupNotes } from "../Journal";
 import { MatchupLink } from "../matchupLink";
+import { groupAllies, MIN_ALLY_GAMES } from "../synergy";
 import { championNoteKey, inPool, toggleFavouriteChampion, togglePool, usePersonal } from "../personal";
 import { ProBuildList } from "../ProBuildList";
 import { championIconUrl, champions, latestVersion, roleIconUrl, type Champion } from "../data/ddragon";
@@ -395,8 +396,6 @@ function Matchups({ counters, champions, version, onOpenChampion, championId, po
   ));
 }
 
-const SHOWN_ALLIES = 5;
-
 const SHOWN_SIMILAR = 5;
 const TIER_ORDER = ["S", "A", "B", "C", "D"];
 
@@ -451,28 +450,37 @@ function AllyList({
 }: Omit<CounterProps, "onOpenChampion"> & { onOpenChampion: (championId: number, position: string) => void }) {
   const percent = percentIn(useLang());
   const t = useT();
-  const lang = useLang();
   const [state] = useAsync(`allies:${championId}:${position}`, () => getSynergies(championId, position));
-  if (state.status !== "done" || state.value.allies.length === 0) return null;
+  if (state.status !== "done") return null;
+  const groups = groupAllies(state.value.allies, position);
+  if (groups.length === 0) return null;
   return (
     <section className="matchups" aria-label={t("Takım arkadaşları")}>
       <h2 className="draft__heading">{t("En iyi anlaştığı takım arkadaşları")}</h2>
-      <ul className="matchups__list matchups__list--plain">
-        {state.value.allies.slice(0, SHOWN_ALLIES).map((a) => {
-          const ally = champions.get(a.championId);
-          return (
-            <li key={`${a.championId}-${a.position}`}>
-              <button type="button" className="matchups__open" onClick={() => onOpenChampion(a.championId, a.position)}>
-                {ally && version && <img src={championIconUrl(version, ally.id)} alt="" width={26} height={26} />}
-                <span className="matchups__name">{ally?.name ?? a.championId}</span>
-              </button>
-              <span className="matchups__games">{t(POSITIONS[a.position] ?? "").toLocaleLowerCase(lang)}</span>
-              <span className="matchups__rate">{percent(a.winRate)}</span>
-              <span className="matchups__games">{t("{games} maç", { games: a.games })}</span>
-            </li>
-          );
-        })}
-      </ul>
+      {groups.map((group) => (
+        <div key={group.position}>
+          <p className="build__stat">
+            {t(POSITIONS[group.position] ?? "")}
+            {group.duo && ` · ${t("ikili")}`}
+          </p>
+          <ul className="matchups__list matchups__list--plain">
+            {group.allies.map((a) => {
+              const ally = champions.get(a.championId);
+              return (
+                <li key={`${a.championId}-${a.position}`}>
+                  <button type="button" className="matchups__open" onClick={() => onOpenChampion(a.championId, a.position)}>
+                    {ally && version && <img src={championIconUrl(version, ally.id)} alt="" width={26} height={26} />}
+                    <span className="matchups__name">{ally?.name ?? a.championId}</span>
+                  </button>
+                  <span className="matchups__rate">{percent(a.winRate)}</span>
+                  <span className="matchups__games">{t("{games} maç", { games: a.games })}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+      <p className="build__note">{t("{games} maçtan azı gösterilmez.", { games: MIN_ALLY_GAMES })}</p>
     </section>
   );
 }
