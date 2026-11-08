@@ -15,6 +15,8 @@ export type Champion = {
   partype?: string;
   /** Basic attack range at level one. */
   attackRange?: number;
+  /** Level-one stats from champion.json, for comparing champions at a glance. */
+  baseStats?: { hp: number; armor: number; mr: number; ad: number; speed: number };
 };
 
 let version: Promise<string> | undefined;
@@ -37,7 +39,7 @@ export function champions(): Promise<Map<number, Champion>> {
         response.json() as Promise<{
           data: Record<
             string,
-            { id: string; key: string; name: string; tags: string[]; info: Champion["info"]; partype?: string; stats?: { attackrange?: number } }
+            { id: string; key: string; name: string; tags: string[]; info: Champion["info"]; partype?: string; stats?: { attackrange?: number; hp?: number; armor?: number; spellblock?: number; attackdamage?: number; movespeed?: number } }
           >;
         }>,
     )
@@ -56,6 +58,10 @@ export function champions(): Promise<Map<number, Champion>> {
               info: c.info,
               partype: c.partype,
               attackRange: c.stats?.attackrange,
+              baseStats:
+                c.stats?.hp !== undefined
+                  ? { hp: c.stats.hp, armor: c.stats.armor ?? 0, mr: c.stats.spellblock ?? 0, ad: c.stats.attackdamage ?? 0, speed: c.stats.movespeed ?? 0 }
+                  : undefined,
             },
           ]),
         ),

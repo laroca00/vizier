@@ -824,6 +824,7 @@ export const EN: Record<string, string> = {
   "Takip ettiğin oyuncuların son 30 günde maçı yok.": "The players you follow have no games in the last 30 days.",
   "Takip ettiklerin": "Following",
   "Benzer şampiyonlar": "Similar champions",
+  "Aynı sınıf ve hasar türü, en yakın temel statlar.": "Same class and damage type, closest base stats.",
   "Bu rolde benzer şampiyonlar": "Similar champions in this role",
   "{partner} ile birlikte {rate} kazanma, {games} maç": "{rate} win rate together with {partner}, {games} games",
   "{partner} ile birlikte yeterli maç yok.": "Not enough games together with {partner}.",
