@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { abilityIconUrl, championDetail, championIconUrl, skins, splashUrl, type Champion } from "../data/ddragon";
 import { useLang, useT } from "../i18n";
 import { POSITIONS } from "../labels";
@@ -12,13 +12,14 @@ import {
   emojisShown,
   hash,
   rangeOf,
-  skinZoom,
+  skinView,
   streak,
   type ClassicResult,
   type Match,
   type QuizMode,
 } from "../quiz/logic";
 import "../quiz/quiz.css";
+import { REGION_NAMES } from "../quiz/championFacts";
 import { recordFor, saveRecord, useQuizRecords } from "../quiz/store";
 import { Button } from "../ui/Button";
 import { LiquidGlass } from "../ui/LiquidGlass";
@@ -31,7 +32,7 @@ import { ItemGame } from "../quiz/ItemGame";
 import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
 
 const MODE_LABELS: Record<QuizMode, { label: string; hint: string }> = {
-  classic: { label: "Klasik", hint: "Her tahmin; sınıf, kaynak, menzil, zorluk ve rollerde ne kadar yaklaştığını gösterir." },
+  classic: { label: "Klasik", hint: "Her tahmin; bölge, kaynak, menzil, çıkış yılı ve rollerde ne kadar yaklaştığını gösterir." },
   ability: { label: "Yetenek", hint: "Bu yetenek kimin? Yanlış tahminlerde ikon renklenir, sonra tuşu ve adı açılır." },
   emoji: { label: "Emoji", hint: "Her yanlış tahminde bir emoji daha açılır." },
   skin: { label: "Kostüm", hint: "Bir kostüm görselinin yakın planı. Her yanlış tahminde görüntü uzaklaşır." },
@@ -126,7 +127,7 @@ function Game({ mode, play, data, onNext }: { mode: QuizMode; play: Play; data: 
       <Clue mode={mode} answer={answer} wrong={wrong} over={over} data={data} seed={play === "daily" ? hash(today) : freeSeed} />
 
       {over ? (
-        <div className="quiz__result" role="status">
+        <div className="quiz__result" role="status" data-solved={solved || undefined}>
           <img src={championIconUrl(data.version, answer.id)} alt="" width={56} height={56} />
           <div>
             <p className="quiz__answer">{solved ? t("Bildin: {champion}", { champion: answer.name }) : t("Cevap: {champion}", { champion: answer.name })}</p>
@@ -227,7 +228,8 @@ function Clue({ mode, answer, wrong, over, data, seed }: { mode: QuizMode; answe
     return (
       <p className="quiz__emoji" aria-label={t("Emoji ipuçları")}>
         {hints.map((e, i) => (
-          <span key={i} data-hidden={i >= shown || undefined}>
+          // A new key when the emoji shows, so it turns over into view.
+          <span key={`${i}:${i < shown}`} data-hidden={i >= shown || undefined}>
             {i < shown ? e : "?"}
           </span>
         ))}
@@ -252,17 +254,25 @@ function Clue({ mode, answer, wrong, over, data, seed }: { mode: QuizMode; answe
   if (mode === "skin") {
     if (skinList.status !== "done") return <Skeleton lines={3} label={t("Yükleniyor")} />;
     const skin = skinList.value[seed % skinList.value.length];
-    const zoom = over ? 1 : skinZoom(wrong);
+    const view = over ? { zoom: 1, radius: 100 } : skinView(wrong);
     // A spot in the middle of the art, where the champion usually is.
     const x = 30 + (seed % 41);
     const y = 25 + ((seed >> 8) % 41);
     return (
       <figure className="quiz__skin">
-        <div
-          role="img"
-          aria-label={t("Bir kostüm görselinden kesit")}
-          style={{ backgroundImage: `url(${splashUrl(answer.id, skin.num)})`, backgroundSize: `${zoom * 100}%`, backgroundPosition: `${x}% ${y}%` }}
-        />
+        <div className="quiz__skin-frame">
+          <div
+            role="img"
+            aria-label={t("Bir kostüm görselinden kesit")}
+            style={{
+              backgroundImage: `url(${splashUrl(answer.id, skin.num)})`,
+              backgroundSize: `${view.zoom * 100}%`,
+              backgroundPosition: `${x}% ${y}%`,
+              // The window sits on the same spot the zoom centres, so it shows the focus point.
+              clipPath: view.radius >= 100 ? "none" : `circle(${view.radius}% at ${x}% ${y}%)`,
+            }}
+          />
+        </div>
         {over && <figcaption className="build__note">{skin.name === "default" ? answer.name : skin.name}</figcaption>}
       </figure>
     );
@@ -287,55 +297,56 @@ const TITLE_HINT_AFTER = 5;
 
 const MATCH_LABEL: Record<Match, string> = { yes: "Doğru", partial: "Kısmen", no: "Yanlış" };
 
+const COLUMNS = ["Bölge", "Kaynak", "Menzil", "Çıkış yılı", "Roller"];
+
+/** Rows of tiles, newest on top; a new row's tiles turn over one after another. */
 function ClassicTable({ guesses, answer, data }: { guesses: number[]; answer: Champion; data: ChampionRoles }) {
   const t = useT();
   if (guesses.length === 0) return <p className="build__note">{t("Bir şampiyon yazıp tahmin et. Renkler doğru, kısmen doğru ve yanlış olanları gösterir.")}</p>;
   const target = attributesOf(answer, rolesOf(data, answer.key));
-  const cell = (match: Match, text: string, arrow?: ClassicResult["difficultyArrow"]) => (
-    <td data-match={match} title={t(MATCH_LABEL[match])}>
-      {text}
-      {arrow && <span aria-hidden="true">{arrow === "higher" ? " ↑" : " ↓"}</span>}
+  const tile = (i: number, match: Match, text: string, arrow?: ClassicResult["yearArrow"]) => (
+    <div role="cell" className="quiz__tile" data-match={match} style={{ "--i": i } as CSSProperties} title={t(MATCH_LABEL[match])}>
+      <span>{text}</span>
+      {arrow && (
+        <span className="quiz__arrow" aria-hidden="true">
+          {arrow === "higher" ? "↑" : "↓"}
+        </span>
+      )}
       <span className="visually-hidden">
         {", "}
         {t(MATCH_LABEL[match])}
-        {arrow ? `, ${arrow === "higher" ? t("cevap daha zor") : t("cevap daha kolay")}` : ""}
+        {arrow ? `, ${arrow === "higher" ? t("cevap daha yeni") : t("cevap daha eski")}` : ""}
       </span>
-    </td>
+    </div>
   );
   return (
-    <table className="quiz__table">
-      <thead>
-        <tr>
-          <th scope="col">{t("Şampiyon")}</th>
-          <th scope="col">{t("Sınıf")}</th>
-          <th scope="col">{t("Kaynak")}</th>
-          <th scope="col">{t("Menzil")}</th>
-          <th scope="col">{t("Zorluk")}</th>
-          <th scope="col">{t("Roller")}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {[...guesses].reverse().map((id) => {
-          const c = data.champions.get(id)!;
-          const mine = attributesOf(c, rolesOf(data, id));
-          const r = compareClassic(mine, target);
-          return (
-            <tr key={id}>
-              <th scope="row">
-                <img src={championIconUrl(data.version, c.id)} alt="" width={32} height={32} />
-                {c.name}
-              </th>
-              {cell(r.classes, mine.classes.map((x) => t(CLASS[x] ?? x)).join(", "))}
-              {cell(r.resource, mine.resource)}
-              {cell(r.range, rangeOf(c) === "ranged" ? t("Uzak") : t("Yakın"))}
-              {cell(r.difficulty, String(mine.difficulty), r.difficultyArrow)}
-              {cell(r.roles, mine.roles.map((role) => t(POSITIONS[role] ?? role)).join(", ") || "–")}
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    <div className="quiz__board" role="table" aria-label={t("Tahminlerin")}>
+      <div role="row" className="quiz__board-head">
+        <span role="columnheader">{t("Şampiyon")}</span>
+        {COLUMNS.map((c) => (
+          <span key={c} role="columnheader">
+            {t(c)}
+          </span>
+        ))}
+      </div>
+      {[...guesses].reverse().map((id) => {
+        const c = data.champions.get(id)!;
+        const mine = attributesOf(c, rolesOf(data, id));
+        const r = compareClassic(mine, target);
+        return (
+          <div role="row" key={id} className="quiz__board-row">
+            <div role="rowheader" className="quiz__tile quiz__tile--champion" data-match={id === answer.key ? "yes" : undefined}>
+              <img src={championIconUrl(data.version, c.id)} alt="" width={44} height={44} />
+              <span>{c.name}</span>
+            </div>
+            {tile(1, r.region, mine.region ? t(REGION_NAMES[mine.region]) : "–")}
+            {tile(2, r.resource, mine.resource)}
+            {tile(3, r.range, rangeOf(c) === "ranged" ? t("Uzak") : t("Yakın"))}
+            {tile(4, r.year, mine.year ? String(mine.year) : "–", r.yearArrow)}
+            {tile(5, r.roles, mine.roles.map((role) => t(POSITIONS[role] ?? role)).join(", ") || "–")}
+          </div>
+        );
+      })}
+    </div>
   );
 }
-
-const CLASS: Record<string, string> = { Assassin: "Suikastçı", Fighter: "Dövüşçü", Mage: "Büyücü", Marksman: "Nişancı", Support: "Destek", Tank: "Tank" };

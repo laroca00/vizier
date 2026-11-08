@@ -77,7 +77,7 @@ function Round({ play, version, pool, onNext }: { play: "daily" | "free"; versio
       </div>
 
       {over ? (
-        <div className="quiz__result" role="status">
+        <div className="quiz__result" role="status" data-solved={solved || undefined}>
           <img src={itemIconUrl(version, answer.id)} alt="" width={56} height={56} />
           <div>
             <p className="quiz__answer">{solved ? t("Bildin: {champion}", { champion: answer.name }) : t("Cevap: {champion}", { champion: answer.name })}</p>

@@ -1,4 +1,5 @@
 import type { Champion } from "../data/ddragon";
+import { CHAMPION_FACTS, type Region } from "./championFacts";
 
 // The champion riddle: one answer per mode per day, the same for every
 // player, or a random one in free play. Pure, so it is tested without a page.
@@ -31,10 +32,11 @@ export type Match = "yes" | "partial" | "no";
 export type Arrow = "higher" | "lower" | null;
 
 export type ClassicAttributes = {
-  classes: string[];
+  /** Null for champions newer than the facts table. */
+  region: Region | null;
   resource: string;
   range: "melee" | "ranged";
-  difficulty: number;
+  year: number | null;
   roles: string[];
 };
 
@@ -42,7 +44,8 @@ export type ClassicAttributes = {
 export const rangeOf = (champion: Pick<Champion, "attackRange">): "melee" | "ranged" => ((champion.attackRange ?? 0) >= 300 ? "ranged" : "melee");
 
 export function attributesOf(champion: Champion, roles: string[]): ClassicAttributes {
-  return { classes: champion.tags, resource: champion.partype || "Yok", range: rangeOf(champion), difficulty: champion.info.difficulty, roles };
+  const facts = CHAMPION_FACTS[champion.id];
+  return { region: facts?.region ?? null, resource: champion.partype || "Yok", range: rangeOf(champion), year: facts?.year ?? null, roles };
 }
 
 function overlap(a: string[], b: string[]): Match {
@@ -51,36 +54,49 @@ function overlap(a: string[], b: string[]): Match {
 }
 
 export type ClassicResult = {
-  classes: Match;
+  region: Match;
   resource: Match;
   range: Match;
-  difficulty: Match;
-  difficultyArrow: Arrow;
+  year: Match;
+  /** Which way the answer's release year lies from the guess's. */
+  yearArrow: Arrow;
   roles: Match;
 };
 
-/** How a guess compares to the answer, attribute by attribute; partial when lists share something. */
+/** How a guess compares to the answer, attribute by attribute; roles are partial when they share one. */
 export function compareClassic(guess: ClassicAttributes, answer: ClassicAttributes): ClassicResult {
+  const years = guess.year !== null && answer.year !== null;
   return {
-    classes: overlap(guess.classes, answer.classes),
+    region: guess.region !== null && guess.region === answer.region ? "yes" : "no",
     resource: guess.resource === answer.resource ? "yes" : "no",
     range: guess.range === answer.range ? "yes" : "no",
-    difficulty: guess.difficulty === answer.difficulty ? "yes" : Math.abs(guess.difficulty - answer.difficulty) <= 1 ? "partial" : "no",
-    difficultyArrow: guess.difficulty === answer.difficulty ? null : answer.difficulty > guess.difficulty ? "higher" : "lower",
+    year: years && guess.year === answer.year ? "yes" : "no",
+    yearArrow: !years || guess.year === answer.year ? null : answer.year! > guess.year! ? "higher" : "lower",
     roles: guess.roles.length === 0 && answer.roles.length === 0 ? "yes" : overlap(guess.roles, answer.roles),
   };
 }
 
-const SQUARES: Record<Match, string> = { yes: "🟩", partial: "🟨", no: "🟥" };
+const SQUARES: Record<Match, string> = { yes: "🟩", partial: "🟧", no: "🟥" };
 
 /** One line of squares per guess, oldest first, for sharing a classic result without the answer. */
 export function classicGrid(results: ClassicResult[]): string {
-  return results.map((r) => [r.classes, r.resource, r.range, r.difficulty, r.roles].map((m) => SQUARES[m]).join("")).join("\n");
+  return results.map((r) => [r.region, r.resource, r.range, r.year, r.roles].map((m) => SQUARES[m]).join("")).join("\n");
 }
 
-/** How far the splash is zoomed in after this many wrong guesses: a detail first, the whole picture last. */
-export function skinZoom(wrongGuesses: number): number {
-  const steps = [6, 4.5, 3.2, 2.2, 1.5, 1];
+/**
+ * How much of the splash shows after this many wrong guesses: a small round
+ * window first, the whole picture last. Splash art is only about 1200 pixels
+ * wide, so the zoom stays low to keep it sharp and the window does the hiding.
+ */
+export function skinView(wrongGuesses: number): { zoom: number; radius: number } {
+  const steps = [
+    { zoom: 1.6, radius: 9 },
+    { zoom: 1.5, radius: 14 },
+    { zoom: 1.35, radius: 21 },
+    { zoom: 1.2, radius: 31 },
+    { zoom: 1.1, radius: 46 },
+    { zoom: 1, radius: 100 },
+  ];
   return steps[Math.min(wrongGuesses, steps.length - 1)];
 }
 

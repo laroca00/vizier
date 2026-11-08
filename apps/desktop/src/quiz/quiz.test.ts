@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Champion } from "../data/ddragon";
 import { EMOJI_HINTS } from "./emoji";
-import { attributesOf, classicGrid, itemBlur, itemPool, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinZoom, streak, type QuizRecord } from "./logic";
+import { attributesOf, classicGrid, itemBlur, itemPool, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinView, streak, type QuizRecord } from "./logic";
 
 function champion(id: string, tags: string[], difficulty: number, partype: string, attackRange: number): Champion {
   return { id, key: id.length, name: id, magic: true, tank: false, tags, info: { attack: 5, defense: 5, magic: 5, difficulty }, partype, attackRange };
@@ -23,27 +23,37 @@ describe("champion riddle", () => {
     expect(dayKey(new Date(2026, 0, 5, 23, 59))).toBe("2026-01-05");
   });
 
-  it("compares classic attributes with partial matches", () => {
+  it("compares region, resource, range, release year and roles", () => {
+    // Lux: Demacia, 2010. Ahri: Ionia, 2011. Zed: Ionia, 2012.
     const result = compareClassic(attributesOf(LUX, ["MIDDLE", "UTILITY"]), attributesOf(AHRI, ["MIDDLE"]));
-    expect(result).toEqual({ classes: "partial", resource: "yes", range: "yes", difficulty: "yes", difficultyArrow: null, roles: "partial" });
+    expect(result).toEqual({ region: "no", resource: "yes", range: "yes", year: "no", yearArrow: "higher", roles: "partial" });
     const zed = compareClassic(attributesOf(ZED, ["MIDDLE"]), attributesOf(AHRI, ["MIDDLE"]));
-    expect(zed.classes).toBe("partial");
+    expect(zed.region).toBe("yes");
     expect(zed.range).toBe("no");
-    expect(zed.difficultyArrow).toBe("lower");
+    expect(zed.yearArrow).toBe("lower");
     expect(zed.roles).toBe("yes");
+  });
+
+  it("never matches a champion missing from the facts table", () => {
+    const fresh = { ...AHRI, id: "BrandNewChampion" };
+    const result = compareClassic(attributesOf(fresh, []), attributesOf(fresh, []));
+    expect(result.region).toBe("no");
+    expect(result.year).toBe("no");
+    expect(result.yearArrow).toBeNull();
   });
 
   it("shares a classic result as squares without naming the answer", () => {
     const grid = classicGrid([compareClassic(attributesOf(ZED, []), attributesOf(AHRI, [])), compareClassic(attributesOf(AHRI, []), attributesOf(AHRI, []))]);
-    expect(grid.split("\n")).toEqual(["🟨🟥🟥🟥🟩", "🟩🟩🟩🟩🟩"]);
+    expect(grid.split("\n")).toEqual(["🟩🟥🟥🟥🟩", "🟩🟩🟩🟩🟩"]);
     expect(grid).not.toContain("Ahri");
   });
 
   it("reads range and reveals hints step by step", () => {
     expect(rangeOf(ZED)).toBe("melee");
     expect(rangeOf(AHRI)).toBe("ranged");
-    expect(skinZoom(0)).toBeGreaterThan(skinZoom(3));
-    expect(skinZoom(99)).toBe(1);
+    expect(skinView(0).radius).toBeLessThan(skinView(3).radius);
+    expect(skinView(0).zoom).toBeLessThanOrEqual(1.6);
+    expect(skinView(99)).toEqual({ zoom: 1, radius: 100 });
     expect(emojisShown(0, 5)).toBe(1);
     expect(emojisShown(9, 5)).toBe(5);
   });

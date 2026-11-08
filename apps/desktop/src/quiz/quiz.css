@@ -107,15 +107,22 @@
   margin: 0;
 }
 
-.quiz__skin div {
-  width: min(480px, 100%);
+.quiz__skin-frame {
+  width: min(560px, 100%);
   aspect-ratio: 16 / 9;
+  overflow: hidden;
   border-radius: var(--radius-panel);
-  background-repeat: no-repeat;
+  background: var(--canvas);
   box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.quiz__skin-frame div {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
   transition:
     background-size var(--duration-slow) var(--ease),
-    background-position var(--duration-slow) var(--ease);
+    clip-path var(--duration-slow) var(--ease-enter);
 }
 
 .quiz__result {
@@ -153,55 +160,135 @@
   padding: 4px 10px 4px 4px;
   border-radius: 10px;
   font-size: var(--text-small);
-  background: rgb(210 65 47 / 0.14);
+  background: #a83226;
 }
 
 .quiz__guesses li[data-match="yes"] {
-  background: rgb(28 156 146 / 0.22);
+  background: #2e8b47;
 }
 
-.quiz__table {
-  border-collapse: separate;
-  border-spacing: 4px;
-  font-size: var(--text-small);
+/* Classic board: a row of tiles per guess. A new row's tiles turn over one
+   after another, the page's single moment of motion. */
+
+.quiz__board {
+  display: grid;
+  gap: 6px;
+  overflow-x: auto;
 }
 
-.quiz__table thead th {
-  font-weight: 350;
-  text-align: left;
+.quiz__board-head,
+.quiz__board-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.3fr) repeat(5, minmax(86px, 1fr));
+  gap: 6px;
+}
+
+.quiz__board-head span {
+  font-size: var(--text-meta);
   color: var(--glaze-muted);
+  text-align: center;
 }
 
-.quiz__table tbody th {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding-right: var(--space-3);
-  font-weight: var(--weight-medium);
+.quiz__board-head span:first-child {
   text-align: left;
 }
 
-.quiz__table td {
-  min-width: 90px;
-  padding: 8px 10px;
+.quiz__tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 64px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  text-align: center;
+  background: rgb(255 255 255 / 0.05);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transform-origin: 50% 50%;
+  animation: tile-turn var(--duration-standard) var(--ease-enter) both;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+
+.quiz__tile--champion {
+  display: flex;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  text-align: left;
+  animation: rise var(--duration-standard) var(--ease-enter) both;
+}
+
+.quiz__tile--champion img {
+  display: block;
   border-radius: 8px;
 }
 
-.quiz__table td[data-match="yes"] {
-  background: rgb(28 156 146 / 0.45);
+.quiz__tile--champion[data-match="yes"] {
+  box-shadow: inset 0 0 0 2px var(--gilt);
 }
 
-.quiz__table td[data-match="partial"] {
-  background: rgb(214 180 106 / 0.42);
+/* Green right, orange close, red wrong, as players expect from riddle games. */
+.quiz__tile[data-match="yes"] {
+  background: #2e8b47;
+  box-shadow: inset 0 0 0 1px #4fbf6b;
 }
 
-.quiz__table td[data-match="no"] {
-  background: rgb(210 65 47 / 0.3);
+.quiz__tile[data-match="partial"] {
+  background: #c46f12;
+  box-shadow: inset 0 0 0 1px #f0973a;
+}
+
+.quiz__tile[data-match="no"] {
+  background: #a83226;
+  box-shadow: inset 0 0 0 1px #d2523f;
+}
+
+.quiz__arrow {
+  position: absolute;
+  right: 6px;
+  bottom: 2px;
+  font-size: var(--text-lead);
+  opacity: 0.8;
+}
+
+@keyframes tile-turn {
+  from {
+    opacity: 0;
+    transform: perspective(400px) rotateX(-90deg);
+  }
+}
+
+.quiz__emoji span:not([data-hidden]) {
+  animation: tile-turn var(--duration-standard) var(--ease-enter) both;
+}
+
+.quiz__result {
+  animation: rise var(--duration-slow) var(--ease-enter) both;
+  --rise: 10px;
+}
+
+.quiz__result[data-solved] {
+  background: rgb(214 180 106 / 0.12);
+  box-shadow:
+    inset 0 0 0 1px rgb(214 180 106 / 0.6),
+    0 0 32px rgb(214 180 106 / 0.18);
+}
+
+.quiz__guesses li {
+  animation: rise var(--duration-standard) var(--ease-enter) both;
+  --rise: 6px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .quiz__ability img,
-  .quiz__skin div {
+  .quiz__skin-frame div {
     transition: none;
+  }
+
+  .quiz__tile,
+  .quiz__emoji span,
+  .quiz__result,
+  .quiz__guesses li {
+    animation: none;
   }
 }
