@@ -988,4 +988,8 @@ export const EN: Record<string, string> = {
   "İlk kan oranı": "First blood rate",
   "Bu eşleşme için yeterli zaman çizelgesi verisi yok.": "Not enough timeline data for this matchup.",
   "{games} maçın ortalaması; artı, senin lehine.": "Average of {games} games; plus means you are ahead.",
+  "Yetenek karşılaştırması": "Ability comparison",
+  "{first} → {max} sn": "{first} → {max} s",
+  "{opponent} ultisi ({name}) 6. seviyeden gelir ve ilk rankta {seconds} sn bekler; bitince daha rahat girersin.": "{opponent}'s ultimate ({name}) arrives at level 6 with a {seconds} s cooldown at rank 1; once it is spent you can play more freely.",
+  "{opponent} {key} ({name}) ilk rankta {seconds} sn bekler: bekleme sürerken takas yap.": "{opponent}'s {key} ({name}) has a {seconds} s cooldown at rank 1: trade while it is down.",
 };
