@@ -12,8 +12,9 @@ import { Scatter } from "../charts";
 import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
+import { Toggle } from "../ui/Fields";
 import { changeText, trendOf } from "./trend";
-import { sortTiers, type TierSort } from "./tierSort";
+import { isThin, sortTiers, THIN_GAMES, withoutThin, type TierSort } from "./tierSort";
 import "./TierListPage.css";
 
 // The most picked champions only; past this the plot turns into a pile of icons.
@@ -45,6 +46,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
   const [queue, setQueue] = useState(RANKED);
   const [position, setPosition] = useState("MIDDLE");
   const [sort, setSort] = useState<TierSort>("tier");
+  const [hideThin, setHideThin] = useState(false);
   const [state, retry] = useAsync(`${queue}:${position}`, () => load(queue, position));
   const ranked = queue === RANKED;
   const personal = usePersonal();
@@ -120,6 +122,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
                   { group: "C", label: "C–D" },
                 ]}
                 points={[...state.value.list.champions]
+                  .filter((c) => !isThin(c))
                   .sort((a, b) => b.pickRate - a.pickRate)
                   .slice(0, PLOTTED)
                   .flatMap((c) => {
@@ -149,68 +152,74 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
               />
             </section>
           )}
-          {state.value.list.champions.length === 0 ? (
-            <p className="coach__note">
-              {t("{what} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.", {
-                what: ranked ? t("Bu rol") : t(QUEUES.find((q) => q.id === queue)?.label ?? ""),
-              })}
-            </p>
-          ) : (
-            <table className="tiers__table">
-              <thead>
-                <tr>
-                  <th scope="col">Tier</th>
-                  <th scope="col">{t("Şampiyon")}</th>
-                  <th scope="col">{t(winLabel(queue))}</th>
-                  <th scope="col">{t("Değişim")}</th>
-                  <th scope="col">{t("Seçilme")}</th>
-                  {ranked && <th scope="col">{t("Yasaklanma")}</th>}
-                  <th scope="col">{t("Maç")}</th>
-                  {ranked && <th scope="col">{t("Eşleşme")}</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {sortTiers(state.value.list.champions, ranked ? "tier" : sort).map((c) => {
-                  const champion = state.value.champions.get(c.championId);
-                  const mine = poolIds.has(c.championId) ? "pool" : personal.favourites.includes(c.championId) ? "favourite" : undefined;
-                  return (
-                    <tr key={c.championId} data-mine={mine}>
-                      <td>
-                        <span className="tier" data-tier={c.tier}>
-                          {c.tier}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="tiers__champion"
-                          onClick={() => onOpenChampion(c.championId, ranked ? position : null, queue)}
-                        >
-                          {champion && <img src={championIconUrl(state.value.version, champion.id)} alt="" width={26} height={26} />}
-                          {champion?.name ?? c.championId}
-                          {mine && <span className="tiers__mine">{mine === "pool" ? t("Havuzunda") : t("Favori")}</span>}
-                        </button>
-                      </td>
-                      <td>{percent(c.winRate)}</td>
-                      <td className="tiers__change" data-trend={trendOf(c.winRateChange) ?? undefined}
-                        title={c.winRateChange == null ? t("Önceki yamada yeterli maç yok.") : t("Önceki yamaya göre {change} puan", { change: signed(c.winRateChange) })}
-                      >
-                        {changeText(c.winRateChange)}
-                      </td>
-                      <td>{percent(c.pickRate)}</td>
-                      {ranked && <td>{c.banRate == null ? "–" : percent(c.banRate)}</td>}
-                      <td>{c.games.toLocaleString()}</td>
-                      {ranked && (
-                        <td>
-                          <MatchupLink championId={c.championId} opponentId={null} position={position} />
-                        </td>
-                      )}
-                    </tr>
-                  );
+          <div className="tiers__list">
+            {state.value.list.champions.some(isThin) && (
+              <Toggle label={t("{games} maçtan azını gizle", { games: THIN_GAMES })} checked={hideThin} onChange={setHideThin} />
+            )}
+            {state.value.list.champions.length === 0 ? (
+              <p className="coach__note">
+                {t("{what} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.", {
+                  what: ranked ? t("Bu rol") : t(QUEUES.find((q) => q.id === queue)?.label ?? ""),
                 })}
-              </tbody>
-            </table>
-          )}
+              </p>
+            ) : (
+              <table className="tiers__table">
+                <thead>
+                  <tr>
+                    <th scope="col">Tier</th>
+                    <th scope="col">{t("Şampiyon")}</th>
+                    <th scope="col">{t(winLabel(queue))}</th>
+                    <th scope="col">{t("Değişim")}</th>
+                    <th scope="col">{t("Seçilme")}</th>
+                    {ranked && <th scope="col">{t("Yasaklanma")}</th>}
+                    <th scope="col">{t("Maç")}</th>
+                    {ranked && <th scope="col">{t("Eşleşme")}</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {withoutThin(sortTiers(state.value.list.champions, ranked ? "tier" : sort), hideThin).map((c) => {
+                    const champion = state.value.champions.get(c.championId);
+                    const mine = poolIds.has(c.championId) ? "pool" : personal.favourites.includes(c.championId) ? "favourite" : undefined;
+                    return (
+                      <tr key={c.championId} data-mine={mine} data-thin={isThin(c) || undefined}>
+                        <td>
+                          <span className="tier" data-tier={c.tier}>
+                            {c.tier}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="tiers__champion"
+                            onClick={() => onOpenChampion(c.championId, ranked ? position : null, queue)}
+                          >
+                            {champion && <img src={championIconUrl(state.value.version, champion.id)} alt="" width={26} height={26} />}
+                            {champion?.name ?? c.championId}
+                            {isThin(c) && <span className="tiers__thin">{t("az maç")}</span>}
+                            {mine && <span className="tiers__mine">{mine === "pool" ? t("Havuzunda") : t("Favori")}</span>}
+                          </button>
+                        </td>
+                        <td>{percent(c.winRate)}</td>
+                        <td className="tiers__change" data-trend={trendOf(c.winRateChange) ?? undefined}
+                          title={c.winRateChange == null ? t("Önceki yamada yeterli maç yok.") : t("Önceki yamaya göre {change} puan", { change: signed(c.winRateChange) })}
+                        >
+                          {changeText(c.winRateChange)}
+                        </td>
+                        <td>{percent(c.pickRate)}</td>
+                        {ranked && <td>{c.banRate == null ? "–" : percent(c.banRate)}</td>}
+                        <td>{c.games.toLocaleString()}</td>
+                        {ranked && (
+                          <td>
+                            <MatchupLink championId={c.championId} opponentId={null} position={position} />
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
 
           {state.value.bans && (
             <aside className="tiers__bans" aria-label={t("Yasak önerileri")}>

@@ -1,5 +1,14 @@
 import type { TierEntry } from "../api";
 
+/** The server ranks a champion from 30 games; the tier only means something from this many. */
+export const THIN_GAMES = 100;
+
+export const isThin = (entry: Pick<TierEntry, "games">) => entry.games < THIN_GAMES;
+
+export function withoutThin(list: TierEntry[], hide: boolean): TierEntry[] {
+  return hide ? list.filter((c) => !isThin(c)) : list;
+}
+
 export type TierSort = "tier" | "winRate" | "pickRate";
 
 /** Rows under this many games sort below the rest, so a lucky small sample never tops a win rate list. */

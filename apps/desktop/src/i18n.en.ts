@@ -254,6 +254,8 @@ export const EN: Record<string, string> = {
   "Tier listesi alınamadı.": "Couldn't load the tier list.",
   "{what} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.": "Not enough games for {what} yet. Vizier collects more every day.",
   "Bu rol": "this role",
+  "{games} maçtan azını gizle": "Hide rows under {games} games",
+  "az maç": "few games",
   "Önceki yamada yeterli maç yok.": "Not enough games on the previous patch.",
   "Önceki yamaya göre {change} puan": "{change} points since the previous patch",
   Değişim: "Change",
