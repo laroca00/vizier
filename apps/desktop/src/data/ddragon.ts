@@ -145,6 +145,15 @@ export function splashUrl(championId: string, skin = 0) {
   return `${BASE}/cdn/img/champion/splash/${championId}_${skin}.jpg`;
 }
 
+export function loadingUrl(championId: string, skin = 0) {
+  return `${BASE}/cdn/img/champion/loading/${championId}_${skin}.jpg`;
+}
+
+/** Data Dragon names the base skin "default". */
+export function skinLabel(skin: Skin, championName: string) {
+  return skin.name === "default" ? championName : skin.name;
+}
+
 export type Skin = { num: number; name: string };
 
 const skinsById = new Map<string, Promise<Skin[]>>();

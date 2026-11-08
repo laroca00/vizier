@@ -5,6 +5,7 @@ import { BuildSuggestion } from "../BuildSuggestion";
 import { Abilities, ChampionReference, ChampionTitle, StrengthsWeaknesses } from "../ChampionGuide";
 import { JournalNote, MatchupNotes } from "../Journal";
 import { MatchupLink } from "../matchupLink";
+import { SkinGallery } from "../SkinGallery";
 import { similarChampions } from "../similar";
 import { groupAllies, MIN_ALLY_GAMES } from "../synergy";
 import { championNoteKey, inPool, toggleFavouriteChampion, togglePool, usePersonal } from "../personal";
@@ -136,6 +137,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           <div>
             <StrengthsWeaknesses champion={champion} />
             <ChampionReference champion={champion} />
+            <SkinGallery champion={champion} />
             <JournalNote noteKey={championNoteKey(championId)} label={t("{champion} notların", { champion: champion.name })} />
             {data.status === "done" && <MatchupNotes championId={championId} champions={data.value.champions} version={version} />}
           </div>
