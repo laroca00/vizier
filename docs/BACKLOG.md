@@ -83,11 +83,11 @@ A dedicated place to study any matchup before the game, not only during champ se
 
 ## 6. Tier list improvements
 
-- [ ] 6.1 Honest tiers: tier from a score that shrinks win rate toward the role average by sample size (Bayesian or Wilson), so a champion with few games can't reach S on win rate alone. Same response fields, so old clients keep working. Tests with fixed counts.
-- [ ] 6.2 Win rate change versus the previous patch (fill `winRateChange` in the crawler when both patches have enough games) shown with an arrow and colour.
-- [ ] 6.3 Low-sample rows: lower the cut-off but mark rows under the threshold with a badge and a toggle to hide them.
-- [ ] 6.4 Sorting by every column, search by name, a "my pool only" filter, all kept in the route state.
-- [ ] 6.5 Meta movers card on the tier list and Home: biggest win rate and pick rate risers and fallers this patch.
+- [x] 6.1 Honest tiers: tier from a score that shrinks win rate toward the role average by sample size (Bayesian or Wilson), so a champion with few games can't reach S on win rate alone. Same response fields, so old clients keep working. Tests with fixed counts. (da33aa2; shrinks towards the role average with the existing 1500-game prior; same response fields)
+- [x] 6.2 Win rate change versus the previous patch (fill `winRateChange` in the crawler when both patches have enough games) shown with an arrow and colour. (da33aa2; the API already filled winRateChange; the page now shows an arrow and tooltip)
+- [x] 6.3 Low-sample rows: lower the cut-off but mark rows under the threshold with a badge and a toggle to hide them. (da33aa2; the API lists champions from 30 games, the app flags rows under 100)
+- [x] 6.4 Sorting by every column, search by name, a "my pool only" filter, all kept in the route state. (da33aa2; view state lives in the tiers route, so Back keeps it)
+- [x] 6.5 Meta movers card on the tier list and Home: biggest win rate and pick rate risers and fallers this patch. (da33aa2; adds pickRateChange to tier rows; the card sits on Home and under the ranked tier list)
 - [ ] 6.6 Tier list by rank band (Emerald, Diamond, Master+): add region and tier to the crawler's counts (new migration, backward compatible) and a query parameter; old clients keep the pooled list.
 - [ ] 6.7 "How tiers are made" popover with the real rule and the game count.
 
