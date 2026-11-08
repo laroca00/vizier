@@ -8,7 +8,22 @@ export class ApiError extends Error {
   }
 }
 
-async function get<T>(path: string, init?: RequestInit): Promise<T> {
+// Several champ select panels read the same build, counters and role data; one
+// request each per few minutes is enough, the Worker publishes every 4 hours.
+const FRESH_FOR = 5 * 60_000;
+const recent = new Map<string, { at: number; value: Promise<unknown> }>();
+
+function get<T>(path: string, init?: RequestInit): Promise<T> {
+  if (init) return request<T>(path, init);
+  const hit = recent.get(path);
+  if (hit && Date.now() - hit.at < FRESH_FOR) return hit.value as Promise<T>;
+  const value = request<T>(path);
+  recent.set(path, { at: Date.now(), value });
+  value.catch(() => recent.delete(path));
+  return value;
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, init);
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as { error?: string } | null;

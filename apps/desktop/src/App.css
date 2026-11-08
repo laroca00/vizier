@@ -206,14 +206,6 @@
   margin-top: 24px;
 }
 
-.draft__me {
-  --delay: 140ms;
-}
-
-.draft__teams {
-  --delay: 200ms;
-}
-
 .draft__heading {
   margin: 0 0 10px;
   font-size: 15px;

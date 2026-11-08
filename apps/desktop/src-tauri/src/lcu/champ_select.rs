@@ -15,7 +15,19 @@ struct RawSession {
     their_team: Vec<RawMember>,
     #[serde(default)]
     bans: RawBans,
+    #[serde(default)]
+    actions: Vec<Vec<RawAction>>,
     timer: RawTimer,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawAction {
+    actor_cell_id: i64,
+    #[serde(default, rename = "type")]
+    kind: String,
+    #[serde(default)]
+    is_in_progress: bool,
 }
 
 #[derive(Deserialize)]
@@ -65,6 +77,16 @@ pub struct Member {
     pub is_local: bool,
 }
 
+/// Whose move the draft is waiting for. Actions only carry cell ids, so
+/// nothing here names a player.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Turn {
+    /// `ban` or `pick`.
+    pub kind: String,
+    pub mine: bool,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChampSelect {
@@ -72,6 +94,8 @@ pub struct ChampSelect {
     pub their_team: Vec<Member>,
     pub bans: Vec<i64>,
     pub phase: String,
+    /// None during planning, finalization and between turns.
+    pub turn: Option<Turn>,
     /// Epoch milliseconds; the client and Vizier share the machine clock.
     pub phase_ends_at: i64,
 }
@@ -87,9 +111,23 @@ fn member(raw: RawMember, local_cell: i64) -> Member {
     }
 }
 
+fn turn(actions: &[Vec<RawAction>], local_cell: i64) -> Option<Turn> {
+    let current: Vec<&RawAction> = actions
+        .iter()
+        .flatten()
+        .filter(|a| a.is_in_progress && (a.kind == "ban" || a.kind == "pick"))
+        .collect();
+    let first = current.first()?;
+    Some(Turn {
+        kind: first.kind.clone(),
+        mine: current.iter().any(|a| a.actor_cell_id == local_cell),
+    })
+}
+
 pub fn parse(value: serde_json::Value) -> Option<ChampSelect> {
     let raw: RawSession = serde_json::from_value(value).ok()?;
     let local = raw.local_player_cell_id;
+    let turn = turn(&raw.actions, local);
     Some(ChampSelect {
         my_team: raw.my_team.into_iter().map(|m| member(m, local)).collect(),
         their_team: raw.their_team.into_iter().map(|m| member(m, local)).collect(),
@@ -101,6 +139,7 @@ pub fn parse(value: serde_json::Value) -> Option<ChampSelect> {
             .filter(|&id| id > 0)
             .collect(),
         phase: raw.timer.phase,
+        turn,
         phase_ends_at: raw.timer.internal_now_in_epoch_ms + raw.timer.adjusted_time_left_in_phase,
     })
 }
@@ -120,6 +159,10 @@ mod tests {
             ],
             "theirTeam": [{ "cellId": 7, "championId": 0 }],
             "bans": { "myTeamBans": [238, -1], "theirTeamBans": [157] },
+            "actions": [
+                [{ "actorCellId": 2, "type": "ban", "isInProgress": false, "completed": true }],
+                [{ "actorCellId": 7, "type": "pick", "isInProgress": true }, { "actorCellId": 2, "type": "pick", "isInProgress": true }]
+            ],
             "timer": { "phase": "BAN_PICK", "adjustedTimeLeftInPhase": 25000, "internalNowInEpochMs": 1000 }
         });
         let parsed = parse(session).unwrap();
@@ -128,7 +171,18 @@ mod tests {
         assert!(!parsed.my_team[1].is_local);
         assert_eq!(parsed.bans, vec![238, 157]);
         assert_eq!(parsed.phase_ends_at, 26000);
+        assert_eq!(parsed.turn, Some(Turn { kind: "pick".into(), mine: true }));
         let json = serde_json::to_string(&parsed).unwrap();
         assert!(!json.contains("Someone") && !json.contains("secret"));
+    }
+
+    #[test]
+    fn no_turn_outside_bans_and_picks() {
+        let session = serde_json::json!({
+            "localPlayerCellId": 0,
+            "actions": [[{ "actorCellId": 0, "type": "ten_bans_reveal", "isInProgress": true }]],
+            "timer": { "phase": "PLANNING", "adjustedTimeLeftInPhase": 0, "internalNowInEpochMs": 0 }
+        });
+        assert_eq!(parse(session).unwrap().turn, None);
     }
 }

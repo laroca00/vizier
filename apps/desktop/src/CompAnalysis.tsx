@@ -1,16 +1,16 @@
 import type { Champion } from "./data/ddragon";
-import { adviceAgainst, analyzeComp, PHASE_TEXT, WEAKNESS_TEXT, type CompReport } from "./data/traits";
+import { adviceAgainst, analyzeComp, compDimensions, DIMENSION_NAMES, dimensionText, PHASE_TEXT, WEAKNESS_TEXT, type CompReport } from "./data/traits";
 import { formatPercent, useLang, useT } from "./i18n";
 
-/** AP/AD split, what the team brings to a fight, and its gaps. */
-export function CompSummary({ report, label }: { report: CompReport; label: string }) {
+const PIPS = [0, 1, 2];
+
+/** AP/AD split, frontline to teamfight with who brings each, and the team's gaps. */
+export function CompSummary({ team, report, label }: { team: Champion[]; report: CompReport; label: string }) {
   const t = useT();
   const lang = useLang();
   if (report.champions === 0) return null;
-  const traits = [
-    { name: "Tank", count: report.tanks },
+  const extras = [
     { name: "Savaş başlatma", count: report.engage },
-    { name: "Uzaktan yıpratma", count: report.poke },
     { name: "Koruma", count: report.peel },
     { name: "Geri çekilme", count: report.disengage },
   ];
@@ -24,8 +24,21 @@ export function CompSummary({ report, label }: { report: CompReport; label: stri
         <span>{t("Büyü {rate}", { rate: formatPercent(report.magic, lang) })}</span>
         <span>{t("Fiziksel {rate}", { rate: formatPercent(1 - report.magic, lang) })}</span>
       </p>
+      <ul className="comp__dims">
+        {compDimensions(team).map((d) => (
+          <li key={d.dimension} data-level={d.level}>
+            <span className="comp__dim-name">{t(DIMENSION_NAMES[d.dimension])}</span>
+            <span className="comp__pips" role="img" aria-label={t("{count} şampiyon", { count: d.names.length })}>
+              {PIPS.map((i) => (
+                <span key={i} data-on={i < d.names.length || undefined} />
+              ))}
+            </span>
+            <span className="comp__dim-text">{t(dimensionText(d), { names: d.names.join(", ") })}</span>
+          </li>
+        ))}
+      </ul>
       <ul className="comp__traits">
-        {traits.map((trait) => (
+        {extras.map((trait) => (
           <li key={trait.name} data-strong={trait.count >= 2 || undefined} data-none={trait.count === 0 || undefined}>
             {t(trait.name)} {trait.count}
           </li>
@@ -45,21 +58,23 @@ export function CompSummary({ report, label }: { report: CompReport; label: stri
 
 type Props = { allies: number[]; enemies: number[]; champions: Map<number, Champion> };
 
-/** Both drafts side by side plus general plans against the enemy one. */
+/** Both drafts one after the other plus general plans against the enemy one. */
 export function CompAnalysis({ allies, enemies, champions }: Props) {
   const t = useT();
   const pick = (ids: number[]) => ids.map((id) => champions.get(id)).filter((c): c is Champion => c !== undefined);
-  const ours = analyzeComp(pick(allies));
-  const theirs = analyzeComp(pick(enemies));
+  const ourTeam = pick(allies);
+  const theirTeam = pick(enemies);
+  const ours = analyzeComp(ourTeam);
+  const theirs = analyzeComp(theirTeam);
   const advice = adviceAgainst(theirs, ours);
   return (
     <section aria-label={t("Takım kompozisyonu")}>
       <h2 className="draft__heading">{t("Takımının kompozisyonu")}</h2>
-      {ours.champions === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary report={ours} label={t("Takımın")} />}
+      {ours.champions === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary team={ourTeam} report={ours} label={t("Takımın")} />}
       {theirs.champions > 0 && (
         <>
           <h2 className="draft__heading">{t("Rakibin kompozisyonu")}</h2>
-          <CompSummary report={theirs} label={t("Rakip takım")} />
+          <CompSummary team={theirTeam} report={theirs} label={t("Rakip takım")} />
         </>
       )}
       {advice.length > 0 && (

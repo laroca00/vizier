@@ -2,6 +2,7 @@ import { formatPercent, useLang, useT, type Lang } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getBuild, type Build, type BuildStyle, type Foe, type Picks } from "./api";
+import { ProMatchups } from "./draft/ProMatchups";
 import { BuildCompare } from "./BuildCompare";
 import { readChosenStyle, saveChosenStyle, STYLE_NAMES } from "./buildStyles";
 import {
@@ -23,12 +24,15 @@ import { SkillGrid } from "./SkillGrid";
 import { useAsync } from "./useAsync";
 import { Button } from "./ui/Button";
 import { ErrorState } from "./ui/States";
+import { useToast } from "./ui/Toast";
 
 const FLASH = 4;
 const SHOWN_ITEMS = 6;
 
 type Data = {
   build: Build | null;
+  /** The build against the lane opponent; its `vs` is null when that matchup has too few games. */
+  versus: Build | null;
   version: string;
   runes: Map<number, RuneStyle>;
   spells: Map<number, SummonerSpell>;
@@ -37,15 +41,16 @@ type Data = {
 };
 
 async function load(championId: number, position: string | null, vs: number | null, queue: number): Promise<Data> {
-  const [build, version, runeStyles, spells, itemList, championList] = await Promise.all([
-    getBuild(championId, position, vs, queue),
+  const [build, versus, version, runeStyles, spells, itemList, championList] = await Promise.all([
+    getBuild(championId, position, null, queue),
+    vs ? getBuild(championId, position, vs, queue) : null,
     latestVersion(),
     runes(),
     summonerSpells(),
     items(),
     champions(),
   ]);
-  return { build, version, runes: runeStyles, spells, items: itemList, champions: championList };
+  return { build, versus, version, runes: runeStyles, spells, items: itemList, champions: championList };
 }
 
 const FOE_LABELS: Record<Foe, string> = {
@@ -82,15 +87,19 @@ type ImportState =
   | { status: "error"; message: string }
   | { status: "choose"; pages: { id: number; name: string }[] };
 
+type Tab = "general" | "vs" | BuildStyle;
+
 type Props = {
   championId: number;
   championName: string;
   position: string | null;
   currentSpells: [number, number];
-  /** Auto-import waits for the pick to be locked. */
+  /** In champ select, imports wait for the pick to be locked; a hovered champion is a preview. */
   locked: boolean;
-  /** Lane opponent the player picked, if any. */
+  /** Lane opponent, picked by the player or guessed. */
   vs: number | null;
+  /** Pro games in this role, closest matchup first, under the win rate. */
+  showPros?: boolean;
   /** The client only takes summoner spells during champ select. */
   inDraft?: boolean;
   queue?: number;
@@ -100,15 +109,24 @@ type Props = {
 
 const SKILL_KEYS = ["", "Q", "W", "E", "R"];
 
-export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs, inDraft = true, queue = 420, enemies = [] }: Props) {
+export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs, showPros = false, inDraft = true, queue = 420, enemies = [] }: Props) {
   const percent = percentIn(useLang());
   const t = useT();
+  const toast = useToast();
   const [state, retry] = useAsync(`${queue}:${championId}:${position}:${vs}`, () => load(championId, position, vs, queue));
   const [runeImport, setRuneImport] = useState<ImportState>({ status: "idle" });
   const [spellImport, setSpellImport] = useState<ImportState>({ status: "idle" });
   const [itemImport, setItemImport] = useState<ImportState>({ status: "idle" });
-  const [chosenStyle, setChosenStyle] = useState<BuildStyle | null>(() => readChosenStyle(championId, position));
-  useEffect(() => setChosenStyle(readChosenStyle(championId, position)), [championId, position]);
+  const [chosenTab, setChosenTab] = useState<Tab | null>(null);
+  // Results that land after the champion changed belong to the old pick.
+  const currentChampion = useRef(championId);
+  currentChampion.current = championId;
+  useEffect(() => {
+    setChosenTab(null);
+    setRuneImport({ status: "idle" });
+    setSpellImport({ status: "idle" });
+    setItemImport({ status: "idle" });
+  }, [championId, position, vs]);
   const settings = useSettings();
   const autoImported = useRef<number | null>(null);
   const actions = useRef<{ runes?: () => void; spells?: () => void; items?: () => void }>({});
@@ -138,17 +156,26 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
     return <p className="build__note">{t("{champion} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.", { champion: championName })}</p>;
   }
 
-  const variants = build.variants ?? [];
   // One style alone is the overall build under another name.
-  const variant = variants.length >= 2 ? (variants.find((v) => v.style === chosenStyle) ?? variants[0]) : null;
-  const picks: Picks = variant ?? build;
+  const variants = build.variants && build.variants.length >= 2 ? build.variants : [];
+  const versus = state.value.versus && state.value.versus.vs !== null && state.value.versus.runes.length > 0 ? state.value.versus : null;
+  const opponentName = vs ? (state.value.champions.get(vs)?.name ?? "") : "";
+  const saved = readChosenStyle(championId, position);
+  const savedVariant = variants.find((v) => v.style === saved);
+  const defaultTab: Tab = versus ? "vs" : (savedVariant?.style ?? "general");
+  const isValid = (choice: Tab | null): choice is Tab =>
+    choice === "general" || (choice === "vs" && versus !== null) || variants.some((v) => v.style === choice);
+  const tab: Tab = isValid(chosenTab) ? chosenTab : defaultTab;
+  const variant = variants.find((v) => v.style === tab) ?? null;
+  const shown = tab === "vs" && versus ? versus : (variant ?? build);
+  const picks: Picks = shown;
   const setName = variant ? `Vizier ${championName} ${t(STYLE_NAMES[variant.style])}` : `Vizier ${championName}`;
   const foes = foesOf(enemies, state.value.champions);
   const situational = [...(build.situational ?? [])].sort((a, b) => Number(foes.has(b.vs)) - Number(foes.has(a.vs)));
 
-  function chooseStyle(style: BuildStyle) {
-    setChosenStyle(style);
-    saveChosenStyle(championId, position, style);
+  function chooseTab(next: Tab) {
+    setChosenTab(next);
+    if (next !== "general" && next !== "vs") saveChosenStyle(championId, position, next);
     setRuneImport({ status: "idle" });
     setSpellImport({ status: "idle" });
     setItemImport({ status: "idle" });
@@ -161,9 +188,18 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   const spells = picks.spells[0];
   const shownItems = picks.items.filter((i) => state.value.items.get(i.id)?.complete).slice(0, SHOWN_ITEMS);
 
+  const stale = (forChampion: number) => currentChampion.current !== forChampion;
+
+  function report(set: (next: ImportState) => void, forChampion: number, result: { status: "done" | "error"; message: string }) {
+    if (stale(forChampion)) return;
+    set(result);
+    toast(result.status === "done" ? "success" : "error", result.message);
+  }
+
   async function importRunes(replacePageId?: number, index = pendingPage.current) {
     pendingPage.current = index;
     const chosen = picks.runes[index] ?? page;
+    const forChampion = championId;
     setRuneImport({ status: "working" });
     try {
       const result = await invoke<{ status: "imported" } | { status: "needsSlot"; pages: { id: number; name: string }[] }>(
@@ -178,27 +214,30 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           replacePageId: replacePageId ?? null,
         },
       );
-      setRuneImport(
-        result.status === "imported"
-          ? { status: "done", message: t("Rünler aktarıldı") }
-          : { status: "choose", pages: result.pages },
-      );
+      if (result.status === "imported") {
+        report(setRuneImport, forChampion, { status: "done", message: t("{champion} rünleri aktarıldı", { champion: championName }) });
+      } else if (!stale(forChampion)) {
+        setRuneImport({ status: "choose", pages: result.pages });
+        toast("info", t("Boş rün sayfası yok. Hangi sayfanın yerine yazılacağını build kartında seç."));
+      }
     } catch {
-      setRuneImport({ status: "error", message: t("Rünler aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene.") });
+      report(setRuneImport, forChampion, { status: "error", message: t("Rünler aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene.") });
     }
   }
 
   async function importSpells() {
+    const forChampion = championId;
     setSpellImport({ status: "working" });
     try {
       await invoke("import_spells", { spells: orderSpells(spells.ids, currentSpells) });
-      setSpellImport({ status: "done", message: t("Büyüler aktarıldı") });
+      report(setSpellImport, forChampion, { status: "done", message: t("{champion} büyüleri aktarıldı", { champion: championName }) });
     } catch {
-      setSpellImport({ status: "error", message: t("Büyüler aktarılamadı. Seçim kilitlendikten sonra değiştirilemez.") });
+      report(setSpellImport, forChampion, { status: "error", message: t("Büyüler aktarılamadı. Oyun başlamadan tekrar dene.") });
     }
   }
 
   async function importItems() {
+    const forChampion = championId;
     setItemImport({ status: "working" });
     try {
       await invoke("import_item_set", {
@@ -211,32 +250,47 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           ...situational.map((s) => ({ title: t(FOE_LABELS[s.vs]), items: s.items.map((i) => i.id) })),
         ],
       });
-      setItemImport({ status: "done", message: t("Eşya seti aktarıldı") });
+      report(setItemImport, forChampion, { status: "done", message: t("{champion} eşya seti aktarıldı", { champion: championName }) });
     } catch {
-      setItemImport({ status: "error", message: t("Eşya seti aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene.") });
+      report(setItemImport, forChampion, { status: "error", message: t("Eşya seti aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene.") });
     }
   }
 
   actions.current = { runes: () => importRunes(undefined, 0), spells: spells ? importSpells : undefined, items: shownItems.length ? importItems : undefined };
-  const canImport = isTauri();
+  const preview = inDraft && !locked;
+  const canImport = isTauri() && !preview;
 
   return (
     <div className="build">
-      <p className="build__summary">
-        {t("Yama {patch}, {games} maç, kazanma oranı {rate}", { patch: build.patches[0], games: build.games, rate: percent(build.winRate) })}
-        {vs && build.vs === null ? `. ${t("Bu eşleşme için yeterli maç yok; genel öneri gösteriliyor")}` : ""}
-      </p>
-
-      {variant && (
+      {(variants.length > 0 || versus) && (
         <div className="build__styles" role="group" aria-label={t("Build türü")}>
+          <button type="button" className="build__style-tab" aria-pressed={tab === "general"} onClick={() => chooseTab("general")}>
+            <span className="build__style-name">{t("Genel")}</span>
+            <span className="build__style-meta">{t("{games} maç, {rate} kazanma", { games: build.games, rate: percent(build.winRate) })}</span>
+          </button>
           {variants.map((v) => (
-            <button key={v.style} type="button" className="build__style-tab" aria-pressed={v === variant} onClick={() => chooseStyle(v.style)}>
+            <button key={v.style} type="button" className="build__style-tab" aria-pressed={tab === v.style} onClick={() => chooseTab(v.style)}>
               <span className="build__style-name">{t(STYLE_NAMES[v.style])}</span>
               <span className="build__style-meta">{t("{share} maç, {rate} kazanma", { share: percent(v.share), rate: percent(v.winRate) })}</span>
             </button>
           ))}
+          {versus && (
+            <button type="button" className="build__style-tab" aria-pressed={tab === "vs"} onClick={() => chooseTab("vs")}>
+              <span className="build__style-name">{t("{opponent} karşısında", { opponent: opponentName })}</span>
+              <span className="build__style-meta">{t("{games} maç, {rate} kazanma", { games: versus.games, rate: percent(versus.winRate) })}</span>
+            </button>
+          )}
         </div>
       )}
+
+      <p className="build__summary">
+        {t("Yama {patch}, {games} maç, kazanma oranı {rate}", { patch: build.patches[0], games: shown.games, rate: percent(shown.winRate) })}
+        {vs && !versus ? `. ${t("{opponent} eşleşmesi için yeterli maç yok; genel build gösteriliyor", { opponent: opponentName })}` : ""}
+      </p>
+
+      {showPros && <ProMatchups championId={championId} position={position} opponentId={vs} />}
+
+      {preview && <p className="build__note build__preview">{t("Önizleme. Şampiyonu kilitleyince aktarabilirsin.")}</p>}
 
       {picks.skills && (
         <section className="build__block" aria-label={t("Yetenek sırası")}>
@@ -274,6 +328,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           disabled={!canImport}
           onImport={() => importRunes(undefined, 0)}
           onChoose={(id) => importRunes(id)}
+          onCancel={() => setRuneImport({ status: "idle" })}
         />
         {picks.runes.length > 1 && (
           <div className="build__alternatives">
@@ -341,7 +396,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
                   key={item.id}
                   src={itemIconUrl(version, item.id)}
                   alt={info?.name ?? ""}
-                  title={t("{item}: {share} maçta alındı", { item: info?.name ?? "", share: percent(item.games / (variant ?? build).games) })}
+                  title={t("{item}: {share} maçta alındı", { item: info?.name ?? "", share: percent(item.games / shown.games) })}
                   width={30}
                   height={30}
                 />
@@ -389,24 +444,31 @@ function ImportControls({
   disabled,
   onImport,
   onChoose,
+  onCancel,
 }: {
   label: string;
   state: ImportState;
   disabled: boolean;
   onImport: () => void;
   onChoose?: (pageId: number) => void;
+  onCancel?: () => void;
 }) {
   const t = useT();
   if (state.status === "choose" && onChoose) {
     return (
       <div className="build__choose" role="group" aria-label={t("Üzerine yazılacak rün sayfası")}>
-        <p className="build__note">{t("Boş rün sayfası yok. Hangisinin yerine yazılsın?")}</p>
+        <p className="build__note">{t("Boş rün sayfası yok. Seçtiğin sayfadaki rünler silinip yerine bu sayfa yazılır.")}</p>
         <div className="build__pages">
           {state.pages.map((p) => (
             <Button key={p.id} onClick={() => onChoose(p.id)}>
-              {p.name}
+              {t("{page} yerine yaz", { page: p.name })}
             </Button>
           ))}
+          {onCancel && (
+            <Button variant="ghost" onClick={onCancel}>
+              {t("Vazgeç")}
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -414,7 +476,7 @@ function ImportControls({
   return (
     <div className="build__action">
       <Button variant="primary" disabled={disabled} busy={state.status === "working"} onClick={onImport}>
-        {label}
+        {state.status === "error" ? t("Tekrar dene") : label}
       </Button>
       {(state.status === "done" || state.status === "error") && (
         <span className="build__feedback" data-status={state.status} role="status">

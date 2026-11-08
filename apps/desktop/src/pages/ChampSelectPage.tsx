@@ -1,11 +1,8 @@
-import { useLang, useT } from "../i18n";
 import { useEffect, useState } from "react";
 import { getBans, getChampion, getCounters } from "../api";
-import { CompAnalysis } from "../CompAnalysis";
+import { BuildSuggestion } from "../BuildSuggestion";
 import { EnemyTips } from "../ChampionGuide";
-import { JournalNote } from "../Journal";
-import { championNoteKey, matchupNoteKey, usePersonal } from "../personal";
-import { formatPercent } from "../i18n";
+import { CompAnalysis } from "../CompAnalysis";
 import {
   championIconUrl,
   champions,
@@ -15,12 +12,19 @@ import {
   type Champion,
   type SummonerSpell,
 } from "../data/ddragon";
-import { BuildSuggestion } from "../BuildSuggestion";
-import { ProBuildList } from "../ProBuildList";
+import { autoView, shownChampion, type DraftView } from "../draft/logic";
+import { MatchupGuide } from "../draft/MatchupGuide";
+import { PickSuggestions } from "../draft/PickSuggestions";
+import { useOpponent, type Opponent } from "../draft/useOpponent";
+import "../draft/draft.css";
+import { formatPercent, useLang, useT } from "../i18n";
+import { JournalNote } from "../Journal";
 import { draftPhaseLabel, positionLabel } from "../labels";
 import type { ChampSelect, DraftMember } from "../lcu";
+import { championNoteKey, matchupNoteKey, usePersonal } from "../personal";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { useSplash } from "../ui/Splash";
+import { Tabs } from "../ui/Tabs";
 import { useAsync } from "../useAsync";
 
 type StaticData = { version: string; champions: Map<number, Champion>; spells: Map<number, SummonerSpell> };
@@ -39,31 +43,62 @@ function useSecondsLeft(endsAt: number) {
   return Math.max(0, Math.ceil((endsAt - now) / 1000));
 }
 
-function shownChampion(member: DraftMember) {
-  return member.championId || member.pickIntent;
-}
-
 export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const t = useT();
   const lang = useLang();
   const [data] = useAsync("static", loadStatic);
   const [bans] = useAsync("bans", getBans);
-  // Enemy roles are hidden in ranked champ select, so the player names their lane opponent.
-  const [opponent, setOpponent] = useState<number | null>(null);
-  const enemyPicks = draft.theirTeam.map((m) => m.championId).filter((id) => id > 0);
-  const vs = opponent !== null && enemyPicks.includes(opponent) ? opponent : null;
   const seconds = useSecondsLeft(draft.phaseEndsAt);
   const me = draft.myTeam.find((m) => m.isLocal);
   const ready = data.status === "done" ? data.value : null;
-  useSplash(me ? shownChampion(me) : null);
+  const myChampion = me ? shownChampion(me) : 0;
+  const locked = !!me && me.championId !== 0;
+  const role = me?.position ? me.position.toUpperCase() : null;
+  useSplash(myChampion || null);
+
+  // The view follows the draft; a tab the player picks holds until the next turn.
+  const auto = autoView(draft);
+  const [manual, setManual] = useState<{ view: DraftView; moment: string } | null>(null);
+  const view = manual && manual.moment === auto.moment ? manual.view : auto.view;
+
+  // Enemy roles are hidden in ranked, so Vizier guesses the lane opponent and the player can correct it.
+  const enemyPicks = draft.theirTeam.map((m) => m.championId).filter((id) => id > 0);
+  const [chosenOpponent, setChosenOpponent] = useState<number | null>(null);
+  const opponent = useOpponent(enemyPicks, role, chosenOpponent);
+  const vs = opponent?.championId ?? null;
+
   const allyIds = draft.myTeam.map(shownChampion).filter((id) => id > 0);
+  const allies = ready
+    ? draft.myTeam
+        .filter((m) => !m.isLocal)
+        .map((m) => ready.champions.get(shownChampion(m)))
+        .filter((c): c is Champion => c !== undefined)
+    : [];
+  const unavailable = new Set([...draft.bans, ...draft.myTeam.filter((m) => !m.isLocal).map((m) => m.championId), ...enemyPicks]);
+
+  function chooseOpponent(id: number) {
+    // Pressing the current choice again hands the lane back to the guess.
+    setChosenOpponent(opponent && !opponent.guessed && opponent.championId === id ? null : id);
+  }
 
   return (
     <LiquidGlass className="panel draft" radius={28} strength={2.5} scroll>
       <header className="draft__header enter">
         <h1 className="draft__title">{t("Şampiyon seçimi")}</h1>
+        <Tabs
+          items={[
+            { id: "draft" as DraftView, label: t("Draft") },
+            { id: "build" as DraftView, label: t("Build") },
+          ]}
+          value={view}
+          onChange={(next) => setManual({ view: next, moment: auto.moment })}
+          label={t("Görünüm")}
+          size="small"
+          className="draft__tabs"
+        />
         <p className="draft__phase">
           {draftPhaseLabel(draft.phase, lang)}
+          {draft.turn?.mine && <span className="draft__turn">{draft.turn.kind === "ban" ? t("Yasak sırası sende") : t("Seçim sırası sende")}</span>}
           <span className="draft__timer" aria-label={t("{seconds} saniye kaldı", { seconds })}>
             {seconds}
           </span>
@@ -71,90 +106,143 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
       </header>
 
       <div className="draft__body">
-        <section className="draft__me enter" aria-label={t("Senin seçimin")}>
-          {me && <MyPick member={me} data={ready} />}
-          {me && ready && shownChampion(me) > 0 && (
+        <section key={view} className="draft__main draft__view" aria-label={view === "draft" ? t("Draft") : t("Build")}>
+          {view === "draft" ? (
             <>
-              <h2 className="draft__heading draft__heading--spaced">{t("Vizier önerisi")}</h2>
-              <BuildSuggestion
-                championId={shownChampion(me)}
-                championName={ready.champions.get(shownChampion(me))?.name ?? ""}
-                position={me.position || null}
-                currentSpells={me.spells as [number, number]}
-                locked={me.championId !== 0}
-                vs={vs}
-                enemies={enemyPicks}
-              />
-              <DraftMatchups championId={shownChampion(me)} position={me.position} data={ready} />
-              <JournalNote noteKey={championNoteKey(shownChampion(me))} label={t("{champion} notların", { champion: ready.champions.get(shownChampion(me))?.name ?? "" })} />
-              {vs && (
-                <JournalNote
-                  noteKey={matchupNoteKey(shownChampion(me), vs)}
-                  label={t("{opponent} eşleşmesi notların", { opponent: ready.champions.get(vs)?.name ?? "" })}
-                  placeholder={t("Bu rakibe karşı ne işe yaradı?")}
-                />
+              {role && !locked && ready && (
+                <>
+                  <h2 className="draft__heading">{t("{role} için öneriler", { role: positionLabel(role, lang) ?? "" })}</h2>
+                  <PickSuggestions
+                    role={role}
+                    opponentId={vs}
+                    allies={allies}
+                    unavailable={unavailable}
+                    champions={ready.champions}
+                    version={ready.version}
+                  />
+                </>
               )}
-              <h2 className="draft__heading draft__heading--spaced">{t("Pro'lar")}</h2>
-              <ProBuildList
-                filter={{ championId: shownChampion(me), position: me.position ? me.position.toUpperCase() : undefined, limit: 3 }}
-                compact
-                emptyText={t("Worlds oyuncularının bu şampiyonla son maçı yok.")}
-              />
+              {draft.phase !== "FINALIZATION" && bans.status === "done" && bans.value.champions.length > 0 && (
+                <>
+                  <h2 className="draft__heading">{t("Yasak önerisi")}</h2>
+                  <ChampionStrip ids={bans.value.champions.map((c) => c.championId).filter((id) => !draft.bans.includes(id))} data={ready} empty={t("Öneri yok")} />
+                </>
+              )}
+              {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} />}
+              {ready && me && <PoolStrip position={me.position} data={ready} />}
             </>
-          )}
-        </section>
-
-        <section className="draft__teams enter" aria-label={t("Takımlar")}>
-          <h2 className="draft__heading">{t("Takımın")}</h2>
-          <ul className="team">
-            {draft.myTeam.map((member) => (
-              <TeamRow key={member.cellId} member={member} data={ready} />
-            ))}
-          </ul>
-
-          <h2 className="draft__heading">{t("Rakip takım")}</h2>
-          {enemyPicks.length === 0 ? (
-            <p className="draft__empty">{t("Henüz seçim yok")}</p>
+          ) : me && ready && myChampion > 0 ? (
+            <BuildSuggestion
+              championId={myChampion}
+              championName={ready.champions.get(myChampion)?.name ?? ""}
+              position={me.position || null}
+              currentSpells={me.spells as [number, number]}
+              locked={locked}
+              vs={vs}
+              enemies={enemyPicks}
+              showPros
+            />
           ) : (
-            <>
-              <p className="draft__empty">{t("Koridor rakibini seç; öneri o eşleşmeye göre değişir.")}</p>
-              <ul className="strip strip--pickable">
-                {enemyPicks.map((id) => {
-                  const champion = ready?.champions.get(id);
-                  return (
-                    <li key={id}>
-                      <button
-                        type="button"
-                        className="strip__pick"
-                        aria-pressed={vs === id}
-                        title={champion?.name}
-                        onClick={() => setOpponent(vs === id ? null : id)}
-                      >
-                        {champion && ready && <img src={championIconUrl(ready.version, champion.id)} alt={champion.name} width={32} height={32} />}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
+            <p className="draft__empty">{t("Bir şampiyonun üzerine geldiğinde build burada açılır.")}</p>
           )}
-
-          {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} />}
-          {ready && <EnemyTips enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c) => c !== undefined)} />}
-          {ready && me && <PoolStrip position={me.position} data={ready} />}
-
-          {draft.phase !== "FINALIZATION" && bans.status === "done" && bans.value.champions.length > 0 && (
-            <>
-              <h2 className="draft__heading">{t("Yasak önerisi")}</h2>
-              <ChampionStrip ids={bans.value.champions.map((c) => c.championId).filter((id) => !draft.bans.includes(id))} data={ready} empty={t("Öneri yok")} />
-            </>
-          )}
-
-          <h2 className="draft__heading">{t("Yasaklar")}</h2>
-          <ChampionStrip ids={draft.bans} data={ready} empty={t("Yasak yok")} muted />
         </section>
+
+        <aside className="draft__rail enter" aria-label={t("Draft bilgileri")}>
+          {me && <MyPick member={me} data={ready} />}
+
+          <OpponentPicker enemies={enemyPicks} opponent={opponent} data={ready} onChoose={chooseOpponent} />
+
+          {view === "draft" ? (
+            <>
+              <h2 className="draft__heading">{t("Takımın")}</h2>
+              <ul className="team">
+                {draft.myTeam.map((member) => (
+                  <TeamRow key={member.cellId} member={member} data={ready} />
+                ))}
+              </ul>
+              {ready && <EnemyTips enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c) => c !== undefined)} />}
+              <h2 className="draft__heading">{t("Yasaklar")}</h2>
+              <ChampionStrip ids={draft.bans} data={ready} empty={t("Yasak yok")} muted />
+            </>
+          ) : (
+            ready &&
+            me &&
+            myChampion > 0 && (
+              <>
+                {vs && role && ready.champions.get(vs) && (
+                  <MatchupGuide championId={myChampion} position={role} opponent={ready.champions.get(vs)!} version={ready.version} />
+                )}
+                <DraftMatchups championId={myChampion} position={me.position} data={ready} />
+                <JournalNote
+                  noteKey={championNoteKey(myChampion)}
+                  label={t("{champion} notların", { champion: ready.champions.get(myChampion)?.name ?? "" })}
+                />
+                {vs && (
+                  <JournalNote
+                    noteKey={matchupNoteKey(myChampion, vs)}
+                    label={t("{opponent} eşleşmesi notların", { opponent: ready.champions.get(vs)?.name ?? "" })}
+                    placeholder={t("Bu rakibe karşı ne işe yaradı?")}
+                  />
+                )}
+              </>
+            )
+          )}
+        </aside>
       </div>
     </LiquidGlass>
+  );
+}
+
+function OpponentPicker({
+  enemies,
+  opponent,
+  data,
+  onChoose,
+}: {
+  enemies: number[];
+  opponent: Opponent;
+  data: StaticData | null;
+  onChoose: (id: number) => void;
+}) {
+  const t = useT();
+  const name = opponent ? data?.champions.get(opponent.championId)?.name : undefined;
+  return (
+    <div className="opponent">
+      <h2 className="draft__heading">{t("Rakip takım")}</h2>
+      {enemies.length === 0 ? (
+        <p className="draft__empty">{t("Henüz seçim yok")}</p>
+      ) : (
+        <>
+          <ul className="strip strip--pickable">
+            {enemies.map((id) => {
+              const champion = data?.champions.get(id);
+              const current = opponent?.championId === id;
+              return (
+                <li key={id}>
+                  <button
+                    type="button"
+                    className="strip__pick"
+                    aria-pressed={current}
+                    data-guess={(current && opponent?.guessed) || undefined}
+                    title={champion?.name}
+                    onClick={() => onChoose(id)}
+                  >
+                    {champion && data && <img src={championIconUrl(data.version, champion.id)} alt={champion.name} width={32} height={32} />}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="opponent__note">
+            {!opponent
+              ? t("Koridor rakibini seç; build ve eşleşme rehberi ona göre değişir.")
+              : opponent.guessed
+                ? t("Koridor rakibin büyük ihtimalle {opponent}. Yanlışsa doğrusuna tıkla.", { opponent: name ?? "" })
+                : t("Koridor rakibin {opponent}.", { opponent: name ?? "" })}
+          </p>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -168,7 +256,7 @@ function MyPick({ member, data }: { member: DraftMember; data: StaticData | null
   return (
     <div className="my-pick">
       <div className="my-pick__portrait" data-locked={locked}>
-        {champion && data && <img src={championIconUrl(data.version, champion.id)} alt="" width={88} height={88} />}
+        {champion && data && <img src={championIconUrl(data.version, champion.id)} alt="" width={72} height={72} />}
       </div>
       <div>
         <p className="my-pick__name">{champion?.name ?? t("Şampiyon seçilmedi")}</p>
@@ -180,7 +268,7 @@ function MyPick({ member, data }: { member: DraftMember; data: StaticData | null
             {member.spells.map((key, i) => {
               const spell = data.spells.get(key);
               return spell ? (
-                <img key={i} src={spellIconUrl(data.version, spell.id)} alt={spell.name} title={spell.name} width={28} height={28} />
+                <img key={i} src={spellIconUrl(data.version, spell.id)} alt={spell.name} title={spell.name} width={24} height={24} />
               ) : null;
             })}
           </div>

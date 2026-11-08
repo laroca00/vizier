@@ -42,11 +42,16 @@ export type DraftMember = {
   isLocal: boolean;
 };
 
+/** Whose move the draft waits for; null during planning, finalization and between turns. */
+export type DraftTurn = { kind: "ban" | "pick"; mine: boolean };
+
 export type ChampSelect = {
   myTeam: DraftMember[];
   theirTeam: DraftMember[];
   bans: number[];
   phase: string;
+  /** Missing from backends older than 0.8. */
+  turn?: DraftTurn | null;
   phaseEndsAt: number;
 };
 

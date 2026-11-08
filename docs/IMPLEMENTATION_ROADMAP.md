@@ -20,7 +20,7 @@ The plan for turning Vizier into a preparation and reference app: prepare, explo
 | 1. Removal and cleanup | Code done; deploy steps open (see below) |
 | 2. Design system components | Done, except splitting `App.css` per page |
 | 3. Navigation and Home | Done for the sections that exist |
-| 4. Champion Select 2.0 | Not started |
+| 4. Champion Select 2.0 | Done; needs a check against a live client |
 | 5. Build Library | Not started |
 | 6. Champions and champion pool | Not started |
 | 7. Pro Builds | Not started |
@@ -115,7 +115,20 @@ Acceptance:
 
 ## Phase 4: Champion Select 2.0
 
-Work:
+Done. Decisions agreed with the owner on 2026-11-08:
+- The page follows the draft. Planning, bans and other players' picks show the Draft view; the player's own pick turn with a hovered champion, a locked pick and finalization show the Build view. Draft and Build tabs override it until the next turn (`draft/logic.ts`, `autoView`). The backend now sends whose turn it is (`turn` in `champ_select.rs`), read from the session's actions, which carry cell ids only.
+- Build tabs: General, each style variant with enough games, and "against {opponent}" when that matchup has enough games. No new backend data.
+- Pro builds sit right under the win rate: three pro games side by side, no import. Same opponent first, then an opponent of the same Data Dragon class and damage type, then the same damage type, then the newest. The card says why it was chosen.
+- The lane opponent is guessed from where each enemy champion is usually played, assigning the whole enemy team at once; it is marked as a guess and the player can correct it.
+- Pick suggestions are one list scored from the role's tier list, the guessed opponent's matchups and the team's gaps, each row with its reasons and numbers. A gap every pick fills is said once above the list.
+- Matchup guide: difficulty from our counters, the opponent's abilities and Riot's tips from Data Dragon, items bought noticeably more often against that opponent.
+- Composition: frontline, backline, poke, pick and teamfight with who brings each and one line on what it means; the pick and teamfight lists are hand-kept in `data/traits.ts`.
+- Imports: automatic per type on lock, manual buttons otherwise, a hovered champion is a preview with imports disabled. Results show as toasts; replacing a player's rune page names the page and can be cancelled; a result that lands after the champion changed is dropped.
+- Desktop logic tests run with Vitest (`pnpm --filter @vizier/desktop test`).
+
+Still to check with a live client: imports with no free rune page, and switching champion mid-import.
+
+The plan as written before the work:
 - Layout: my champion and role, both teams, build (runes, spells, starting, core and situational items, skill order), style variants that have enough games, sample size next to every rate.
 - Matchup guide from visible enemy picks: difficulty from our counters, strengths and weaknesses, key abilities from Data Dragon, situational items.
 - Composition analysis extended with frontline, backline, poke, pick and teamfight, each with a one-line explanation, built on `data/traits.ts`.

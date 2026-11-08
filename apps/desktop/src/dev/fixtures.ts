@@ -2,10 +2,15 @@ import type { ChampSelect, LcuStatus } from "../lcu";
 import { sampleGame } from "../overlay/sample";
 import type { LiveGame } from "../overlay/live";
 
-/** Dev only: `?fixture=champ-select` renders the draft page without a client. */
+/**
+ * Dev only: `?fixture=champ-select` renders the draft page without a client.
+ * `&draft=ban`, `&draft=locked` and `&draft=planning` show the other moments.
+ */
 export function champSelectFixture(): ChampSelect | null {
-  if (!import.meta.env.DEV || new URLSearchParams(location.search).get("fixture") !== "champ-select") return null;
-  return {
+  const params = new URLSearchParams(location.search);
+  if (!import.meta.env.DEV || params.get("fixture") !== "champ-select") return null;
+  const moment = params.get("draft");
+  const draft: ChampSelect = {
     myTeam: [
       { cellId: 0, championId: 266, pickIntent: 0, position: "top", spells: [4, 12], isLocal: false },
       { cellId: 1, championId: 64, pickIntent: 0, position: "jungle", spells: [11, 4], isLocal: false },
@@ -22,8 +27,21 @@ export function champSelectFixture(): ChampSelect | null {
     ],
     bans: [238, 157, 555, 84],
     phase: "BAN_PICK",
+    turn: { kind: "pick", mine: true },
     phaseEndsAt: Date.now() + 27_000,
   };
+  if (moment === "planning") return { ...draft, phase: "PLANNING", turn: null, theirTeam: draft.theirTeam.map((m) => ({ ...m, championId: 0 })) };
+  if (moment === "ban") return { ...draft, turn: { kind: "ban", mine: true } };
+  if (moment === "locked") {
+    return {
+      ...draft,
+      phase: "FINALIZATION",
+      turn: null,
+      myTeam: draft.myTeam.map((m) => (m.isLocal ? { ...m, championId: m.pickIntent } : m)),
+      theirTeam: draft.theirTeam.map((m, i) => ({ ...m, championId: [122, 7, 222, 412, 875][i] })),
+    };
+  }
+  return draft;
 }
 
 /** Dev only: `?fixture=overlay` renders the in-game overlay mid-game without the game. */

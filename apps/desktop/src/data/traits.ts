@@ -43,6 +43,23 @@ const LATE = new Set([
   "Orianna", "Tristana", "Shyvana", "Nilah", "Swain", "Mordekaiser",
 ]);
 
+// Can catch one target out of position and decide a fight before it starts.
+const PICK = new Set([
+  "Thresh", "Blitzcrank", "Nautilus", "Pyke", "Morgana", "Lux", "Ahri", "Leblanc", "Elise", "Zoe", "Rengar", "Evelynn",
+  "Nidalee", "Ashe", "Varus", "Jhin", "Bard", "Leona", "TwistedFate", "Pantheon", "Talon", "Qiyana", "Zed", "Neeko",
+  "Xerath", "Syndra", "Lissandra", "Kalista", "Zyra", "Rakan", "Renata", "Camille", "Vi", "LeeSin", "Nocturne", "Shaco",
+  "Fiddlesticks", "Kayn", "Khazix", "Naafiri", "Akali", "Fizz", "Ezreal", "Caitlyn", "Senna", "Hwei", "Ambessa",
+]);
+
+// Ultimates or kits that hit several champions at once in a five-versus-five.
+const TEAMFIGHT = new Set([
+  "Malphite", "Amumu", "Orianna", "MissFortune", "Kennen", "Seraphine", "Sona", "Rumble", "Galio", "MonkeyKing",
+  "Yasuo", "Yone", "JarvanIV", "Sejuani", "Annie", "Fiddlesticks", "Rell", "Neeko", "Diana", "Gragas", "Karthus", "Brand",
+  "Zyra", "Leona", "Maokai", "Ornn", "Lillia", "Jinx", "Samira", "Cassiopeia", "Anivia", "Swain", "Vladimir", "Rakan",
+  "Hwei", "Mel", "Zac", "Alistar", "Nami", "Taliyah", "Azir", "Ziggs", "Kayle", "Lissandra", "Aurora",
+  "Gwen", "Kaisa", "Sett", "Nunu", "Ivern", "Zilean", "Karma", "Shen", "Sion", "Viktor", "Velkoz", "Lulu",
+]);
+
 export type Phase = "early" | "mid" | "late";
 
 export type Traits = {
@@ -54,6 +71,12 @@ export type Traits = {
   peel: boolean;
   disengage: boolean;
   phase: Phase;
+  /** Stands in front and takes the damage: tanks and durable fighters. */
+  frontline: boolean;
+  /** Deals its damage from behind the frontline: marksmen and mages. */
+  backline: boolean;
+  pick: boolean;
+  teamfight: boolean;
 };
 
 export function traitsOf(c: Champion): Traits {
@@ -67,7 +90,67 @@ export function traitsOf(c: Champion): Traits {
     peel: PEEL.has(c.id) || (c.tags[0] === "Support" && !ENGAGE.has(c.id)),
     disengage: DISENGAGE.has(c.id),
     phase: EARLY.has(c.id) ? "early" : LATE.has(c.id) ? "late" : "mid",
+    frontline: c.tank || tagged("Tank") || (c.tags[0] === "Fighter" && c.info.defense >= 5),
+    backline: c.tags[0] === "Marksman" || (c.tags[0] === "Mage" && !tagged("Tank")),
+    pick: PICK.has(c.id),
+    teamfight: TEAMFIGHT.has(c.id),
   };
+}
+
+export type Dimension = "frontline" | "backline" | "poke" | "pick" | "teamfight";
+
+export const DIMENSIONS: Dimension[] = ["frontline", "backline", "poke", "pick", "teamfight"];
+
+export const DIMENSION_NAMES: Record<Dimension, string> = {
+  frontline: "Ön hat",
+  backline: "Arka hat",
+  poke: "Uzaktan yıpratma",
+  pick: "Tek hedef yakalama",
+  teamfight: "Takım savaşı",
+};
+
+// One line per dimension and level: none, one champion, two or more.
+const DIMENSION_TEXT: Record<Dimension, [string, string, string]> = {
+  frontline: [
+    "Önde hasar karşılayacak kimse yok; savaşlar kısa ve riskli geçer.",
+    "{names} önde tek başına; düşerse arka hat açıkta kalır.",
+    "{names} önde hasarı karşılar; arka hat rahat vurur.",
+  ],
+  backline: [
+    "Geriden sürekli hasar veren yok; hasar yakın mesafeden gelmek zorunda.",
+    "Arkadan vuran tek isim {names}; onu korumak öncelik.",
+    "{names} geriden hasar verir; uzun savaşlar bu takıma yarar.",
+  ],
+  poke: [
+    "Uzaktan yıpratma yok; savaştan önce rakibin canını eksiltemez.",
+    "{names} savaş öncesi rakibi yıpratabilir.",
+    "{names} ile kuşatma ve obje beklemeleri bu takıma yarar.",
+  ],
+  pick: [
+    "Tek kalan rakibi yakalayacak araç yok; savaşları toplu açmak zorunda.",
+    "{names} haritada tek kalan rakibi yakalayabilir.",
+    "{names} ile görüş kurup tek kalanları avlamak bu takımın planı.",
+  ],
+  teamfight: [
+    "Toplu savaşta birden çok rakibe vuran yetenek yok; dağınık savaşlar bu takıma uyar.",
+    "{names} toplu savaşta birkaç rakibe birden vurabilir.",
+    "{names} ile 5'e 5 savaş bu takımın güçlü yanı.",
+  ],
+};
+
+export type DimensionReport = { dimension: Dimension; names: string[]; level: 0 | 1 | 2 };
+
+/** Frontline, backline, poke, pick and teamfight, each with who brings it. */
+export function compDimensions(team: Champion[]): DimensionReport[] {
+  return DIMENSIONS.map((dimension) => {
+    const names = team.filter((c) => traitsOf(c)[dimension]).map((c) => c.name);
+    return { dimension, names, level: Math.min(names.length, 2) as 0 | 1 | 2 };
+  });
+}
+
+/** The template for the report; {names} is filled by the caller after translation. */
+export function dimensionText(report: DimensionReport): string {
+  return DIMENSION_TEXT[report.dimension][report.level];
 }
 
 export type Weakness = "noTank" | "noEngage" | "noPeel" | "allPhysical" | "allMagic";

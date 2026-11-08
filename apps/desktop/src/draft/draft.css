@@ -1,0 +1,438 @@
+/* Champ select: a main column that follows the draft and a rail beside it. */
+
+.draft {
+  width: min(1120px, 100%);
+}
+
+.draft__header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.draft__tabs {
+  align-self: center;
+}
+
+.draft__phase {
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.draft__turn {
+  padding: 2px 10px;
+  border-radius: 8px;
+  font-size: var(--text-small);
+  color: var(--gilt);
+  background: rgb(214 180 106 / 0.12);
+}
+
+.draft__body {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+}
+
+.draft__main {
+  min-width: 0;
+}
+
+.draft__main > section {
+  margin-top: var(--space-5);
+}
+
+.draft__main > section:first-child {
+  margin-top: 0;
+}
+
+.draft__view {
+  animation: rise var(--duration-standard) var(--ease-enter) both;
+  --rise: 6px;
+}
+
+.draft__rail {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+  --delay: 200ms;
+}
+
+.draft__rail .my-pick {
+  gap: 14px;
+  margin-bottom: var(--space-3);
+}
+
+.draft__rail .my-pick__portrait {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+}
+
+.draft__rail .my-pick__name {
+  font-size: 22px;
+}
+
+.draft__rail .my-pick__meta {
+  margin-bottom: 6px;
+}
+
+/* Lane opponent: a dashed ring marks Vizier's guess, a solid one the player's choice. */
+
+.strip__pick[data-guess] {
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12);
+  outline: 2px dashed rgb(28 156 146 / 0.85);
+  outline-offset: 2px;
+}
+
+.opponent__note {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-small);
+  font-weight: 350;
+  color: var(--glaze-muted);
+}
+
+/* Pick suggestions */
+
+.picks__shared {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-small);
+  color: #b9c8f5;
+}
+
+.picks {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.picks__row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.picks__row:last-child {
+  border-bottom: 0;
+}
+
+.picks__row img {
+  display: block;
+  border-radius: 10px;
+}
+
+.picks__name {
+  margin: 0 0 4px;
+  font-size: var(--text-lead);
+  line-height: 1.2;
+}
+
+.picks__reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.picks__reasons li {
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-size: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze-muted);
+  background: var(--hover);
+}
+
+.picks__reasons li[data-kind="counter"] {
+  color: #7fd6cc;
+  background: rgb(28 156 146 / 0.14);
+}
+
+.picks__reasons li[data-kind="need"] {
+  color: #b9c8f5;
+  background: rgb(91 127 230 / 0.16);
+}
+
+.picks__reasons li[data-kind="meta"] {
+  color: var(--gilt);
+  background: rgb(214 180 106 / 0.12);
+}
+
+/* Pro builds under the win rate */
+
+.pro-matchups {
+  display: grid;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.pro-matchups__title {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+}
+
+.pro-matchups__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pro-card {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-item);
+  background: rgb(255 255 255 / 0.04);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.pro-card[data-match="exact"] {
+  box-shadow: inset 0 0 0 1px rgb(214 180 106 / 0.5);
+}
+
+.pro-card p {
+  margin: 0;
+}
+
+.pro-card__who {
+  display: grid;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.pro-card__player {
+  overflow: hidden;
+  font-weight: var(--weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pro-card__team {
+  overflow: hidden;
+  font-size: var(--text-meta);
+  color: var(--glaze-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pro-card__vs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-meta);
+  color: var(--glaze-muted);
+}
+
+.pro-card__vs img {
+  border-radius: 6px;
+}
+
+.pro-card__tag {
+  padding: 0 6px;
+  border-radius: 6px;
+  font-weight: var(--weight-medium);
+  color: var(--gilt);
+  background: rgb(214 180 106 / 0.14);
+}
+
+.pro-card__build {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.pro-card__build img {
+  display: block;
+  border-radius: 6px;
+}
+
+.pro-card__build .pro-card__keystone {
+  border-radius: 0;
+  margin-right: 2px;
+}
+
+.pro-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze-muted);
+}
+
+.pro-card__meta [data-result="win"] {
+  color: var(--turquoise);
+}
+
+.pro-card__meta [data-result="loss"] {
+  color: #f08a7e;
+}
+
+.build__preview {
+  padding-left: 10px;
+  border-left: 2px solid var(--gilt);
+}
+
+/* Matchup guide */
+
+.matchup {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-2) 0;
+}
+
+.matchup__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.matchup__head img {
+  display: block;
+  border-radius: 12px;
+}
+
+.matchup__difficulty {
+  margin: 0;
+  font-size: var(--text-lead);
+  font-weight: var(--weight-medium);
+}
+
+.matchup__difficulty[data-difficulty="hard"] {
+  color: #f08a7e;
+}
+
+.matchup__difficulty[data-difficulty="easy"] {
+  color: var(--turquoise);
+}
+
+.matchup__abilities {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.matchup__abilities li {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 40px;
+}
+
+.matchup__abilities img {
+  display: block;
+  border-radius: 8px;
+}
+
+.matchup__key {
+  font-size: var(--text-meta);
+  font-weight: var(--weight-medium);
+}
+
+.matchup__cooldown {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze-muted);
+}
+
+.matchup__tips {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0 0 0 var(--space-3);
+  border-left: 2px solid var(--line-strong);
+  list-style: none;
+  font-size: var(--text-small);
+  font-weight: 350;
+  color: var(--glaze-muted);
+}
+
+.matchup__items {
+  display: grid;
+  gap: 6px;
+}
+
+/* Composition: one row per dimension, with diamond pips like a tile border. */
+
+.comp__dims {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comp__dims li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-2);
+}
+
+.comp__dim-name {
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+}
+
+.comp__dims li[data-level="0"] .comp__dim-name {
+  color: var(--glaze-muted);
+}
+
+.comp__pips {
+  display: flex;
+  gap: 7px;
+  padding-right: 3px;
+}
+
+.comp__pips span {
+  width: 7px;
+  height: 7px;
+  transform: rotate(45deg);
+  background: var(--line-strong);
+}
+
+.comp__pips span[data-on] {
+  background: var(--gilt);
+}
+
+.comp__dim-text {
+  grid-column: 1 / -1;
+  font-size: var(--text-small);
+  font-weight: 350;
+  color: var(--glaze-muted);
+}
+
+@media (max-width: 900px) {
+  .draft__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .draft__header {
+    grid-template-columns: 1fr auto;
+  }
+
+  .draft__tabs {
+    grid-row: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draft__view {
+    --rise: 0px;
+  }
+}

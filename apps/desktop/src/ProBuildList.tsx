@@ -20,9 +20,9 @@ import { useAsync } from "./useAsync";
 import { Button } from "./ui/Button";
 import { ErrorState } from "./ui/States";
 
-type Static = { version: string; champions: Map<number, Champion>; items: Map<number, Item>; runes: Map<number, Rune> };
+export type ProStatic = { version: string; champions: Map<number, Champion>; items: Map<number, Item>; runes: Map<number, Rune> };
 
-async function loadStatic(): Promise<Static> {
+export async function loadProStatic(): Promise<ProStatic> {
   const [version, byKey, itemList, styles] = await Promise.all([latestVersion(), champions(), items(), runes()]);
   const runeById = new Map([...styles.values()].flatMap((s) => s.slots.flat().map((r) => [r.id, r] as const)));
   return { version, champions: byKey, items: itemList, runes: runeById };
@@ -67,7 +67,7 @@ export function ProBuildList({ filter, compact = false, emptyText }: Props) {
   const t = useT();
   const key = `${filter.championId ?? ""}:${filter.position ?? ""}:${filter.team ?? ""}:${filter.group ?? ""}:${filter.limit ?? ""}`;
   const [state, retry] = useAsync(key, () => getProBuilds(filter));
-  const [data] = useAsync("static", loadStatic);
+  const [data] = useAsync("pro-static", loadProStatic);
 
   if (state.status === "error") {
     return (
@@ -86,7 +86,7 @@ export function ProBuildList({ filter, compact = false, emptyText }: Props) {
   );
 }
 
-function ProRow({ build, data, compact }: { build: ProBuild; data: Static; compact: boolean }) {
+function ProRow({ build, data, compact }: { build: ProBuild; data: ProStatic; compact: boolean }) {
   const t = useT();
   const lang = useLang();
   const [importState, setImportState] = useState<ImportState>({ status: "idle" });
