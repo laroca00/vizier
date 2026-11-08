@@ -505,3 +505,41 @@ textarea.text-input {
 .editor__item-list li[draggable="true"] {
   cursor: grab;
 }
+
+.diff {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.diff__list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.diff__list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.diff__side {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.diff__side img {
+  border-radius: 6px;
+}
+
+.diff__side[data-side="a"] img {
+  outline: 2px solid var(--turquoise);
+}
+
+.diff__side[data-side="b"] img {
+  outline: 2px solid var(--bole);
+}
