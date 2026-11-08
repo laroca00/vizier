@@ -107,3 +107,12 @@ export function csByMinute(timeline: Timeline): Map<number, number[]> {
   }
   return result;
 }
+
+/** Per participant id: total gold at the start of the given minute, or none when the game was shorter. */
+export function goldAtMinute(timeline: Timeline, minute: number): Map<number, number> {
+  const frame = timeline.info.frames[minute];
+  const result = new Map<number, number>();
+  if (!frame) return result;
+  for (const [id, pf] of Object.entries(frame.participantFrames)) result.set(Number(id), pf.totalGold);
+  return result;
+}

@@ -163,6 +163,20 @@ export async function getArenaItems(championId: number): Promise<ArenaItems | nu
   }
 }
 
+export type LaneStat = {
+  games: number;
+  csDiff10?: number;
+  csDiff15?: number;
+  goldDiff10?: number;
+  goldDiff15?: number;
+  firstBloodRate?: number;
+};
+
+/** Averages from the champion's side against one lane opponent; `games` is 0 until enough timelines are in. */
+export function getLaneStats(championId: number, position: string, vs: number) {
+  return get<LaneStat>(`/v1/champions/${championId}/lane?position=${position}&vs=${vs}`);
+}
+
 export type Counters = { patches: string[]; games: number; matchups: { championId: number; games: number; winRate: number }[] };
 
 export function getCounters(championId: number, position: string) {

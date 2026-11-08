@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { BuildSuggestion } from "../BuildSuggestion";
 import { championIconUrl, champions, latestVersion, type Champion } from "../data/ddragon";
+import { LaneStats } from "../draft/LaneStats";
 import { StatsDuel } from "../draft/StatsDuel";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { useLang, useT } from "../i18n";
@@ -85,6 +86,7 @@ export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange
           {isComplete(route) && me && opponent ? (
             <div className="matchup-page__body">
               <MatchupGuide championId={route.championId} position={route.position} opponent={opponent} version={data.value.version} />
+              <LaneStats championId={route.championId} position={route.position} opponentId={route.opponentId} />
               <StatsDuel champion={me} opponent={opponent} />
               <section aria-label={t("Build")}>
                 <h2 className="draft__heading">{t("{champion} için {opponent} karşısında build", { champion: me.name, opponent: opponent.name })}</h2>

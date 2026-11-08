@@ -32,9 +32,50 @@ type Raw = {
   opponent_champion_id: number | null;
   team_id: number | null;
   augments: string | null;
+  cs_minutes: string | null;
+  gold10: number | null;
+  gold15: number | null;
+  first_blood: number | null;
 };
 
 type Count = { patch: string; queue: number; position: string; champion: number; kind: string; value: string; games: number; wins: number };
+
+type LaneSum = { patch: string; position: string; champion: number; opponent: number; games: number; cs10: number; cs15: number; gold10: number; gold15: number; firstBloods: number };
+
+/** Both laners need timeline data, or the difference means nothing. */
+function laneDifference(me: Raw, foe: Raw): Omit<LaneSum, "patch" | "position" | "champion" | "opponent" | "games"> | null {
+  if (me.gold10 === null || me.gold15 === null || foe.gold10 === null || foe.gold15 === null) return null;
+  const mine = ids(me.cs_minutes ?? "");
+  const theirs = ids(foe.cs_minutes ?? "");
+  if (mine.length < 15 || theirs.length < 15) return null;
+  return {
+    cs10: mine[9] - theirs[9],
+    cs15: mine[14] - theirs[14],
+    gold10: me.gold10 - foe.gold10,
+    gold15: me.gold15 - foe.gold15,
+    firstBloods: me.first_blood ?? 0,
+  };
+}
+
+function addLane(sums: Map<string, LaneSum>, me: Raw, foe: Raw) {
+  const diff = laneDifference(me, foe);
+  if (!diff) return;
+  const key = [me.patch, me.team_position, me.champion_id, foe.champion_id].join("\t");
+  const sum = sums.get(key) ?? { patch: me.patch, position: me.team_position, champion: me.champion_id, opponent: foe.champion_id, games: 0, cs10: 0, cs15: 0, gold10: 0, gold15: 0, firstBloods: 0 };
+  sum.games++;
+  for (const field of ["cs10", "cs15", "gold10", "gold15", "firstBloods"] as const) sum[field] += diff[field];
+  sums.set(key, sum);
+}
+
+function laneUpserts(db: D1Database, sums: Map<string, LaneSum>) {
+  const statement = db.prepare(
+    `INSERT INTO lane_sums (patch, team_position, champion_id, opponent_id, games, cs10, cs15, gold10, gold15, first_bloods)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT DO UPDATE SET games = games + excluded.games, cs10 = cs10 + excluded.cs10, cs15 = cs15 + excluded.cs15,
+        gold10 = gold10 + excluded.gold10, gold15 = gold15 + excluded.gold15, first_bloods = first_bloods + excluded.first_bloods`,
+  );
+  return [...sums.values()].map((l) => statement.bind(l.patch, l.position, l.champion, l.opponent, l.games, l.cs10, l.cs15, l.gold10, l.gold15, l.firstBloods));
+}
 
 class Tally {
   counts = new Map<string, Count>();
@@ -121,7 +162,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const { results } = await db
       .prepare(
         `SELECT rowid, match_id, patch, queue_id, team_position, champion_id, win, runes, spells, items, start_items,
-            skill_order, purchase_order, opponent_champion_id, team_id, augments
+            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood
           FROM participant_stats WHERE rowid > ? ORDER BY rowid LIMIT ?`,
       )
       .bind(from, CHUNK)
@@ -138,6 +179,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const tally = new Tally();
     const teams = new Map<string, Raw[]>();
     const duos = new Map<string, Raw[]>();
+    const lanes = new Map<string, LaneSum>();
     for (const row of rows) {
       tally.add(row, "games", "", row.win);
       if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
@@ -175,7 +217,12 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     }
     for (const [key, team] of teams) {
       const [match, side] = key.split(":");
-      const enemies = (teams.get(`${match}:${side === "100" ? 200 : 100}`) ?? []).map((r) => r.champion_id);
+      const enemyRows = teams.get(`${match}:${side === "100" ? 200 : 100}`) ?? [];
+      const enemies = enemyRows.map((r) => r.champion_id);
+      for (const me of team) {
+        const foe = enemyRows.find((r) => r.team_position === me.team_position);
+        if (foe) addLane(lanes, me, foe);
+      }
       const foes = foeProfiles(enemies, catalog);
       for (const me of team) {
         for (const ally of team) if (ally !== me) tally.add(me, "ally", `${ally.champion_id}:${ally.team_position}`, me.win);
@@ -186,7 +233,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
         }
       }
     }
-    await db.batch([...upserts(db, tally), setWatermark(db, "rolled_participants", rows[rows.length - 1].rowid)]);
+    await db.batch([...upserts(db, tally), ...laneUpserts(db, lanes), setWatermark(db, "rolled_participants", rows[rows.length - 1].rowid)]);
     rolled += rows.length;
   }
 }
@@ -279,5 +326,6 @@ export async function pruneRaw(db: D1Database, now = Date.now()) {
   await db.batch([
     db.prepare("DELETE FROM stat_counts WHERE patch NOT IN (?, ?)").bind(...keep),
     db.prepare("DELETE FROM stat_matches WHERE patch NOT IN (?, ?)").bind(...keep),
+    db.prepare("DELETE FROM lane_sums WHERE patch NOT IN (?, ?)").bind(...keep),
   ]);
 }

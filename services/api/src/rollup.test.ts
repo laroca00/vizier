@@ -7,7 +7,7 @@ import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { pruneRaw, rollup } from "./rollup.ts";
 import { docKey, statDocs } from "./statDocs.ts";
-import { arenaDuos, arenaItems, augmentStats, sampleLimits, tierList } from "./stats.ts";
+import { arenaDuos, arenaItems, augmentStats, laneStats, sampleLimits, tierList } from "./stats.ts";
 import { MemoryStore } from "./store.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
@@ -128,6 +128,47 @@ describe("arena duos", () => {
     // The same games also carry item counts; player() buys item 3157 in every game.
     expect(await arenaItems(db, 103)).toMatchObject({ games: 12, items: [{ id: 3157, games: 12, pickRate: 1, winRate: 0.667 }] });
     expect((await arenaItems(db, 999)).items).toEqual([]);
+  });
+});
+
+describe("lane stats", () => {
+  // A timeline with a frame per minute up to 16, where gold and CS grow at a per-player rate.
+  const timeline = (rates: Record<number, { gold: number; cs: number }>) => ({
+    info: {
+      frames: Array.from({ length: 17 }, (_, minute) => ({
+        timestamp: minute * 60_000,
+        participantFrames: Object.fromEntries(
+          Object.entries(rates).map(([id, r]) => [id, { totalGold: r.gold * minute, xp: 0, minionsKilled: r.cs * minute, jungleMinionsKilled: 0, level: 1 }]),
+        ),
+        events: [],
+      })),
+    },
+  });
+
+  it("averages what a champion is ahead by against its lane opponent", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, noRiot);
+    for (let n = 1; n <= 12; n++) {
+      const match = game(n, true);
+      match.metadata.matchId = `TR1_L${n}`;
+      match.info.participants = [
+        { ...player(1, 100, 103, true), firstBloodKill: n <= 3 },
+        { ...player(6, 200, 238, false), firstBloodKill: false },
+      ];
+      await crawler.save(match, timeline({ 1: { gold: 400, cs: 8 }, 6: { gold: 350, cs: 7 } }));
+    }
+    await rollup(db, noCatalog);
+    const lane = await laneStats(db, 103, "MIDDLE");
+    expect(lane[238]).toEqual({ games: 12, csDiff10: 10, csDiff15: 15, goldDiff10: 500, goldDiff15: 750, firstBloodRate: 0.25 });
+    expect((await laneStats(db, 238, "MIDDLE"))[103]).toMatchObject({ games: 12, csDiff10: -10, goldDiff15: -750, firstBloodRate: 0 });
+    expect(await laneStats(db, 103, "TOP")).toEqual({});
+  });
+
+  it("skips games without timelines", async () => {
+    const { db } = fakeD1();
+    await seed(db, 1, 12);
+    await rollup(db, noCatalog);
+    expect(await laneStats(db, 103, "MIDDLE")).toEqual({});
   });
 });
 

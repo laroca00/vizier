@@ -1,5 +1,5 @@
 import type { Platform, Region, RiotClient } from "./riot/client.ts";
-import { buildPaths, csByMinute, type BuildPath, type Timeline } from "./timeline.ts";
+import { buildPaths, csByMinute, goldAtMinute, type BuildPath, type Timeline } from "./timeline.ts";
 import { patchOf, type LeagueEntryWithPuuid, type LeagueList, type Match, type Participant } from "./riot/types.ts";
 
 const RANKED_SOLO = 420;
@@ -255,11 +255,13 @@ export class Crawler {
         (match_id, patch, champion_id, team_position, win, runes, spells, items,
          opponent_champion_id, duration, deaths, cs10, cs_pm, gold_pm, vision_pm,
          kill_participation, damage_share, start_items, skill_order, purchase_order, cs_minutes,
-         queue_id, team_id, augments)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         queue_id, team_id, augments, gold10, gold15, first_blood)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const paths = timeline ? buildPaths(timeline) : new Map<number, BuildPath>();
     const pace = timeline ? csByMinute(timeline) : new Map<number, number[]>();
+    const gold10 = timeline ? goldAtMinute(timeline, 10) : new Map<number, number>();
+    const gold15 = timeline ? goldAtMinute(timeline, 15) : new Map<number, number>();
     const minutes = info.gameDuration / 60;
     const round = (n: number) => Math.round(n * 100) / 100;
     const rows = info.participants.flatMap((p) => {
@@ -306,6 +308,9 @@ export class Crawler {
           // An Arena team is a duo, which teamId alone may not tell apart.
           (info.queueId === ARENA ? p.playerSubteamId : undefined) ?? p.teamId ?? null,
           augments.length ? augments.join(",") : null,
+          (p.participantId && gold10.get(p.participantId)) ?? null,
+          (p.participantId && gold15.get(p.participantId)) ?? null,
+          timeline && p.firstBloodKill !== undefined ? Number(p.firstBloodKill) : null,
         ),
       ];
     });

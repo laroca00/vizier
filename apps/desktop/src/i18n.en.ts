@@ -980,4 +980,12 @@ export const EN: Record<string, string> = {
   "{champion} ve {opponent} temel istatistikleri": "Base stats of {champion} and {opponent}",
   "Seviye {level}": "Level {level}",
   "{champion} · {opponent}; öndeki kalın yazılır.": "{champion} · {opponent}; the one ahead is in bold.",
+  "Koridor farkı": "Lane difference",
+  "10. dakikada CS farkı": "CS difference at 10 min",
+  "15. dakikada CS farkı": "CS difference at 15 min",
+  "10. dakikada altın farkı": "Gold difference at 10 min",
+  "15. dakikada altın farkı": "Gold difference at 15 min",
+  "İlk kan oranı": "First blood rate",
+  "Bu eşleşme için yeterli zaman çizelgesi verisi yok.": "Not enough timeline data for this matchup.",
+  "{games} maçın ortalaması; artı, senin lehine.": "Average of {games} games; plus means you are ahead.",
 };

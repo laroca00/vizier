@@ -129,6 +129,16 @@ export function createApp(store: Store, { statsDb, catalog, augments = false, ar
     return c.json((await readDoc(statsDb, docKey.counters(championId, position))) ?? { patches: [], games: 0, matchups: [] });
   });
 
+  app.get("/v1/champions/:championId/lane", async (c) => {
+    const { championId, position } = championRequest(c);
+    if (!position) badRequest("position is required");
+    const vs = Number(c.req.query("vs"));
+    if (!Number.isInteger(vs) || vs <= 0) badRequest("Invalid opponent champion id");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    const lanes = await readDoc<Record<number, unknown>>(statsDb, docKey.lane(championId, position));
+    return c.json(lanes?.[vs] ?? { games: 0 });
+  });
+
   app.get("/v1/champions/:championId/synergies", async (c) => {
     const { championId, position } = championRequest(c);
     if (!position) badRequest("position is required");
