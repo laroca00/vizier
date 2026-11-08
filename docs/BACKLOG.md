@@ -13,6 +13,7 @@ Product scope: prepare, explore, customize. No post-game analysis, coaching or p
 - Don't split slices into smaller ones unless one is genuinely too big for a run.
 - A slice that can't be done (missing data, needs a live client, needs an owner decision) gets `[-]` and one line saying why. Move on.
 - Every slice ends with `pnpm --filter @vizier/desktop test`, `pnpm --filter @vizier/desktop lint` and `pnpm build:web` passing; API and crawler slices also run `pnpm --filter @vizier/api test`.
+- File names must differ by more than case: Windows resolves `./banPlanner` and `./BanPlanner` to the same file. Name the component `BanPlannerPanel.tsx` next to the logic in `banPlanner.ts`.
 - New logic gets Vitest tests. New Turkish strings get an English entry in `i18n.en.ts`. UI copy is short and plain.
 - Every number shown to a player comes with its game count. Hide or grey out values with too few games instead of showing noise.
 - New pages: add the route in `router.ts`, a lazy import in `App.tsx`, a menu entry in `Sidebar.tsx`, an entry in the search palette, and a `?view=` id for dev.
