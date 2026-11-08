@@ -149,6 +149,12 @@ const OBJECTIVES = new Set([
   "Evelynn", "Brand", "Kaisa", "Ivern", "Tryndamere", "Yorick", "Fiora", "Ornn", "Zeri",
 ]);
 
+// Pushes a side lane alone and wins by pulling the enemy away from the fight.
+const SPLIT_PUSH = new Set([
+  "Fiora", "Tryndamere", "Jax", "Yorick", "Nasus", "Camille", "Gangplank", "Shen", "Irelia", "Riven", "Trundle", "Singed",
+  "Teemo", "Udyr", "Tristana", "Sion", "Illaoi", "Garen", "Darius", "Mordekaiser", "Gwen", "Kayle", "Zilean", "Heimerdinger",
+]);
+
 export type Phase = "early" | "mid" | "late";
 
 // Champions whose power is lopsided enough to need more than the early/mid/late label.
@@ -181,6 +187,7 @@ export type Traits = {
   healing: boolean;
   hardCc: boolean;
   burst: boolean;
+  splitPush: boolean;
 };
 
 export function traitsOf(c: Champion): Traits {
@@ -204,6 +211,7 @@ export function traitsOf(c: Champion): Traits {
     healing: HEALING.has(c.id),
     hardCc: HARD_CC.has(c.id),
     burst: BURST.has(c.id),
+    splitPush: SPLIT_PUSH.has(c.id),
   };
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getBans, getChampion, getCounters, getSynergies } from "../api";
+import { getChampion, getCounters, getSynergies } from "../api";
 import { BuildSuggestion } from "../BuildSuggestion";
 import { EnemyTips } from "../ChampionGuide";
 import { CompAnalysis } from "../CompAnalysis";
@@ -12,9 +12,12 @@ import {
   type Champion,
   type SummonerSpell,
 } from "../data/ddragon";
+import { checkRole } from "../draft/allyRole";
+import { BanPlanner } from "../draft/BanPlanner";
 import { autoView, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";
+import { ThreatsPanel } from "../draft/ThreatsPanel";
 import { ItemAdvicePanel } from "../draft/ItemAdvicePanel";
 import { PoolBuild } from "../draft/PoolBuild";
 import { useOpponent, type Opponent } from "../draft/useOpponent";
@@ -51,7 +54,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const t = useT();
   const lang = useLang();
   const [data] = useAsync("static", loadStatic);
-  const [bans] = useAsync("bans", getBans);
+  const { pool } = usePersonal();
   const seconds = useSecondsLeft(draft.phaseEndsAt);
   const me = draft.myTeam.find((m) => m.isLocal);
   const ready = data.status === "done" ? data.value : null;
@@ -79,6 +82,12 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
         .filter((c): c is Champion => c !== undefined)
     : [];
   const unavailable = new Set([...draft.bans, ...draft.myTeam.filter((m) => !m.isLocal).map((m) => m.championId), ...enemyPicks]);
+
+  // The hovered or locked champion; before that, the pool main for the role.
+  const banSubject = myChampion || pool.find((p) => p.rank === "main" && (!p.position || !role || p.position === role))?.championId || null;
+  const banAllies = draft.myTeam
+    .filter((m) => !m.isLocal && shownChampion(m) > 0 && m.position)
+    .map((m) => ({ championId: shownChampion(m), position: m.position.toUpperCase() }));
 
   function chooseOpponent(id: number) {
     // Pressing the current choice again hands the lane back to the guess.
@@ -126,12 +135,20 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                   />
                 </>
               )}
-              {draft.phase !== "FINALIZATION" && bans.status === "done" && bans.value.champions.length > 0 && (
+              {draft.phase !== "FINALIZATION" && ready && (
                 <>
                   <h2 className="draft__heading">{t("Yasak önerisi")}</h2>
-                  <ChampionStrip ids={bans.value.champions.map((c) => c.championId).filter((id) => !draft.bans.includes(id))} data={ready} empty={t("Öneri yok")} />
+                  <BanPlanner
+                    subject={banSubject}
+                    role={role}
+                    allies={banAllies}
+                    unavailable={new Set([...draft.bans, ...enemyPicks, ...allyIds])}
+                    champions={ready.champions}
+                    version={ready.version}
+                  />
                 </>
               )}
+              {ready && enemyPicks.length > 0 && <ThreatsPanel enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c): c is Champion => c !== undefined)} />}
               {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} />}
               {ready && me && <PoolStrip position={me.position} data={ready} opponentId={vs} />}
             </>
@@ -350,13 +367,32 @@ function AllyRate({ championId, position }: { championId: number; position: stri
   const lang = useLang();
   const role = position ? position.toUpperCase() : null;
   const [state] = useAsync(`ally:${championId}:${role}`, () => getChampion(championId, role));
-  if (state.status !== "done" || !state.value) return null;
-  const { winRate, games, tier } = state.value;
+  // A role the champion has no games in answers 404, so the usual roles come from the plain overview.
+  const [overall] = useAsync(role && state.status === "done" && !state.value ? `ally:${championId}:any` : null, () => getChampion(championId, null));
+  const overview = state.status === "done" ? (state.value ?? (overall.status === "done" ? overall.value : null)) : null;
+  const check = overview && role ? checkRole(overview, role) : null;
+  const own = state.status === "done" ? state.value : null;
   return (
-    <span className="team__stat" title={t("{games} maç", { games })} data-thin={games < 100 || undefined}>
-      {tier ? `${tier}, ` : ""}
-      {formatPercent(winRate, lang, 1)}
-    </span>
+    <>
+      {own && (
+        <span className="team__stat" title={t("{games} maç", { games: own.games })} data-thin={own.games < 100 || undefined}>
+          {own.tier ? `${own.tier}, ` : ""}
+          {formatPercent(own.winRate, lang, 1)} · {t("{games} maç", { games: own.games })}
+        </span>
+      )}
+      {check?.kind === "off" && (
+        <span
+          className="team__warn"
+          title={
+            check.usual
+              ? t("{role} rolünde nadir oynanıyor; genelde {usual} oynanıyor", { role: positionLabel(role!, lang) ?? "", usual: positionLabel(check.usual, lang) ?? "" })
+              : t("{role} rolünde nadir oynanıyor", { role: positionLabel(role!, lang) ?? "" })
+          }
+        >
+          {t("Rol dışı")}
+        </span>
+      )}
+    </>
   );
 }
 

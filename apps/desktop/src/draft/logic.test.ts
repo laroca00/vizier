@@ -171,3 +171,35 @@ describe("matchup helpers", () => {
     expect(matchupItems(general, versus)).toEqual([2, 3]);
   });
 });
+
+describe("suggestPicks pool and breakdown", () => {
+  it("lists pool champions first even when nothing else speaks for them", () => {
+    const picks = suggestPicks({
+      tierList: [entry(103, 0.53, "S"), entry(134, 0.5, "B")],
+      opponentCounters: null,
+      opponentId: null,
+      allies: [],
+      champions: ALL,
+      unavailable: new Set(),
+      pool: new Set([134]),
+    });
+    expect(picks.map((p) => p.championId)).toEqual([134, 103]);
+    expect(picks[0].inPool).toBe(true);
+    expect(picks[1].inPool).toBe(false);
+  });
+
+  it("splits the score into its parts", () => {
+    const picks = suggestPicks({
+      tierList: [entry(61, 0.52)],
+      opponentCounters: { patches: [], games: 0, matchups: [{ championId: 61, games: 200, winRate: 0.44 }] },
+      opponentId: 238,
+      allies: [JINX, LEESIN],
+      champions: ALL,
+      unavailable: new Set(),
+    });
+    const [pick] = picks;
+    expect(pick.breakdown.meta).toBeCloseTo(2);
+    expect(pick.breakdown.counter).toBeCloseTo(9);
+    expect(pick.score).toBeCloseTo(pick.breakdown.meta + pick.breakdown.counter + pick.breakdown.needs);
+  });
+});
