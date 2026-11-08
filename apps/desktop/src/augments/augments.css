@@ -31,3 +31,35 @@
   display: block;
   border-radius: 6px;
 }
+
+.champion-augments {
+  margin-top: var(--space-4);
+}
+
+.champion-augments__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 4px var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.champion-augments__list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.champion-augments__list img {
+  display: block;
+  border-radius: 6px;
+}
+
+.champion-augments__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

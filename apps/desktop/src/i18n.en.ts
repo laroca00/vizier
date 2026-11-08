@@ -811,4 +811,8 @@ export const EN: Record<string, string> = {
   "Özel": "Special",
   "ARAM Mayhem": "ARAM Mayhem",
   Tier: "Tier",
+  "En iyi augment'ler": "Best augments",
+  "Bu şampiyonla bu modda henüz yeterli maç yok.": "Not enough games with this champion in this mode yet.",
+  "{pick} seçilme, {rate} ilk 4": "{pick} picked, {rate} top four",
+  "{pick} seçilme, {rate} kazanma": "{pick} picked, {rate} win rate",
 };
