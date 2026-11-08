@@ -19,7 +19,7 @@ The work after `IMPLEMENTATION_ROADMAP.md` (phases 0–11 are done). Tasks are o
 - [ ] A2 Fix the remaining ESLint hook-dependency warnings one file at a time, without changing behaviour. Where a dependency is left out on purpose, add a one-line comment saying why and a scoped disable.
 - [x] A3 Typed fetch layer: give `api.ts` a single `request<T>()` with timeout, abort signal and one retry on network errors (not on 4xx). Tests for timeout, abort and retry using a fake `fetch`. (5daaa8a)
 - [x] A4 In-memory and `sessionStorage` cache for API answers with a per-route TTL (tier lists 30 min, builds 30 min, pro builds 5 min). Tests for expiry and key building. (6460c65)
-- [x] A5 `useAsync`: add stale-while-revalidate (show cached data, refresh in background) and cancel on unmount. Tests.
+- [x] A5 `useAsync`: add stale-while-revalidate (show cached data, refresh in background) and cancel on unmount. Tests. (ca57caa)
 - [ ] A6 Data Dragon loader (`data/ddragon.ts`): cache static JSON per version in IndexedDB so a restart doesn't refetch `championFull.json`. Fallback to network when IndexedDB is missing. Tests with fake-indexeddb or an injected store.
 - [ ] A7 Versioned local storage: one `migrate()` per store (`settings`, `personal`, `library`, `drafts`, `quiz`) with a schema version number and tests that load every older shape.
 - [ ] A8 Export/import of local data: validate the file before writing anything, show what will be replaced (counts per store), keep a one-step undo of the last import.
