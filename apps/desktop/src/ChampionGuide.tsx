@@ -1,4 +1,5 @@
-import { abilityIconUrl, championDetail, type Champion } from "./data/ddragon";
+import { hasRankData, rankRows } from "./data/abilityRanks";
+import { abilityIconUrl, championDetail, type Ability, type Champion } from "./data/ddragon";
 import { traitsOf, PHASE_TEXT } from "./data/traits";
 import { useLang, useT } from "./i18n";
 import { useAsync } from "./useAsync";
@@ -26,9 +27,39 @@ export function Abilities({ champion, version }: { champion: Champion; version: 
             )}
           </p>
           <p className="abilities__text">{a.description}</p>
+          <AbilityRanks ability={a} />
         </li>
       ))}
     </ul>
+  );
+}
+
+function AbilityRanks({ ability }: { ability: Ability }) {
+  const t = useT();
+  const rows = rankRows(ability);
+  if (!hasRankData(rows)) return null;
+  const dash = (n: number | null) => (n === null ? "–" : String(n));
+  return (
+    <table className="abilities__ranks">
+      <thead>
+        <tr>
+          <th scope="col">{t("Rank")}</th>
+          <th scope="col">{t("Bekleme (sn)")}</th>
+          <th scope="col">{ability.costType ? t("Bedel ({type})", { type: ability.costType.trim() }) : t("Bedel")}</th>
+          <th scope="col">{t("Menzil")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.rank}>
+            <th scope="row">{r.rank}</th>
+            <td>{dash(r.cooldown)}</td>
+            <td>{dash(r.cost)}</td>
+            <td>{dash(r.range)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 

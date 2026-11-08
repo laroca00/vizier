@@ -1009,4 +1009,8 @@ export const EN: Record<string, string> = {
   "Botlar": "Boots",
   "Yaygın yetenek sıraları": "Common skill orders",
   "{share} oynanma, {rate} kazanma, {games} maç": "{share} played, {rate} win rate, {games} games",
+  Rank: "Rank",
+  "Bekleme (sn)": "Cooldown (s)",
+  "Bedel ({type})": "Cost ({type})",
+  Bedel: "Cost",
 };

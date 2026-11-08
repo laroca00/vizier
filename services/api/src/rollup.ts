@@ -186,7 +186,8 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       const choices = buildChoices(row, catalog.finished);
       for (const [kind, value] of choices) tally.add(row, kind, value, row.win);
       // Single runes, for pick rates inside a rune page.
-      if (row.runes) for (const id of new Set(parseRuneKey(row.runes).perks)) tally.add(row, "perk", String(id), row.win);
+      // Perk 0 counts the games these rows come from; older games were rolled up before single runes were counted.
+      if (row.runes) for (const id of new Set([0, ...parseRuneKey(row.runes).perks])) tally.add(row, "perk", String(id), row.win);
       // Each build style gets its own runes, items and skills: AP Kai'Sa is not crit Kai'Sa.
       const style = buildStyle(ids(row.items), catalog);
       if (style) {

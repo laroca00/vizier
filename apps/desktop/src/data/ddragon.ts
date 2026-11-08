@@ -164,6 +164,11 @@ export type Ability = {
   /** Seconds per rank; empty for the passive. */
   cooldowns: number[];
   image: string;
+  /** Resource cost per rank, and what it is paid in ("Mana", "Energy"...); empty for the passive. */
+  costs?: number[];
+  costType?: string;
+  /** Range per rank; Data Dragon uses 25000 for abilities without one. */
+  ranges?: number[];
 };
 
 export type ChampionDetail = {
@@ -187,7 +192,7 @@ const plain = (html: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
-type RawSpell = { name: string; description: string; cooldown?: number[]; image: { full: string } };
+type RawSpell = { name: string; description: string; cooldown?: number[]; cost?: number[]; costType?: string; range?: number[]; image: { full: string } };
 
 /** Abilities and Riot's own tips in the UI language; tips are empty for some newer champions. */
 export function championDetail(championId: string, lang: "tr" | "en"): Promise<ChampionDetail> {
@@ -224,7 +229,7 @@ export function championDetail(championId: string, lang: "tr" | "en"): Promise<C
           stats: c.stats,
           abilities: [
             { key: "P" as const, name: c.passive.name, description: plain(c.passive.description), cooldowns: [], image: `passive/${c.passive.image.full}` },
-            ...c.spells.map((s, i) => ({ key: keys[i], name: s.name, description: plain(s.description), cooldowns: s.cooldown ?? [], image: `spell/${s.image.full}` })),
+            ...c.spells.map((s, i) => ({ key: keys[i], name: s.name, description: plain(s.description), cooldowns: s.cooldown ?? [], image: `spell/${s.image.full}`, costs: s.cost ?? [], costType: s.costType, ranges: s.range ?? [] })),
           ],
           allyTips: c.allytips.map(plain),
           enemyTips: c.enemytips.map(plain),

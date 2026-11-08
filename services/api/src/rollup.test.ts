@@ -193,7 +193,9 @@ describe("rune and skill detail", () => {
     }
     await rollup(db, noCatalog);
     const build = await aggregateBuild(db, 103, "MIDDLE");
+    expect(build?.perkGames).toBe(12);
     expect(build?.perks.find((p) => p.id === 8112)).toEqual({ id: 8112, games: 12, winRate: 0.667 });
+    expect(build?.perks.some((p) => p.id === 0)).toBe(false);
     expect(build?.perks.map((p) => p.id)).toEqual(expect.arrayContaining([8143, 8345, 5008, 5011]));
     expect(build?.skillOptions.map((o) => [o.games, o.share])).toEqual([[9, 0.75], [3, 0.25]]);
     expect(build?.skillOptions[0].maxOrder).toEqual([1, 2, 3]);

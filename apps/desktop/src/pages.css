@@ -628,3 +628,21 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+.abilities__ranks {
+  margin-top: var(--space-2);
+  border-collapse: collapse;
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.abilities__ranks th,
+.abilities__ranks td {
+  padding: 2px var(--space-3) 2px 0;
+  text-align: left;
+  font-weight: normal;
+}
+
+.abilities__ranks thead th {
+  color: var(--glaze-muted);
+}

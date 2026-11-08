@@ -329,7 +329,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           secondary={sub}
           perks={page.perks}
           counts={shown === build && page === picks.runes[0] ? build.perks : undefined}
-          total={build.games}
+          total={build.perkGames ?? build.games}
         />
         <p className="build__stat">
           {t("{games} maçta, {rate} kazanma", { games: page.games, rate: percent(page.winRate) })}

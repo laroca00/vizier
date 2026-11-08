@@ -51,6 +51,8 @@ export type Build = Picks & {
   situational: { vs: Foe; games: number; items: Choice<{ id: number }>[] }[];
   /** How often each single rune (and shard) was taken in the champion's games. Empty for matchup builds. */
   perks: Choice<{ id: number }>[];
+  /** Games the perk counts come from, which is fewer than `games` while older games lack them. */
+  perkGames: number;
   /** The most played skill orders; `share` is out of the games that had a timeline. */
   skillOptions: Choice<{ maxOrder: number[]; firstLevels: number[]; share: number }>[];
 };
@@ -159,11 +161,14 @@ export async function aggregateBuild(
     variants: [],
     situational: [],
     perks: [],
+    perkGames: 0,
     skillOptions: [],
   };
   if (used) return build;
 
+  build.perkGames = unprefixed("perk").find((r) => r.value === "0")?.games ?? 0;
   build.perks = unprefixed("perk")
+    .filter((r) => r.value !== "0")
     .slice(0, MAX_PERKS)
     .map((r) => ({ id: Number(r.value), games: r.games, winRate: rate(r.wins, r.games) }));
   const skillRows = unprefixed("skill");
