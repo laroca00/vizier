@@ -144,6 +144,13 @@ export function getSynergies(championId: number, position: string) {
   return get<Synergies>(`/v1/champions/${championId}/synergies?position=${position}`);
 }
 
+export type ArenaDuos = { patches: string[]; games: number; partners: { championId: number; games: number; winRate: number }[] };
+
+/** Champions that placed top four most often next to this one in Arena. */
+export function getArenaDuos(championId: number) {
+  return get<ArenaDuos>(`/v1/arena/duos/${championId}`);
+}
+
 export type Counters = { patches: string[]; games: number; matchups: { championId: number; games: number; winRate: number }[] };
 
 export function getCounters(championId: number, position: string) {

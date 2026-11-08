@@ -956,4 +956,8 @@ export const EN: Record<string, string> = {
   "ARAM planı: Net bir yıpratma ya da başlatma aracı yok; birlikte durun ve rakibin hatasını bekleyin.": "ARAM plan: no clear poke or engage; stay together and wait for their mistake.",
   "Mayhem ise: ilk bakılacak augment'ler": "If this is Mayhem: augments to look for first",
   "{games} oyunluk veriden": "From {games} games",
+  "{champion} ile eşleşenler": "Pairs well with {champion}",
+  "{champion} için en iyi eş": "Best partners for {champion}",
+  "Bu ikili için henüz yeterli Arena maçı yok.": "Not enough Arena games for this pairing yet.",
+  "Birlikte {rate} ilk 4, {games} maç": "Together {rate} top four, {games} games",
 };

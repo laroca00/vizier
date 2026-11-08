@@ -17,6 +17,8 @@ export type Participant = {
   puuid: string;
   participantId?: number;
   teamId?: number;
+  /** Arena only: which duo the player belongs to. */
+  playerSubteamId?: number;
   championId: number;
   teamPosition: string;
   win: boolean;

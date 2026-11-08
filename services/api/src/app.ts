@@ -134,6 +134,12 @@ export function createApp(store: Store, { statsDb, catalog, augments = false }: 
     return c.json((await readDoc(statsDb, docKey.synergies(championId, position))) ?? { patches: [], games: 0, allies: [] });
   });
 
+  app.get("/v1/arena/duos/:championId", async (c) => {
+    const { championId } = championRequest(c);
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json((await readDoc(statsDb, docKey.duos(championId))) ?? { patches: [], games: 0, partners: [] });
+  });
+
   app.get("/v1/pros/builds", async (c) => {
     const championParam = c.req.query("champion");
     const championId = championParam === undefined ? undefined : Number(championParam);

@@ -2,7 +2,7 @@
 // to D1's stat_docs as finished JSON; the Worker only reads them. Keys are
 // shared here so both sides agree.
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
-import { augmentStats, banSuggestions, championOverview, counters, latestPatches, synergies, tierList } from "./stats.ts";
+import { arenaDuos, augmentStats, banSuggestions, championOverview, counters, latestPatches, synergies, tierList } from "./stats.ts";
 
 // Queues with augments: Arena and ARAM Mayhem.
 export const AUGMENT_QUEUES = [1700, 2400];
@@ -23,6 +23,8 @@ export const docKey = {
   matchupBuilds: (championId: number, position: string) => `buildvs:${championId}:${position}`,
   counters: (championId: number, position: string) => `counters:${championId}:${position}`,
   synergies: (championId: number, position: string) => `synergies:${championId}:${position}`,
+  /** Arena duo partners for a champion. */
+  duos: (championId: number) => `duos:1700:${championId}`,
   bans: () => "bans",
   /** One compact row per ranked champion and role, for searching builds without fetching each one. */
   buildIndex: () => "buildindex",
@@ -90,6 +92,7 @@ export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown
     yield [docKey.champion(queue, championId, null), overview];
     yield [docKey.build(queue, championId, null), await aggregateBuild(db, championId, null, null, queue)];
     if (AUGMENT_QUEUES.includes(queue)) yield [docKey.augments(queue, championId), await augmentStats(db, queue, championId)];
+    if (queue === 1700) yield [docKey.duos(championId), await arenaDuos(db, championId)];
     if (queue !== RANKED) continue;
 
     for (const { position } of overview.positions) {

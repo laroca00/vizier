@@ -3,6 +3,7 @@ import { maxOrder } from "./builds.ts";
 import { loadCatalog } from "./ddragon.ts";
 
 const RANKED_SOLO = 420;
+const ARENA = 1700;
 const CHUNK = 5000;
 const CORE_ITEMS = 3;
 const DAY = 86_400_000;
@@ -136,6 +137,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
 
     const tally = new Tally();
     const teams = new Map<string, Raw[]>();
+    const duos = new Map<string, Raw[]>();
     for (const row of rows) {
       tally.add(row, "games", "", row.win);
       if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
@@ -160,6 +162,16 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
         const team = `${row.match_id}:${row.team_id}`;
         teams.set(team, [...(teams.get(team) ?? []), row]);
       }
+      if (row.queue_id === ARENA && row.team_id !== null) {
+        const duo = `${row.match_id}:${row.team_id}`;
+        duos.set(duo, [...(duos.get(duo) ?? []), row]);
+      }
+    }
+    // Both players share the placement, so a duo's win is each one's own win.
+    for (const duo of duos.values()) {
+      if (duo.length !== 2) continue;
+      tally.add(duo[0], "duo", String(duo[1].champion_id), duo[0].win);
+      tally.add(duo[1], "duo", String(duo[0].champion_id), duo[1].win);
     }
     for (const [key, team] of teams) {
       const [match, side] = key.split(":");
