@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDraftHistory } from "../simulator/history";
 import { CompSummary } from "../CompAnalysis";
 import { championIconUrl, roleIconUrl, type Champion } from "../data/ddragon";
 import { adviceAgainst, analyzeComp, compDimensions, DIMENSION_NAMES } from "../data/traits";
@@ -19,7 +20,6 @@ import {
   swap,
   toggleBan,
   useSavedDrafts,
-  type Draft,
   type SavedDraft,
   type Side,
 } from "../simulator/store";
@@ -62,7 +62,22 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const toast = useToast();
   const saved = useSavedDrafts();
   const session = useChampSelect();
-  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const { draft, set: setDraft, undo, redo, canUndo, canRedo } = useDraftHistory();
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const key = e.key.toLowerCase();
+      if (key === "z" && !e.shiftKey) undo();
+      else if (key === "y" || (key === "z" && e.shiftKey)) redo();
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [undo, redo]);
   // Explicit when the player clicked the slot; otherwise Vizier may move the pick to its role.
   const [active, setActive] = useState<{ side: Side; slot: number; explicit?: boolean } | null>({ side: "blue", slot: 0 });
   const [pickOrder, setPickOrder] = useState(false);
@@ -131,6 +146,12 @@ function Simulator({ data }: { data: ChampionRoles }) {
     <>
       <div className="library__filters">
         <Toggle label={t("Dereceli seçim sırası")} hint={t("Boş yerler B1, R1, R2, B2... sırasıyla dolar.")} checked={pickOrder} onChange={setPickOrder} />
+        <Button variant="ghost" disabled={!canUndo} title="Ctrl+Z" onClick={undo}>
+          {t("Geri al")}
+        </Button>
+        <Button variant="ghost" disabled={!canRedo} title="Ctrl+Y" onClick={redo}>
+          {t("Yinele")}
+        </Button>
         <Button variant="ghost" onClick={reset}>
           {t("Sıfırla")}
         </Button>

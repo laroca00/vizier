@@ -1161,4 +1161,6 @@ export const EN: Record<string, string> = {
   "Koddan yükle": "Load from code",
   "Draft kodu kopyalandı": "Draft code copied",
   "Kodu kopyala": "Copy code",
+  "Geri al": "Undo",
+  "Yinele": "Redo",
 };
