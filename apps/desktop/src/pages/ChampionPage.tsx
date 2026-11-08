@@ -15,6 +15,8 @@ import { useAsync } from "../useAsync";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
 import { SegmentBar } from "../charts";
+import { MatchupGuide } from "../draft/MatchupGuide";
+import { Select } from "../ui/Fields";
 import "./ChampionPage.css";
 
 const SHOWN_MATCHUPS = 5;
@@ -150,6 +152,13 @@ function Overview({ overview, championId, championName, champions, version, queu
   const percent = percentIn(useLang());
   const t = useT();
   const position = overview.position;
+  // A lane opponent to prepare for outside champ select; it resets with the role.
+  const [opponent, setOpponent] = useState<number | null>(null);
+  const [opponentRole, setOpponentRole] = useState(position);
+  if (opponentRole !== position) {
+    setOpponentRole(position);
+    setOpponent(null);
+  }
   const ranked = queue === RANKED && position !== null;
   // A role with a handful of games is someone's troll pick, not a way to play the champion.
   const roles = overview.positions.filter((p) => p.games >= MIN_ROLE_GAMES || p.position === position);
@@ -222,14 +231,21 @@ function Overview({ overview, championId, championName, champions, version, queu
 
       <div className="champion__body">
         <section className="enter" aria-label="Build">
-          <h2 className="draft__heading">{t("Build")}</h2>
+          <div className="champion__build-head">
+            <h2 className="draft__heading">{t("Build")}</h2>
+            {ranked && position && <OpponentSelect championId={championId} position={position} champions={champions} value={opponent} onChange={setOpponent} />}
+          </div>
+          {opponent && position && version && champions.get(opponent) && (
+            <MatchupGuide championId={championId} position={position} opponent={champions.get(opponent)!} version={version} />
+          )}
           <BuildSuggestion
             championId={championId}
             championName={championName}
             position={position}
             currentSpells={[0, 0]}
             locked={false}
-            vs={null}
+            vs={ranked ? opponent : null}
+            showPros={ranked && opponent !== null}
             inDraft={false}
             queue={queue}
           />
@@ -264,6 +280,39 @@ function Overview({ overview, championId, championName, champions, version, queu
         )}
       </div>
     </>
+  );
+}
+
+/** Every lane opponent with enough games in this role, by name. */
+function OpponentSelect({
+  championId,
+  position,
+  champions,
+  value,
+  onChange,
+}: {
+  championId: number;
+  position: string;
+  champions: Map<number, Champion>;
+  value: number | null;
+  onChange: (id: number | null) => void;
+}) {
+  const t = useT();
+  const lang = useLang();
+  const [state] = useAsync(`${championId}:${position}`, () => getCounters(championId, position));
+  if (state.status !== "done" || state.value.matchups.length === 0) return null;
+  const options = state.value.matchups
+    .map((m) => champions.get(m.championId))
+    .filter((c): c is Champion => c !== undefined)
+    .sort((a, b) => a.name.localeCompare(b.name, lang))
+    .map((c) => ({ value: String(c.key), label: c.name }));
+  return (
+    <Select
+      label={t("Rakibe hazırlan")}
+      value={value === null ? "" : String(value)}
+      options={[{ value: "", label: t("Rakip seçilmedi") }, ...options]}
+      onChange={(v) => onChange(v ? Number(v) : null)}
+    />
   );
 }
 

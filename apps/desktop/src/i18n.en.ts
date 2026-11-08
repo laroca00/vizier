@@ -759,4 +759,6 @@ export const EN: Record<string, string> = {
   "Yasak {count}/{max}": "Ban {count}/{max}",
   "{champion} yasağını kaldır": "Lift the ban on {champion}",
   "{champion} seç": "Pick {champion}",
+  "Rakibe hazırlan": "Prepare for",
+  "Rakip seçilmedi": "No opponent",
 };

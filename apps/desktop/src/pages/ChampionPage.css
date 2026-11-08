@@ -222,3 +222,16 @@
     0 0 0 1px var(--gilt),
     0 12px 30px rgb(3 8 30 / 0.5);
 }
+
+.champion__build-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.champion__build-head .draft__heading {
+  margin: 0;
+}
