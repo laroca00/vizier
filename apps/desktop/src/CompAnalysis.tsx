@@ -1,8 +1,9 @@
 import type { Champion } from "./data/ddragon";
-import { adviceAgainst, analyzeComp, teamDamage, compDimensions, DIMENSION_NAMES, dimensionText, PHASE_TEXT, WEAKNESS_TEXT, type CompReport } from "./data/traits";
+import { adviceAgainst, analyzeComp, curveRead, teamCurve, teamDamage, compDimensions, DIMENSION_NAMES, dimensionText, PHASE_TEXT, WEAKNESS_TEXT, type CompReport } from "./data/traits";
 import { formatPercent, useLang, useT } from "./i18n";
 
 const PIPS = [0, 1, 2];
+const PHASES = ["early", "mid", "late"] as const;
 
 /** AP/AD split, frontline to teamfight with who brings each, and the team's gaps. */
 export function CompSummary({ team, report, label }: { team: Champion[]; report: CompReport; label: string }) {
@@ -70,6 +71,10 @@ export function CompAnalysis({ allies, enemies, champions }: Props) {
   const ours = analyzeComp(ourTeam);
   const theirs = analyzeComp(theirTeam);
   const advice = adviceAgainst(theirs, ours);
+  const ourCurve = teamCurve(ourTeam);
+  const theirCurve = teamCurve(theirTeam);
+  const read = curveRead(ourCurve, theirCurve);
+  const curve = ourCurve && theirCurve && read ? { ours: ourCurve, theirs: theirCurve, read } : null;
   return (
     <section aria-label={t("Takım kompozisyonu")}>
       <h2 className="draft__heading">{t("Takımının kompozisyonu")}</h2>
@@ -78,6 +83,23 @@ export function CompAnalysis({ allies, enemies, champions }: Props) {
         <>
           <h2 className="draft__heading">{t("Rakibin kompozisyonu")}</h2>
           <CompSummary team={theirTeam} report={theirs} label={t("Rakip takım")} />
+        </>
+      )}
+      {curve && (
+        <>
+          <h2 className="draft__heading">{t("Oyun evreleri")}</h2>
+          <ul className="curve" aria-label={t("Oyun evreleri")}>
+            {PHASES.map((phase) => (
+              <li key={phase}>
+                <span className="curve__name">{t(PHASE_TEXT[phase])}</span>
+                <span className="curve__bars" role="img" aria-label={t("{phase}: sen {ours}, rakip {theirs} (4 üzerinden)", { phase: t(PHASE_TEXT[phase]), ours: curve.ours[phase].toFixed(1), theirs: curve.theirs[phase].toFixed(1) })}>
+                  <span data-side="ours" style={{ width: `${(curve.ours[phase] / 4) * 100}%` }} />
+                  <span data-side="theirs" style={{ width: `${(curve.theirs[phase] / 4) * 100}%` }} />
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="draft__empty">{t(curve.read)}</p>
         </>
       )}
       {advice.length > 0 && (

@@ -91,3 +91,39 @@ describe("composition 2.0 dimensions", () => {
     }
   });
 });
+
+describe("game phase curve", () => {
+  const kayle = champion("Kayle", ["Fighter"]);
+  const draven = champion("Draven", ["Marksman"]);
+  const lux = champion("Lux", ["Mage"]);
+
+  it("gives lopsided champions steep curves and others a mid peak", async () => {
+    const { phaseCurve } = await import("./traits");
+    expect(phaseCurve(draven).early).toBeGreaterThan(phaseCurve(draven).late);
+    expect(phaseCurve(kayle).late).toBeGreaterThan(phaseCurve(kayle).early);
+    const mid = phaseCurve(lux);
+    expect(mid.mid).toBeGreaterThan(mid.early);
+  });
+
+  it("waits for three champions", async () => {
+    const { teamCurve } = await import("./traits");
+    expect(teamCurve([kayle, draven])).toBeNull();
+    expect(teamCurve([kayle, draven, lux])).not.toBeNull();
+  });
+
+  it("reads the matchup of two curves", async () => {
+    const { curveRead, teamCurve } = await import("./traits");
+    const late = teamCurve([kayle, champion("Vayne", ["Marksman"]), champion("Nasus", ["Fighter"])]);
+    const early = teamCurve([draven, champion("Pantheon", ["Fighter"]), champion("LeeSin", ["Fighter"])]);
+    expect(curveRead(late, early)).toContain("geç oyunda daha güçlüsün");
+    expect(curveRead(early, late)).toContain("Rakip geç oyunda");
+    expect(curveRead(late, late)).toContain("birbirine yakın");
+    expect(curveRead(null, late)).toBeNull();
+  });
+
+  it("calls an early lead when the late game is even", async () => {
+    const { curveRead } = await import("./traits");
+    expect(curveRead({ early: 3, mid: 2, late: 2 }, { early: 2, mid: 2, late: 2 })).toContain("Erken oyun senin");
+    expect(curveRead({ early: 2, mid: 2, late: 2 }, { early: 3, mid: 2, late: 2 })).toContain("Rakip erken");
+  });
+});

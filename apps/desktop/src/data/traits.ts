@@ -151,6 +151,16 @@ const OBJECTIVES = new Set([
 
 export type Phase = "early" | "mid" | "late";
 
+// Champions whose power is lopsided enough to need more than the early/mid/late label.
+const EARLY_EXTREME = new Set([
+  "Draven", "Pantheon", "LeeSin", "Elise", "Renekton", "Lucian", "Kalista", "Leona", "Pyke", "Nidalee", "RekSai", "Olaf",
+  "Kled", "Darius", "XinZhao", "Jayce", "Shaco", "Talon", "Rengar", "Blitzcrank", "Nautilus",
+]);
+const LATE_EXTREME = new Set([
+  "Kayle", "Kassadin", "Vayne", "Veigar", "Nasus", "KogMaw", "Smolder", "Senna", "AurelionSol", "Zeri", "Jinx", "Aphelios",
+  "Belveth", "Ryze", "Karthus", "Yuumi", "Cassiopeia", "Mordekaiser", "Azir", "Twitch",
+]);
+
 export type Traits = {
   /** Share of the champion's damage that is magic, 0 to 1. */
   magic: number;
@@ -195,6 +205,39 @@ export function traitsOf(c: Champion): Traits {
     hardCc: HARD_CC.has(c.id),
     burst: BURST.has(c.id),
   };
+}
+
+/** Strength in each phase, 0 (hopeless) to 4 (at its peak). */
+export type PhaseCurve = Record<Phase, number>;
+
+export function phaseCurve(c: Champion): PhaseCurve {
+  if (EARLY_EXTREME.has(c.id)) return { early: 4, mid: 2, late: 1 };
+  if (LATE_EXTREME.has(c.id)) return { early: 1, mid: 2, late: 4 };
+  const phase = traitsOf(c).phase;
+  if (phase === "early") return { early: 3, mid: 2.5, late: 1.5 };
+  if (phase === "late") return { early: 1.5, mid: 2.5, late: 3 };
+  return { early: 2, mid: 3, late: 2.5 };
+}
+
+/** The team's average curve; null until three champions are known, as a smaller team says little. */
+export function teamCurve(team: Champion[]): PhaseCurve | null {
+  if (team.length < 3) return null;
+  const sum = team.map(phaseCurve).reduce((a, b) => ({ early: a.early + b.early, mid: a.mid + b.mid, late: a.late + b.late }));
+  return { early: sum.early / team.length, mid: sum.mid / team.length, late: sum.late / team.length };
+}
+
+const CURVE_GAP = 0.4;
+
+/** One plain line on how the two curves meet; null when either side is unknown. */
+export function curveRead(ours: PhaseCurve | null, theirs: PhaseCurve | null): string | null {
+  if (!ours || !theirs) return null;
+  const early = ours.early - theirs.early;
+  const late = ours.late - theirs.late;
+  if (late <= -CURVE_GAP && early >= -CURVE_GAP) return "Rakip geç oyunda daha güçlü; erken ejderler ve kulelerle farkı aç.";
+  if (late >= CURVE_GAP && early <= CURVE_GAP) return "Sen geç oyunda daha güçlüsün; erken kavgalardan kaçın ve oyunu uzat.";
+  if (early >= CURVE_GAP) return "Erken oyun senin; baskı kur ve ilk objeleri al.";
+  if (early <= -CURVE_GAP) return "Rakip erken oyunda güçlü; ilk dakikaları güvenli geç ve farkı ilerde kapat.";
+  return "İki takımın eğrisi birbirine yakın; oyun orta oyunda belli olur.";
 }
 
 export type Dimension =
