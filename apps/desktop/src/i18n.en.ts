@@ -1174,4 +1174,7 @@ export const EN: Record<string, string> = {
   "{stat} (18. seviye)": "{stat} (level 18)",
   "{stat} (1. seviye)": "{stat} (level 1)",
   "Şuna dönüşür": "Builds into",
+  "Güçlendirme": "Buff",
+  "Zayıflatma": "Nerf",
+  "Karışık": "Mixed",
 };

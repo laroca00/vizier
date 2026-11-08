@@ -90,3 +90,18 @@
 .patches .search-input {
   min-width: 280px;
 }
+
+.patches__verdict {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.8em;
+  background: rgb(255 255 255 / 0.08);
+}
+
+.patches__verdict[data-verdict="buff"] {
+  color: #7fd6cc;
+}
+
+.patches__verdict[data-verdict="nerf"] {
+  color: #f08a7e;
+}

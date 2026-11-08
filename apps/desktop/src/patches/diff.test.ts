@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diffChampions, diffItems, diffRunes, direction, perRank, type RawChampion, type RawItem } from "./diff";
+import { diffChampions, diffItems, diffRunes, direction, perRank, verdict, type RawChampion, type RawItem } from "./diff";
 
 const ahri = (hp: number, qCooldown: number[]): RawChampion => ({
   id: "Ahri",
@@ -74,5 +74,35 @@ describe("patch diff", () => {
     expect(direction({ field: "item:gold", before: 3000, after: 3100 })).toBe("down");
     expect(direction({ field: "stat:hp", before: 590, after: 600 })).toBe("up");
     expect(direction({ field: "spell:Q:cooldown", before: "7/6", after: 6 })).toBeNull();
+  });
+});
+
+describe("verdict", () => {
+  const entry = (changes: [string, number | string, number | string][]) => ({
+    kind: "champion" as const, id: "1", name: "A", status: "changed" as const,
+    changes: changes.map(([field, before, after]) => ({ field, before, after })),
+  });
+
+  it("calls an all-helpful patch a buff and an all-harmful one a nerf", () => {
+    expect(verdict(entry([["stat:hp", 600, 610], ["spell:Q:cooldown", 8, 7]]))).toBe("buff");
+    expect(verdict(entry([["stat:armor", 30, 28], ["spell:Q:cost", 50, 60]]))).toBe("nerf");
+  });
+
+  it("calls a mix of both mixed", () => {
+    expect(verdict(entry([["stat:hp", 600, 610], ["stat:armor", 30, 28]]))).toBe("mixed");
+  });
+
+  it("reads per-rank values only when every rank moves the same way", () => {
+    expect(direction({ field: "spell:Q:cooldown", before: "10/9/8", after: "9/8/7" })).toBe("up");
+    expect(direction({ field: "spell:Q:cooldown", before: "10/9/8", after: "9/9/9" })).toBeNull();
+  });
+
+  it("has no verdict for new champions or changes without a direction", () => {
+    expect(verdict({ ...entry([]), status: "added" })).toBeNull();
+    expect(verdict(entry([["item:recipe", "1+2", "1+3"]]))).toBeNull();
+  });
+
+  it("does not count the level 18 line twice", () => {
+    expect(verdict(entry([["stat:hp", 600, 610], ["level:hp:18", 1000, 1010], ["stat:armor", 30, 28]]))).toBe("mixed");
   });
 });

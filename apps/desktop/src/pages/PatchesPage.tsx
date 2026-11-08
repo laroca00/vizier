@@ -3,7 +3,7 @@ import { championIconUrl, champions, itemIconUrl, latestVersion } from "../data/
 import { useLang, useT, type Lang } from "../i18n";
 import "../library/library.css";
 import { openExternal, PATCH_NOTES } from "../links";
-import { direction, type EntityDiff, type Kind } from "../patches/diff";
+import { direction, verdict, type EntityDiff, type Kind, type Verdict } from "../patches/diff";
 import { patchDiff, patchName, patchVersions, type PatchDiff } from "../patches/load";
 import "../patches/patches.css";
 import { fieldLabel, formatValue } from "../patches/format";
@@ -141,6 +141,8 @@ function DiffView({ diff, onOpenChampion }: { diff: PatchDiff; onOpenChampion: (
   );
 }
 
+const VERDICT_NAMES: Record<Verdict, string> = { buff: "Güçlendirme", nerf: "Zayıflatma", mixed: "Karışık" };
+
 const STATUS: Record<EntityDiff["status"], string> = { added: "Yeni", removed: "Kaldırıldı", changed: "Değişti" };
 
 function Entry({ entry, icon, itemNames, lang, onOpen }: { entry: EntityDiff; icon: string | null; itemNames: Record<string, string>; lang: Lang; onOpen?: () => void }) {
@@ -161,7 +163,14 @@ function Entry({ entry, icon, itemNames, lang, onOpen }: { entry: EntityDiff; ic
         ) : (
           <span className="library__open">{name}</span>
         )}
-        <span className="patches__status">{t(STATUS[entry.status])}</span>
+        <span className="patches__status">
+          {verdict(entry) && (
+            <span className="patches__verdict" data-verdict={verdict(entry)}>
+              {t(VERDICT_NAMES[verdict(entry)!])}
+            </span>
+          )}{" "}
+          {t(STATUS[entry.status])}
+        </span>
       </div>
       {entry.changes.length > 0 && (
         <ul className="patches__changes">
