@@ -105,3 +105,25 @@
 .patches__verdict[data-verdict="nerf"] {
   color: #f08a7e;
 }
+
+/* A champion's patch history on its page. */
+
+.champion-history {
+  margin-top: var(--space-4);
+}
+
+.champion-history__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.champion-history__patch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 4px;
+  font-weight: var(--weight-medium);
+}
