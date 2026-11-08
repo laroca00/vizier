@@ -17,6 +17,9 @@ import {
 } from "./data/ddragon";
 import { timeAgo } from "./labels";
 import { useAsync } from "./useAsync";
+import { fromPro } from "./library/convert";
+import { createBuild } from "./library/store";
+import { useToast } from "./ui/Toast";
 import { Button } from "./ui/Button";
 import { ErrorState } from "./ui/States";
 
@@ -90,6 +93,7 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: ProStatic; co
   const t = useT();
   const lang = useLang();
   const [importState, setImportState] = useState<ImportState>({ status: "idle" });
+  const toast = useToast();
   const champion = data.champions.get(build.championId);
   const opponent = build.opponentChampionId ? data.champions.get(build.opponentChampionId) : undefined;
   const keystone = data.runes.get(parseRunes(build.runes).selectedPerkIds[0]);
@@ -143,6 +147,21 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: ProStatic; co
       <span className="pros__action">
         <Button disabled={!isTauri()} busy={importState.status === "working"} onClick={onImport}>
           {t("Aktar")}
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            createBuild(
+              fromPro(
+                { name: [build.player, champion?.name].filter(Boolean).join(" "), championId: build.championId, position: build.position || null },
+                build,
+                (id) => !!data.items.get(id)?.complete,
+              ),
+            );
+            toast("success", t("{champion} buildlerine kaydedildi", { champion: champion?.name ?? "" }));
+          }}
+        >
+          {t("Kaydet")}
         </Button>
         {(importState.status === "done" || importState.status === "error") && (
           <span className="build__feedback" data-status={importState.status} role="status">

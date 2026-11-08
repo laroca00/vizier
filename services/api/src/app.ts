@@ -60,6 +60,12 @@ export function createApp(store: Store, { statsDb, catalog }: AppOptions = {}) {
 
   app.get("/health", (c) => c.json({ ok: true }));
 
+  // Registered before the champion route so "index" isn't read as an id.
+  app.get("/v1/builds/index", async (c) => {
+    if (!statsDb) return c.json({ error: "Build stats are not available" }, 503);
+    return c.json((await readDoc(statsDb, docKey.buildIndex())) ?? { patches: [], builds: [] });
+  });
+
   app.get("/v1/builds/:championId", async (c) => {
     const championId = Number(c.req.param("championId"));
     if (!Number.isInteger(championId) || championId <= 0) badRequest("Invalid champion id");

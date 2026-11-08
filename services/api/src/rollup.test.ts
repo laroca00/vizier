@@ -92,6 +92,7 @@ describe("stat docs", () => {
         docKey.build(420, 103, "MIDDLE"),
         docKey.matchupBuilds(103, "MIDDLE"),
         docKey.counters(103, "MIDDLE"),
+        docKey.buildIndex(),
       ]),
     );
 
@@ -102,6 +103,8 @@ describe("stat docs", () => {
     // Too few games against this opponent: the champion's overall build.
     expect(await (await app.request("/v1/builds/103?position=MIDDLE&vs=84")).json()).toMatchObject({ vs: null, games: 20 });
     expect((await app.request("/v1/builds/1?position=MIDDLE")).status).toBe(404);
+    const index = (await (await app.request("/v1/builds/index")).json()) as { builds: { championId: number; position: string; games: number }[] };
+    expect(index.builds).toContainEqual(expect.objectContaining({ championId: 103, position: "MIDDLE", games: 20 }));
     // No ARAM games were crawled, so nothing was published for it.
     expect(await (await app.request("/v1/tierlist/ALL?queue=450")).json()).toEqual({ patches: [], games: 0, champions: [] });
   });

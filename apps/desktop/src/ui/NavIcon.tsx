@@ -12,7 +12,8 @@ export type IconName =
   | "profile"
   | "refresh"
   | "close"
-  | "overlay";
+  | "overlay"
+  | "library";
 
 // Drawn for Vizier on a 20px grid with a 1.6 stroke, so they sit with the
 // Geologica text at the same weight.
@@ -31,6 +32,7 @@ const PATHS: Record<IconName, string> = {
   refresh: "M15.5 10a5.5 5.5 0 1 1-1.6-3.9M15.5 3.8v2.8h-2.8",
   close: "M5.5 5.5l9 9M14.5 5.5l-9 9",
   overlay: "M3.5 4.5h13v9h-13zM7 16.5h6M10 13.5v3M6.5 7.5h3v2.5h-3z",
+  library: "M4 3.5h3v13H4zM8.5 3.5h3v13h-3zM13.2 4.3l2.7-.7 2.6 12.3-2.7.6z",
 };
 
 export function NavIcon({ name, className = "side__icon", size = 20 }: { name: IconName; className?: string; size?: number }) {

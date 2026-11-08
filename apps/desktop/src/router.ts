@@ -8,6 +8,7 @@ export type Route =
   | { page: "draft" }
   | { page: "tiers" }
   | { page: "pros" }
+  | { page: "builds" }
   | { page: "champion"; championId: number; position: string | null; queue: number }
   | { page: "overlay" }
   | { page: "settings" }

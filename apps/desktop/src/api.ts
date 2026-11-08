@@ -76,6 +76,24 @@ export async function getBuild(championId: number, position: string | null, vs: 
   }
 }
 
+export type BuildIndexEntry = {
+  championId: number;
+  position: string;
+  games: number;
+  winRate: number;
+  keystone: number | null;
+  styles: BuildStyle[];
+  /** Core items in buy order, then the most bought finished items. */
+  items: number[];
+};
+
+export type BuildIndex = { patches: string[]; builds: BuildIndexEntry[] };
+
+/** Every ranked champion and role in one small document; empty until the crawler publishes it. */
+export function getBuildIndex() {
+  return get<BuildIndex>("/v1/builds/index");
+}
+
 export type TierEntry = {
   championId: number;
   games: number;

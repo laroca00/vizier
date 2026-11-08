@@ -21,7 +21,38 @@ export const docKey = {
   counters: (championId: number, position: string) => `counters:${championId}:${position}`,
   synergies: (championId: number, position: string) => `synergies:${championId}:${position}`,
   bans: () => "bans",
+  /** One compact row per ranked champion and role, for searching builds without fetching each one. */
+  buildIndex: () => "buildindex",
 };
+
+export type BuildIndexEntry = {
+  championId: number;
+  position: string;
+  games: number;
+  winRate: number;
+  keystone: number | null;
+  /** Build styles with enough games, most played first. */
+  styles: string[];
+  /** Core items in buy order, then the most bought finished items. */
+  items: number[];
+};
+
+export type BuildIndex = { patches: string[]; builds: BuildIndexEntry[] };
+
+const INDEX_ITEMS = 8;
+
+export function indexEntry(championId: number, position: string, build: Build): BuildIndexEntry {
+  const items = [...new Set([...(build.coreItems?.ids ?? []), ...build.items.map((i) => i.id)])].slice(0, INDEX_ITEMS);
+  return {
+    championId,
+    position,
+    games: build.games,
+    winRate: build.winRate,
+    keystone: build.runes[0]?.perks[0] ?? null,
+    styles: build.variants.map((v) => v.style),
+    items,
+  };
+}
 
 export async function readDoc<T>(db: D1Database, key: string): Promise<T | null> {
   const row = await db.prepare("SELECT body FROM stat_docs WHERE key = ?").bind(key).first<{ body: string }>();
@@ -42,6 +73,8 @@ export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown
   }
   yield [docKey.bans(), await banSuggestions(db)];
 
+  const index: BuildIndexEntry[] = [];
+  let indexPatches: string[] = [];
   const { results: champions } = await db
     .prepare("SELECT DISTINCT queue_id, champion_id FROM stat_counts WHERE kind = 'games'")
     .all<{ queue_id: number; champion_id: number }>();
@@ -54,12 +87,18 @@ export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown
 
     for (const { position } of overview.positions) {
       yield [docKey.champion(queue, championId, position), await championOverview(db, championId, position, queue)];
-      yield [docKey.build(queue, championId, position), await aggregateBuild(db, championId, position, null, queue)];
+      const build = await aggregateBuild(db, championId, position, null, queue);
+      if (build && build.runes.length > 0) {
+        index.push(indexEntry(championId, position, build));
+        indexPatches = build.patches;
+      }
+      yield [docKey.build(queue, championId, position), build];
       yield [docKey.matchupBuilds(championId, position), await matchupBuilds(db, championId, position)];
       yield [docKey.counters(championId, position), await counters(db, championId, position)];
       yield [docKey.synergies(championId, position), await synergies(db, championId, position)];
     }
   }
+  if (index.length > 0) yield [docKey.buildIndex(), { patches: indexPatches, builds: index } satisfies BuildIndex];
 }
 
 async function matchupBuilds(db: D1Database, championId: number, position: string): Promise<Record<number, Build>> {

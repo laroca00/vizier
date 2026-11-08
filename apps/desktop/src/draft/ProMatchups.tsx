@@ -2,6 +2,7 @@ import { getProBuilds, type ProBuild } from "../api";
 import { championIconUrl, itemIconUrl, runeIconUrl } from "../data/ddragon";
 import { useLang, useT } from "../i18n";
 import { timeAgo } from "../labels";
+import { maxOrderOf } from "../library/convert";
 import { loadProStatic, parseRunes, type ProStatic } from "../ProBuildList";
 import { useAsync } from "../useAsync";
 import { rankProBuilds, type ProMatch } from "./logic";
@@ -14,19 +15,6 @@ const MATCH_TAGS: Partial<Record<ProMatch, string>> = {
   class: "Benzer rakip",
   damage: "Aynı hasar tipi",
 };
-
-/** The order Q, W and E reached five points; skills that never did follow by points spent. */
-export function maxOrder(skillOrder: number[]): number[] {
-  const points = [0, 0, 0, 0];
-  const maxed: number[] = [];
-  for (const slot of skillOrder) {
-    if (slot < 1 || slot > 3) continue;
-    points[slot] += 1;
-    if (points[slot] === 5) maxed.push(slot);
-  }
-  const rest = [1, 2, 3].filter((s) => !maxed.includes(s)).sort((a, b) => points[b] - points[a]);
-  return [...maxed, ...rest];
-}
 
 type Props = { championId: number; position: string | null; opponentId: number | null };
 
@@ -72,7 +60,7 @@ function ProCard({ build, match, data }: { build: ProBuild; match: ProMatch; dat
   const opponent = build.opponentChampionId ? data.champions.get(build.opponentChampionId) : undefined;
   const keystone = data.runes.get(parseRunes(build.runes).selectedPerkIds[0]);
   const finished = build.items.filter((id) => data.items.get(id)?.complete);
-  const order = build.skillOrder.length >= 9 ? maxOrder(build.skillOrder) : null;
+  const order = build.skillOrder.length >= 9 ? maxOrderOf(build.skillOrder) : null;
   const tag = MATCH_TAGS[match];
 
   return (

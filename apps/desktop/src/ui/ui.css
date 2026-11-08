@@ -349,6 +349,16 @@
   background: transparent;
 }
 
+.modal--wide {
+  width: min(880px, calc(100% - 32px));
+}
+
+.modal--wide .modal__body {
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
 .modal::backdrop {
   background: rgb(2 6 24 / 0.6);
 }

@@ -8,6 +8,7 @@ import { ChampionPage } from "./pages/ChampionPage";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { OverlayPage } from "./pages/OverlayPage";
+import { BuildsPage } from "./pages/BuildsPage";
 import { ProsPage } from "./pages/ProsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TierListPage } from "./pages/TierListPage";
@@ -34,6 +35,7 @@ const LABELS: Record<Page, string> = {
   draft: "Şampiyon seçimi",
   tiers: "Tier listesi",
   pros: "Pro build'ler",
+  builds: "Build kütüphanesi",
   champion: "Tier listesi",
   overlay: "Overlay",
   settings: "Ayarlar",
@@ -162,6 +164,7 @@ function App() {
       heading: "Keşfet",
       items: [
         { id: "tiers", label: "Tier listesi", icon: "tiers" },
+        { id: "builds", label: "Build kütüphanesi", icon: "library" },
         { id: "pros", label: "Pro build'ler", icon: "pros" },
       ],
     },
@@ -239,6 +242,8 @@ function App() {
               <OverlayPage />
             ) : route.page === "tiers" ? (
               <TierListPage onOpenChampion={openChampion} />
+            ) : route.page === "builds" ? (
+              <BuildsPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "pros" ? (
               <ProsPage />
             ) : route.page === "champion" ? (

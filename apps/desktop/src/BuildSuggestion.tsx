@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getBuild, type Build, type BuildStyle, type Foe, type Picks } from "./api";
 import { ProMatchups } from "./draft/ProMatchups";
+import { fromPicks } from "./library/convert";
+import { createBuild } from "./library/store";
+import { positionLabel } from "./labels";
 import { BuildCompare } from "./BuildCompare";
 import { readChosenStyle, saveChosenStyle, STYLE_NAMES } from "./buildStyles";
 import {
@@ -110,7 +113,8 @@ type Props = {
 const SKILL_KEYS = ["", "Q", "W", "E", "R"];
 
 export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs, showPros = false, inDraft = true, queue = 420, enemies = [] }: Props) {
-  const percent = percentIn(useLang());
+  const lang = useLang();
+  const percent = percentIn(lang);
   const t = useT();
   const toast = useToast();
   const [state, retry] = useAsync(`${queue}:${championId}:${position}:${vs}`, () => load(championId, position, vs, queue));
@@ -287,6 +291,22 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
         {t("Yama {patch}, {games} maç, kazanma oranı {rate}", { patch: build.patches[0], games: shown.games, rate: percent(shown.winRate) })}
         {vs && !versus ? `. ${t("{opponent} eşleşmesi için yeterli maç yok; genel build gösteriliyor", { opponent: opponentName })}` : ""}
       </p>
+
+      <div className="build__save">
+        <Button
+          size="small"
+          variant="ghost"
+          onClick={() => {
+            const name = [championName, variant ? t(STYLE_NAMES[variant.style]) : null, tab === "vs" ? t("{opponent} karşısında", { opponent: opponentName }) : positionLabel(position ?? "", lang)]
+              .filter(Boolean)
+              .join(" ");
+            createBuild(fromPicks({ name, championId, position: position ? position.toUpperCase() : null }, picks, (id) => !!state.value.items.get(id)?.complete));
+            toast("success", t("{champion} buildlerine kaydedildi", { champion: championName }));
+          }}
+        >
+          {t("Buildlerime kaydet")}
+        </Button>
+      </div>
 
       {showPros && <ProMatchups championId={championId} position={position} opponentId={vs} />}
 

@@ -10,10 +10,12 @@ type Props = {
   children: ReactNode;
   /** Buttons along the bottom, primary last. */
   actions?: ReactNode;
+  /** For forms that need room; the body scrolls inside the window. */
+  wide?: boolean;
 };
 
 /** A native dialog: focus is trapped and Escape closes it without any code of ours. */
-export function Modal({ open, title, onClose, children, actions }: Props) {
+export function Modal({ open, title, onClose, children, actions, wide = false }: Props) {
   const t = useT();
   const dialog = useRef<HTMLDialogElement>(null);
 
@@ -27,7 +29,7 @@ export function Modal({ open, title, onClose, children, actions }: Props) {
   return (
     <dialog
       ref={dialog}
-      className="modal"
+      className={wide ? "modal modal--wide" : "modal"}
       aria-label={title}
       onClose={onClose}
       onClick={(event) => event.target === dialog.current && onClose()}
