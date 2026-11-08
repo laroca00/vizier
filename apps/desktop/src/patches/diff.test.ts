@@ -17,10 +17,19 @@ describe("patch diff", () => {
     const ahriDiff = diff.find((d) => d.id === "103")!;
     expect(ahriDiff.changes).toEqual([
       { field: "stat:hp", before: 590, after: 600 },
+      { field: "level:hp:18", before: 590, after: 600 },
       { field: "spell:Q:cooldown", before: 7, after: "7/6.5" },
     ]);
     expect(diff.find((d) => d.id === "2")?.status).toBe("added");
     expect(diff.find((d) => d.id === "1")?.status).toBe("removed");
+  });
+
+  it("adds the level 18 value when a growth number changes", () => {
+    const champ = (growth: number): RawChampion => ({ id: "A", key: "1", name: "A", stats: { hp: 600, hpperlevel: growth, armor: 30 } });
+    const [diff] = diffChampions({ A: champ(100) }, { A: champ(110) });
+    const level18 = (growth: number) => Math.round((600 + growth * 17 * (0.7025 + 0.0175 * 17)) * 1000) / 1000;
+    expect(diff.changes).toContainEqual({ field: "level:hp:18", before: level18(100), after: level18(110) });
+    expect(diff.changes.some((c) => c.field.startsWith("level:armor"))).toBe(false);
   });
 
   it("leaves unchanged champions out", () => {

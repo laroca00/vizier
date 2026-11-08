@@ -45,8 +45,13 @@ const SPELL_FIELDS: Record<string, string> = { cooldown: "{key} bekleme süresi"
 
 export type T = (text: string, params?: Record<string, string | number>) => string;
 
+/** Stats that grow per level; their base value is the level 1 value. */
+const GROWING = new Set(["hp", "attackdamage", "armor", "spellblock", "attackspeed"]);
+
 export function fieldLabel(field: string, t: T) {
   const [kind, a, b] = field.split(":");
+  if (kind === "level") return t("{stat} (18. seviye)", { stat: t(STAT_NAMES[a] ?? a) });
+  if (kind === "stat" && GROWING.has(a)) return t("{stat} (1. seviye)", { stat: t(STAT_NAMES[a] ?? a) });
   if (kind === "stat") return t(STAT_NAMES[a] ?? a);
   if (kind === "spell") return t(SPELL_FIELDS[b] ?? b, { key: a });
   if (field === "item:gold") return t("Fiyat");
