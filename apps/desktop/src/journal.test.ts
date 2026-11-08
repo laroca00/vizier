@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupJournal, journalEntries, parseNoteKey } from "./journal";
+import { groupJournal, journalEntries, noteToStore, parseNoteKey } from "./journal";
 
 const names: Record<number, string> = { 103: "Ahri", 238: "Zed", 1: "Annie", 157: "Yasuo" };
 const nameOf = (id: number) => names[id] ?? "";
@@ -28,5 +28,12 @@ describe("journal", () => {
     expect(groupJournal(entries, nameOf, "tibbers", "en").map((g) => g.name)).toEqual(["Annie"]);
     expect(groupJournal(entries, nameOf, "zed", "en")[0].matchups).toHaveLength(1);
     expect(groupJournal(entries, nameOf, "nothing here", "en")).toEqual([]);
+  });
+
+  it("does not store an untouched template", () => {
+    const template = "Lane plan:\n\n";
+    expect(noteToStore(template, template)).toBe("");
+    expect(noteToStore(`${template}trade at level 2`, template)).toContain("trade");
+    expect(noteToStore("free text")).toBe("free text");
   });
 });

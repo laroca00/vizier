@@ -7,7 +7,7 @@ import { PowerSpikes } from "../draft/PowerSpikes";
 import { StatsDuel } from "../draft/StatsDuel";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { useLang, useT } from "../i18n";
-import { JournalNote } from "../Journal";
+import { JournalNote, useMatchupTemplate } from "../Journal";
 import { POSITIONS } from "../labels";
 import { matchupNoteKey } from "../personal";
 import { Button } from "../ui/Button";
@@ -58,6 +58,7 @@ function ChampionField({ label, value, list, version, onPick }: { label: string;
 /** Study how two champions meet in a role, before the game and outside champ select. */
 export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange: (next: MatchupRoute) => void }) {
   const t = useT();
+  const template = useMatchupTemplate();
   const lang = useLang();
   const [data] = useAsync("static", loadStatic);
   const list = data.status === "done" ? [...data.value.champions.values()].sort((a, b) => a.name.localeCompare(b.name, lang)) : [];
@@ -105,7 +106,7 @@ export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange
                   showPros
                 />
               </section>
-              <JournalNote noteKey={matchupNoteKey(route.championId, route.opponentId)} label={t("Eşleşme notun")} />
+              <JournalNote noteKey={matchupNoteKey(route.championId, route.opponentId)} label={t("Eşleşme notun")} template={template} />
             </div>
           ) : (
             <EmptyState title={t("İki şampiyon seç")}>{t("Eşleşmeyi görmek için iki farklı şampiyon ve bir rol seç.")}</EmptyState>

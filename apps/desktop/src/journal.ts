@@ -45,3 +45,8 @@ export function groupJournal(entries: JournalEntry[], nameOf: (id: number) => st
   for (const group of groups.values()) group.matchups.sort((a, b) => nameOf(a.opponentId!).localeCompare(nameOf(b.opponentId!), locale));
   return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, locale));
 }
+
+/** What to store for the text in the box: an untouched template is no note. */
+export function noteToStore(text: string, template?: string): string {
+  return template !== undefined && text === template ? "" : text;
+}

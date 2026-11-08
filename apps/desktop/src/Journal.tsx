@@ -1,30 +1,42 @@
 import { useEffect, useState } from "react";
 import { championIconUrl, type Champion } from "./data/ddragon";
 import { useLang, useT } from "./i18n";
+import { noteToStore } from "./journal";
 import { matchupNoteKey, notedMatchups, setNote, usePersonal } from "./personal";
 
-/** A note the player keeps for a champion or a matchup; saved as they type. */
-export function JournalNote({ noteKey, label, placeholder }: { noteKey: string; label: string; placeholder?: string }) {
+/** A matchup note starts with these headings; the player deletes the ones they don't need. */
+export function useMatchupTemplate(): string {
+  const t = useT();
+  return [t("Hat planı"), t("Hepsini verme penceresi"), t("Kaçınılacaklar")].map((h) => `${h}:\n\n`).join("");
+}
+
+/**
+ * A note the player keeps for a champion or a matchup; saved as they type.
+ * An untouched `template` is shown in an empty note but never saved.
+ */
+export function JournalNote({ noteKey, label, placeholder, template }: { noteKey: string; label: string; placeholder?: string; template?: string }) {
   const t = useT();
   const { notes } = usePersonal();
-  const [text, setText] = useState(notes[noteKey] ?? "");
+  const start = (key: string) => notes[key] ?? template ?? "";
+  const [text, setText] = useState(start(noteKey));
   const [shownKey, setShownKey] = useState(noteKey);
   const [saved, setSaved] = useState(false);
 
   // Another note opened in the same spot, e.g. a different matchup.
   if (shownKey !== noteKey) {
     setShownKey(noteKey);
-    setText(notes[noteKey] ?? "");
+    setText(start(noteKey));
   }
 
   useEffect(() => {
-    if (text === (notes[noteKey] ?? "")) return;
+    const value = noteToStore(text, template);
+    if (value === (notes[noteKey] ?? "")) return;
     const timer = setTimeout(() => {
-      setNote(noteKey, text);
+      setNote(noteKey, value);
       setSaved(true);
     }, 500);
     return () => clearTimeout(timer);
-  }, [text, noteKey, notes]);
+  }, [text, template, noteKey, notes]);
 
   return (
     <label className="journal">
@@ -48,6 +60,7 @@ export function JournalNote({ noteKey, label, placeholder }: { noteKey: string; 
 export function MatchupNotes({ championId, champions, version }: { championId: number; champions: Map<number, Champion>; version: string | null }) {
   const t = useT();
   const lang = useLang();
+  const template = useMatchupTemplate();
   const personal = usePersonal();
   const noted = notedMatchups(personal, championId);
   const [opponent, setOpponent] = useState<number | null>(noted[0] ?? null);
@@ -91,6 +104,7 @@ export function MatchupNotes({ championId, champions, version }: { championId: n
       )}
       {opponent !== null && (
         <JournalNote
+          template={template}
           noteKey={matchupNoteKey(championId, opponent)}
           label={t("{opponent} karşısında", { opponent: champions.get(opponent)?.name ?? "" })}
           placeholder={t("Bu rakibe karşı ne işe yaradı?")}

@@ -28,7 +28,7 @@ import { ItemAdvicePanel } from "../draft/ItemAdvicePanel";
 import { PoolBuild } from "../draft/PoolBuild";
 import { useOpponent, type Opponent } from "../draft/useOpponent";
 import { formatPercent, useLang, useT } from "../i18n";
-import { JournalNote } from "../Journal";
+import { JournalNote, useMatchupTemplate } from "../Journal";
 import { draftPhaseLabel, positionLabel } from "../labels";
 import type { ChampSelect, DraftMember } from "../lcu";
 import { MatchupLink } from "../matchupLink";
@@ -60,6 +60,7 @@ function useSecondsLeft(endsAt: number) {
 
 export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const t = useT();
+  const matchupTemplate = useMatchupTemplate();
   const lang = useLang();
   const [data] = useAsync("static", loadStatic);
   const { pool } = usePersonal();
@@ -266,6 +267,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 />
                 {vs && (
                   <JournalNote
+                    template={matchupTemplate}
                     noteKey={matchupNoteKey(myChampion, vs)}
                     label={t("{opponent} eşleşmesi notların", { opponent: ready.champions.get(vs)?.name ?? "" })}
                     placeholder={t("Bu rakibe karşı ne işe yaradı?")}
