@@ -71,6 +71,13 @@ export function compareClassic(guess: ClassicAttributes, answer: ClassicAttribut
   };
 }
 
+const SQUARES: Record<Match, string> = { yes: "🟩", partial: "🟨", no: "🟥" };
+
+/** One line of squares per guess, oldest first, for sharing a classic result without the answer. */
+export function classicGrid(results: ClassicResult[]): string {
+  return results.map((r) => [r.classes, r.resource, r.range, r.difficulty, r.roles].map((m) => SQUARES[m]).join("")).join("\n");
+}
+
 /** How far the splash is zoomed in after this many wrong guesses: a detail first, the whole picture last. */
 export function skinZoom(wrongGuesses: number): number {
   const steps = [6, 4.5, 3.2, 2.2, 1.5, 1];

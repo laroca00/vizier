@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Champion } from "../data/ddragon";
 import { EMOJI_HINTS } from "./emoji";
-import { attributesOf, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinZoom, streak, type QuizRecord } from "./logic";
+import { attributesOf, classicGrid, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinZoom, streak, type QuizRecord } from "./logic";
 
 function champion(id: string, tags: string[], difficulty: number, partype: string, attackRange: number): Champion {
   return { id, key: id.length, name: id, magic: true, tank: false, tags, info: { attack: 5, defense: 5, magic: 5, difficulty }, partype, attackRange };
@@ -31,6 +31,12 @@ describe("champion riddle", () => {
     expect(zed.range).toBe("no");
     expect(zed.difficultyArrow).toBe("lower");
     expect(zed.roles).toBe("yes");
+  });
+
+  it("shares a classic result as squares without naming the answer", () => {
+    const grid = classicGrid([compareClassic(attributesOf(ZED, []), attributesOf(AHRI, [])), compareClassic(attributesOf(AHRI, []), attributesOf(AHRI, []))]);
+    expect(grid.split("\n")).toEqual(["🟨🟥🟥🟥🟩", "🟩🟩🟩🟩🟩"]);
+    expect(grid).not.toContain("Ahri");
   });
 
   it("reads range and reveals hints step by step", () => {

@@ -766,4 +766,8 @@ export const EN: Record<string, string> = {
   "Bölüm": "Section",
   "Bu adla bir şampiyon ya da bölüm yok.": "No champion or section by that name.",
   "Havuzundaki build'in: {name}": "Your pool build: {name}",
+  "Vizier bilmecesi, {mode}, {day}: {count} tahmin": "Vizier riddle, {mode}, {day}: {count} guesses",
+  "Sonuç panoya kopyalandı": "Result copied to the clipboard",
+  "Panoya kopyalanamadı.": "Couldn't copy to the clipboard.",
+  "Sonucu kopyala": "Copy result",
 };

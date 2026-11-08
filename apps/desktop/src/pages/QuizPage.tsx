@@ -5,6 +5,7 @@ import { POSITIONS } from "../labels";
 import { EMOJI_HINTS } from "../quiz/emoji";
 import {
   attributesOf,
+  classicGrid,
   compareClassic,
   dailyPick,
   dayKey,
@@ -25,6 +26,7 @@ import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
 import { useAsync } from "../useAsync";
+import { useToast } from "../ui/Toast";
 import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
 
 const MODE_LABELS: Record<QuizMode, { label: string; hint: string }> = {
@@ -84,6 +86,7 @@ function Game({ mode, play, data, onNext }: { mode: QuizMode; play: Play; data: 
   const t = useT();
   const lang = useLang();
   const records = useQuizRecords();
+  const toast = useToast();
   const today = dayKey(new Date());
   const candidates = pool(mode, data);
   const [freeSeed] = useState(() => Math.floor(Math.random() * 1e9));
@@ -126,6 +129,22 @@ function Game({ mode, play, data, onNext }: { mode: QuizMode; play: Play; data: 
               {play === "daily" && solved && `. ${t("Seri: {days} gün", { days: streak(records, mode, today) })}`}
             </p>
           </div>
+          <Button
+            onClick={() => {
+              const head = t("Vizier bilmecesi, {mode}, {day}: {count} tahmin", { mode: t(MODE_LABELS[mode].label), day: play === "daily" ? today : t("Serbest"), count: solved ? guesses.length : "X" });
+              const target = attributesOf(answer, rolesOf(data, answer.key));
+              const grid =
+                mode === "classic"
+                  ? classicGrid(guesses.map((id) => compareClassic(attributesOf(data.champions.get(id)!, rolesOf(data, id)), target)))
+                  : guesses.map((id) => (id === answer.key ? "🟩" : "🟥")).join("");
+              navigator.clipboard.writeText(`${head}\n${grid}`).then(
+                () => toast("success", t("Sonuç panoya kopyalandı")),
+                () => toast("error", t("Panoya kopyalanamadı.")),
+              );
+            }}
+          >
+            {t("Sonucu kopyala")}
+          </Button>
           {play === "free" ? (
             <Button variant="primary" onClick={onNext}>
               {t("Yeni tur")}
