@@ -29,3 +29,149 @@
 .pool-patch__name {
   font-weight: var(--weight-medium);
 }
+
+.home__edit {
+  justify-self: start;
+  margin-top: var(--space-2);
+  font-size: var(--text-meta);
+}
+
+/* Home editor: the cards in order with a show toggle and up and down buttons. */
+
+.home-editor {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-item);
+}
+
+.home-editor__list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-editor__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.home-editor__list li[data-hidden] .home-editor__toggle span {
+  color: var(--glaze-faint);
+}
+
+.home-editor__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.home-editor__moves {
+  display: flex;
+  gap: 4px;
+}
+
+.home-editor__moves button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--glaze);
+  background: none;
+  cursor: pointer;
+}
+
+.home-editor__moves button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* This patch for you: one row per pool pick. */
+
+.this-patch__list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.this-patch__row {
+  display: grid;
+  grid-template-columns: 30px minmax(110px, 1fr) 30px minmax(120px, auto) minmax(0, 2fr);
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-item);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  cursor: pointer;
+}
+
+.this-patch__row:hover {
+  background: var(--hover);
+}
+
+.this-patch__row img {
+  display: block;
+  border-radius: 7px;
+}
+
+.this-patch__who,
+.this-patch__rate,
+.this-patch__patch {
+  display: grid;
+  min-width: 0;
+}
+
+.this-patch__name {
+  font-weight: var(--weight-medium);
+}
+
+.this-patch__rate {
+  font-variant-numeric: tabular-nums;
+}
+
+.this-patch__change {
+  font-size: var(--text-meta);
+}
+
+.this-patch__change[data-trend="up"] {
+  color: var(--data-win);
+}
+
+.this-patch__change[data-trend="down"] {
+  color: var(--data-loss);
+}
+
+.this-patch__patch {
+  justify-items: start;
+  gap: 2px;
+}
+
+.this-patch__patch .build__stat {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+@media (max-width: 720px) {
+  .this-patch__row {
+    grid-template-columns: 30px 1fr 30px auto;
+  }
+
+  .this-patch__patch {
+    grid-column: 2 / -1;
+  }
+}

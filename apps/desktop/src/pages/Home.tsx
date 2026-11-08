@@ -1,4 +1,9 @@
+import { Fragment, useState, type ReactNode } from "react";
 import { ClientStatus } from "../ClientStatus";
+import { HomeEditor } from "../home/HomeEditor";
+import { normalizeHome, type HomeCard } from "../home/layout";
+import { ThisPatchCard } from "../home/ThisPatchCard";
+import { useSettings } from "../settings";
 import { openExternal, PATCH_NOTES } from "../links";
 import { champions, latestVersion, type Champion } from "../data/ddragon";
 import { getChampion } from "../api";
@@ -17,8 +22,6 @@ import { useAsync } from "../useAsync";
 import { dayKey, MODES } from "../quiz/logic";
 import { useQuizRecords } from "../quiz/store";
 import "./Home.css";
-import { PoolPatch } from "./PoolPatch";
-import { PoolMoves } from "../PoolMovesPanel";
 
 type Props = {
   lcu: LcuStatus;
@@ -43,6 +46,9 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
   const today = dayKey(new Date());
   const solvedToday = useQuizRecords().filter((r) => r.day === today && r.solved).length;
   const patch = data.status === "done" ? data.value.version.split(".").slice(0, 2).join(".") : null;
+  const layout = normalizeHome(useSettings().homeLayout);
+  const [editing, setEditing] = useState(false);
+  const shows = (card: HomeCard) => !layout.hidden.includes(card);
 
   const actions: { icon: IconName; title: string; text: string; onClick: () => void; disabled?: boolean }[] = [
     { icon: "search", title: t("Şampiyon ara"), text: t("Build, eşleşme ve pro maçları, Ctrl K"), onClick: onSearch },
@@ -68,38 +74,8 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
   const recent = known(personal.recent);
   const pool = known(personal.pool.map((p) => p.championId));
 
-  return (
-    <div className="home">
-      <div className="home__main">
-        <header className="home__hello enter">
-          <h1 className="page__title">{summoner ? t("Merhaba, {name}", { name: summoner.gameName }) : "Vizier"}</h1>
-          <p className="page__subtitle">
-            {patch ? t("Yama {patch}", { patch }) : t("EUW ve TR oyuncuları için League of Legends yardımcısı.")}
-            {patch && (
-              <>
-                {" "}
-                <button type="button" className="link" onClick={() => onNavigate({ page: "patches" })}>
-                  {t("Neler değişti")}
-                </button>{" "}
-                <button type="button" className="link" onClick={() => openExternal(PATCH_NOTES[lang])}>
-                  {t("Yama notlarını aç")}
-                </button>
-              </>
-            )}
-          </p>
-          <ClientStatus status={lcu} />
-        </header>
-
-        <nav className="home__actions enter" aria-label={t("Hızlı erişim")}>
-          {actions.map((action) => (
-            <button key={action.title} type="button" className="action" disabled={action.disabled} onClick={action.onClick}>
-              <NavIcon name={action.icon} className="action__icon" />
-              <span className="action__title">{action.title}</span>
-              <span className="action__text">{action.text}</span>
-            </button>
-          ))}
-        </nav>
-
+  const cards: Record<Exclude<HomeCard, "pros">, ReactNode> = {
+    lists: (
         <div className="home__lists enter">
           <section aria-labelledby="home-recent">
             <h2 id="home-recent" className="section-title">{t("Son baktıkların")}</h2>
@@ -135,14 +111,59 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
             )}
           </section>
         </div>
+    ),
+    thisPatch: <ThisPatchCard onOpenChampion={onOpenChampion} onNavigate={onNavigate} />,
+    metaPicks: <MetaPicks onOpenChampion={onOpenChampion} />,
+    metaMovers: <MetaMovers onOpenChampion={onOpenChampion} />,
+  };
 
-        <PoolPatch onNavigate={onNavigate} />
-        <PoolMoves onOpenChampion={onOpenChampion} />
+  return (
+    <div className="home">
+      <div className="home__main">
+        <header className="home__hello enter">
+          <h1 className="page__title">{summoner ? t("Merhaba, {name}", { name: summoner.gameName }) : "Vizier"}</h1>
+          <p className="page__subtitle">
+            {patch ? t("Yama {patch}", { patch }) : t("EUW ve TR oyuncuları için League of Legends yardımcısı.")}
+            {patch && (
+              <>
+                {" "}
+                <button type="button" className="link" onClick={() => onNavigate({ page: "patches" })}>
+                  {t("Neler değişti")}
+                </button>{" "}
+                <button type="button" className="link" onClick={() => openExternal(PATCH_NOTES[lang])}>
+                  {t("Yama notlarını aç")}
+                </button>
+              </>
+            )}
+          </p>
+          <ClientStatus status={lcu} />
+          {!editing && (
+            <button type="button" className="link home__edit" onClick={() => setEditing(true)}>
+              {t("Ana sayfayı düzenle")}
+            </button>
+          )}
+        </header>
 
-        <MetaPicks onOpenChampion={onOpenChampion} />
-        <MetaMovers onOpenChampion={onOpenChampion} />
+        <nav className="home__actions enter" aria-label={t("Hızlı erişim")}>
+          {actions.map((action) => (
+            <button key={action.title} type="button" className="action" disabled={action.disabled} onClick={action.onClick}>
+              <NavIcon name={action.icon} className="action__icon" />
+              <span className="action__title">{action.title}</span>
+              <span className="action__text">{action.text}</span>
+            </button>
+          ))}
+        </nav>
+
+        {editing && <HomeEditor layout={layout} onDone={() => setEditing(false)} />}
+
+        {layout.order
+          .filter((card): card is Exclude<HomeCard, "pros"> => card !== "pros" && shows(card))
+          .map((card) => (
+            <Fragment key={card}>{cards[card]}</Fragment>
+          ))}
       </div>
 
+      {shows("pros") && (
       <LiquidGlass className="panel home__pros" radius={28} strength={2.5} scroll>
         {personal.followed.length > 0 && (
           <>
@@ -162,6 +183,7 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
           emptyText={t("Bu filtreyle henüz pro maçı yok. Vizier birkaç dakikada bir yeni maçları alıyor.")}
         />
       </LiquidGlass>
+      )}
     </div>
   );
 }

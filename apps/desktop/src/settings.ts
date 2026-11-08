@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { DEFAULT_HOME, type HomeLayout } from "./home/layout";
 import type { LanguageSetting } from "./i18n";
 
 export type Settings = {
@@ -25,6 +26,8 @@ export type Settings = {
   sidebarCollapsed: boolean;
   /** "auto" follows the League client's language. */
   language: LanguageSetting;
+  /** Which Home cards show, in order. */
+  homeLayout: HomeLayout;
 };
 
 const DEFAULTS: Settings = {
@@ -45,6 +48,7 @@ const DEFAULTS: Settings = {
   customTimerSeconds: 90,
   sidebarCollapsed: false,
   language: "auto",
+  homeLayout: DEFAULT_HOME,
 };
 
 const KEY = "vizier.settings";
