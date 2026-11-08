@@ -82,3 +82,12 @@
   color: var(--gilt);
   background: rgb(214 180 106 / 0.16);
 }
+
+.build__shards {
+  font-size: var(--text-meta);
+}
+
+.build__gold {
+  margin-left: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}

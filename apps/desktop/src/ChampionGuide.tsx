@@ -168,9 +168,27 @@ export function ChampionReference({ champion }: { champion: Champion }) {
   );
 }
 
-/** "the Nine-Tailed Fox", in the UI language. */
+const CLASS_NAMES: Record<string, string> = {
+  Assassin: "Suikastçı",
+  Fighter: "Dövüşçü",
+  Mage: "Büyücü",
+  Marksman: "Nişancı",
+  Support: "Destek",
+  Tank: "Tank",
+};
+
+const difficultyName = (d: number) => (d <= 3 ? "Kolay" : d <= 7 ? "Orta" : "Zor");
+
+/** "the Nine-Tailed Fox", then Data Dragon's classes and difficulty, in the UI language. */
 export function ChampionTitle({ champion }: { champion: Champion }) {
+  const t = useT();
   const lang = useLang();
   const [state] = useAsync(`detail:${lang}:${champion.id}`, () => championDetail(champion.id, lang));
-  return state.status === "done" && state.value.title ? <p className="champion__title">{state.value.title}</p> : null;
+  const facts = [...champion.tags.map((tag) => t(CLASS_NAMES[tag] ?? tag)), t("zorluk: {level}", { level: t(difficultyName(champion.info.difficulty)).toLocaleLowerCase(lang) })];
+  return (
+    <p className="champion__title">
+      {state.status === "done" && state.value.title ? `${state.value.title}. ` : ""}
+      {facts.join(", ")}
+    </p>
+  );
 }

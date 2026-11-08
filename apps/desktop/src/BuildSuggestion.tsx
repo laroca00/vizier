@@ -1,4 +1,5 @@
-import { formatPercent, useLang, useT, type Lang } from "./i18n";
+import { formatPercent, intlLocale, useLang, useT, type Lang } from "./i18n";
+import { shardName } from "./library/RuneEditor";
 import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getBuild, type Build, type BuildStyle, type Foe, type Picks } from "./api";
@@ -343,6 +344,11 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
         <p className="build__stat">
           {t("{games} maçta, {rate} kazanma", { games: page.games, rate: percent(page.winRate) })}
         </p>
+        {page.perks.length === 9 && (
+          <p className="build__stat build__shards">
+            {t("Bonuslar: {shards}", { shards: page.perks.slice(6, 9).map((id, row) => t(shardName(row, id))).filter(Boolean).join(", ") })}
+          </p>
+        )}
         <ImportControls
           label={t("Rünleri aktar")}
           state={runeImport}
@@ -393,8 +399,8 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
 
       {(picks.startItems || picks.coreItems) && (
         <section className="build__block" aria-label={t("Başlangıç ve ana eşyalar")}>
-          {[picks.startItems && { label: t("Başlangıç"), ids: picks.startItems.ids }, picks.coreItems && { label: t("Ana eşyalar"), ids: picks.coreItems.ids }]
-            .filter((row): row is { label: string; ids: number[] } => !!row)
+          {[picks.startItems && { label: t("Başlangıç"), ids: picks.startItems.ids, core: false }, picks.coreItems && { label: t("Ana eşyalar"), ids: picks.coreItems.ids, core: true }]
+            .filter((row): row is { label: string; ids: number[]; core: boolean } => !!row)
             .map((row) => (
               <div className="build__row" key={row.label}>
                 <span className="build__stat build__row-label">{row.label}</span>
@@ -402,6 +408,11 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
                   const info = state.value.items.get(id);
                   return <img key={`${id}-${i}`} src={itemIconUrl(version, id)} alt={info?.name ?? ""} title={info?.name} width={28} height={28} />;
                 })}
+                {row.core && (
+                  <span className="build__stat build__gold">
+                    {t("toplam {gold} altın", { gold: row.ids.reduce((sum, id) => sum + (state.value.items.get(id)?.gold ?? 0), 0).toLocaleString(intlLocale(lang)) })}
+                  </span>
+                )}
               </div>
             ))}
         </section>

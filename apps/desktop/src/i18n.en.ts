@@ -704,4 +704,11 @@ export const EN: Record<string, string> = {
   "şuna değişti:": "changed to:",
   "(güçlendirme)": "(buff)",
   "(zayıflatma)": "(nerf)",
+  "Bonuslar: {shards}": "Shards: {shards}",
+  "toplam {gold} altın": "{gold} gold in total",
+  "Suikastçı": "Assassin",
+  "Dövüşçü": "Fighter",
+  "Büyücü": "Mage",
+  "Nişancı": "Marksman",
+  "zorluk: {level}": "difficulty: {level}",
 };
