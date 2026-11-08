@@ -1,0 +1,88 @@
+/* Patch tracker: one entry per changed champion, item or rune. Turquoise
+   reads as a buff, bole as a nerf, as on the rest of the app. */
+
+.patches__limits {
+  max-width: 80ch;
+  margin-bottom: var(--space-3);
+}
+
+.patches__list {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.patches__entry {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-item);
+  background: rgb(255 255 255 / 0.03);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.patches__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.patches__head img,
+.patches__no-icon {
+  display: block;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+.patches__no-icon {
+  background: var(--hover);
+}
+
+.patches__status {
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-size: var(--text-meta);
+  color: var(--glaze-muted);
+  background: var(--hover);
+}
+
+.patches__entry[data-status="added"] .patches__status {
+  color: var(--gilt);
+  background: rgb(214 180 106 / 0.14);
+}
+
+.patches__entry[data-status="removed"] .patches__status {
+  color: #f08a7e;
+  background: rgb(210 65 47 / 0.14);
+}
+
+.patches__changes {
+  display: grid;
+  gap: 2px;
+  margin: var(--space-2) 0 0 calc(36px + var(--space-3));
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-small);
+}
+
+.patches__changes li {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  gap: var(--space-3);
+  color: var(--glaze-muted);
+}
+
+.patches__values {
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze);
+}
+
+.patches__changes li[data-direction="up"] .patches__values {
+  color: #7fd6cc;
+}
+
+.patches__changes li[data-direction="down"] .patches__values {
+  color: #f08a7e;
+}

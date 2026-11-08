@@ -11,6 +11,7 @@ export type Route =
   | { page: "builds" }
   | { page: "champions" }
   | { page: "simulator" }
+  | { page: "patches" }
   | { page: "champion"; championId: number; position: string | null; queue: number }
   | { page: "overlay" }
   | { page: "settings" }

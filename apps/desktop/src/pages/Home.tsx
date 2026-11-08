@@ -1,6 +1,5 @@
-import { isTauri } from "@tauri-apps/api/core";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { ClientStatus } from "../ClientStatus";
+import { openExternal, PATCH_NOTES } from "../links";
 import { champions, latestVersion } from "../data/ddragon";
 import type { LcuStatus } from "../lcu";
 import { MetaPicks } from "../MetaPicks";
@@ -22,16 +21,9 @@ type Props = {
 };
 
 // Riot's own patch notes; Vizier links to them instead of copying them.
-const PATCH_NOTES = { tr: "https://www.leagueoflegends.com/tr-tr/news/game-updates/", en: "https://www.leagueoflegends.com/en-gb/news/game-updates/" };
-
 async function loadStatic() {
   const [version, byKey] = await Promise.all([latestVersion(), champions()]);
   return { version, champions: byKey };
-}
-
-function openExternal(url: string) {
-  if (isTauri()) openUrl(url).catch(() => {});
-  else window.open(url, "_blank", "noopener");
 }
 
 export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }: Props) {
@@ -70,6 +62,9 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
             {patch && (
               <>
                 {" "}
+                <button type="button" className="link" onClick={() => onNavigate({ page: "patches" })}>
+                  {t("Neler değişti")}
+                </button>{" "}
                 <button type="button" className="link" onClick={() => openExternal(PATCH_NOTES[lang])}>
                   {t("Yama notlarını aç")}
                 </button>

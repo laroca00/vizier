@@ -15,7 +15,8 @@ export type IconName =
   | "overlay"
   | "library"
   | "champions"
-  | "simulator";
+  | "simulator"
+  | "patches";
 
 // Drawn for Vizier on a 20px grid with a 1.6 stroke, so they sit with the
 // Geologica text at the same weight.
@@ -36,6 +37,7 @@ const PATHS: Record<IconName, string> = {
   overlay: "M3.5 4.5h13v9h-13zM7 16.5h6M10 13.5v3M6.5 7.5h3v2.5h-3z",
   champions: "M10 3l6 2.5v4c0 3.6-2.5 6.3-6 7.5-3.5-1.2-6-3.9-6-7.5v-4zM7.5 9.5l2 2 3.5-4",
   simulator: "M3.5 4.5h5v11h-5zM11.5 4.5h5v11h-5zM5 8h2M5 11h2M13 8h2M13 11h2",
+  patches: "M5 3.5h7l3 3v10H5zM12 3.5v3h3M7.5 10h5M7.5 13h3",
   library: "M4 3.5h3v13H4zM8.5 3.5h3v13h-3zM13.2 4.3l2.7-.7 2.6 12.3-2.7.6z",
 };
 
