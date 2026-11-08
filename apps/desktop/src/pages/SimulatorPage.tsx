@@ -3,7 +3,7 @@ import { CompSummary } from "../CompAnalysis";
 import { championIconUrl, roleIconUrl, type Champion } from "../data/ddragon";
 import { adviceAgainst, analyzeComp, compDimensions, DIMENSION_NAMES } from "../data/traits";
 import { useChampSelect } from "../lcu";
-import { fromChampSelect } from "../simulator/transfer";
+import { draftCode, fromChampSelect, readDraftCode } from "../simulator/transfer";
 import { formatPercent, useLang, useT } from "../i18n";
 import { POSITIONS } from "../labels";
 import "../library/library.css";
@@ -74,6 +74,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const [compare, setCompare] = useState<[string, string] | null>(null);
   const [compareWith, setCompareWith] = useState<string>("");
   const [banning, setBanning] = useState(false);
+  const [codeText, setCodeText] = useState("");
 
   const picked = new Set([...draft.blue, ...draft.red].filter((id) => id > 0));
   const unavailable = new Set([...picked, ...draft.bans]);
@@ -159,7 +160,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
                 .filter(Boolean)
                 .join(", ")}`;
             const bans = draft.bans.map((id) => data.champions.get(id)?.name ?? id).join(", ");
-            const text = [line(t("Mavi takım"), draft.blue), line(t("Kırmızı takım"), draft.red), bans ? `${t("Yasaklar")}: ${bans}` : null].filter(Boolean).join("\n");
+            const text = [line(t("Mavi takım"), draft.blue), line(t("Kırmızı takım"), draft.red), bans ? `${t("Yasaklar")}: ${bans}` : null, draftCode(draft)].filter(Boolean).join("\n");
             navigator.clipboard.writeText(text).then(
               () => toast("success", t("Draft panoya kopyalandı")),
               () => toast("error", t("Panoya kopyalanamadı.")),
@@ -169,6 +170,41 @@ function Simulator({ data }: { data: ChampionRoles }) {
           {t("Kopyala")}
         </Button>
       </div>
+
+      <form
+        className="library__collection-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const next = readDraftCode(codeText);
+          if (!next) {
+            toast("error", t("Bu bir Vizier draft kodu değil."));
+            return;
+          }
+          setDraft(next);
+          setCurrentId(null);
+          setName("");
+          setActive(nextSlot(next, pickOrder, { side: "blue", slot: 0 }));
+          setCodeText("");
+          toast("success", t("Draft koddan yüklendi"));
+        }}
+      >
+        <input className="text-input" aria-label={t("Draft kodu")} placeholder={t("Draft kodu yapıştır")} value={codeText} onChange={(e) => setCodeText(e.target.value)} />
+        <Button type="submit" disabled={!codeText.trim()}>
+          {t("Koddan yükle")}
+        </Button>
+        <Button
+          variant="ghost"
+          disabled={picked.size === 0}
+          onClick={() =>
+            navigator.clipboard.writeText(draftCode(draft)).then(
+              () => toast("success", t("Draft kodu kopyalandı")),
+              () => toast("error", t("Panoya kopyalanamadı.")),
+            )
+          }
+        >
+          {t("Kodu kopyala")}
+        </Button>
+      </form>
 
       <div className="sim">
         <TeamColumn

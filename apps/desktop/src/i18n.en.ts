@@ -1154,4 +1154,11 @@ export const EN: Record<string, string> = {
   "Şampiyon seçimi açıkken kullanılabilir.": "Available while champ select is open.",
   "Şampiyon seçimi yüklendi": "Champ select loaded",
   "Şampiyon seçimini yükle": "Load champ select",
+  "Bu bir Vizier draft kodu değil.": "This is not a Vizier draft code.",
+  "Draft koddan yüklendi": "Draft loaded from the code",
+  "Draft kodu": "Draft code",
+  "Draft kodu yapıştır": "Paste a draft code",
+  "Koddan yükle": "Load from code",
+  "Draft kodu kopyalandı": "Draft code copied",
+  "Kodu kopyala": "Copy code",
 };
