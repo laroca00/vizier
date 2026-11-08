@@ -315,7 +315,7 @@ function App() {
             ) : route.page === "tiers" ? (
               <TierListPage view={route.view} onView={(view) => replace({ page: "tiers", view })} onOpenChampion={openChampion} />
             ) : route.page === "augments" ? (
-              <AugmentsPage />
+              <AugmentsPage onOpenChampion={(id) => openChampion(id)} />
             ) : route.page === "matchup" ? (
               <MatchupPage route={route} onChange={replace} />
             ) : route.page === "items" ? (

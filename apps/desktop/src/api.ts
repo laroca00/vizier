@@ -68,13 +68,34 @@ export async function getBuild(championId: number, position: string | null, vs: 
   }
 }
 
-export type AugmentStat = { augmentId: number; games: number; pickRate: number; winRate: number; tier: string };
+export type AugmentStat = {
+  augmentId: number;
+  games: number;
+  pickRate: number;
+  winRate: number;
+  tier: string;
+  /** Win rate minus the champion's own rate with any augment; older servers leave it out. */
+  delta?: number;
+};
 export type AugmentStats = { patches: string[]; games: number; augments: AugmentStat[] };
 
 /** Null while the server has augment stats switched off. */
 export async function getAugments(queue: number, championId: number | null): Promise<AugmentStats | null> {
   try {
     return await get<AugmentStats>(`/v1/augments?queue=${queue}${championId ? `&champion=${championId}` : ""}`);
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 403 || error.status === 404)) return null;
+    throw error;
+  }
+}
+
+export type AugmentChampion = { championId: number; games: number; winRate: number; delta: number; tier: string };
+export type AugmentChampionList = { patches: string[]; augments: { augmentId: number; champions: AugmentChampion[] }[] };
+
+/** For each augment, the champions it lifts most. Null while augment stats are off or the server is older. */
+export async function getAugmentChampions(queue: number): Promise<AugmentChampionList | null> {
+  try {
+    return await get<AugmentChampionList>(`/v1/augments/champions?queue=${queue}`);
   } catch (error) {
     if (error instanceof ApiError && (error.status === 403 || error.status === 404)) return null;
     throw error;

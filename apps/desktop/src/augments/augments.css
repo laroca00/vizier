@@ -67,3 +67,220 @@
 .augments__catalogue {
   margin-top: var(--space-4);
 }
+
+/* Champion augment tier board: one row per tier, augment chips edged by rarity. */
+
+.augment-board {
+  margin-top: var(--space-4);
+}
+
+.augment-board__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.augment-board__rows {
+  display: grid;
+  gap: 6px;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.augment-board__row {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: start;
+  gap: var(--space-3);
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.augment-board__row:first-child {
+  border-top: 0;
+}
+
+.augment-board__tier {
+  justify-self: center;
+  margin-top: 6px;
+}
+
+.augment-board__chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.augment-chip {
+  --rarity: var(--line-strong);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 5px 8px 5px 5px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--rarity);
+  border-radius: var(--radius-item);
+  background: var(--hover);
+}
+
+.augment-chip[data-rarity="0"] {
+  --rarity: rgb(238 242 236 / 0.45);
+}
+
+.augment-chip[data-rarity="1"] {
+  --rarity: var(--gilt);
+}
+
+.augment-chip[data-rarity="2"] {
+  --rarity: var(--turquoise);
+}
+
+.augment-chip img {
+  flex: none;
+  display: block;
+  border-radius: 6px;
+}
+
+.augment-chip__text {
+  display: grid;
+  min-width: 0;
+}
+
+.augment-chip__name {
+  overflow: hidden;
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.augment-chip__stat {
+  font-size: var(--text-meta);
+  color: var(--glaze-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.augment-chip__stat [data-sign="up"],
+.augments__delta[data-sign="up"] {
+  color: var(--data-win);
+}
+
+.augment-chip__stat [data-sign="down"],
+.augments__delta[data-sign="down"] {
+  color: var(--data-loss);
+}
+
+.augment-chip__games {
+  color: var(--glaze-faint);
+}
+
+.augments__table tr[data-open] > * {
+  border-bottom-color: transparent;
+}
+
+.augments__delta {
+  font-size: var(--text-meta);
+}
+
+.augments__muted {
+  color: var(--glaze-faint);
+}
+
+.augments__suited {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: none;
+  color: var(--glaze-muted);
+  font: inherit;
+  font-size: var(--text-meta);
+  cursor: pointer;
+  transition: background var(--duration-quick) var(--ease), border-color var(--duration-quick) var(--ease);
+}
+
+.augments__suited:hover,
+.augments__suited[aria-expanded="true"] {
+  border-color: var(--line-strong);
+  background: var(--hover);
+}
+
+.augments__suited img {
+  display: block;
+  border-radius: 50%;
+}
+
+.augments__more {
+  margin-left: 2px;
+}
+
+.augments__detail > td {
+  padding-top: 0;
+}
+
+.augments__suited-list ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 4px var(--space-3);
+  margin: var(--space-2) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.augments__suited-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--radius-item);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+button.augments__suited-row {
+  cursor: pointer;
+}
+
+button.augments__suited-row:hover {
+  background: var(--hover);
+}
+
+.augments__suited-row img {
+  display: block;
+  border-radius: 6px;
+}
+
+.augments__suited-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: var(--weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.augments__suited-stat {
+  color: var(--glaze-muted);
+  font-size: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .augments__suited {
+    transition: none;
+  }
+}

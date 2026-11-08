@@ -14,7 +14,7 @@ import { championIconUrl, champions, latestVersion, roleIconUrl, type Champion }
 import { POSITIONS } from "../labels";
 import { ARENA, AUGMENT_QUEUES, QUEUES, RANKED, winLabel } from "../queues";
 import { ArenaItems } from "../draft/ArenaItems";
-import { ChampionAugments } from "../augments/ChampionAugments";
+import { ChampionAugmentBoard } from "../augments/ChampionAugmentBoard";
 import "../augments/augments.css";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { SplashLayers, useSkinSplash, useSplashUrl } from "../ui/Splash";
@@ -124,7 +124,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           onOpenChampion={onOpenChampion}
         />
       )}
-      {AUGMENT_QUEUES.includes(queue) && <ChampionAugments championId={championId} queue={queue} />}
+      {AUGMENT_QUEUES.includes(queue) && <ChampionAugmentBoard championId={championId} championName={champion?.name ?? ""} queue={queue} />}
       {queue === ARENA && <ArenaItems championId={championId} />}
 
       {champion && version && (
