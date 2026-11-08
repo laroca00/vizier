@@ -35,7 +35,8 @@ export function Sidebar<V extends string>({ lcu, groups, foot, current, collapse
       className="side__item"
       aria-current={entry.id === current ? "page" : undefined}
       data-live={entry.live || undefined}
-      title={collapsed ? t(entry.label) : undefined}
+      title={[collapsed ? t(entry.label) : null, entry.shortcut].filter(Boolean).join(", ") || undefined}
+      aria-keyshortcuts={entry.shortcut?.replace("Ctrl", "Control")}
       onClick={() => onOpen(entry.id)}
     >
       <NavIcon name={entry.icon} />

@@ -113,6 +113,8 @@ function App() {
   const [searching, setSearching] = useState(false);
   const [splash, setSplash] = useState<string | null>(null);
   const draftActive = useRef(draft !== null);
+  const shortcutsRef = useRef<Page[]>([]);
+  const goRef = useRef<(next: Route) => void>(() => {});
 
   const phase = lcu.state === "connected" ? lcu.phase : null;
   const clientLocale = lcu.state === "connected" ? (lcu.region?.locale ?? null) : null;
@@ -149,6 +151,14 @@ function App() {
         event.preventDefault();
         setSearching(true);
       }
+      const digit = Number(event.key);
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && digit >= 1 && digit <= 9) {
+        const page = shortcutsRef.current[digit - 1];
+        if (page) {
+          event.preventDefault();
+          goRef.current({ page } as Route);
+        }
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -158,6 +168,7 @@ function App() {
     setNavigated(true);
     nav.navigate(next);
   }
+  goRef.current = go;
 
   function openChampion(championId: number, position: string | null = null, queue = 420) {
     noteRecent(championId);
@@ -184,6 +195,11 @@ function App() {
       ],
     },
   ];
+  // Ctrl+1 to Ctrl+9 open the menu's sections in order; the live champ select
+  // entry is left out so the numbers don't shift during a draft.
+  const shortcutPages = groups.flatMap((g) => g.items).filter((item) => item.id !== "draft").slice(0, 9);
+  for (const [i, item] of shortcutPages.entries()) item.shortcut = `Ctrl+${i + 1}`;
+  shortcutsRef.current = shortcutPages.map((item) => item.id);
   const footItems: NavItem<Page>[] = [
     { id: "overlay", label: "Overlay", icon: "overlay" },
     { id: "settings", label: "Ayarlar", icon: "settings" },
