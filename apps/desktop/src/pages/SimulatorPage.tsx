@@ -2,6 +2,8 @@ import { useState } from "react";
 import { CompSummary } from "../CompAnalysis";
 import { championIconUrl, roleIconUrl, type Champion } from "../data/ddragon";
 import { adviceAgainst, analyzeComp, compDimensions, DIMENSION_NAMES } from "../data/traits";
+import { useChampSelect } from "../lcu";
+import { fromChampSelect } from "../simulator/transfer";
 import { formatPercent, useLang, useT } from "../i18n";
 import { POSITIONS } from "../labels";
 import "../library/library.css";
@@ -59,6 +61,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const lang = useLang();
   const toast = useToast();
   const saved = useSavedDrafts();
+  const session = useChampSelect();
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   // Explicit when the player clicked the slot; otherwise Vizier may move the pick to its role.
   const [active, setActive] = useState<{ side: Side; slot: number; explicit?: boolean } | null>({ side: "blue", slot: 0 });
@@ -129,6 +132,22 @@ function Simulator({ data }: { data: ChampionRoles }) {
         <Toggle label={t("Dereceli seçim sırası")} hint={t("Boş yerler B1, R1, R2, B2... sırasıyla dolar.")} checked={pickOrder} onChange={setPickOrder} />
         <Button variant="ghost" onClick={reset}>
           {t("Sıfırla")}
+        </Button>
+        <Button
+          variant="ghost"
+          disabled={!session}
+          title={session ? undefined : t("Şampiyon seçimi açıkken kullanılabilir.")}
+          onClick={() => {
+            if (!session) return;
+            const next = fromChampSelect(session);
+            setDraft(next);
+            setCurrentId(null);
+            setName("");
+            setActive(nextSlot(next, pickOrder, { side: "blue", slot: 0 }));
+            toast("success", t("Şampiyon seçimi yüklendi"));
+          }}
+        >
+          {t("Şampiyon seçimini yükle")}
         </Button>
         <Button
           variant="ghost"
