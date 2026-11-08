@@ -127,6 +127,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
               {ready && hasBench(draft) && (
                 <BenchHelper
                   current={myChampion}
+                  rerolls={draft.rerollsRemaining ?? 0}
                   bench={draft.bench ?? []}
                   allies={draft.myTeam.filter((m) => !m.isLocal).map(shownChampion)}
                   champions={ready.champions}

@@ -2,22 +2,34 @@ import { getTierList } from "../api";
 import { championIconUrl, type Champion } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
 import { useAsync } from "../useAsync";
-import { rankBench, type BenchSource } from "./bench";
+import { rankBench, rerollAdvice, type BenchSource } from "./bench";
 
 const SOURCE_TEXT: Record<BenchSource, string> = { current: "Senin", bench: "Sırada", ally: "Takım arkadaşı" };
 
-type Props = { current: number; bench: number[]; allies: number[]; champions: Map<number, Champion>; version: string };
+type Props = { current: number; rerolls: number; bench: number[]; allies: number[]; champions: Map<number, Champion>; version: string };
 
 /** ARAM win rates for the player's champion, the bench and the team, with a hint to swap. */
-export function BenchHelper({ current, bench, allies, champions, version }: Props) {
+export function BenchHelper({ current, rerolls, bench, allies, champions, version }: Props) {
   const t = useT();
   const lang = useLang();
   const [tiers] = useAsync("tiers:ALL:450", () => getTierList("ALL", 450));
   if (tiers.status !== "done") return null;
   const rows = rankBench({ tierList: tiers.value.champions, current, bench, allies });
   if (rows.length === 0) return null;
+  const reroll = rerollAdvice(tiers.value.champions, current, rerolls);
   return (
     <>
+      {reroll && (
+        <p className="picks__shared" role="status">
+          {t("Şampiyonun ARAM listesinde {total} içinde {rank}. sırada ({rate}, {games} maç); {rerolls} yenileme hakkın var.", {
+            rank: reroll.rank,
+            total: reroll.total,
+            rate: formatPercent(reroll.winRate, lang, 1),
+            games: reroll.games,
+            rerolls,
+          })}
+        </p>
+      )}
       <h2 className="draft__heading">{t("Sıra ve takım")}</h2>
       <ol className="picks bench">
         {rows.map((row) => {

@@ -948,4 +948,5 @@ export const EN: Record<string, string> = {
   "ARAM: {rate} kazanma, {games} maç": "ARAM: {rate} win rate, {games} games",
   "ARAM: yeterli maç yok ({games} maç)": "ARAM: not enough games ({games} games)",
   "Sıradan bunu al": "Take this from the bench",
+  "Şampiyonun ARAM listesinde {total} içinde {rank}. sırada ({rate}, {games} maç); {rerolls} yenileme hakkın var.": "Your champion is {rank} of {total} on the ARAM list ({rate}, {games} games); you have {rerolls} rerolls left.",
 };

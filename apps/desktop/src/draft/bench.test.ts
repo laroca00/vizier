@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TierEntry } from "../api";
-import { rankBench } from "./bench";
+import { rankBench, rerollAdvice } from "./bench";
 
 const entry = (championId: number, winRate: number, games = 1000): TierEntry => ({ championId, games, winRate, pickRate: 0.02, tier: "A", winRateChange: null });
 
@@ -23,5 +23,26 @@ describe("rankBench", () => {
   it("lists allies once and keeps their source", () => {
     const rows = rankBench({ tierList, current: 1, bench: [2], allies: [2, 3, 0] });
     expect(rows.map((r) => [r.championId, r.source])).toEqual([[2, "bench"], [1, "current"], [3, "ally"]]);
+  });
+});
+
+describe("rerollAdvice", () => {
+  const list = Array.from({ length: 40 }, (_, i) => entry(i + 1, 0.56 - i * 0.003));
+
+  it("suggests a reroll for a champion near the bottom", () => {
+    const advice = rerollAdvice(list, 39, 1);
+    expect(advice).toMatchObject({ rank: 39, total: 40, games: 1000 });
+  });
+
+  it("stays quiet without rerolls, for good champions and for thin lists", () => {
+    expect(rerollAdvice(list, 39, 0)).toBeNull();
+    expect(rerollAdvice(list, 2, 2)).toBeNull();
+    expect(rerollAdvice(list, 25, 2)).toBeNull();
+    expect(rerollAdvice(list.slice(0, 10), 9, 2)).toBeNull();
+    expect(rerollAdvice(list, 99, 2)).toBeNull();
+  });
+
+  it("ignores a champion with too few games", () => {
+    expect(rerollAdvice([...list.slice(0, 39), entry(40, 0.4, 10)], 40, 1)).toBeNull();
   });
 });

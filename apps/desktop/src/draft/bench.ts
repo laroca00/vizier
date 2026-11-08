@@ -49,3 +49,22 @@ export function rankBench({ tierList, current, bench, allies }: Input): BenchRow
   }
   return rows.sort((a, b) => (b.winRate ?? -1) - (a.winRate ?? -1));
 }
+
+export type RerollAdvice = { winRate: number; games: number; rank: number; total: number };
+
+/** Share of the ARAM list, from the bottom, where a reroll is worth suggesting. */
+const BOTTOM_SHARE = 0.25;
+
+/**
+ * Suggests a reroll when the champion sits in the bottom quarter of the ARAM
+ * list, below an even win rate, and the player has rerolls left.
+ */
+export function rerollAdvice(tierList: TierEntry[], current: number, rerolls: number): RerollAdvice | null {
+  if (rerolls <= 0 || current <= 0) return null;
+  const known = tierList.filter((e) => e.games >= MIN_BENCH_GAMES).sort((a, b) => b.winRate - a.winRate);
+  const index = known.findIndex((e) => e.championId === current);
+  if (index < 0 || known.length < 20) return null;
+  const mine = known[index];
+  if (mine.winRate >= 0.5 || index < known.length * (1 - BOTTOM_SHARE)) return null;
+  return { winRate: mine.winRate, games: mine.games, rank: index + 1, total: known.length };
+}
