@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type WheelEvent } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { getBuild, type Build, type Picks } from "../api";
+import { getAugments, getBuild, type Build, type Picks } from "../api";
+import { augmentInfo, RARITY } from "../augments/data";
+import { augmentQueue, augmentsByRarity } from "../augments/tiers";
 import { readChosenStyle } from "../buildStyles";
 import { champions, itemIconUrl, items, latestVersion, type Item } from "../data/ddragon";
 import { overlayFixture } from "../dev/fixtures";
 import type { LcuStatus } from "../lcu";
-import { setClientLocale, useT, type Params } from "../i18n";
+import { setClientLocale, useLang, useT, type Params } from "../i18n";
 import { useSettings } from "../settings";
 import { useAsync } from "../useAsync";
 import {
@@ -81,6 +83,7 @@ async function loadStatic(): Promise<Static> {
 
 // A rare pick can have no build; the panels that need it just stay hidden.
 const loadBuild = (championId: number, position: string) => getBuild(championId, position).catch(() => null);
+const AUGMENTS_PER_RARITY = 4;
 const thousands = (gold: number) => `${gold > 0 ? "+" : gold < 0 ? "−" : ""}${(Math.abs(gold) / 1000).toFixed(1)}k`;
 
 /** The build the player picked on the build page, else the most played style. */
@@ -110,6 +113,11 @@ export function Overlay() {
   // Positions are empty outside Summoner's Rift; builds are per role.
   const position = me?.position || null;
   const [build] = useAsync(championId && position ? `${championId}:${position}` : null, () => loadBuild(championId!, position!));
+  const lang = useLang();
+  const queue = game ? augmentQueue(game.gameMode) : null;
+  const wantAugments = settings.overlayAugments && queue !== null && championId !== null;
+  const [augments] = useAsync(wantAugments ? `augments:${queue}:${championId}` : null, () => getAugments(queue!, championId!).catch(() => null));
+  const [augmentNames] = useAsync(wantAugments ? `augment-info:${lang}` : null, () => augmentInfo(lang));
 
   // The loading screen gets nothing; the overlay starts with the game.
   if (hidden || !settings.overlay || (loading && !editing)) return null;
@@ -184,6 +192,36 @@ export function Overlay() {
         </section>
       ),
     });
+
+  if (augments.status === "done" && augments.value && augmentNames.status === "done") {
+    const names = augmentNames.value;
+    const groups = augmentsByRarity(augments.value.augments, (id) => names.get(id)?.rarity, AUGMENTS_PER_RARITY);
+    if (groups.length > 0)
+      boxes.push({
+        id: "augments",
+        name: t("Augment önerisi"),
+        node: (
+          <section className="overlay__card overlay__augments">
+            <p className="overlay__caption">{t("En iyi augment'ler")}</p>
+            {groups.map((group) => (
+              <div key={group.rarity} className="overlay__augment-group" data-rarity={group.rarity}>
+                <span className="overlay__augment-rarity">{t(RARITY[group.rarity] ?? "")}</span>
+                <ol>
+                  {group.augments.map((a) => (
+                    <li key={a.augmentId}>
+                      <span className="overlay__augment-tier" data-tier={a.tier}>
+                        {a.tier}
+                      </span>
+                      {names.get(a.augmentId)?.name}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ))}
+          </section>
+        ),
+      });
+  }
 
   const move = (id: WidgetId, spot: Spot, done: boolean) => (done ? save : preview)({ ...layout, [id]: spot });
   const rowGap = layout.rowGap ?? ROW_GAP;

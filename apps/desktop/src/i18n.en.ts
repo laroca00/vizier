@@ -1194,4 +1194,6 @@ export const EN: Record<string, string> = {
   kazanma: "win",
   "{champion} augment tier listesi": "{champion} augment tier list",
   "{name}: {rate} {word}, {games} maç": "{name}: {rate} {word}, {games} games",
+  "Arena ve ARAM Mayhem'de şampiyonunun her nadirlikteki en iyi augment'leri.": "In Arena and ARAM Mayhem, your champion's best augments of each rarity.",
+  "Augment önerisi": "Augment picks",
 };

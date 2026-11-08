@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AugmentStat } from "../api";
-import { formatDelta, sortAugments, tierRows } from "./tiers";
+import { augmentQueue, augmentsByRarity, formatDelta, sortAugments, tierRows } from "./tiers";
 
 const stat = (augmentId: number, tier: string, winRate: number, games = 100, pickRate = 0.1): AugmentStat => ({ augmentId, tier, winRate, games, pickRate, delta: 0 });
 
@@ -35,5 +35,20 @@ describe("formatDelta", () => {
     expect(formatDelta(-0.01, "tr")).toBe("−1,0");
     expect(formatDelta(0, "en")).toBe("±0.0");
     expect(formatDelta(undefined, "en")).toBeNull();
+  });
+});
+
+describe("in-game augments", () => {
+  it("reads the queue from the live game mode", () => {
+    expect(augmentQueue("CHERRY")).toBe(1700);
+    expect(augmentQueue("KIWI")).toBe(2400);
+    expect(augmentQueue("ARAM")).toBeNull();
+  });
+
+  it("keeps the best few of each rarity, prismatic first", () => {
+    const rarity: Record<number, number> = { 1: 0, 2: 0, 3: 2, 4: 0, 5: 1 };
+    const groups = augmentsByRarity([stat(1, "B", 0.5), stat(2, "S", 0.6), stat(3, "A", 0.55), stat(4, "S", 0.58), stat(5, "D", 0.4)], (id) => rarity[id], 2);
+    expect(groups.map((g) => g.rarity)).toEqual([2, 1, 0]);
+    expect(groups[2].augments.map((a) => a.augmentId)).toEqual([2, 4]);
   });
 });

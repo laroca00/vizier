@@ -57,8 +57,10 @@ export function champSelectFixture(): ChampSelect | null {
 
 /** Dev only: `?fixture=overlay` renders the in-game overlay mid-game without the game. */
 export function overlayFixture(): LiveGame | null {
-  if (!import.meta.env.DEV || new URLSearchParams(location.search).get("fixture") !== "overlay") return null;
-  return sampleGame();
+  const fixture = import.meta.env.DEV ? new URLSearchParams(location.search).get("fixture") : null;
+  // `?fixture=arena` plays the same game as Arena, for the augment card.
+  if (fixture === "arena") return { ...sampleGame(), gameMode: "CHERRY" };
+  return fixture === "overlay" ? sampleGame() : null;
 }
 
 /** Dev only: `?fixture=client` shows a connected client without one. */

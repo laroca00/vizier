@@ -9,6 +9,8 @@
   --bole: #d2412f;
   /* Tezhip gilding; frames champion art the way the client's gold borders do. */
   --gilt: #d6b46a;
+  /* Iznik manganese purple; marks prismatic augments so they never read as a tier colour. */
+  --manganese: #a27ad8;
 
   /* Flat layers of the same night cobalt, darkest at the back. Lines do the
      separating, so surfaces carry no drop shadows. */

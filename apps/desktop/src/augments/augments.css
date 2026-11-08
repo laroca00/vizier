@@ -20,15 +20,15 @@
   color: var(--glaze-muted);
 }
 
+/* Kept a table cell (no flex) so its bottom rule lines up with the rest of the row. */
 .augments__name {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
   font-weight: var(--weight-medium);
 }
 
 .augments__name img {
-  display: block;
+  display: inline-block;
+  margin-right: var(--space-2);
+  vertical-align: middle;
   border-radius: 6px;
 }
 
@@ -139,7 +139,7 @@
 }
 
 .augment-chip[data-rarity="2"] {
-  --rarity: var(--turquoise);
+  --rarity: var(--manganese);
 }
 
 .augment-chip img {
@@ -283,4 +283,18 @@ button.augments__suited-row:hover {
   .augments__suited {
     transition: none;
   }
+}
+
+/* The tier list page's sort buttons, without loading that page's stylesheet. */
+.augments__table .tiers__sort {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+}
+
+.augments__table .tiers__sort:hover {
+  color: var(--glaze);
 }

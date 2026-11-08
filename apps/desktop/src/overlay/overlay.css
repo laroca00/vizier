@@ -264,3 +264,72 @@ html:has(.overlay) body {
     background: rgb(214 180 106 / 0.2);
   }
 }
+
+/* Augment card: the champion's best picks per rarity, read at a glance on the augment screen. */
+
+.overlay__augments {
+  gap: 6px;
+  min-width: 220px;
+  max-width: 300px;
+}
+
+.overlay__augment-group {
+  --rarity: rgb(238 242 236 / 0.45);
+  display: grid;
+  gap: 2px;
+  padding-left: 8px;
+  border-left: 2px solid var(--rarity);
+}
+
+.overlay__augment-group[data-rarity="1"] {
+  --rarity: var(--gilt);
+}
+
+.overlay__augment-group[data-rarity="2"] {
+  --rarity: var(--manganese);
+}
+
+.overlay__augment-rarity {
+  font-size: 11px;
+  color: var(--rarity);
+}
+
+.overlay__augment-group ol {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.overlay__augment-group li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.overlay__augment-tier {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgb(255 255 255 / 0.1);
+}
+
+.overlay__augment-tier[data-tier="S"] {
+  color: var(--ink);
+  background: var(--gilt);
+}
+
+.overlay__augment-tier[data-tier="A"] {
+  color: var(--ink);
+  background: var(--turquoise);
+}

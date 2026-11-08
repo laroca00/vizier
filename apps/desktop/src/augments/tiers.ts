@@ -45,3 +45,25 @@ export function formatDelta(delta: number | undefined, lang: string): string | n
   const text = Math.abs(points).toLocaleString(lang === "tr" ? "tr" : "en-GB", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   return `${points > 0 ? "+" : points < 0 ? "−" : "±"}${text}`;
 }
+
+/** The augment queue a live game belongs to, from the Live Client's game mode: Arena is CHERRY, ARAM Mayhem is KIWI. */
+export function augmentQueue(gameMode: string): number | null {
+  return gameMode === "CHERRY" ? 1700 : gameMode === "KIWI" ? 2400 : null;
+}
+
+// Arena hands out one rarity per round, so the in-game card answers "which of these three".
+const OVERLAY_RARITIES = [2, 1, 0];
+
+/** The best few augments of each rarity, best tier first, for the in-game card. */
+export function augmentsByRarity<T extends { augmentId: number; tier: string; winRate: number }>(
+  augments: T[],
+  rarityOf: (augmentId: number) => number | undefined,
+  perRarity: number,
+): { rarity: number; augments: T[] }[] {
+  return OVERLAY_RARITIES.map((rarity) => ({
+    rarity,
+    augments: tierRows(augments, (a) => rarityOf(a.augmentId) === rarity)
+      .flatMap((row) => row.augments)
+      .slice(0, perRarity),
+  })).filter((group) => group.augments.length > 0);
+}

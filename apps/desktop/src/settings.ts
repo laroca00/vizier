@@ -15,6 +15,8 @@ export type Settings = {
   overlayNextItem: boolean;
   overlayScoreboard: boolean;
   overlayTimers: boolean;
+  /** In Arena and ARAM Mayhem, the champion's best augments of each rarity. */
+  overlayAugments: boolean;
   /** A short tone when a manual timer or an objective is about to come up. */
   timerSound: boolean;
   /** Length of the Ctrl+Shift+T timer. */
@@ -38,6 +40,7 @@ const DEFAULTS: Settings = {
   overlayNextItem: true,
   overlayScoreboard: true,
   overlayTimers: true,
+  overlayAugments: true,
   timerSound: true,
   customTimerSeconds: 90,
   sidebarCollapsed: false,
