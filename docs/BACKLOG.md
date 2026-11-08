@@ -149,11 +149,11 @@ Worlds and pro builds are a top priority for the EUW audience.
 
 ## 13. Patch tracker improvements
 
-- [ ] 13.1 Per-level stat changes shown at level 1 and level 18, not only the raw growth number.
-- [ ] 13.2 Ability cooldown and cost changes per rank, item recipe and build path changes.
-- [ ] 13.3 Buff / nerf / mixed label per champion and item from simple rules.
-- [ ] 13.4 Pool champions first and a Home badge when one changed.
-- [ ] 13.5 Win rate before and after the patch for each changed champion (uses 6.2).
+- [x] 13.1 Per-level stat changes shown at level 1 and level 18, not only the raw growth number. (4a9f5d2; level 18 line next to the growth number; the base stat is labelled level 1; cached diffs recompute once)
+- [x] 13.2 Ability cooldown and cost changes per rank, item recipe and build path changes. (4a9f5d2; per-rank cooldown and cost already showed as 10/9/8; added what an item builds into)
+- [x] 13.3 Buff / nerf / mixed label per champion and item from simple rules. (4a9f5d2; label from the direction of each number, none for recipes and new entries)
+- [x] 13.4 Pool champions first and a Home badge when one changed. (4a9f5d2; pool and favourites first in the tracker; Home pool cards say when the patch changed them (reads the tracker's cache))
+- [x] 13.5 Win rate before and after the patch for each changed champion (uses 6.2). (4a9f5d2; shown for the newest patch only, since the change compares the latest two crawled patches; loads on its own for the pool, on click for others; hidden under 100 games)
 - [ ] 13.6 A champion's change history over the cached versions on its page.
 
 ## 14. Home
