@@ -1,0 +1,207 @@
+/* Champion riddle. Matches use the app's own signals: turquoise right,
+   gilt close, bole wrong. */
+
+.quiz__game {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.quiz__guess {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.quiz__input {
+  width: min(360px, 100%);
+  height: 40px;
+  font-size: var(--text-lead);
+}
+
+.quiz__suggestions {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  z-index: 3;
+  display: grid;
+  width: min(360px, 100%);
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-item);
+  list-style: none;
+  background: var(--surface-raised);
+}
+
+.quiz__suggestions button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 4px var(--space-2);
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  color: var(--glaze);
+  text-align: left;
+  background: none;
+  cursor: pointer;
+}
+
+.quiz__suggestions li:first-child button,
+.quiz__suggestions button:hover {
+  background: var(--selected);
+}
+
+.quiz__suggestions img,
+.quiz__guesses img,
+.quiz__table img,
+.quiz__result img {
+  display: block;
+  border-radius: 8px;
+}
+
+.quiz__emoji {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: 44px;
+  line-height: 1;
+}
+
+.quiz__emoji span {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.05);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.quiz__emoji span[data-hidden] {
+  font-size: 24px;
+  color: var(--glaze-faint);
+}
+
+.quiz__ability {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+}
+
+.quiz__ability img {
+  border-radius: 16px;
+  box-shadow: 0 0 0 2px var(--gilt);
+  transition: filter var(--duration-slow) var(--ease);
+}
+
+.quiz__ability img[data-grey] {
+  filter: grayscale(1);
+}
+
+.quiz__skin {
+  margin: 0;
+}
+
+.quiz__skin div {
+  width: min(480px, 100%);
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-panel);
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  transition:
+    background-size var(--duration-slow) var(--ease),
+    background-position var(--duration-slow) var(--ease);
+}
+
+.quiz__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-item);
+  background: rgb(28 156 146 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(28 156 146 / 0.4);
+}
+
+.quiz__result p {
+  margin: 0;
+}
+
+.quiz__answer {
+  font-size: var(--text-section);
+}
+
+.quiz__guesses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quiz__guesses li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 10px 4px 4px;
+  border-radius: 10px;
+  font-size: var(--text-small);
+  background: rgb(210 65 47 / 0.14);
+}
+
+.quiz__guesses li[data-match="yes"] {
+  background: rgb(28 156 146 / 0.22);
+}
+
+.quiz__table {
+  border-collapse: separate;
+  border-spacing: 4px;
+  font-size: var(--text-small);
+}
+
+.quiz__table thead th {
+  font-weight: 350;
+  text-align: left;
+  color: var(--glaze-muted);
+}
+
+.quiz__table tbody th {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-right: var(--space-3);
+  font-weight: var(--weight-medium);
+  text-align: left;
+}
+
+.quiz__table td {
+  min-width: 90px;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.quiz__table td[data-match="yes"] {
+  background: rgb(28 156 146 / 0.45);
+}
+
+.quiz__table td[data-match="partial"] {
+  background: rgb(214 180 106 / 0.42);
+}
+
+.quiz__table td[data-match="no"] {
+  background: rgb(210 65 47 / 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz__ability img,
+  .quiz__skin div {
+    transition: none;
+  }
+}

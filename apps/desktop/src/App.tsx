@@ -12,6 +12,7 @@ import { BuildsPage } from "./pages/BuildsPage";
 import { ChampionsPage } from "./pages/ChampionsPage";
 import { SimulatorPage } from "./pages/SimulatorPage";
 import { PatchesPage } from "./pages/PatchesPage";
+import { QuizPage } from "./pages/QuizPage";
 import { ProsPage } from "./pages/ProsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TierListPage } from "./pages/TierListPage";
@@ -39,6 +40,7 @@ const LABELS: Record<Page, string> = {
   champions: "Şampiyonlar",
   simulator: "Draft simülatörü",
   patches: "Yama takibi",
+  quiz: "Şampiyon bilmecesi",
   champion: "Şampiyonlar",
   overlay: "Overlay",
   settings: "Ayarlar",
@@ -172,6 +174,7 @@ function App() {
         { id: "pros", label: "Pro build'ler", icon: "pros" },
         { id: "simulator", label: "Draft simülatörü", icon: "simulator" },
         { id: "patches", label: "Yama takibi", icon: "patches" },
+        { id: "quiz", label: "Şampiyon bilmecesi", icon: "quiz" },
       ],
     },
   ];
@@ -248,6 +251,8 @@ function App() {
               <OverlayPage />
             ) : route.page === "tiers" ? (
               <TierListPage onOpenChampion={openChampion} />
+            ) : route.page === "quiz" ? (
+              <QuizPage />
             ) : route.page === "patches" ? (
               <PatchesPage onOpenChampion={(id) => openChampion(id)} />
             ) : route.page === "simulator" ? (

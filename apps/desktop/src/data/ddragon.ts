@@ -11,6 +11,10 @@ export type Champion = {
   tags: string[];
   /** Data Dragon's 0-10 ratings. */
   info: { attack: number; defense: number; magic: number; difficulty: number };
+  /** The resource bar, as Data Dragon names it in Turkish: "Mana", "Enerji", "Yok"... */
+  partype?: string;
+  /** Basic attack range at level one. */
+  attackRange?: number;
 };
 
 let version: Promise<string> | undefined;
@@ -31,7 +35,10 @@ export function champions(): Promise<Map<number, Champion>> {
     .then(
       (response) =>
         response.json() as Promise<{
-          data: Record<string, { id: string; key: string; name: string; tags: string[]; info: Champion["info"] }>;
+          data: Record<
+            string,
+            { id: string; key: string; name: string; tags: string[]; info: Champion["info"]; partype?: string; stats?: { attackrange?: number } }
+          >;
         }>,
     )
     .then(
@@ -47,6 +54,8 @@ export function champions(): Promise<Map<number, Champion>> {
               tank: c.tags[0] === "Tank",
               tags: c.tags,
               info: c.info,
+              partype: c.partype,
+              attackRange: c.stats?.attackrange,
             },
           ]),
         ),
