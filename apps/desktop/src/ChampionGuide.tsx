@@ -168,7 +168,7 @@ export function ChampionReference({ champion }: { champion: Champion }) {
   );
 }
 
-const CLASS_NAMES: Record<string, string> = {
+export const CLASS_NAMES: Record<string, string> = {
   Assassin: "Suikastçı",
   Fighter: "Dövüşçü",
   Mage: "Büyücü",

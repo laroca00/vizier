@@ -960,4 +960,7 @@ export const EN: Record<string, string> = {
   "{champion} için en iyi eş": "Best partners for {champion}",
   "Bu ikili için henüz yeterli Arena maçı yok.": "Not enough Arena games for this pairing yet.",
   "Birlikte {rate} ilk 4, {games} maç": "Together {rate} top four, {games} games",
+  "Tüm nadirlikler": "All rarities",
+  "Tüm sınıflar": "All classes",
+  "{champions} şampiyonun birleşik verisi, {games} oyuncu-maç": "Combined data of {champions} champions, {games} player-games",
 };
