@@ -1,6 +1,7 @@
 // Everything Vizier keeps on this computer lives in localStorage under the
-// "vizier." prefix: settings, the champion pool and notes, chosen build
-// styles and the overlay layout. These move it in and out as one file.
+// "vizier." prefix: settings, the champion pool and notes, saved builds and
+// drafts, riddle results, chosen build styles and the overlay layout. These
+// move it in and out as one file.
 
 const PREFIX = "vizier.";
 const FORMAT = "vizier-local-data";

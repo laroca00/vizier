@@ -102,7 +102,7 @@ export function SettingsPage() {
       <section className="settings__section enter" aria-labelledby="settings-data">
         <h2 id="settings-data" className="section-title">{t("Veriler")}</h2>
         <p className="settings__note">
-          {t("Ayarların, şampiyon havuzun, notların ve overlay yerleşimin yalnızca bu bilgisayarda tutulur. Başka bir bilgisayara taşımak için dışa aktarıp orada içe aktarabilirsin.")}
+          {t("Ayarların, şampiyon havuzun, kayıtlı build ve draft'ların, notların, bilmece sonuçların ve overlay yerleşimin yalnızca bu bilgisayarda tutulur. Başka bir bilgisayara taşımak için dışa aktarıp orada içe aktarabilirsin.")}
         </p>
         <div className="settings__actions">
           <Button onClick={download}>{t("Dışa aktar")}</Button>
@@ -126,7 +126,7 @@ export function SettingsPage() {
       <ConfirmDialog
         open={confirmClear}
         title={t("Veriler temizlensin mi?")}
-        message={t("Ayarların, şampiyon havuzun, notların ve overlay yerleşimin silinir. Bu geri alınamaz; istersen önce dışa aktar.")}
+        message={t("Ayarların, şampiyon havuzun, kayıtlı build ve draft'ların, notların, bilmece sonuçların ve overlay yerleşimin silinir. Bu geri alınamaz; istersen önce dışa aktar.")}
         confirmLabel={t("Temizle")}
         danger
         onCancel={() => setConfirmClear(false)}
