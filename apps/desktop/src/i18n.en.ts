@@ -789,4 +789,6 @@ export const EN: Record<string, string> = {
   "Takip ettiğin pro'lar": "Pros you follow",
   "Takip ettiğin oyuncuların son 30 günde maçı yok.": "The players you follow have no games in the last 30 days.",
   "Takip ettiklerin": "Following",
+  "Benzer şampiyonlar": "Similar champions",
+  "Bu rolde benzer şampiyonlar": "Similar champions in this role",
 };

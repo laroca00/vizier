@@ -1,6 +1,6 @@
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { useState } from "react";
-import { getChampion, getCounters, getSynergies, type ChampionOverview, type Counters } from "../api";
+import { getChampion, getCounters, getSynergies, getTierList, type ChampionOverview, type Counters } from "../api";
 import { BuildSuggestion } from "../BuildSuggestion";
 import { Abilities, ChampionReference, ChampionTitle, StrengthsWeaknesses } from "../ChampionGuide";
 import { JournalNote, MatchupNotes } from "../Journal";
@@ -276,6 +276,13 @@ function Overview({ overview, championId, championName, champions, version, queu
               version={version}
               onOpenChampion={(id, role) => onOpenChampion(id, role, queue)}
             />
+            <SimilarList
+              championId={championId}
+              position={position}
+              champions={champions}
+              version={version}
+              onOpenChampion={(id) => onOpenChampion(id, position, queue)}
+            />
           </div>
         )}
       </div>
@@ -382,6 +389,51 @@ function Matchups({ counters, champions, version, onOpenChampion }: { counters: 
 }
 
 const SHOWN_ALLIES = 5;
+
+const SHOWN_SIMILAR = 5;
+const TIER_ORDER = ["S", "A", "B", "C", "D"];
+
+/**
+ * Other champions played in this role that share the main Data Dragon class,
+ * best tier first: alternatives when this one is banned or out of the pool.
+ */
+function SimilarList({ championId, position, champions, version, onOpenChampion }: CounterProps) {
+  const percent = percentIn(useLang());
+  const t = useT();
+  const [state] = useAsync(`tiers:${position}`, () => getTierList(position));
+  const self = champions.get(championId);
+  if (state.status !== "done" || !self) return null;
+  const similar = state.value.champions
+    .filter((e) => e.championId !== championId && champions.get(e.championId)?.tags[0] === self.tags[0] && e.games >= SIMILAR_MIN_GAMES)
+    // Tier first: it already weighs how many games a rate rests on.
+    .sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier) || b.winRate - a.winRate)
+    .slice(0, SHOWN_SIMILAR);
+  if (similar.length === 0) return null;
+  return (
+    <section className="matchups" aria-label={t("Benzer şampiyonlar")}>
+      <h2 className="draft__heading">{t("Bu rolde benzer şampiyonlar")}</h2>
+      <ul className="matchups__list matchups__list--plain">
+        {similar.map((e) => {
+          const c = champions.get(e.championId);
+          return (
+            <li key={e.championId}>
+              <button type="button" className="matchups__open" onClick={() => onOpenChampion(e.championId)}>
+                {c && version && <img src={championIconUrl(version, c.id)} alt="" width={26} height={26} />}
+                <span className="matchups__name">{c?.name ?? e.championId}</span>
+              </button>
+              <span className="matchups__games">{t("{tier} tier", { tier: e.tier })}</span>
+              <span className="matchups__rate">{percent(e.winRate)}</span>
+              <span className="matchups__games">{t("{games} maç", { games: e.games })}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+// Fewer games than this and the win rate says more about luck than the champion.
+const SIMILAR_MIN_GAMES = 100;
 
 function AllyList({
   championId,
