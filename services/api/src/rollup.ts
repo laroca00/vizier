@@ -1,5 +1,5 @@
 import { buildStyle, foeProfiles, type Catalog } from "./archetypes.ts";
-import { maxOrder } from "./builds.ts";
+import { maxOrder, parseRuneKey } from "./builds.ts";
 import { loadCatalog } from "./ddragon.ts";
 
 const RANKED_SOLO = 420;
@@ -185,6 +185,8 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
       const choices = buildChoices(row, catalog.finished);
       for (const [kind, value] of choices) tally.add(row, kind, value, row.win);
+      // Single runes, for pick rates inside a rune page.
+      if (row.runes) for (const id of new Set(parseRuneKey(row.runes).perks)) tally.add(row, "perk", String(id), row.win);
       // Each build style gets its own runes, items and skills: AP Kai'Sa is not crit Kai'Sa.
       const style = buildStyle(ids(row.items), catalog);
       if (style) {

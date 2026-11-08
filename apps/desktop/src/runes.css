@@ -1,0 +1,46 @@
+/* Rune trees laid out like the client's rune page. */
+
+.runes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.runes__style {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-small);
+  color: var(--glaze-muted);
+}
+
+.runes__row {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.runes__row li {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze-muted);
+  opacity: 0.45;
+  filter: grayscale(0.8);
+}
+
+.runes__row li[data-chosen] {
+  opacity: 1;
+  filter: none;
+  color: inherit;
+}
+
+.runes__row img {
+  display: block;
+  border-radius: 50%;
+}

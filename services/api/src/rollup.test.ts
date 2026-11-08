@@ -172,6 +172,35 @@ describe("lane stats", () => {
   });
 });
 
+describe("rune and skill detail", () => {
+  it("counts every single rune and lists the common skill orders with their share", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, noRiot);
+    const levels = (slots: number[]) => ({
+      info: {
+        frames: [
+          {
+            timestamp: 0,
+            participantFrames: {},
+            events: slots.map((skillSlot, i) => ({ type: "SKILL_LEVEL_UP", timestamp: i * 1000, participantId: 1, skillSlot, levelUpType: "NORMAL" })),
+          },
+        ],
+      },
+    });
+    for (let n = 1; n <= 12; n++) {
+      const order = n <= 9 ? [1, 2, 3, 1, 1, 4, 1, 2, 1, 2, 4, 2, 2, 3, 3, 4, 3, 3] : [2, 1, 3, 2, 2, 4, 2, 1, 2, 1, 4, 1, 1, 3, 3, 4, 3, 3];
+      await crawler.save(game(n, n % 3 !== 0), levels(order));
+    }
+    await rollup(db, noCatalog);
+    const build = await aggregateBuild(db, 103, "MIDDLE");
+    expect(build?.perks.find((p) => p.id === 8112)).toEqual({ id: 8112, games: 12, winRate: 0.667 });
+    expect(build?.perks.map((p) => p.id)).toEqual(expect.arrayContaining([8143, 8345, 5008, 5011]));
+    expect(build?.skillOptions.map((o) => [o.games, o.share])).toEqual([[9, 0.75], [3, 0.25]]);
+    expect(build?.skillOptions[0].maxOrder).toEqual([1, 2, 3]);
+    expect(build?.skillOptions[0].firstLevels).toEqual([1, 2, 3]);
+  });
+});
+
 describe("stat docs", () => {
   it("publishes what the API serves, and the API reads it back", async () => {
     const { db } = fakeD1();

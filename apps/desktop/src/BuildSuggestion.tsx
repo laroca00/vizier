@@ -1,3 +1,4 @@
+import { RunePageView } from "./RunePageView";
 import { formatPercent, intlLocale, useLang, useT, type Lang } from "./i18n";
 import { shardName } from "./library/RuneEditor";
 import { useEffect, useRef, useState } from "react";
@@ -332,20 +333,13 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
       )}
 
       <section className="build__block" aria-label={t("Önerilen rünler")}>
-        <div className="build__runes">
-          {primary && <img src={runeIconUrl(primary.icon)} alt={primary.name} title={primary.name} width={22} height={22} className="build__style" />}
-          {page.perks.slice(0, 4).map((id, i) => {
-            const rune = runeById.get(id);
-            return rune ? (
-              <img key={id} src={runeIconUrl(rune.icon)} alt={rune.name} title={rune.name} width={i === 0 ? 40 : 28} height={i === 0 ? 40 : 28} />
-            ) : null;
-          })}
-          {sub && <img src={runeIconUrl(sub.icon)} alt={sub.name} title={sub.name} width={22} height={22} className="build__style" />}
-          {page.perks.slice(4, 6).map((id) => {
-            const rune = runeById.get(id);
-            return rune ? <img key={id} src={runeIconUrl(rune.icon)} alt={rune.name} title={rune.name} width={24} height={24} /> : null;
-          })}
-        </div>
+        <RunePageView
+          primary={primary}
+          secondary={sub}
+          perks={page.perks}
+          counts={shown === build && page === picks.runes[0] ? build.perks : undefined}
+          total={build.games}
+        />
         <p className="build__stat">
           {t("{games} maçta, {rate} kazanma", { games: page.games, rate: percent(page.winRate) })}
         </p>
