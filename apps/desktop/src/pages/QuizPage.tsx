@@ -14,6 +14,7 @@ import {
   hash,
   rangeOf,
   skinView,
+  abilityView,
   streak,
   type ClassicResult,
   type Match,
@@ -34,7 +35,7 @@ import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
 
 const MODE_LABELS: Record<QuizMode, { label: string; hint: string }> = {
   classic: { label: "Klasik", hint: "Her tahmin; cinsiyet, pozisyon, tür, kaynak, menzil, bölge ve çıkış yılında ne kadar yaklaştığını gösterir." },
-  ability: { label: "Yetenek", hint: "Bu yetenek kimin? Yanlış tahminlerde ikon renklenir, sonra tuşu ve adı açılır." },
+  ability: { label: "Yetenek", hint: "Bu yetenek kimin? İkon önce ters ve gri; yanlış tahminlerde döner ve renklenir, sonra tuşu ve adı açılır." },
   emoji: { label: "Emoji", hint: "Her yanlış tahminde bir emoji daha açılır." },
   skin: { label: "Kostüm", hint: "Bir kostüm görselinin yakın planı. Her yanlış tahminde görüntü uzaklaşır." },
   recipe: { label: "Tarif", hint: "Bu parçalardan hangi eşya yapılır? Her yanlış tahminde fiyat ve ilk harf gibi ipuçları açılır." },
@@ -241,9 +242,17 @@ function Clue({ mode, answer, wrong, over, data, seed }: { mode: QuizMode; answe
   if (mode === "ability") {
     if (detail.status !== "done") return <Skeleton lines={2} label={t("Yükleniyor")} />;
     const ability = detail.value.abilities[seed % detail.value.abilities.length];
+    const view = over ? { rotate: 0, grey: false } : abilityView(wrong, seed);
     return (
       <div className="quiz__ability">
-        <img src={abilityIconUrl(data.version, ability.image)} alt={t("Tahmin edilecek yetenek")} width={96} height={96} data-grey={(!over && wrong < 2) || undefined} />
+        <img
+          src={abilityIconUrl(data.version, ability.image)}
+          alt={t("Tahmin edilecek yetenek")}
+          width={96}
+          height={96}
+          data-grey={view.grey || undefined}
+          style={{ transform: `rotate(${view.rotate}deg)` }}
+        />
         <p className="build__note">
           {over || wrong >= 3 ? t("Tuş: {key}", { key: ability.key === "P" ? t("Pasif") : ability.key }) : t("3 yanlıştan sonra tuşu açılır")}
           {(over || wrong >= 5) && `. ${ability.name}`}

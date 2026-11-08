@@ -118,6 +118,17 @@ export function skinView(wrongGuesses: number): { zoom: number; radius: number }
   return steps[Math.min(wrongGuesses, steps.length - 1)];
 }
 
+/**
+ * How an ability icon is disguised after this many wrong guesses: turned
+ * and grey first, then straightened, then in colour.
+ */
+export function abilityView(wrongGuesses: number, seed: number): { rotate: number; grey: boolean } {
+  const turns = [180, 120, 60, 0];
+  const base = turns[Math.min(wrongGuesses, turns.length - 1)];
+  // The direction depends on the day's seed, so the same icon isn't always turned the same way.
+  return { rotate: seed % 2 === 0 ? base : -base, grey: wrongGuesses < 2 };
+}
+
 /** Pixels of blur on the item icon: heavy at first, sharp after five wrong guesses. */
 export function itemBlur(wrongGuesses: number): number {
   const steps = [10, 7, 5, 3, 1.5, 0];

@@ -96,7 +96,7 @@
 .quiz__ability img {
   border-radius: 16px;
   box-shadow: 0 0 0 2px var(--gilt);
-  transition: filter var(--duration-slow) var(--ease);
+  transition: filter var(--duration-slow) var(--ease), transform var(--duration-slow) var(--ease);
 }
 
 .quiz__ability img[data-grey] {

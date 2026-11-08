@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Champion } from "../data/ddragon";
 import { EMOJI_HINTS } from "./emoji";
-import { attributesOf, mainRoles, classicGrid, itemBlur, itemPool, recipePool, recipeParts, combineCost, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinView, streak, type QuizRecord } from "./logic";
+import { attributesOf, mainRoles, classicGrid, itemBlur, itemPool, abilityView, recipePool, recipeParts, combineCost, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinView, streak, type QuizRecord } from "./logic";
 
 function champion(id: string, tags: string[], difficulty: number, partype: string, attackRange: number): Champion {
   return { id, key: id.length, name: id, magic: true, tank: false, tags, info: { attack: 5, defense: 5, magic: 5, difficulty }, partype, attackRange };
@@ -112,5 +112,17 @@ describe("recipe mode", () => {
 
   it("works out the combine cost", () => {
     expect(combineCost(3600, [1250, 1250])).toBe(1100);
+  });
+});
+
+describe("ability disguise", () => {
+  it("straightens and colours the icon as guesses go wrong", () => {
+    expect(abilityView(0, 2)).toEqual({ rotate: 180, grey: true });
+    expect(abilityView(2, 2)).toEqual({ rotate: 60, grey: false });
+    expect(abilityView(9, 2)).toEqual({ rotate: 0, grey: false });
+  });
+
+  it("turns the other way on odd seeds", () => {
+    expect(abilityView(1, 3).rotate).toBe(-120);
   });
 });

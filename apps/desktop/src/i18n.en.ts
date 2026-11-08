@@ -869,7 +869,7 @@ export const EN: Record<string, string> = {
   "Bir kostüm görselinden kesit": "A detail from a skin's art",
   "Bir kostüm görselinin yakın planı. Her yanlış tahminde görüntü uzaklaşır.": "A close-up of a skin's art. Each wrong guess zooms out.",
   "Bir şampiyon yazıp tahmin et. Renkler doğru, kısmen doğru ve yanlış olanları gösterir.": "Type a champion to guess. Colours show what's right, close and wrong.",
-  "Bu yetenek kimin? Yanlış tahminlerde ikon renklenir, sonra tuşu ve adı açılır.": "Whose ability is this? Wrong guesses bring out its colour, then its key and name.",
+  "Bu yetenek kimin? İkon önce ters ve gri; yanlış tahminlerde döner ve renklenir, sonra tuşu ve adı açılır.": "Whose ability is this? The icon starts upside down and grey; wrong guesses turn it and bring out its colour, then its key and name.",
   "Cevap: {champion}": "The answer: {champion}",
   "Doğru": "Right",
   "Emoji ipuçları": "Emoji hints",
