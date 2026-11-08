@@ -1,21 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { championIconUrl, champions, latestVersion, type Champion } from "./data/ddragon";
+import { fold } from "./fold";
 import { useT } from "./i18n";
 import { NavIcon, type IconName } from "./ui/NavIcon";
 import { useAsync } from "./useAsync";
 import "./SearchPalette.css";
 
 const SHOWN = 8;
-
-/** "Kai'Sa", "kaisa" and "KAİSA" all match each other. */
-export function fold(text: string) {
-  return text
-    .toLocaleLowerCase("tr")
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .replace(/ı/g, "i")
-    .replace(/[^\p{L}\p{N}]/gu, "");
-}
 
 export type PaletteLink = { id: string; label: string; icon: IconName };
 

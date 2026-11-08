@@ -14,12 +14,20 @@ export type Route =
   | { page: "patches" }
   | { page: "quiz" }
   | { page: "augments" }
+  | { page: "matchup"; championId: number | null; opponentId: number | null; position: string }
   | { page: "champion"; championId: number; position: string | null; queue: number }
   | { page: "overlay" }
   | { page: "settings" }
   | { page: "about" };
 
 export type Page = Route["page"];
+
+/** The route a menu entry opens; pages that carry choices start empty. */
+export function pageRoute(page: Page): Route {
+  if (page === "matchup") return { page, championId: null, opponentId: null, position: "MIDDLE" };
+  if (page === "champion") return { page, championId: 0, position: null, queue: 420 };
+  return { page };
+}
 
 const MAX_HISTORY = 50;
 
