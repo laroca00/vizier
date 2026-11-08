@@ -4,7 +4,7 @@ import { formatPercent, useLang, useT } from "../i18n";
 import { useAsync } from "../useAsync";
 import { difficultyOf, matchupItems, type Difficulty } from "./logic";
 
-const DIFFICULTY_TEXT: Record<Difficulty, string> = {
+export const DIFFICULTY_TEXT: Record<Difficulty, string> = {
   hard: "Zor eşleşme",
   even: "Dengeli eşleşme",
   easy: "Rahat eşleşme",

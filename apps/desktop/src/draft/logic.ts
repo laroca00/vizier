@@ -227,3 +227,28 @@ export function matchupItems(
     .sort((a, b) => b.lift - a.lift)
     .map((i) => i.id);
 }
+
+// Bot lane is played in pairs; the jungler works most with the mid laner.
+const DUO_PARTNER: Record<string, string> = { BOTTOM: "UTILITY", UTILITY: "BOTTOM", JUNGLE: "MIDDLE", MIDDLE: "JUNGLE" };
+
+/** The role whose champion pairs with ours, or null for top and unknown roles. */
+export function duoPartnerRole(role: string | null | undefined): string | null {
+  return (role && DUO_PARTNER[role.toUpperCase()]) || null;
+}
+
+const MIN_LINE_GAMES = 40;
+
+/** The champion's matchup against the opponent, or null while the sample is too thin. */
+export function matchupLine(
+  counters: { matchups: { championId: number; games: number; winRate: number }[] },
+  opponentId: number,
+): { winRate: number; games: number; difficulty: Difficulty } | null {
+  const m = counters.matchups.find((x) => x.championId === opponentId);
+  if (!m || m.games < MIN_LINE_GAMES) return null;
+  return { winRate: m.winRate, games: m.games, difficulty: difficultyOf(m.winRate) };
+}
+
+/** ARAM and Mayhem hand out a shared bench; other queues never have one. */
+export function hasBench(draft: ChampSelect): boolean {
+  return (draft.bench?.length ?? 0) > 0 || (draft.rerollsRemaining ?? 0) > 0;
+}

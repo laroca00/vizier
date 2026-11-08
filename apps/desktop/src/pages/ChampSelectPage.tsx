@@ -13,8 +13,10 @@ import {
   type SummonerSpell,
 } from "../data/ddragon";
 import { checkRole } from "../draft/allyRole";
+import { BenchHelper } from "../draft/BenchHelper";
+import { HoverMatchup } from "../draft/HoverMatchup";
 import { BanPlanner } from "../draft/BanPlanner";
-import { autoView, shownChampion, type DraftView } from "../draft/logic";
+import { autoView, duoPartnerRole, hasBench, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";
 import { ThreatsPanel } from "../draft/ThreatsPanel";
@@ -122,6 +124,25 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
         <section key={view} className="draft__main draft__view" aria-label={view === "draft" ? t("Draft") : t("Build")}>
           {view === "draft" ? (
             <>
+              {ready && hasBench(draft) && (
+                <BenchHelper
+                  current={myChampion}
+                  rerolls={draft.rerollsRemaining ?? 0}
+                  bench={draft.bench ?? []}
+                  allies={draft.myTeam.filter((m) => !m.isLocal).map(shownChampion)}
+                  champions={ready.champions}
+                  version={ready.version}
+                />
+              )}
+              {role && !locked && ready && myChampion > 0 && vs && ready.champions.get(myChampion) && ready.champions.get(vs) && (
+                <HoverMatchup
+                  champion={ready.champions.get(myChampion)!}
+                  role={role}
+                  opponent={ready.champions.get(vs)!}
+                  guessed={opponent?.guessed ?? false}
+                  version={ready.version}
+                />
+              )}
               {role && !locked && ready && (
                 <>
                   <h2 className="draft__heading">{t("{role} için öneriler", { role: positionLabel(role, lang) ?? "" })}</h2>
@@ -188,7 +209,12 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
               <h2 className="draft__heading">{t("Takımın")}</h2>
               <ul className="team">
                 {draft.myTeam.map((member) => (
-                  <TeamRow key={member.cellId} member={member} data={ready} />
+                  <TeamRow
+                    key={member.cellId}
+                    member={member}
+                    data={ready}
+                    duo={myChampion && role && duoPartnerRole(role) === member.position.toUpperCase() ? { championId: myChampion, position: role } : undefined}
+                  />
                 ))}
               </ul>
               {ready && <EnemyTips enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c) => c !== undefined)} />}
@@ -310,7 +336,7 @@ function MyPick({ member, data }: { member: DraftMember; data: StaticData | null
   );
 }
 
-function TeamRow({ member, data }: { member: DraftMember; data: StaticData | null }) {
+function TeamRow({ member, data, duo }: { member: DraftMember; data: StaticData | null; duo?: { championId: number; position: string } }) {
   const t = useT();
   const lang = useLang();
   const champion = data?.champions.get(shownChampion(member));
@@ -325,6 +351,7 @@ function TeamRow({ member, data }: { member: DraftMember; data: StaticData | nul
       )}
       <span className="team__name">{champion?.name ?? t("Seçim bekleniyor")}</span>
       {member.isLocal ? <span className="team__you">{t("Sen")}</span> : champion && <AllyRate championId={champion.key} position={member.position} />}
+      {duo && champion && !member.isLocal && <DuoHint mine={duo} partner={champion} partnerPosition={member.position.toUpperCase()} />}
     </li>
   );
 }
@@ -373,7 +400,7 @@ function AllyRate({ championId, position }: { championId: number; position: stri
   const check = overview && role ? checkRole(overview, role) : null;
   const own = state.status === "done" ? state.value : null;
   return (
-    <>
+    <span className="team__tags">
       {own && (
         <span className="team__stat" title={t("{games} maç", { games: own.games })} data-thin={own.games < 100 || undefined}>
           {own.tier ? `${own.tier}, ` : ""}
@@ -392,7 +419,7 @@ function AllyRate({ championId, position }: { championId: number; position: stri
           {t("Rol dışı")}
         </span>
       )}
-    </>
+    </span>
   );
 }
 
@@ -470,15 +497,12 @@ function PoolStrip({ position, data, opponentId }: { position: string; data: Sta
   );
 }
 
-// Bot lane is played in pairs; the jungler roams with everyone.
-const PARTNER: Record<string, string> = { BOTTOM: "UTILITY", UTILITY: "BOTTOM" };
-
 /** How the pick does next to the lane partner already chosen, from games where both played together. */
 function LanePartner({ championId, position, team, data }: { championId: number; position: string; team: DraftMember[]; data: StaticData }) {
   const t = useT();
   const lang = useLang();
   const role = position.toUpperCase();
-  const partnerRole = PARTNER[role];
+  const partnerRole = duoPartnerRole(role);
   const partner = partnerRole ? team.find((m) => !m.isLocal && m.position.toUpperCase() === partnerRole) : undefined;
   const partnerId = partner ? shownChampion(partner) : 0;
   const [state] = useAsync(partnerId ? `allies:${championId}:${role}` : null, () => getSynergies(championId, role));
@@ -495,5 +519,20 @@ function LanePartner({ championId, position, team, data }: { championId: number;
           : t("{partner} ile birlikte yeterli maç yok.", { partner: champion.name })}
       </p>
     </div>
+  );
+}
+
+/** How the player's champion does next to this ally, from games where both played together. */
+function DuoHint({ mine, partner, partnerPosition }: { mine: { championId: number; position: string }; partner: Champion; partnerPosition: string }) {
+  const t = useT();
+  const lang = useLang();
+  const [state] = useAsync(`allies:${mine.championId}:${mine.position}`, () => getSynergies(mine.championId, mine.position));
+  if (state.status !== "done") return null;
+  const pair = state.value.allies.find((a) => a.championId === partner.key && a.position === partnerPosition);
+  if (!pair) return null;
+  return (
+    <span className="team__duo" data-thin={pair.games < 100 || undefined}>
+      {t("Birlikte {rate}, {games} maç", { rate: formatPercent(pair.winRate, lang, 1), games: pair.games })}
+    </span>
   );
 }
