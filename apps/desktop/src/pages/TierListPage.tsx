@@ -1,3 +1,4 @@
+import { TierRuleInfo } from "./TierRuleInfo";
 import { MetaMovers } from "../MetaMovers";
 import { MatchupLink } from "../matchupLink";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
@@ -85,7 +86,12 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
               })
             : undefined
         }
-        toolbar={<Tabs label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />}
+        toolbar={
+          <>
+            <Tabs label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
+            {state.status === "done" && <TierRuleInfo list={state.value.list} />}
+          </>
+        }
       />
 
       {ranked && (
