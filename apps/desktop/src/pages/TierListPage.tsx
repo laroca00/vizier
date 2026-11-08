@@ -11,6 +11,7 @@ import { Scatter } from "../charts";
 import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
+import { sortTiers, type TierSort } from "./tierSort";
 import "./TierListPage.css";
 
 // The most picked champions only; past this the plot turns into a pile of icons.
@@ -41,6 +42,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
   const t = useT();
   const [queue, setQueue] = useState(RANKED);
   const [position, setPosition] = useState("MIDDLE");
+  const [sort, setSort] = useState<TierSort>("tier");
   const [state, retry] = useAsync(`${queue}:${position}`, () => load(queue, position));
   const ranked = queue === RANKED;
   const personal = usePersonal();
@@ -68,6 +70,21 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
           items={ORDER.map((p) => ({ id: p, label: t(POSITIONS[p]), icon: <img className="role-icon" src={roleIconUrl(p)} alt="" width={16} height={16} /> }))}
           value={position}
           onChange={setPosition}
+        />
+      )}
+
+      {!ranked && (
+        <Tabs
+          label={t("Sırala")}
+          className="tiers__roles"
+          size="small"
+          items={[
+            { id: "tier" as TierSort, label: t("Tier") },
+            { id: "winRate" as TierSort, label: t(winLabel(queue)) },
+            { id: "pickRate" as TierSort, label: t("Seçilme") },
+          ]}
+          value={sort}
+          onChange={setSort}
         />
       )}
 
@@ -150,7 +167,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
                 </tr>
               </thead>
               <tbody>
-                {state.value.list.champions.map((c) => {
+                {sortTiers(state.value.list.champions, ranked ? "tier" : sort).map((c) => {
                   const champion = state.value.champions.get(c.championId);
                   const mine = poolIds.has(c.championId) ? "pool" : personal.favourites.includes(c.championId) ? "favourite" : undefined;
                   return (
