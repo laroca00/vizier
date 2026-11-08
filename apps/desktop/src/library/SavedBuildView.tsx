@@ -7,6 +7,7 @@ import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/Modal";
 import { useToast } from "../ui/Toast";
 import { useBuildExport } from "./useBuildExport";
+import { shareCode } from "./share";
 import { skillOrderLabel, type LibraryData } from "./data";
 import { shardName } from "./RuneEditor";
 import { deleteBuild, duplicateBuild, toggleFavourite, type SavedBuild } from "./store";
@@ -60,6 +61,16 @@ export function SavedBuildView({ build, data, onEdit, onSelect }: Props) {
           {t("İstemciye aktar")}
         </Button>
         <Button onClick={onEdit}>{t("Düzenle")}</Button>
+        <Button
+          onClick={() =>
+            navigator.clipboard.writeText(shareCode(build)).then(
+              () => toast("success", t("Paylaşım kodu panoya kopyalandı. Notların koda eklenmez.")),
+              () => toast("error", t("Panoya kopyalanamadı.")),
+            )
+          }
+        >
+          {t("Paylaşım kodu")}
+        </Button>
         <Button onClick={() => onSelect(duplicateBuild(build.id, (name) => t("{name} kopyası", { name }))?.id ?? null)}>{t("Kopyala")}</Button>
         <Button variant="ghost" onClick={() => setConfirming(true)}>
           {t("Sil")}

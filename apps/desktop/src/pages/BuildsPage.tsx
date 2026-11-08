@@ -6,6 +6,7 @@ import { formatPercent, useLang, useT } from "../i18n";
 import { POSITIONS, positionLabel } from "../labels";
 import { BuildEditor } from "../library/BuildEditor";
 import { fromPicks } from "../library/convert";
+import { readShareCode } from "../library/share";
 import { loadLibraryData, type LibraryData } from "../library/data";
 import "../library/library.css";
 import { SavedBuildView } from "../library/SavedBuildView";
@@ -224,6 +225,7 @@ function Mine({ data }: { data: LibraryData }) {
   const [editing, setEditing] = useState<SavedBuild | null>(null);
   const [newCollection, setNewCollection] = useState("");
   const [newChampion, setNewChampion] = useState<string>("");
+  const [code, setCode] = useState("");
 
   const shown = library.builds.filter((b) => (filter === ALL ? true : filter === FAVOURITES ? b.favourite : b.collections.includes(filter)));
   const current = library.builds.find((b) => b.id === selected) ?? shown[0] ?? null;
@@ -293,6 +295,26 @@ function Mine({ data }: { data: LibraryData }) {
           </Button>
         )}
       </div>
+
+      <form
+        className="library__collection-form library__import"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const draft = readShareCode(code);
+          if (!draft || !data.champions.has(draft.championId)) {
+            toast("error", t("Bu bir Vizier paylaşım kodu değil ya da bozuk."));
+            return;
+          }
+          setSelected(createBuild(draft).id);
+          setCode("");
+          toast("success", t("{name} buildlerine eklendi", { name: draft.name }));
+        }}
+      >
+        <input className="text-input" aria-label={t("Paylaşım kodu")} placeholder={t("Bir arkadaşının paylaşım kodunu yapıştır")} value={code} onChange={(e) => setCode(e.target.value)} />
+        <Button size="small" type="submit" disabled={!code.trim()}>
+          {t("Kodla ekle")}
+        </Button>
+      </form>
 
       <div className="library__new">
         <Select label={t("Yeni build için şampiyon")} value={newChampion || championOptions[0]?.value || ""} options={championOptions} onChange={setNewChampion} />

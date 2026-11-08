@@ -483,3 +483,11 @@ textarea.text-input {
   justify-content: flex-end;
   margin-top: calc(var(--space-2) * -1);
 }
+
+.library__import {
+  margin-bottom: var(--space-3);
+}
+
+.library__import .text-input {
+  width: min(420px, 100%);
+}

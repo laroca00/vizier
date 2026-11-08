@@ -778,4 +778,10 @@ export const EN: Record<string, string> = {
   "İpucu: unvanı \"{title}\"": "Hint: their title is \"{title}\"",
   "{count} yanlış tahminden sonra şampiyonun unvanı ipucu olarak açılır.": "After {count} wrong guesses the champion's title shows as a hint.",
   "Draft panoya kopyalandı": "Draft copied to the clipboard",
+  "Paylaşım kodu panoya kopyalandı. Notların koda eklenmez.": "Share code copied to the clipboard. Your notes aren't included.",
+  "Paylaşım kodu": "Share code",
+  "Bu bir Vizier paylaşım kodu değil ya da bozuk.": "That isn't a Vizier share code, or it's damaged.",
+  "{name} buildlerine eklendi": "{name} added to your builds",
+  "Bir arkadaşının paylaşım kodunu yapıştır": "Paste a friend's share code",
+  "Kodla ekle": "Add from code",
 };

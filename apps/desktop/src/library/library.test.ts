@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Picks, ProBuild } from "../api";
 import { fromPicks, fromPro, maxOrderOf, parseRuneKey, runesComplete, toClient } from "./convert";
+import { readShareCode, shareCode } from "./share";
 import { parseLibrary, type SavedBuild } from "./store";
 
 const finished = (id: number) => id >= 3000;
@@ -68,5 +69,30 @@ describe("saved builds", () => {
     expect(library.builds.map((b) => b.id)).toEqual(["y"]);
     expect(library.builds[0].items).toEqual([]);
     expect(library.collections).toEqual(["Ana"]);
+  });
+
+  it("round-trips a build through a share code, keeping notes private", () => {
+    const build: SavedBuild = {
+      ...fromPicks({ name: "Ahri ğüşıöç burst", championId: 103, position: "MIDDLE" }, picks, finished),
+      notes: "private",
+      collections: ["Ana"],
+      id: "a",
+      createdAt: 0,
+      updatedAt: 0,
+    };
+    const code = shareCode(build);
+    expect(code.startsWith("VZB1:")).toBe(true);
+    const back = readShareCode(`  ${code}\n`)!;
+    expect(back.name).toBe("Ahri ğüşıöç burst");
+    expect(back.runes).toEqual(build.runes);
+    expect(back.coreItems).toEqual(build.coreItems);
+    expect(back.notes).toBe("");
+    expect(back.collections).toEqual([]);
+  });
+
+  it("rejects codes that aren't Vizier builds", () => {
+    expect(readShareCode("hello")).toBeNull();
+    expect(readShareCode("VZB1:not-base64!!")).toBeNull();
+    expect(readShareCode("VZB1:" + btoa(JSON.stringify({ n: "x", c: 1 })))).toBeNull();
   });
 });
