@@ -132,7 +132,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 </>
               )}
               {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} />}
-              {ready && me && <PoolStrip position={me.position} data={ready} />}
+              {ready && me && <PoolStrip position={me.position} data={ready} opponentId={vs} />}
             </>
           ) : me && ready && myChampion > 0 ? (
             <>
@@ -386,22 +386,37 @@ function DraftMatchups({ championId, position, data }: { championId: number; pos
   );
 }
 
-function PoolStrip({ position, data }: { position: string; data: StaticData }) {
+/**
+ * The player's pool for this role, main picks first. With a lane opponent
+ * known, each pick shows how it does against that opponent.
+ */
+function PoolStrip({ position, data, opponentId }: { position: string; data: StaticData; opponentId: number | null }) {
   const t = useT();
+  const lang = useLang();
   const { pool } = usePersonal();
   const role = position ? position.toUpperCase() : null;
-  const shown = pool.filter((p) => !p.position || !role || p.position === role);
+  const [counters] = useAsync(opponentId && role ? `counters:${opponentId}:${role}` : null, () => getCounters(opponentId!, role!));
+  const shown = pool
+    .filter((p) => !p.position || !role || p.position === role)
+    .sort((a, b) => (a.rank === b.rank ? 0 : a.rank === "main" ? -1 : 1));
   if (shown.length === 0) return null;
+  const opponent = opponentId ? data.champions.get(opponentId) : undefined;
+  // The opponent's own matchups: their win rate against each pick, so ours is the rest.
+  const against = new Map(counters.status === "done" ? counters.value.matchups.map((m) => [m.championId, m]) : []);
   return (
     <>
-      <h2 className="draft__heading">{t("Havuzun")}</h2>
-      <ul className="strip">
+      <h2 className="draft__heading">{opponent ? t("Havuzun, {opponent} karşısında", { opponent: opponent.name }) : t("Havuzun")}</h2>
+      <ul className="strip strip--pool">
         {shown.map((p) => {
           const champion = data.champions.get(p.championId);
+          const m = against.get(p.championId);
           return (
-            <li key={p.championId} title={champion?.name}>
+            <li key={p.championId} title={[champion?.name, p.note].filter(Boolean).join(": ")} data-rank={p.rank}>
               {champion && <img src={championIconUrl(data.version, champion.id)} alt="" width={32} height={32} />}
-              <span className="strip__rate">{champion?.name}</span>
+              <span className="strip__rate">
+                {champion?.name}
+                {m && <span className="strip__vs">{t("{rate}, {games} maç", { rate: formatPercent(1 - m.winRate, lang), games: m.games })}</span>}
+              </span>
             </li>
           );
         })}

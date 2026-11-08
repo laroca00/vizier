@@ -474,3 +474,24 @@
   gap: 2px;
   margin: 0;
 }
+
+.strip__vs {
+  display: block;
+  font-size: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze-muted);
+}
+
+.strip li[data-rank="main"] img {
+  box-shadow: 0 0 0 2px var(--gilt);
+}
+
+.strip--pool {
+  gap: var(--space-3);
+}
+
+.strip--pool li {
+  display: grid;
+  justify-items: center;
+  min-width: 88px;
+}
