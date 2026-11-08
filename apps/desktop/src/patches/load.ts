@@ -4,7 +4,7 @@ import { diffChampions, diffItems, diffRunes, type EntityDiff, type RawChampion,
 const BASE = "https://ddragon.leagueoflegends.com";
 const SHOWN_VERSIONS = 12;
 // Not under "vizier." so the cached diffs stay out of exported settings.
-const CACHE_PREFIX = "patchdiff.v1.";
+const CACHE_PREFIX = "patchdiff.v3.";
 
 let versionList: Promise<string[]> | undefined;
 

@@ -3,6 +3,8 @@
 // prices and recipes, and which runes exist. Damage numbers inside ability
 // text and system changes are not in it, and the page says so.
 
+import { statAt, type DuelStat } from "../data/duel";
+
 export type Value = number | string | null;
 /** `field` is a code the page turns into words: "stat:hp", "spell:Q:cooldown", "item:gold", "item:stat:FlatHPPoolMod". */
 export type Change = { field: string; before: Value; after: Value };
@@ -16,6 +18,8 @@ export type RawItem = {
   gold: { total: number; purchasable?: boolean };
   stats?: Record<string, number>;
   from?: string[];
+  /** Items this one builds into. */
+  into?: string[];
   maps?: Record<string, boolean>;
   inStore?: boolean;
 };
@@ -29,6 +33,9 @@ export function perRank(values: number[] | undefined): Value {
   const rounded = values.map((v) => Math.round(v * 1000) / 1000);
   return rounded.every((v) => v === rounded[0]) ? rounded[0] : rounded.join("/");
 }
+
+const LEVEL_STATS: DuelStat[] = ["hp", "attackdamage", "armor", "spellblock", "attackspeed"];
+const round = (value: number) => Math.round(value * 1000) / 1000;
 
 function changed(field: string, before: Value, after: Value, out: Change[]) {
   if (before !== after) out.push({ field, before, after });
@@ -45,6 +52,11 @@ export function diffChampions(before: Record<string, RawChampion>, after: Record
     const changes: Change[] = [];
     for (const stat of new Set([...Object.keys(prev.stats), ...Object.keys(next.stats)])) {
       changed(`stat:${stat}`, prev.stats[stat] ?? null, next.stats[stat] ?? null, changes);
+    }
+    // The growth number alone says little; show what the stat is at level 18.
+    for (const stat of LEVEL_STATS) {
+      if (prev.stats[stat] === next.stats[stat] && prev.stats[`${stat}perlevel`] === next.stats[`${stat}perlevel`]) continue;
+      changed(`level:${stat}:18`, round(statAt(prev.stats, stat, 18)), round(statAt(next.stats, stat, 18)), changes);
     }
     SPELL_KEYS.forEach((key, i) => {
       const a = prev.spells?.[i];
@@ -68,6 +80,7 @@ export function onRift(item: RawItem) {
 }
 
 const recipe = (item: RawItem) => (item.from ?? []).slice().sort().join("+") || null;
+const buildsInto = (item: RawItem) => (item.into ?? []).slice().sort((a, b) => Number(a) - Number(b)).join("+") || null;
 
 export function diffItems(before: Record<string, RawItem>, after: Record<string, RawItem>): EntityDiff[] {
   const out: EntityDiff[] = [];
@@ -85,6 +98,7 @@ export function diffItems(before: Record<string, RawItem>, after: Record<string,
     const stats = new Set([...Object.keys(prev.stats ?? {}), ...Object.keys(next.stats ?? {})]);
     for (const stat of stats) changed(`item:stat:${stat}`, prev.stats?.[stat] ?? null, next.stats?.[stat] ?? null, changes);
     changed("item:recipe", recipe(prev), recipe(next), changes);
+    changed("item:into", buildsInto(prev), buildsInto(next), changes);
     if (changes.length) out.push({ kind: "item", id, name: next.name, status: "changed", changes });
   }
   for (const [id, prev] of Object.entries(prevShop)) {
@@ -105,8 +119,36 @@ export function diffRunes(before: RawRuneStyle[], after: RawRuneStyle[]): Entity
 
 /** Positive when the change helps the champion or item: more stats, lower cooldowns, cost or price. */
 export function direction(change: Change): "up" | "down" | null {
-  if (typeof change.before !== "number" || typeof change.after !== "number") return null;
   const lowerIsBetter = /:(cooldown|cost)$|^item:gold$/.test(change.field);
-  const better = lowerIsBetter ? change.after < change.before : change.after > change.before;
-  return change.after === change.before ? null : better ? "up" : "down";
+  const sign = (before: number, after: number) => (after === before ? 0 : (lowerIsBetter ? after < before : after > before) ? 1 : -1);
+  if (typeof change.before === "number" && typeof change.after === "number") {
+    const s = sign(change.before, change.after);
+    return s === 0 ? null : s > 0 ? "up" : "down";
+  }
+  // Per-rank values ("10/9/8"): a clear direction only when every rank moves the same way.
+  if (typeof change.before === "string" && typeof change.after === "string" && change.before.includes("/") && change.after.includes("/")) {
+    const a = change.before.split("/").map(Number);
+    const b = change.after.split("/").map(Number);
+    if (a.length !== b.length || [...a, ...b].some(Number.isNaN)) return null;
+    const signs = a.map((v, i) => sign(v, b[i])).filter((s) => s !== 0);
+    if (signs.length === 0 || !signs.every((s) => s === signs[0])) return null;
+    return signs[0] > 0 ? "up" : "down";
+  }
+  return null;
+}
+
+export type Verdict = "buff" | "nerf" | "mixed";
+
+/**
+ * A plain read of a patch entry: buff when every directional change helps,
+ * nerf when every one hurts, mixed otherwise. Null for added, removed or
+ * entries whose changes have no clear direction (recipes, say).
+ */
+export function verdict(entry: EntityDiff): Verdict | null {
+  if (entry.status !== "changed" || entry.kind === "rune") return null;
+  // The level 18 line restates the growth change; counting it twice would only repeat itself.
+  const directions = entry.changes.filter((c) => !c.field.startsWith("level:")).map(direction).filter((d) => d !== null);
+  if (directions.length === 0) return null;
+  const ups = directions.filter((d) => d === "up").length;
+  return ups === directions.length ? "buff" : ups === 0 ? "nerf" : "mixed";
 }
