@@ -7,7 +7,7 @@ import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { pruneRaw, rollup } from "./rollup.ts";
 import { docKey, statDocs } from "./statDocs.ts";
-import { arenaDuos, augmentStats, sampleLimits, tierList } from "./stats.ts";
+import { arenaDuos, arenaItems, augmentStats, sampleLimits, tierList } from "./stats.ts";
 import { MemoryStore } from "./store.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
@@ -124,6 +124,10 @@ describe("arena duos", () => {
     expect(ahri.partners).toEqual([{ championId: 238, games: 12, winRate: 0.667 }]);
     expect((await arenaDuos(db, 64)).partners).toEqual([{ championId: 157, games: 12, winRate: 0.333 }]);
     expect((await arenaDuos(db, 999)).partners).toEqual([]);
+
+    // The same games also carry item counts; player() buys item 3157 in every game.
+    expect(await arenaItems(db, 103)).toMatchObject({ games: 12, items: [{ id: 3157, games: 12, pickRate: 1, winRate: 0.667 }] });
+    expect((await arenaItems(db, 999)).items).toEqual([]);
   });
 });
 

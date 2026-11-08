@@ -963,4 +963,6 @@ export const EN: Record<string, string> = {
   "Tüm nadirlikler": "All rarities",
   "Tüm sınıflar": "All classes",
   "{champions} şampiyonun birleşik verisi, {games} oyuncu-maç": "Combined data of {champions} champions, {games} player-games",
+  "Arena eşyaları": "Arena items",
+  "{pick} alınma, {rate} ilk 4, {games} maç": "{pick} bought, {rate} top four, {games} games",
 };

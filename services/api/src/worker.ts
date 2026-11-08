@@ -10,6 +10,8 @@ type Env = {
   UPDATES?: KVNamespace;
   /** "on" serves Arena and ARAM Mayhem augment stats; anything else hides them at once. */
   AUGMENTS?: string;
+  /** "off" hides Arena item stats at once; they are on by default. */
+  ARENA_ITEMS?: string;
 };
 
 const DAILY_CRON = "0 4 * * *";
@@ -31,7 +33,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/updates/")) return serveUpdate(env, url.pathname.slice("/updates/".length));
-    app ??= createApp(new D1Store(env.DB), { statsDb: env.DB, catalog: () => loadCatalog(), augments: env.AUGMENTS === "on" });
+    app ??= createApp(new D1Store(env.DB), { statsDb: env.DB, catalog: () => loadCatalog(), augments: env.AUGMENTS === "on", arenaItems: env.ARENA_ITEMS !== "off" });
     return app.fetch(request, env, ctx);
   },
 

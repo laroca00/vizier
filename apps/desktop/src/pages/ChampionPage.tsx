@@ -8,7 +8,8 @@ import { championNoteKey, inPool, toggleFavouriteChampion, togglePool, usePerson
 import { ProBuildList } from "../ProBuildList";
 import { championIconUrl, champions, latestVersion, roleIconUrl, type Champion } from "../data/ddragon";
 import { POSITIONS } from "../labels";
-import { AUGMENT_QUEUES, QUEUES, RANKED, winLabel } from "../queues";
+import { ARENA, AUGMENT_QUEUES, QUEUES, RANKED, winLabel } from "../queues";
+import { ArenaItems } from "../draft/ArenaItems";
 import { ChampionAugments } from "../augments/ChampionAugments";
 import "../augments/augments.css";
 import { LiquidGlass } from "../ui/LiquidGlass";
@@ -121,6 +122,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
         />
       )}
       {AUGMENT_QUEUES.includes(queue) && <ChampionAugments championId={championId} queue={queue} />}
+      {queue === ARENA && <ArenaItems championId={championId} />}
 
       {champion && version && (
         <div className="champion__body champion__reference">

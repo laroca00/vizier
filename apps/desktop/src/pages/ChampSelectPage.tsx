@@ -13,6 +13,7 @@ import {
   type SummonerSpell,
 } from "../data/ddragon";
 import { checkRole } from "../draft/allyRole";
+import { ArenaItems } from "../draft/ArenaItems";
 import { ArenaDuo } from "../draft/ArenaDuo";
 import { isArena } from "../draft/arena";
 import { BenchHelper } from "../draft/BenchHelper";
@@ -207,6 +208,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 showPros
                 queue={queue}
               />
+              {isArena(draft) && <ArenaItems championId={myChampion} />}
               {hasBench(draft) && <ChampionAugments championId={myChampion} queue={MAYHEM} limit={6} title={t("Mayhem ise: ilk bakılacak augment'ler")} hideEmpty />}
               {enemyPicks.length >= 3 && (
                 <ItemAdvicePanel

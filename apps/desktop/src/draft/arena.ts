@@ -1,5 +1,6 @@
 import type { ChampSelect } from "../lcu";
-import type { ArenaDuos } from "../api";
+import type { ArenaDuos, ArenaItems } from "../api";
+import type { Item } from "../data/ddragon";
 
 /** Arena teams are duos; no other mode seats two players on a team. */
 export function isArena(draft: ChampSelect): boolean {
@@ -18,4 +19,9 @@ export function duoPicks(duos: ArenaDuos, taken: Set<number>, pool: Set<number>,
     .filter((p) => !taken.has(p.championId))
     .slice(0, limit)
     .map((p) => ({ ...p, inPool: pool.has(p.championId) }));
+}
+
+/** Finished items only: Arena lists carry components, boots and consumables too. */
+export function finishedArenaItems(stats: ArenaItems, items: Map<number, Item>, limit = 8): ArenaItems["items"] {
+  return stats.items.filter((i) => items.get(i.id)?.complete).slice(0, limit);
 }
