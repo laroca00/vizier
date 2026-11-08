@@ -15,7 +15,7 @@ import {
 import { autoView, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";
-import { ItemAdvicePanel } from "../draft/ItemAdvice";
+import { ItemAdvicePanel } from "../draft/ItemAdvicePanel";
 import { PoolBuild } from "../draft/PoolBuild";
 import { useOpponent, type Opponent } from "../draft/useOpponent";
 import { formatPercent, useLang, useT } from "../i18n";
