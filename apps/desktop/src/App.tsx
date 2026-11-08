@@ -6,10 +6,11 @@ import { champSelectFixture } from "./dev/fixtures";
 import { useChampSelect, useLcuStatus } from "./lcu";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
-import { noteRecent } from "./personal";
+import { noteRecent, usePersonal } from "./personal";
 import { pageRoute, useNavigation, type Page, type Route } from "./router";
 import { OpenMatchupProvider } from "./matchupLink";
 import { useReadyCheckAlert } from "./readyCheck";
+import { enteredQueueFlow, planPreload, runPreload } from "./preload";
 import { SearchPalette } from "./SearchPalette";
 import { SharePaste } from "./library/SharePaste";
 import { setClientLocale, useT } from "./i18n";
@@ -135,6 +136,16 @@ function App() {
 
   useEffect(() => setClientLocale(clientLocale), [clientLocale]);
   useReadyCheckAlert(phase, settings.readyCheckAlert);
+
+  // Champ select opens faster when its data is already cached from the lobby.
+  const personal = usePersonal();
+  const previousPhase = useRef<string | null>(null);
+  useEffect(() => {
+    if (enteredQueueFlow(previousPhase.current, phase)) runPreload(planPreload(personal.pool));
+    previousPhase.current = phase;
+    // The pool is read when the lobby opens; later edits don't need to refetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   // Nobody looks at Vizier while the game is in front, so WebView2 can hand
   // memory back to the game until the player switches over.
