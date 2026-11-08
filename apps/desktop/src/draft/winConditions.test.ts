@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Champion } from "../data/ddragon";
-import { winConditions } from "./winConditions";
+import { aramPlan, winConditions } from "./winConditions";
 
 function champ(id: string, tags: string[], info: Partial<Champion["info"]> = {}): Champion {
   const full = { attack: 5, defense: 5, magic: 5, difficulty: 5, ...info };
@@ -32,5 +32,26 @@ describe("win conditions", () => {
   it("returns nothing for a draft with no clear style", () => {
     const team = [champ("Garen", ["Fighter"]), champ("Ashe", ["Marksman"]), champ("Soraka", ["Support"])];
     expect(winConditions(team).length).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("ARAM reading", () => {
+  const poke = [champ("Xerath", ["Mage"]), champ("Ziggs", ["Mage"]), champ("Soraka", ["Support"])];
+
+  it("ignores split push in ARAM", () => {
+    const split = [champ("Fiora", ["Fighter"]), champ("Tryndamere", ["Fighter"]), champ("Janna", ["Support"])];
+    expect(winConditions(split)[0].archetype).toBe("split");
+    expect(winConditions(split, true).map((w) => w.archetype)).not.toContain("split");
+  });
+
+  it("plans around poke with sustain", () => {
+    const plan = aramPlan(poke)!;
+    expect(plan.line).toContain("köprüde");
+    expect(plan.names).toEqual(["Xerath", "Ziggs"]);
+  });
+
+  it("falls back to staying together and needs three champions", () => {
+    expect(aramPlan([champ("Garen", ["Fighter"]), champ("Ashe", ["Marksman"]), champ("Darius", ["Fighter"])])!.names).toEqual([]);
+    expect(aramPlan(poke.slice(0, 2))).toBeNull();
   });
 });

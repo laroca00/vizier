@@ -949,4 +949,9 @@ export const EN: Record<string, string> = {
   "ARAM: yeterli maç yok ({games} maç)": "ARAM: not enough games ({games} games)",
   "Sıradan bunu al": "Take this from the bench",
   "Şampiyonun ARAM listesinde {total} içinde {rank}. sırada ({rate}, {games} maç); {rerolls} yenileme hakkın var.": "Your champion is {rank} of {total} on the ARAM list ({rate}, {games} games); you have {rerolls} rerolls left.",
+  "ARAM planı: {names} ile köprüde yıpratın, yaşayan taraf savaşı kazanır.": "ARAM plan: poke the bridge with {names}; the side that stays alive wins the fight.",
+  "ARAM planı: {names} ile köprüde yıpratın; kısa savaşlara girmeyin.": "ARAM plan: poke the bridge with {names}; avoid short fights.",
+  "ARAM planı: {names} ile uzun savaşlara girin, canınızı koruyup rakibi eritin.": "ARAM plan: take long fights with {names}; stay healthy and wear them down.",
+  "ARAM planı: {names} ile savaşı hızlı açın; rakip yıpratmadan önce iç içe girin.": "ARAM plan: start the fight fast with {names}; get in before they can poke you.",
+  "ARAM planı: Net bir yıpratma ya da başlatma aracı yok; birlikte durun ve rakibin hatasını bekleyin.": "ARAM plan: no clear poke or engage; stay together and wait for their mistake.",
 };

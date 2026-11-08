@@ -170,7 +170,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 </>
               )}
               {ready && enemyPicks.length > 0 && <ThreatsPanel enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c): c is Champion => c !== undefined)} />}
-              {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} />}
+              {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} aram={hasBench(draft)} />}
               {ready && me && <PoolStrip position={me.position} data={ready} opponentId={vs} />}
             </>
           ) : me && ready && myChampion > 0 ? (
