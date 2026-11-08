@@ -63,10 +63,10 @@ A dedicated place to study any matchup before the game, not only during champ se
 
 - [x] 4.1 Matchup page (`{ page: "matchup", championId, opponentId, position }`): pick two champions and a role. Shows win rate and games, difficulty, the matchup build and runes, items bought more often in this matchup, and the player's own note for it. (949d3b2; the page is reachable from the menu and the search palette, the other entry points follow with 4.6)
 - [x] 4.2 Base stats duel: both champions' HP, AD, armor, MR, attack speed and range at levels 1, 3, 6, 11, 18 from Data Dragon growth formulas, with who is ahead at each level. Tests against known values. (949d3b2)
-- [ ] 4.3 Ability comparison: cooldowns of each basic ability and ultimate at rank 1 and max side by side, with the "window" lines ("their E is on a 14 s cooldown at level 3: trade when it's down").
-- [ ] 4.4 Power spikes timeline: level 2/3/6/11/16 and core item completions for both champions on one horizontal timeline.
-- [ ] 4.5 Lane stats from the crawler: average gold and CS difference at 10 and 15 minutes, first blood rate and lane kill rate for this matchup (new aggregate rollup from timelines; backward compatible doc).
-- [ ] 4.6 Entry points: open the matchup page from the champion page counters list, from champ select, from the tier list (right-click or a button) and from the search palette ("Ahri vs Zed").
+- [x] 4.3 Ability comparison: cooldowns of each basic ability and ultimate at rank 1 and max side by side, with the "window" lines ("their E is on a 14 s cooldown at level 3: trade when it's down"). (87b9c6e)
+- [x] 4.4 Power spikes timeline: level 2/3/6/11/16 and core item completions for both champions on one horizontal timeline. (87b9c6e; item rows are in buy order, minutes follow with 5.6)
+- [x] 4.5 Lane stats from the crawler: average gold and CS difference at 10 and 15 minutes, first blood rate and lane kill rate for this matchup (new aggregate rollup from timelines; backward compatible doc). (87b9c6e; first blood and gold/CS leads only, lane kill rate is not in the match data; needs migration 0013)
+- [x] 4.6 Entry points: open the matchup page from the champion page counters list, from champ select, from the tier list (right-click or a button) and from the search palette ("Ahri vs Zed"). (87b9c6e)
 
 ## 5. Champion page improvements
 
@@ -191,4 +191,5 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 - Deploy the Worker (`pnpm --filter @vizier/api deploy`).
 - Apply pending D1 migrations remotely.
 - Pull and restart the crawler on the VM (Arena duo and item docs appear after the next rollup and publish; duo counts start from games crawled after the update).
+- Apply D1 migration 0013 (lane stats) remotely before the next crawler run on the VM; lane docs fill as timelines are crawled.
 - Optional: set `ARENA_ITEMS=off` on the Worker to hide Arena item stats; they are on by default.
