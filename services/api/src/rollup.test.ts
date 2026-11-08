@@ -7,7 +7,7 @@ import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { pruneRaw, rollup } from "./rollup.ts";
 import { docKey, statDocs } from "./statDocs.ts";
-import { sampleLimits, tierList } from "./stats.ts";
+import { augmentStats, sampleLimits, tierList } from "./stats.ts";
 import { MemoryStore } from "./store.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
@@ -70,6 +70,32 @@ describe("rollup", () => {
     const left = sqlite.prepare("SELECT COUNT(DISTINCT match_id) AS n FROM participant_stats").get();
     expect(left).toEqual({ n: 12 });
     expect((await tierList(db, "MIDDLE")).champions.find((c) => c.championId === 103)?.games).toBe(24);
+  });
+});
+
+describe("augments", () => {
+  it("counts Arena augments per champion and overall", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, noRiot);
+    for (let n = 1; n <= 12; n++) {
+      const top4 = n % 3 !== 0;
+      const match = game(n, top4);
+      match.metadata.matchId = `TR1_A${n}`;
+      match.info.queueId = 1700;
+      match.info.participants = [
+        // Arena counts a top-four placement as a win.
+        { ...player(1, 100, 103, false), teamPosition: "", placement: top4 ? 2 : 6, playerAugment1: 7, playerAugment2: n % 2 ? 9 : 11 } as Participant,
+        { ...player(2, 200, 238, false), teamPosition: "", placement: top4 ? 6 : 2, playerAugment1: 9 } as Participant,
+      ];
+      await crawler.save(match);
+    }
+    await rollup(db, noCatalog);
+    const ahri = await augmentStats(db, 1700, 103);
+    expect(ahri.games).toBe(12);
+    expect(ahri.augments.find((a) => a.augmentId === 7)).toMatchObject({ games: 12, pickRate: 1, winRate: 0.667 });
+    const all = await augmentStats(db, 1700, null);
+    expect(all.augments.find((a) => a.augmentId === 9)?.games).toBe(18);
+    expect((await augmentStats(db, 2400, null)).augments).toEqual([]);
   });
 });
 

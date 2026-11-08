@@ -6,6 +6,9 @@
   "observability": { "enabled": true },
   // 04:00 UTC: clear expired cache rows, old patches and old pro games. Crawling runs in services/crawler.
   "triggers": { "crons": ["0 4 * * *"] },
+  // Arena and ARAM Mayhem augment stats. Set to "off" and deploy to hide them
+  // at once if Riot objects; the owner chose to show them on 2026-11-08.
+  "vars": { "AUGMENTS": "on" },
   // Desktop app updates: latest.json and the signed installers, written by scripts/release.mjs.
   "kv_namespaces": [{ "binding": "UPDATES", "id": "c8b82682f41c44119dceff2b7d15f100" }],
   "d1_databases": [

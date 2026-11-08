@@ -3,7 +3,7 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import type { Catalog } from "./archetypes.ts";
 import { POSITIONS, type Build } from "./builds.ts";
-import { docKey, readDoc } from "./statDocs.ts";
+import { AUGMENT_QUEUES, docKey, readDoc } from "./statDocs.ts";
 import { STORED_QUEUES } from "./crawler.ts";
 import { proBuilds, proPatches, proTeams } from "./pros.ts";
 import type { Store } from "./store.ts";
@@ -19,6 +19,8 @@ function badRequest(message: string): never {
 export type AppOptions = {
   /** Holds stat_docs, which services/crawler fills; without it the stats routes answer 503. */
   statsDb?: D1Database;
+  /** Arena and ARAM Mayhem augment stats; the owner switches them off with the AUGMENTS variable. */
+  augments?: boolean;
   /** Data Dragon items, to name pro builds' styles; without it they have none. */
   catalog?: () => Promise<Catalog>;
 };
@@ -35,7 +37,7 @@ function queueOf(value: string | undefined): number {
  * Every route reads what services/crawler published to D1, so the Worker
  * makes no Riot calls and needs no Riot key.
  */
-export function createApp(store: Store, { statsDb, catalog }: AppOptions = {}) {
+export function createApp(store: Store, { statsDb, catalog, augments = false }: AppOptions = {}) {
   // Concurrent misses for the same key share one load.
   const pending = new Map<string, Promise<unknown>>();
 
@@ -159,6 +161,17 @@ export function createApp(store: Store, { statsDb, catalog }: AppOptions = {}) {
       return proBuilds(statsDb, { championId, position, team, group, player, platform, patch, limit }, items);
     };
     return c.json({ builds: await cached(key, 5 * MINUTE, load) });
+  });
+
+  app.get("/v1/augments", async (c) => {
+    if (!augments) return c.json({ error: "Augment stats are switched off" }, 403);
+    const queue = Number(c.req.query("queue"));
+    if (!AUGMENT_QUEUES.includes(queue)) badRequest("Unsupported queue");
+    const championParam = c.req.query("champion");
+    const championId = championParam === undefined ? null : Number(championParam);
+    if (championId !== null && (!Number.isInteger(championId) || championId <= 0)) badRequest("Invalid champion id");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json((await readDoc(statsDb, docKey.augments(queue, championId))) ?? { patches: [], games: 0, augments: [] });
   });
 
   app.get("/v1/pros/patches", async (c) => {

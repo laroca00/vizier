@@ -17,9 +17,16 @@ describe("api", () => {
   });
 
   it("no longer serves player, match, coach or augment routes", async () => {
-    for (const path of ["/v1/profiles/a/b", "/v1/matches/TR1_1", "/v1/players/x/lp", "/v1/champions/103/arena-augments", "/v1/mayhem/augments"]) {
+    for (const path of ["/v1/profiles/a/b", "/v1/matches/TR1_1", "/v1/players/x/lp", "/v1/champions/103/arena-augments"]) {
       expect((await app().request(path)).status).toBe(404);
     }
     expect((await app().request("/v1/coach/TR1_1", { method: "POST" })).status).toBe(404);
+  });
+
+  it("serves augments only while the switch is on", async () => {
+    expect((await app().request("/v1/augments?queue=1700")).status).toBe(403);
+    const on = createApp(new MemoryStore(), { augments: true });
+    expect((await on.request("/v1/augments?queue=420")).status).toBe(400);
+    expect((await on.request("/v1/augments?queue=1700&champion=x")).status).toBe(400);
   });
 });

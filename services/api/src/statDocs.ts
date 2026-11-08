@@ -2,7 +2,10 @@
 // to D1's stat_docs as finished JSON; the Worker only reads them. Keys are
 // shared here so both sides agree.
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
-import { banSuggestions, championOverview, counters, latestPatches, synergies, tierList } from "./stats.ts";
+import { augmentStats, banSuggestions, championOverview, counters, latestPatches, synergies, tierList } from "./stats.ts";
+
+// Queues with augments: Arena and ARAM Mayhem.
+export const AUGMENT_QUEUES = [1700, 2400];
 
 const RANKED = 420;
 // Matchup builds need this many games, the same as aggregateBuild asks for.
@@ -23,6 +26,8 @@ export const docKey = {
   bans: () => "bans",
   /** One compact row per ranked champion and role, for searching builds without fetching each one. */
   buildIndex: () => "buildindex",
+  /** Augment stats for a queue, overall or for one champion. */
+  augments: (queue: number, championId: number | null) => `augments:${queue}:${championId ?? "ANY"}`,
 };
 
 export type BuildIndexEntry = {
@@ -72,6 +77,7 @@ export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown
     }
   }
   yield [docKey.bans(), await banSuggestions(db)];
+  for (const queue of AUGMENT_QUEUES) yield [docKey.augments(queue, null), await augmentStats(db, queue, null)];
 
   const index: BuildIndexEntry[] = [];
   let indexPatches: string[] = [];
@@ -83,6 +89,7 @@ export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown
     if (!overview) continue;
     yield [docKey.champion(queue, championId, null), overview];
     yield [docKey.build(queue, championId, null), await aggregateBuild(db, championId, null, null, queue)];
+    if (AUGMENT_QUEUES.includes(queue)) yield [docKey.augments(queue, championId), await augmentStats(db, queue, championId)];
     if (queue !== RANKED) continue;
 
     for (const { position } of overview.positions) {

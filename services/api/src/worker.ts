@@ -8,6 +8,8 @@ import { D1Store } from "./store.ts";
 type Env = {
   DB: D1Database;
   UPDATES?: KVNamespace;
+  /** "on" serves Arena and ARAM Mayhem augment stats; anything else hides them at once. */
+  AUGMENTS?: string;
 };
 
 const DAILY_CRON = "0 4 * * *";
@@ -29,7 +31,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/updates/")) return serveUpdate(env, url.pathname.slice("/updates/".length));
-    app ??= createApp(new D1Store(env.DB), { statsDb: env.DB, catalog: () => loadCatalog() });
+    app ??= createApp(new D1Store(env.DB), { statsDb: env.DB, catalog: () => loadCatalog(), augments: env.AUGMENTS === "on" });
     return app.fetch(request, env, ctx);
   },
 
