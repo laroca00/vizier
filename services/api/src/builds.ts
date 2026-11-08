@@ -5,8 +5,11 @@ const MIN_GAMES_FOR_PATCH = 30;
 // Below this many games a matchup says more about luck than the matchup.
 const MIN_MATCHUP_GAMES = 15;
 const TOP_RUNES = 3;
-const TOP_SPELLS = 2;
-const TOP_ITEMS = 15;
+// Spell pairs and items beyond the first are for comparison tables; the first stays what the build imports.
+const TOP_SPELLS = 4;
+const TOP_ITEMS = 24;
+const TOP_SKILLS = 3;
+const MAX_PERKS = 70;
 // A build style is shown on its own when this many games and this share of the champion's games use it.
 const MIN_VARIANT_GAMES = 20;
 const MIN_VARIANT_SHARE = 0.08;
@@ -46,6 +49,12 @@ export type Build = Picks & {
   variants: Variant[];
   /** Items bought more often against magic-heavy, physical-heavy or tanky teams. */
   situational: { vs: Foe; games: number; items: Choice<{ id: number }>[] }[];
+  /** How often each single rune (and shard) was taken in the champion's games. Empty for matchup builds. */
+  perks: Choice<{ id: number }>[];
+  /** Games the perk counts come from, which is fewer than `games` while older games lack them. */
+  perkGames: number;
+  /** The most played skill orders; `share` is out of the games that had a timeline. */
+  skillOptions: Choice<{ maxOrder: number[]; firstLevels: number[]; share: number }>[];
 };
 
 /** Inverse of crawler's runeKey; perks come out in LCU order: 4 primary, 2 secondary, 3 shards. */
@@ -136,7 +145,7 @@ export async function aggregateBuild(
   const kinds = ["rune", "spell", "item", "start", "core", "skill"];
   const { results } = used
     ? await query(patches, kinds.map((k) => `'vs-${k}'`).join(","), "AND value >= ? AND value < ?", [`${used}|`, `${used}}`])
-    : await query(patches, [...kinds.map((k) => `'${k}'`), ...kinds.map((k) => `'s-${k}'`), "'style'", "'foe'", "'foe-item'"].join(","), "", []);
+    : await query(patches, [...kinds.map((k) => `'${k}'`), ...kinds.map((k) => `'s-${k}'`), "'style'", "'foe'", "'foe-item'", "'perk'"].join(","), "", []);
   const unprefixed = (kind: string, prefix?: string) =>
     results
       .filter((r) => r.kind === kind && (prefix === undefined || r.value.startsWith(`${prefix}|`)))
@@ -148,11 +157,26 @@ export async function aggregateBuild(
     games: total.games,
     winRate: rate(total.wins, total.games),
     vs: used,
-    ...picks(base),
+    ...picks(base, !used),
     variants: [],
     situational: [],
+    perks: [],
+    perkGames: 0,
+    skillOptions: [],
   };
   if (used) return build;
+
+  build.perkGames = unprefixed("perk").find((r) => r.value === "0")?.games ?? 0;
+  build.perks = unprefixed("perk")
+    .filter((r) => r.value !== "0")
+    .slice(0, MAX_PERKS)
+    .map((r) => ({ id: Number(r.value), games: r.games, winRate: rate(r.wins, r.games) }));
+  const skillRows = unprefixed("skill");
+  const skillGames = skillRows.reduce((sum, r) => sum + r.games, 0);
+  build.skillOptions = skillRows.slice(0, TOP_SKILLS).map((r) => {
+    const [order, first] = r.value.split("|");
+    return { maxOrder: [...order].map(Number), firstLevels: [...first].map(Number), games: r.games, winRate: rate(r.wins, r.games), share: rate(r.games, skillGames) };
+  });
 
   build.variants = unprefixed("style")
     .filter((r) => r.games >= MIN_VARIANT_GAMES && r.games / total.games >= MIN_VARIANT_SHARE)
@@ -162,7 +186,7 @@ export async function aggregateBuild(
       games: r.games,
       winRate: rate(r.wins, r.games),
       share: rate(r.games, total.games),
-      ...picks((kind) => unprefixed(`s-${kind}`, r.value)),
+      ...picks((kind) => unprefixed(`s-${kind}`, r.value), false),
     }));
 
   const itemShare = new Map(unprefixed("item").map((r) => [r.value, r.games / total.games]));
@@ -180,7 +204,8 @@ export async function aggregateBuild(
   return build;
 }
 
-function picks(rows: (kind: string) => Count[]): Picks {
+// Matchup builds are many per champion and share one stored row, so they keep the shorter lists.
+function picks(rows: (kind: string) => Count[], wide = true): Picks {
   const choice = <T>(row: Count | undefined, shape: (value: string) => T) =>
     row ? { ...shape(row.value), games: row.games, winRate: rate(row.wins, row.games) } : null;
   return {
@@ -188,10 +213,10 @@ function picks(rows: (kind: string) => Count[]): Picks {
       .slice(0, TOP_RUNES)
       .map((r) => ({ ...parseRuneKey(r.value), games: r.games, winRate: rate(r.wins, r.games) })),
     spells: rows("spell")
-      .slice(0, TOP_SPELLS)
+      .slice(0, wide ? TOP_SPELLS : 2)
       .map((r) => ({ ids: ids(r.value), games: r.games, winRate: rate(r.wins, r.games) })),
     items: rows("item")
-      .slice(0, TOP_ITEMS)
+      .slice(0, wide ? TOP_ITEMS : 15)
       .map((r) => ({ id: Number(r.value), games: r.games, winRate: rate(r.wins, r.games) })),
     startItems: choice(rows("start")[0], (value) => ({ ids: ids(value) })),
     coreItems: choice(rows("core")[0], (value) => ({ ids: ids(value) })),

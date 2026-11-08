@@ -45,6 +45,12 @@ export type Build = Picks & {
   variants?: Variant[];
   /** Items bought more often against magic-heavy, physical-heavy or tanky teams. */
   situational?: { vs: Foe; games: number; items: Choice<{ id: number }>[] }[];
+  /** How often each single rune was taken; missing from docs published before it existed and for matchups. */
+  perks?: Choice<{ id: number }>[];
+  /** Games the perk counts come from; fewer than `games` for a while after they were introduced. */
+  perkGames?: number;
+  /** The most played skill orders; `share` is out of the games that had a timeline. */
+  skillOptions?: Choice<{ maxOrder: number[]; firstLevels: number[]; share: number }>[];
 };
 
 /** Null when Vizier has no games for the champion yet. */

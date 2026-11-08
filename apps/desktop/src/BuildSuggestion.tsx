@@ -1,4 +1,7 @@
-import { formatPercent, intlLocale, useLang, useT, type Lang } from "./i18n";
+import { BootsSpells } from "./BootsSpells";
+import { BuildPath } from "./BuildPath";
+import { RunePageView } from "./RunePageView";
+import { formatPercent, useLang, useT, type Lang } from "./i18n";
 import { shardName } from "./library/RuneEditor";
 import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
@@ -24,7 +27,7 @@ import {
   type SummonerSpell,
 } from "./data/ddragon";
 import { useSettings } from "./settings";
-import { SkillGrid } from "./SkillGrid";
+import { SkillOptions } from "./SkillOptions";
 import { useAsync } from "./useAsync";
 import { Button } from "./ui/Button";
 import { ErrorState } from "./ui/States";
@@ -112,7 +115,6 @@ type Props = {
   enemies?: number[];
 };
 
-const SKILL_KEYS = ["", "Q", "W", "E", "R"];
 
 export function BuildSuggestion({ championId, championName, position, currentSpells, locked, vs, showPros = false, inDraft = true, queue = 420, enemies = [] }: Props) {
   const lang = useLang();
@@ -319,33 +321,16 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
 
       {preview && <p className="build__note build__preview">{t("Önizleme. Şampiyonu kilitleyince aktarabilirsin.")}</p>}
 
-      {picks.skills && (
-        <section className="build__block" aria-label={t("Yetenek sırası")}>
-          <p className="build__stat">
-            {t("Yetenek sırası: önce {first}, en çok {max}", {
-              first: picks.skills.firstLevels.map((s) => SKILL_KEYS[s]).join(", "),
-              max: picks.skills.maxOrder.map((s) => SKILL_KEYS[s]).join(" > "),
-            })}
-          </p>
-          <SkillGrid skills={picks.skills} />
-        </section>
-      )}
+      {picks.skills && <SkillOptions key={`${championId}:${position}:${tab}`} skills={picks.skills} options={shown === build ? build.skillOptions : undefined} />}
 
       <section className="build__block" aria-label={t("Önerilen rünler")}>
-        <div className="build__runes">
-          {primary && <img src={runeIconUrl(primary.icon)} alt={primary.name} title={primary.name} width={22} height={22} className="build__style" />}
-          {page.perks.slice(0, 4).map((id, i) => {
-            const rune = runeById.get(id);
-            return rune ? (
-              <img key={id} src={runeIconUrl(rune.icon)} alt={rune.name} title={rune.name} width={i === 0 ? 40 : 28} height={i === 0 ? 40 : 28} />
-            ) : null;
-          })}
-          {sub && <img src={runeIconUrl(sub.icon)} alt={sub.name} title={sub.name} width={22} height={22} className="build__style" />}
-          {page.perks.slice(4, 6).map((id) => {
-            const rune = runeById.get(id);
-            return rune ? <img key={id} src={runeIconUrl(rune.icon)} alt={rune.name} title={rune.name} width={24} height={24} /> : null;
-          })}
-        </div>
+        <RunePageView
+          primary={primary}
+          secondary={sub}
+          perks={page.perks}
+          counts={shown === build && page === picks.runes[0] ? build.perks : undefined}
+          total={build.perkGames ?? build.games}
+        />
         <p className="build__stat">
           {t("{games} maçta, {rate} kazanma", { games: page.games, rate: percent(page.winRate) })}
         </p>
@@ -402,26 +387,9 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
         </section>
       )}
 
-      {(picks.startItems || picks.coreItems) && (
-        <section className="build__block" aria-label={t("Başlangıç ve ana eşyalar")}>
-          {[picks.startItems && { label: t("Başlangıç"), ids: picks.startItems.ids, core: false }, picks.coreItems && { label: t("Ana eşyalar"), ids: picks.coreItems.ids, core: true }]
-            .filter((row): row is { label: string; ids: number[]; core: boolean } => !!row)
-            .map((row) => (
-              <div className="build__row" key={row.label}>
-                <span className="build__stat build__row-label">{row.label}</span>
-                {row.ids.map((id, i) => {
-                  const info = state.value.items.get(id);
-                  return <img key={`${id}-${i}`} src={itemIconUrl(version, id)} alt={info?.name ?? ""} title={info?.name} width={28} height={28} />;
-                })}
-                {row.core && (
-                  <span className="build__stat build__gold">
-                    {t("toplam {gold} altın", { gold: row.ids.reduce((sum, id) => sum + (state.value.items.get(id)?.gold ?? 0), 0).toLocaleString(intlLocale(lang)) })}
-                  </span>
-                )}
-              </div>
-            ))}
-        </section>
-      )}
+      <BootsSpells picks={picks} total={shown.games} items={state.value.items} spells={state.value.spells} version={version} />
+
+      <BuildPath picks={picks} items={state.value.items} version={version} />
 
       {shownItems.length > 0 && (
         <section className="build__block" aria-label={t("Sık alınan eşyalar")}>
