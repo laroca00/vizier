@@ -83,6 +83,30 @@ describe("ProCrawler", () => {
     expect((await proBuilds(db, { patch })).length).toBeGreaterThan(0);
     expect(await proBuilds(db, { patch: "1.1" })).toEqual([]);
   });
+
+  it("keeps one row per game and player when the account's puuid changes", async () => {
+    const { db } = fakeD1();
+    const riot = { get: async () => null } as unknown as RiotClient;
+    const crawler = new ProCrawler(db, riot, () => 100 * DAY, []);
+    const account = { puuid: "faker", player: "Faker", team: "T1", platform: "kr" };
+    await crawler.save(match("KR_7", 99 * DAY), null, account);
+    // A new API key resolves the same account to another puuid.
+    const renamed = match("KR_7", 99 * DAY);
+    renamed.info.participants[0] = participant("faker-new-key", 103, 100);
+    await crawler.save(renamed, null, { ...account, puuid: "faker-new-key" });
+    expect(await proBuilds(db, {})).toHaveLength(1);
+
+    // Rows stored twice before this fix are still listed once.
+    await db
+      .prepare(
+        `INSERT INTO pro_matches (match_id, puuid, player, team, platform, patch, game_start, duration, champion_id,
+          team_position, win, kills, deaths, assists, cs, gold, runes, spells, items, grp)
+          VALUES ('KR_7', 'old', 'Faker', 'T1', 'kr', '16.21', ?, 1700, 103, 'MIDDLE', 1, 1, 1, 1, 1, 1, 'r', '4,14', '1', 'worlds')`,
+      )
+      .bind(99 * DAY)
+      .run();
+    expect(await proBuilds(db, {})).toHaveLength(1);
+  });
 });
 
 describe("syncChallengers", () => {

@@ -159,8 +159,10 @@ export class ProCrawler {
     if (matchIds.length === 0) return 0;
 
     const { results: known } = await this.db
-      .prepare(`SELECT match_id FROM pro_matches WHERE puuid = ? AND match_id IN (${matchIds.map(() => "?").join(",")})`)
-      .bind(account.puuid, ...matchIds)
+      // By player, not puuid: puuids are encrypted per API key, so a new key
+      // resolves the same account to a new puuid and would refetch its games.
+      .prepare(`SELECT match_id FROM pro_matches WHERE player = ? AND match_id IN (${matchIds.map(() => "?").join(",")})`)
+      .bind(account.player, ...matchIds)
       .all<{ match_id: string }>();
     const seen = new Set(known.map((k) => k.match_id));
     let saved = 0;
@@ -191,7 +193,8 @@ export class ProCrawler {
         `INSERT OR IGNORE INTO pro_matches
           (match_id, puuid, player, team, platform, patch, game_start, duration, champion_id, opponent_champion_id,
            team_position, win, kills, deaths, assists, cs, gold, runes, spells, items, start_items, skill_order, purchase_order, grp)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+          WHERE NOT EXISTS (SELECT 1 FROM pro_matches WHERE match_id = ? AND player = ?)`,
       )
       .bind(
         match.metadata.matchId,
@@ -218,6 +221,8 @@ export class ProCrawler {
         path ? path.skillOrder.join("") : null,
         path ? path.purchases.join(",") : null,
         account.grp ?? "worlds",
+        match.metadata.matchId,
+        account.player,
       )
       .run();
     return true;
@@ -280,9 +285,17 @@ export async function proBuilds(
     .prepare(
       `SELECT * FROM pro_matches ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY game_start DESC LIMIT ?`,
     )
-    .bind(...[championId, position, team, group, player, platform, patch].filter((v) => v !== undefined), limit)
+    // Twice the limit: rows saved under an older puuid repeat a game and are dropped below.
+    .bind(...[championId, position, team, group, player, platform, patch].filter((v) => v !== undefined), limit * 2)
     .all<Row>();
-  return results.map((r) => ({
+  const seen = new Set<string>();
+  const unique = results.filter((r) => {
+    const key = `${r.match_id}:${r.player}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return unique.slice(0, limit).map((r) => ({
     matchId: r.match_id,
     player: r.player,
     team: r.team,
