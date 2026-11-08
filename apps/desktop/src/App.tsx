@@ -1,21 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { champSelectFixture } from "./dev/fixtures";
 import { useChampSelect, useLcuStatus } from "./lcu";
-import { About } from "./pages/About";
-import { ChampionPage } from "./pages/ChampionPage";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
-import { OverlayPage } from "./pages/OverlayPage";
-import { BuildsPage } from "./pages/BuildsPage";
-import { ChampionsPage } from "./pages/ChampionsPage";
-import { SimulatorPage } from "./pages/SimulatorPage";
-import { PatchesPage } from "./pages/PatchesPage";
-import { QuizPage } from "./pages/QuizPage";
-import { ProsPage } from "./pages/ProsPage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { TierListPage } from "./pages/TierListPage";
 import { noteRecent } from "./personal";
 import { useNavigation, type Page, type Route } from "./router";
 import { SearchPalette } from "./SearchPalette";
@@ -28,8 +17,22 @@ import { champions } from "./data/ddragon";
 import { Sidebar, type NavGroup, type NavItem } from "./Sidebar";
 import { IconButton } from "./ui/Button";
 import { NavIcon } from "./ui/NavIcon";
-import { ErrorBoundary, PageCrashed } from "./ui/States";
+import { ErrorBoundary, PageCrashed, Skeleton } from "./ui/States";
 import { ToastProvider } from "./ui/Toast";
+
+// Sections load when first opened, so starting the app and champ select stay
+// quick; Home and champ select are in the main bundle.
+const About = lazy(() => import("./pages/About").then((m) => ({ default: m.About })));
+const ChampionPage = lazy(() => import("./pages/ChampionPage").then((m) => ({ default: m.ChampionPage })));
+const OverlayPage = lazy(() => import("./pages/OverlayPage").then((m) => ({ default: m.OverlayPage })));
+const BuildsPage = lazy(() => import("./pages/BuildsPage").then((m) => ({ default: m.BuildsPage })));
+const ChampionsPage = lazy(() => import("./pages/ChampionsPage").then((m) => ({ default: m.ChampionsPage })));
+const SimulatorPage = lazy(() => import("./pages/SimulatorPage").then((m) => ({ default: m.SimulatorPage })));
+const PatchesPage = lazy(() => import("./pages/PatchesPage").then((m) => ({ default: m.PatchesPage })));
+const QuizPage = lazy(() => import("./pages/QuizPage").then((m) => ({ default: m.QuizPage })));
+const ProsPage = lazy(() => import("./pages/ProsPage").then((m) => ({ default: m.ProsPage })));
+const SettingsPage = lazy(() => import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+const TierListPage = lazy(() => import("./pages/TierListPage").then((m) => ({ default: m.TierListPage })));
 
 const LABELS: Record<Page, string> = {
   home: "Ana sayfa",
@@ -241,6 +244,7 @@ function App() {
         </div>
         <main className="shell__main" key={routeKey}>
           <ErrorBoundary fallback={(reset) => <PageCrashed onReset={reset} />}>
+            <Suspense fallback={<Skeleton lines={6} label={t("Yükleniyor")} />}>
             {route.page === "draft" && draft ? (
               <ChampSelectPage draft={draft} />
             ) : route.page === "about" ? (
@@ -273,6 +277,7 @@ function App() {
             ) : (
               <Home lcu={lcu} draftActive={draft !== null} onOpenChampion={openChampion} onNavigate={go} onSearch={() => setSearching(true)} />
             )}
+            </Suspense>
           </ErrorBoundary>
         </main>
       </SplashProvider>
