@@ -99,9 +99,9 @@ export function RuneEditor({ value, styles, onChange }: Props) {
         ))}
         <div className="rune-editor__shards">
           {SHARD_ROWS.map((row, i) => (
-            <div key={i} className="rune-editor__shard-row" role="radiogroup" aria-label={t("Bonus {row}", { row: i + 1 })}>
+            <div key={i} className="rune-editor__shard-row" role="group" aria-label={t("Bonus {row}", { row: i + 1 })}>
               {row.map((shard) => (
-                <button key={shard.id} type="button" role="radio" aria-checked={shards[i] === shard.id} onClick={() => chooseShard(i, shard.id)}>
+                <button key={shard.id} type="button" aria-pressed={shards[i] === shard.id} onClick={() => chooseShard(i, shard.id)}>
                   {t(shard.name)}
                 </button>
               ))}
@@ -115,13 +115,12 @@ export function RuneEditor({ value, styles, onChange }: Props) {
 
 function TreeTabs({ trees, value, disabled, onChange }: { trees: RuneStyle[]; value: number; disabled?: number; onChange: (id: number) => void }) {
   return (
-    <div className="rune-editor__trees" role="radiogroup">
+    <div className="rune-editor__trees" role="group">
       {trees.map((tree) => (
         <button
           key={tree.id}
           type="button"
-          role="radio"
-          aria-checked={tree.id === value}
+          aria-pressed={tree.id === value}
           aria-label={tree.name}
           title={tree.name}
           disabled={tree.id === disabled}
@@ -136,9 +135,9 @@ function TreeTabs({ trees, value, disabled, onChange }: { trees: RuneStyle[]; va
 
 function RuneRow({ runes, chosen, big, label, onChoose }: { runes: Rune[]; chosen: number; big?: boolean; label: string; onChoose: (rune: Rune) => void }) {
   return (
-    <div className="rune-editor__row" role="radiogroup" aria-label={label} data-keystone={big || undefined}>
+    <div className="rune-editor__row" role="group" aria-label={label} data-keystone={big || undefined}>
       {runes.map((rune) => (
-        <button key={rune.id} type="button" role="radio" aria-checked={rune.id === chosen} title={rune.name} aria-label={rune.name} onClick={() => onChoose(rune)}>
+        <button key={rune.id} type="button" aria-pressed={rune.id === chosen} title={rune.name} aria-label={rune.name} onClick={() => onChoose(rune)}>
           <img src={runeIconUrl(rune.icon)} alt="" width={big ? 40 : 30} height={big ? 40 : 30} />
         </button>
       ))}

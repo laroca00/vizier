@@ -210,6 +210,7 @@ function Entry({ entry, icon, itemNames, lang, onOpen }: { entry: EntityDiff; ic
               <span className="patches__values">
                 {format(change, change.before, itemNames, lang, t)} <span aria-hidden="true">→</span>
                 <span className="visually-hidden">{t("şuna değişti:")}</span> {format(change, change.after, itemNames, lang, t)}
+                {direction(change) && <span className="visually-hidden">{direction(change) === "up" ? t("(güçlendirme)") : t("(zayıflatma)")}</span>}
               </span>
             </li>
           ))}

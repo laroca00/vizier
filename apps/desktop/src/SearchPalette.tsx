@@ -91,6 +91,7 @@ export function SearchPalette({ open, onClose, onChampion }: Props) {
           className="palette__input"
           type="search"
           placeholder={t("Şampiyon ara")}
+          aria-label={t("Şampiyon ara")}
           autoFocus
           role="combobox"
           aria-expanded={results.length > 0}

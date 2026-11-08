@@ -702,4 +702,6 @@ export const EN: Record<string, string> = {
   "İki sürüm karşılaştırılıyor": "Comparing two versions",
   "Şampiyon, eşya ya da rün ara": "Search champions, items or runes",
   "şuna değişti:": "changed to:",
+  "(güçlendirme)": "(buff)",
+  "(zayıflatma)": "(nerf)",
 };

@@ -83,6 +83,11 @@
   outline-offset: 2px;
 }
 
+.strip__pick[data-guess]:focus-visible {
+  outline: 2px solid var(--glaze);
+  outline-offset: 3px;
+}
+
 .opponent__note {
   margin: var(--space-2) 0 0;
   font-size: var(--text-small);

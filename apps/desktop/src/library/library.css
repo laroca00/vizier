@@ -423,8 +423,8 @@ textarea.text-input {
   opacity: 0.8;
 }
 
-.rune-editor__trees button[aria-checked="true"],
-.rune-editor__row button[aria-checked="true"] {
+.rune-editor__trees button[aria-pressed="true"],
+.rune-editor__row button[aria-pressed="true"] {
   opacity: 1;
   filter: none;
   box-shadow: 0 0 0 2px var(--gilt);
@@ -456,7 +456,7 @@ textarea.text-input {
   cursor: pointer;
 }
 
-.rune-editor__shard-row button[aria-checked="true"] {
+.rune-editor__shard-row button[aria-pressed="true"] {
   border-color: var(--gilt);
   color: var(--gilt);
 }
