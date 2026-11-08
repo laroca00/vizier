@@ -132,6 +132,23 @@ export function teamDamage(team: Champion[]): DamageProfile {
   return { ap: sum.ap / team.length, ad: sum.ad / team.length, true: sum.true / team.length };
 }
 
+// Clears minion waves fast from range or with area damage, so the lane can be left alone.
+const WAVECLEAR = new Set([
+  "Anivia", "Cassiopeia", "Ziggs", "Xerath", "Malzahar", "Orianna", "Syndra", "Lux", "Karthus", "Brand", "Heimerdinger",
+  "Sivir", "Corki", "Hwei", "Viktor", "Swain", "Vladimir", "Morgana", "Zyra", "Neeko", "Fiddlesticks", "Kennen", "Lissandra",
+  "Ryze", "TwistedFate", "AurelionSol", "Smolder", "Jinx", "KogMaw", "Gangplank", "Tristana", "Nasus", "Gragas", "Singed",
+  "Annie", "Karma", "Velkoz", "Zilean", "Aurora", "Mel", "Rumble", "Teemo", "Yorick", "Kayle", "Varus", "Veigar", "Ashe",
+  "Vex", "Ezreal", "Nunu", "Sona", "Taliyah",
+]);
+
+// Takes dragon, herald and baron down fast or secures them with a strong smite fight.
+const OBJECTIVES = new Set([
+  "Smolder", "Jinx", "KogMaw", "Twitch", "Vayne", "Kayle", "Nasus", "Warwick", "Skarner", "Sivir", "Tristana", "Aphelios",
+  "Kindred", "Fiddlesticks", "Belveth", "Briar", "Udyr", "Olaf", "Shyvana", "Gwen", "Trundle", "Illaoi", "MasterYi", "Karthus",
+  "Nunu", "Rammus", "Lillia", "Volibear", "XinZhao", "Hecarim", "Graves", "Viego", "Diana", "Zac", "Sejuani", "Vi", "JarvanIV",
+  "Evelynn", "Brand", "Kaisa", "Ivern", "Tryndamere", "Yorick", "Fiora", "Ornn", "Zeri",
+]);
+
 export type Phase = "early" | "mid" | "late";
 
 export type Traits = {
@@ -149,6 +166,8 @@ export type Traits = {
   backline: boolean;
   pick: boolean;
   teamfight: boolean;
+  waveclear: boolean;
+  objectives: boolean;
   healing: boolean;
   hardCc: boolean;
   burst: boolean;
@@ -170,15 +189,29 @@ export function traitsOf(c: Champion): Traits {
     backline: c.tags[0] === "Marksman" || (c.tags[0] === "Mage" && !tagged("Tank")),
     pick: PICK.has(c.id),
     teamfight: TEAMFIGHT.has(c.id),
+    waveclear: WAVECLEAR.has(c.id),
+    objectives: OBJECTIVES.has(c.id),
     healing: HEALING.has(c.id),
     hardCc: HARD_CC.has(c.id),
     burst: BURST.has(c.id),
   };
 }
 
-export type Dimension = "frontline" | "backline" | "poke" | "pick" | "teamfight";
+export type Dimension =
+  | "frontline"
+  | "backline"
+  | "poke"
+  | "pick"
+  | "teamfight"
+  | "engage"
+  | "disengage"
+  | "peel"
+  | "waveclear"
+  | "objectives";
 
-export const DIMENSIONS: Dimension[] = ["frontline", "backline", "poke", "pick", "teamfight"];
+export const DIMENSIONS: Dimension[] = [
+  "frontline", "backline", "poke", "pick", "teamfight", "engage", "disengage", "peel", "waveclear", "objectives",
+];
 
 export const DIMENSION_NAMES: Record<Dimension, string> = {
   frontline: "Ön hat",
@@ -186,6 +219,11 @@ export const DIMENSION_NAMES: Record<Dimension, string> = {
   poke: "Uzaktan yıpratma",
   pick: "Tek hedef yakalama",
   teamfight: "Takım savaşı",
+  engage: "Savaş başlatma",
+  disengage: "Geri çekilme",
+  peel: "Koruma",
+  waveclear: "Dalga temizleme",
+  objectives: "Obje kontrolü",
 };
 
 // One line per dimension and level: none, one champion, two or more.
@@ -214,6 +252,31 @@ const DIMENSION_TEXT: Record<Dimension, [string, string, string]> = {
     "Toplu savaşta birden çok rakibe vuran yetenek yok; dağınık savaşlar bu takıma uyar.",
     "{names} toplu savaşta birkaç rakibe birden vurabilir.",
     "{names} ile 5'e 5 savaş bu takımın güçlü yanı.",
+  ],
+  engage: [
+    "Savaşı başlatacak kimse yok; savaşı rakip açmazsa takım beklemek zorunda.",
+    "Savaşı açan tek isim {names}; o yakalanırsa plan çöker.",
+    "{names} savaşı istediği anda başlatabilir.",
+  ],
+  disengage: [
+    "Dalış yiyince kaçacak yol yok; geri çekilme araçları eksik.",
+    "{names} dalışı geri püskürtebilir.",
+    "{names} ile yakın dalışlar karşılanır ve savaştan temiz çıkılır.",
+  ],
+  peel: [
+    "Taşıyıcıyı koruyacak kimse yok; dalan rakip doğrudan arka hatta ulaşır.",
+    "{names} taşıyıcıyı koruyabilir ama tek başına.",
+    "{names} taşıyıcıyı rahatça korur.",
+  ],
+  waveclear: [
+    "Dalgaları hızlı temizleyen yok; yan koridorlar sıkışabilir.",
+    "{names} dalgaları hızlı temizler; diğerleri için zaman kazandırır.",
+    "{names} dalgaları hızla temizler; takım rahatça harekete geçebilir.",
+  ],
+  objectives: [
+    "Ejder ve baron'u hızlı alacak güçlü bir isim yok.",
+    "{names} objeleri hızlı alır.",
+    "{names} ile ejder, tur ve baron hızlı düşer.",
   ],
 };
 

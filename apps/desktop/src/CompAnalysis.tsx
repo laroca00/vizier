@@ -10,11 +10,6 @@ export function CompSummary({ team, report, label }: { team: Champion[]; report:
   const lang = useLang();
   if (report.champions === 0) return null;
   const damage = teamDamage(team);
-  const extras = [
-    { name: "Savaş başlatma", count: report.engage },
-    { name: "Koruma", count: report.peel },
-    { name: "Geri çekilme", count: report.disengage },
-  ];
   return (
     <div className="comp" aria-label={label}>
       <div
@@ -48,14 +43,11 @@ export function CompSummary({ team, report, label }: { team: Champion[]; report:
           </li>
         ))}
       </ul>
-      <ul className="comp__traits">
-        {extras.map((trait) => (
-          <li key={trait.name} data-strong={trait.count >= 2 || undefined} data-none={trait.count === 0 || undefined}>
-            {t(trait.name)} {trait.count}
-          </li>
-        ))}
-        {report.phase && <li data-strong>{t("En güçlü: {phase}", { phase: t(PHASE_TEXT[report.phase]).toLocaleLowerCase(lang) })}</li>}
-      </ul>
+      {report.phase && (
+        <ul className="comp__traits">
+          <li data-strong>{t("En güçlü: {phase}", { phase: t(PHASE_TEXT[report.phase]).toLocaleLowerCase(lang) })}</li>
+        </ul>
+      )}
       {report.weaknesses.length > 0 && (
         <ul className="comp__weak">
           {report.weaknesses.map((w) => (

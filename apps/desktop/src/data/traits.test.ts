@@ -72,3 +72,22 @@ describe("damage profiles", () => {
     expect(profile.true).toBe(0);
   });
 });
+
+describe("composition 2.0 dimensions", () => {
+  it("reports engage, disengage, peel, waveclear and objectives with who brings them", () => {
+    const dims = Object.fromEntries(compDimensions([MALPHITE, ORIANNA, JINX, THRESH]).map((d) => [d.dimension, d]));
+    expect(Object.keys(dims)).toEqual(["frontline", "backline", "poke", "pick", "teamfight", "engage", "disengage", "peel", "waveclear", "objectives"]);
+    expect(dims.engage.names).toContain("Malphite");
+    expect(dims.waveclear.names).toEqual(["Orianna", "Jinx"]);
+    expect(dims.objectives.names).toEqual(["Jinx"]);
+    expect(dims.peel.names).toContain("Thresh");
+  });
+
+  it("has text for every dimension and level", () => {
+    for (const d of compDimensions([])) {
+      expect(dimensionText({ ...d, level: 0 })).toBeTruthy();
+      expect(dimensionText({ ...d, level: 1 })).toContain("{names}");
+      expect(dimensionText({ ...d, level: 2 })).toContain("{names}");
+    }
+  });
+});
