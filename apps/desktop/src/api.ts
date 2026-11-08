@@ -1,12 +1,8 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "https://vizier-api.vizier-api.workers.dev";
 
-export class ApiError extends Error {
-  readonly status: number;
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-  }
-}
+import { ApiError, requestJson } from "./http";
+
+export { ApiError };
 
 // Several champ select panels read the same build, counters and role data; one
 // request each per few minutes is enough, the Worker publishes every 4 hours.
@@ -23,13 +19,8 @@ function get<T>(path: string, init?: RequestInit): Promise<T> {
   return value;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, init);
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as { error?: string } | null;
-    throw new ApiError(response.status, body?.error ?? response.statusText);
-  }
-  return response.json() as Promise<T>;
+function request<T>(path: string, init?: RequestInit) {
+  return requestJson<T>(`${API_URL}${path}`, init);
 }
 
 export type Choice<T> = T & { games: number; winRate: number };
