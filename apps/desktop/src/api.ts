@@ -109,6 +109,8 @@ export type TierEntry = {
   banRate?: number | null;
   tier: string;
   winRateChange: number | null;
+  /** Pick rate change over the same two patches; absent on servers that predate it. */
+  pickRateChange?: number | null;
 };
 export type TierList = { patches: string[]; games: number; champions: TierEntry[] };
 

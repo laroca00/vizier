@@ -1,0 +1,72 @@
+.movers {
+  margin-top: 24px;
+  max-width: 800px;
+}
+
+.movers__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px 24px;
+}
+
+.movers__heading {
+  margin: 0 0 6px;
+  font-size: var(--text-small);
+  font-weight: 400;
+  color: var(--glaze-muted);
+}
+
+.movers__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.movers__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--radius-item);
+  font: inherit;
+  font-size: var(--text-body);
+  color: inherit;
+  text-align: left;
+  background: none;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.movers__row:hover,
+.movers__row:focus-visible {
+  background: var(--hover);
+}
+
+.movers__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.movers__change[data-trend="up"] {
+  color: var(--data-win);
+}
+
+.movers__change[data-trend="down"] {
+  color: #f08a7c;
+}
+
+.movers__games {
+  font-size: var(--text-meta);
+  color: var(--glaze-faint);
+}
+
+.movers__title {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 500;
+}

@@ -3,6 +3,7 @@ import { openExternal, PATCH_NOTES } from "../links";
 import { champions, latestVersion, type Champion } from "../data/ddragon";
 import { getChampion } from "../api";
 import type { LcuStatus } from "../lcu";
+import { MetaMovers } from "../MetaMovers";
 import { MetaPicks } from "../MetaPicks";
 import { usePersonal } from "../personal";
 import { ProBuildList } from "../ProBuildList";
@@ -136,6 +137,7 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
         <PoolPatch onNavigate={onNavigate} />
 
         <MetaPicks onOpenChampion={onOpenChampion} />
+        <MetaMovers onOpenChampion={onOpenChampion} />
       </div>
 
       <LiquidGlass className="panel home__pros" radius={28} strength={2.5} scroll>

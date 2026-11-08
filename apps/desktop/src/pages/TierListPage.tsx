@@ -1,5 +1,5 @@
+import { MetaMovers } from "../MetaMovers";
 import { MatchupLink } from "../matchupLink";
-import { useState } from "react";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { getBans, getTierList } from "../api";
 import { championIconUrl, champions, latestVersion, roleIconUrl } from "../data/ddragon";
@@ -12,7 +12,9 @@ import { Scatter } from "../charts";
 import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
-import { sortTiers, type TierSort } from "./tierSort";
+import { SearchInput, Toggle } from "../ui/Fields";
+import { changeText, trendOf } from "./trend";
+import { DEFAULT_TIER_VIEW, isThin, THIN_GAMES, viewTiers, type TierColumn, type TierSort, type TierView } from "./tierSort";
 import "./TierListPage.css";
 
 // The most picked champions only; past this the plot turns into a pile of icons.
@@ -37,17 +39,39 @@ async function load(queue: number, position: string) {
   return { list, bans, version, champions: championList };
 }
 
-export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: number, position: string | null, queue: number) => void }) {
+type Props = {
+  view?: TierView;
+  /** Called on every change so the route can keep the view for Back. */
+  onView: (view: TierView) => void;
+  onOpenChampion: (championId: number, position: string | null, queue: number) => void;
+};
+
+export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion }: Props) {
   const lang = useLang();
   const percent = percentIn(lang);
   const t = useT();
-  const [queue, setQueue] = useState(RANKED);
-  const [position, setPosition] = useState("MIDDLE");
-  const [sort, setSort] = useState<TierSort>("tier");
+  const { queue, position, sort, desc, query, poolOnly, hideThin } = view;
+  const change = (next: Partial<TierView>) => onView({ ...view, ...next });
+  const setQueue = (next: number) => change({ queue: next });
+  const setPosition = (next: string) => change({ position: next });
+  const setHideThin = (next: boolean) => change({ hideThin: next });
   const [state, retry] = useAsync(`${queue}:${position}`, () => load(queue, position));
   const ranked = queue === RANKED;
   const personal = usePersonal();
   const poolIds = new Set(personal.pool.filter((p) => !ranked || !p.position || p.position === position).map((p) => p.championId));
+
+  const rows =
+    state.status === "done"
+      ? viewTiers(state.value.list.champions, view, (id) => state.value.champions.get(id)?.name ?? "", poolIds)
+      : [];
+  const sortHeader = (column: TierColumn, label: string) => (
+    <th scope="col" aria-sort={sort === column ? (desc ? "descending" : "ascending") : undefined}>
+      <button type="button" className="tiers__sort" onClick={() => change(sort === column ? { desc: !desc } : { sort: column, desc: column !== "name" })}>
+        {label}
+        {sort === column && <span aria-hidden="true">{desc ? " ↓" : " ↑"}</span>}
+      </button>
+    </th>
+  );
 
   return (
     <LiquidGlass className="panel tiers" radius={28} strength={2.5} scroll>
@@ -85,7 +109,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
             { id: "pickRate" as TierSort, label: t("Seçilme") },
           ]}
           value={sort}
-          onChange={setSort}
+          onChange={(next) => change({ sort: next, desc: true })}
         />
       )}
 
@@ -119,6 +143,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
                   { group: "C", label: "C–D" },
                 ]}
                 points={[...state.value.list.champions]
+                  .filter((c) => !isThin(c))
                   .sort((a, b) => b.pickRate - a.pickRate)
                   .slice(0, PLOTTED)
                   .flatMap((c) => {
@@ -148,66 +173,81 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
               />
             </section>
           )}
-          {state.value.list.champions.length === 0 ? (
-            <p className="coach__note">
-              {t("{what} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.", {
-                what: ranked ? t("Bu rol") : t(QUEUES.find((q) => q.id === queue)?.label ?? ""),
-              })}
-            </p>
-          ) : (
-            <table className="tiers__table">
-              <thead>
-                <tr>
-                  <th scope="col">Tier</th>
-                  <th scope="col">{t("Şampiyon")}</th>
-                  <th scope="col">{t(winLabel(queue))}</th>
-                  <th scope="col">{t("Değişim")}</th>
-                  <th scope="col">{t("Seçilme")}</th>
-                  {ranked && <th scope="col">{t("Yasaklanma")}</th>}
-                  <th scope="col">{t("Maç")}</th>
-                  {ranked && <th scope="col">{t("Eşleşme")}</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {sortTiers(state.value.list.champions, ranked ? "tier" : sort).map((c) => {
-                  const champion = state.value.champions.get(c.championId);
-                  const mine = poolIds.has(c.championId) ? "pool" : personal.favourites.includes(c.championId) ? "favourite" : undefined;
-                  return (
-                    <tr key={c.championId} data-mine={mine}>
-                      <td>
-                        <span className="tier" data-tier={c.tier}>
-                          {c.tier}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="tiers__champion"
-                          onClick={() => onOpenChampion(c.championId, ranked ? position : null, queue)}
-                        >
-                          {champion && <img src={championIconUrl(state.value.version, champion.id)} alt="" width={26} height={26} />}
-                          {champion?.name ?? c.championId}
-                          {mine && <span className="tiers__mine">{mine === "pool" ? t("Havuzunda") : t("Favori")}</span>}
-                        </button>
-                      </td>
-                      <td>{percent(c.winRate)}</td>
-                      <td className="tiers__change" data-trend={c.winRateChange == null ? undefined : c.winRateChange >= 0 ? "up" : "down"}>
-                        {c.winRateChange == null ? "–" : signed(c.winRateChange)}
-                      </td>
-                      <td>{percent(c.pickRate)}</td>
-                      {ranked && <td>{c.banRate == null ? "–" : percent(c.banRate)}</td>}
-                      <td>{c.games.toLocaleString()}</td>
-                      {ranked && (
-                        <td>
-                          <MatchupLink championId={c.championId} opponentId={null} position={position} />
-                        </td>
-                      )}
-                    </tr>
-                  );
+          <div className="tiers__list">
+            {state.value.list.champions.length > 0 && (
+              <div className="tiers__filters">
+                <SearchInput label={t("Şampiyon ara")} placeholder={t("Şampiyon ara")} value={query} onChange={(next) => change({ query: next })} />
+                {poolIds.size > 0 && <Toggle label={t("Sadece havuzum")} checked={poolOnly} onChange={(next) => change({ poolOnly: next })} />}
+                {state.value.list.champions.some(isThin) && (
+                  <Toggle label={t("{games} maçtan azını gizle", { games: THIN_GAMES })} checked={hideThin} onChange={setHideThin} />
+                )}
+              </div>
+            )}
+            {state.value.list.champions.length === 0 ? (
+              <p className="coach__note">
+                {t("{what} için henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.", {
+                  what: ranked ? t("Bu rol") : t(QUEUES.find((q) => q.id === queue)?.label ?? ""),
                 })}
-              </tbody>
-            </table>
-          )}
+              </p>
+            ) : (
+              <table className="tiers__table">
+                <thead>
+                  <tr>
+                    {sortHeader("tier", "Tier")}
+                    {sortHeader("name", t("Şampiyon"))}
+                    {sortHeader("winRate", t(winLabel(queue)))}
+                    {sortHeader("change", t("Değişim"))}
+                    {sortHeader("pickRate", t("Seçilme"))}
+                    {ranked && sortHeader("banRate", t("Yasaklanma"))}
+                    {sortHeader("games", t("Maç"))}
+                    {ranked && <th scope="col">{t("Eşleşme")}</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((c) => {
+                    const champion = state.value.champions.get(c.championId);
+                    const mine = poolIds.has(c.championId) ? "pool" : personal.favourites.includes(c.championId) ? "favourite" : undefined;
+                    return (
+                      <tr key={c.championId} data-mine={mine} data-thin={isThin(c) || undefined}>
+                        <td>
+                          <span className="tier" data-tier={c.tier}>
+                            {c.tier}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="tiers__champion"
+                            onClick={() => onOpenChampion(c.championId, ranked ? position : null, queue)}
+                          >
+                            {champion && <img src={championIconUrl(state.value.version, champion.id)} alt="" width={26} height={26} />}
+                            {champion?.name ?? c.championId}
+                            {isThin(c) && <span className="tiers__thin">{t("az maç")}</span>}
+                            {mine && <span className="tiers__mine">{mine === "pool" ? t("Havuzunda") : t("Favori")}</span>}
+                          </button>
+                        </td>
+                        <td>{percent(c.winRate)}</td>
+                        <td className="tiers__change" data-trend={trendOf(c.winRateChange) ?? undefined}
+                          title={c.winRateChange == null ? t("Önceki yamada yeterli maç yok.") : t("Önceki yamaya göre {change} puan", { change: signed(c.winRateChange) })}
+                        >
+                          {changeText(c.winRateChange)}
+                        </td>
+                        <td>{percent(c.pickRate)}</td>
+                        {ranked && <td>{c.banRate == null ? "–" : percent(c.banRate)}</td>}
+                        <td>{c.games.toLocaleString()}</td>
+                        {ranked && (
+                          <td>
+                            <MatchupLink championId={c.championId} opponentId={null} position={position} />
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+            {state.value.list.champions.length > 0 && rows.length === 0 && <p className="coach__note">{t("Bu süzgeçle şampiyon yok.")}</p>}
+          </div>
 
           {state.value.bans && (
             <aside className="tiers__bans" aria-label={t("Yasak önerileri")}>
@@ -229,6 +269,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
           )}
         </div>
       )}
+      {ranked && state.status === "done" && <MetaMovers onOpenChampion={(id, role) => onOpenChampion(id, role, queue)} />}
     </LiquidGlass>
   );
 }
