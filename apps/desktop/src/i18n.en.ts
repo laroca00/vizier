@@ -773,4 +773,6 @@ export const EN: Record<string, string> = {
   "Yama {patch}, TR ve EUW Emerald+ ile KR Challenger'dan {games} maç, kazanma oranı {rate}": "Patch {patch}, {games} games from TR and EUW Emerald+ and KR Challenger, {rate} win rate",
   "Havuzun, {opponent} karşısında": "Your pool against {opponent}",
   "{rate}, {games} maç": "{rate}, {games} games",
+  "{tier} tier": "{tier} tier",
+  "geçen yamaya göre {change}": "{change} since last patch",
 };

@@ -1,12 +1,13 @@
 import { ClientStatus } from "../ClientStatus";
 import { openExternal, PATCH_NOTES } from "../links";
-import { champions, latestVersion } from "../data/ddragon";
+import { champions, latestVersion, type Champion } from "../data/ddragon";
+import { getChampion } from "../api";
 import type { LcuStatus } from "../lcu";
 import { MetaPicks } from "../MetaPicks";
 import { usePersonal } from "../personal";
 import { ProBuildList } from "../ProBuildList";
 import type { Route } from "../router";
-import { useLang, useT } from "../i18n";
+import { formatPercent, useLang, useT } from "../i18n";
 import { ChampionCard } from "../ui/GameIcons";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { NavIcon, type IconName } from "../ui/NavIcon";
@@ -115,11 +116,11 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
                 {pool.map((c) => {
                   const pick = personal.pool.find((p) => p.championId === c.key);
                   return (
-                    <ChampionCard
+                    <PoolCard
                       key={c.key}
                       version={data.value.version}
-                      championId={c.id}
-                      name={c.name}
+                      champion={c}
+                      position={pick?.position ?? null}
                       onOpen={() => onOpenChampion(c.key, pick?.position ?? null)}
                     />
                   );
@@ -144,4 +145,23 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
       </LiquidGlass>
     </div>
   );
+}
+
+/** A pool pick with how it stands this patch: tier, win rate and the change since the last one. */
+function PoolCard({ version, champion, position, onOpen }: { version: string; champion: Champion; position: string | null; onOpen: () => void }) {
+  const t = useT();
+  const lang = useLang();
+  const [state] = useAsync(`ally:${champion.key}:${position}`, () => getChampion(champion.key, position));
+  const o = state.status === "done" ? state.value : null;
+  const change = o?.winRateChange;
+  const detail = o
+    ? [
+        o.tier ? t("{tier} tier", { tier: o.tier }) : null,
+        formatPercent(o.winRate, lang, 1),
+        change != null && Math.abs(change) >= 0.005 ? t("geçen yamaya göre {change}", { change: `${change > 0 ? "+" : "−"}${Math.abs(change * 100).toFixed(1)}` }) : null,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : undefined;
+  return <ChampionCard version={version} championId={champion.id} name={champion.name} detail={detail} onOpen={onOpen} />;
 }
