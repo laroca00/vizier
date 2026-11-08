@@ -1,0 +1,42 @@
+/* Styles only ClientStatus.tsx uses, split out of App.css. */
+
+.status__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.8;
+  transition:
+    background-color var(--duration-standard) var(--ease),
+    border-color var(--duration-standard) var(--ease),
+    transform var(--duration-standard) var(--ease);
+}
+
+.status__dot[data-state="connecting"] {
+  animation: breathe 2000ms ease-in-out infinite;
+}
+
+.status__dot[data-state="connected"] {
+  border-color: var(--turquoise);
+  background: var(--turquoise);
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.status__text {
+  display: inline-flex;
+  gap: 8px;
+  animation: rise var(--duration-standard) var(--ease-enter) both;
+  --rise: 4px;
+}
+
+.status__detail {
+  color: var(--glaze-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status__dot[data-state="connecting"] {
+      animation: none;
+    }
+}

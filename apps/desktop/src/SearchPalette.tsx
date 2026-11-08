@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { championIconUrl, champions, latestVersion, type Champion } from "./data/ddragon";
 import { useT } from "./i18n";
 import { useAsync } from "./useAsync";
+import "./SearchPalette.css";
 
 const SHOWN = 8;
 

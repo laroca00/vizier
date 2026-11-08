@@ -9,6 +9,7 @@ import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
 import { Tabs } from "../ui/Tabs";
 import { useAsync } from "../useAsync";
+import "./ProsPage.css";
 
 const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
 const ALL = "ALL";

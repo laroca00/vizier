@@ -28,6 +28,7 @@ import { useAsync } from "./useAsync";
 import { Button } from "./ui/Button";
 import { ErrorState } from "./ui/States";
 import { useToast } from "./ui/Toast";
+import "./BuildSuggestion.css";
 
 const FLASH = 4;
 const SHOWN_ITEMS = 6;

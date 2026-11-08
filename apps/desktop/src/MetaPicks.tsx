@@ -5,6 +5,7 @@ import { formatPercent, useLang, useT } from "./i18n";
 import { POSITIONS } from "./labels";
 import { useSplash } from "./ui/Splash";
 import { useAsync } from "./useAsync";
+import "./MetaPicks.css";
 
 const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
 // Below this a high win rate is mostly a few one-tricks, not the patch.

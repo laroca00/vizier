@@ -1,0 +1,133 @@
+/* Styles only MetaPicks.tsx uses, split out of App.css. */
+
+.meta__title {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.meta__list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 800px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.meta__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  width: 100%;
+  height: clamp(190px, 34vh, 300px);
+  padding: 12px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 14px;
+  font: inherit;
+  color: var(--glaze);
+  text-align: left;
+  background: rgb(255 255 255 / 0.06);
+  box-shadow:
+    inset 0 0 0 1px rgb(214 180 106 / 0.35),
+    0 18px 40px rgb(3 8 30 / 0.45);
+  cursor: pointer;
+  transition:
+    transform var(--duration-standard) var(--ease),
+    box-shadow var(--duration-standard) var(--ease);
+}
+
+.meta__card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(6 14 44 / 0.35), transparent 30%, transparent 50%, rgb(6 14 44 / 0.94));
+}
+
+.meta__card--loading {
+  cursor: default;
+  animation: breathe 1.6s var(--ease) infinite;
+}
+
+.meta__art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+  transition: transform var(--duration-slow) var(--ease);
+}
+
+.meta__card:hover,
+.meta__card:focus-visible {
+  transform: translateY(-4px);
+  box-shadow:
+    inset 0 0 0 1px var(--gilt),
+    0 26px 50px rgb(3 8 30 / 0.55);
+}
+
+.meta__card:hover .meta__art,
+.meta__card:focus-visible .meta__art {
+  transform: scale(1.05);
+}
+
+.meta__role,
+.meta__tier,
+.meta__name,
+.meta__stat {
+  position: relative;
+  z-index: 1;
+}
+
+.meta__role {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.meta__tier {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.meta__name {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.meta__stat {
+  font-size: 12px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze-muted);
+}
+
+@media (max-width: 900px) {
+  .meta__list {
+      gap: 8px;
+    }
+
+  .meta__name {
+      font-size: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meta__card:hover,
+    .meta__card:focus-visible,
+    .meta__card:hover .meta__art,
+    .meta__card:focus-visible .meta__art {
+      transform: none;
+    }
+
+  .meta__card--loading {
+      animation: none;
+    }
+}

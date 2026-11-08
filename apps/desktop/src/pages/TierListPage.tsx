@@ -10,6 +10,7 @@ import { Scatter } from "../charts";
 import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
+import "./TierListPage.css";
 
 // The most picked champions only; past this the plot turns into a pile of icons.
 const PLOTTED = 40;

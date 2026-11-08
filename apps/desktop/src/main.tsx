@@ -5,6 +5,10 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import "@fontsource-variable/geologica/shrp.css";
 import "./styles.css";
 import "./ui/ui.css";
+// Shared styles load before any page's own, so a page can override them.
+import "./App.css";
+import "./pages.css";
+import "./shell.css";
 import App from "./App";
 import { Overlay } from "./overlay/Overlay";
 

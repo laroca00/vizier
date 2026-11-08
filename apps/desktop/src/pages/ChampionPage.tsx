@@ -15,6 +15,7 @@ import { useAsync } from "../useAsync";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
 import { SegmentBar } from "../charts";
+import "./ChampionPage.css";
 
 const SHOWN_MATCHUPS = 5;
 const MIN_ROLE_GAMES = 10;

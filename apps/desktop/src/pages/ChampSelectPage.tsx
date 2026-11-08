@@ -16,7 +16,6 @@ import { autoView, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";
 import { useOpponent, type Opponent } from "../draft/useOpponent";
-import "../draft/draft.css";
 import { formatPercent, useLang, useT } from "../i18n";
 import { JournalNote } from "../Journal";
 import { draftPhaseLabel, positionLabel } from "../labels";
@@ -26,6 +25,9 @@ import { LiquidGlass } from "../ui/LiquidGlass";
 import { useSplash } from "../ui/Splash";
 import { Tabs } from "../ui/Tabs";
 import { useAsync } from "../useAsync";
+import "./ChampSelectPage.css";
+// After the page's base styles, which it adjusts.
+import "../draft/draft.css";
 
 type StaticData = { version: string; champions: Map<number, Champion>; spells: Map<number, SummonerSpell> };
 

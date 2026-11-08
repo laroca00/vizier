@@ -1,0 +1,8 @@
+/* Styles only ProsPage.tsx uses, split out of App.css. */
+
+.pros__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+}

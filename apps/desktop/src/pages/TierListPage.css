@@ -1,0 +1,62 @@
+/* Styles only TierListPage.tsx uses, split out of App.css. */
+
+.coach__note {
+  margin: 0 0 12px;
+  color: var(--glaze-muted);
+}
+
+.tiers__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 28px;
+  align-items: start;
+}
+
+.tiers__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tiers__table th {
+  padding: 0 8px 8px 0;
+  text-align: left;
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--glaze-muted);
+}
+
+.tiers__table td {
+  padding: 5px 8px 5px 0;
+  border-top: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.tiers__champion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tiers__champion {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  cursor: pointer;
+}
+
+.tiers__champion:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tiers__body[data-solo] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tiers__change[data-trend="down"] {
+  color: #f08a7c;
+}

@@ -1,0 +1,108 @@
+/* Styles only ChampSelectPage.tsx uses, split out of App.css. */
+
+.draft__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  --delay: 80ms;
+}
+
+.draft__title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  font-variation-settings: "SHRP" 100;
+}
+
+.draft__phase {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  color: var(--glaze-muted);
+}
+
+.draft__timer {
+  min-width: 2ch;
+  font-size: 32px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--glaze);
+}
+
+.draft__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 32px;
+  margin-top: 24px;
+}
+
+.my-pick {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.my-pick__portrait {
+  flex: none;
+  width: 88px;
+  height: 88px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: rgb(255 255 255 / 0.06);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.16);
+  transition: box-shadow var(--duration-standard) var(--ease);
+}
+
+.my-pick__portrait[data-locked="false"] img {
+  opacity: 0.6;
+}
+
+.my-pick__portrait[data-locked="true"] {
+  box-shadow:
+    0 0 0 2px var(--gilt),
+    0 0 28px rgb(214 180 106 / 0.35);
+}
+
+.my-pick__name {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.my-pick__meta {
+  min-height: 1.5em;
+  margin: 2px 0 10px;
+  font-size: 14px;
+  font-weight: 350;
+  color: var(--glaze-muted);
+}
+
+.my-pick__spells {
+  display: flex;
+  gap: 6px;
+}
+
+.team__position {
+  color: var(--glaze-muted);
+  font-weight: 350;
+}
+
+.team__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.team__icon--empty {
+  background: rgb(255 255 255 / 0.06);
+}
+
+.team__you {
+  font-size: 13px;
+  color: var(--turquoise);
+}

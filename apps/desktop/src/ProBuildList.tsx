@@ -26,6 +26,7 @@ import { createBuild } from "./library/store";
 import { useToast } from "./ui/Toast";
 import { Button } from "./ui/Button";
 import { ErrorState } from "./ui/States";
+import "./ProBuildList.css";
 
 export type ProStatic = {
   version: string;

@@ -11,6 +11,7 @@ import { ChampionCard } from "../ui/GameIcons";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { NavIcon, type IconName } from "../ui/NavIcon";
 import { useAsync } from "../useAsync";
+import "./Home.css";
 
 type Props = {
   lcu: LcuStatus;

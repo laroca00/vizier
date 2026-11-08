@@ -1,6 +1,7 @@
 import notices from "../../../../THIRD_PARTY_NOTICES.md?raw";
 import { useT } from "../i18n";
 import { LiquidGlass } from "../ui/LiquidGlass";
+import "./About.css";
 
 const CREDITS = [
   { name: "liquid-glass-js", use: "cam yüzeylerdeki kırılma", license: "MIT" },

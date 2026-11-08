@@ -1,0 +1,6 @@
+/* Styles only Fields.tsx uses, split out of App.css. */
+
+.toggle__text {
+  display: grid;
+  gap: 2px;
+}

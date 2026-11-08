@@ -1,0 +1,84 @@
+/* Styles only About.tsx uses, split out of App.css. */
+
+.about__title {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variation-settings: "SHRP" 100;
+  --delay: 100ms;
+}
+
+.about__version {
+  margin: 6px 0 0;
+  color: var(--glaze-muted);
+  font-variant-numeric: tabular-nums;
+  --delay: 140ms;
+}
+
+.about__section {
+  margin-top: 28px;
+  --delay: 180ms;
+}
+
+.about__section + .about__section {
+  --delay: 220ms;
+}
+
+.about__section h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.about__section p {
+  max-width: 64ch;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 350;
+  color: var(--glaze-muted);
+}
+
+.credits {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.credits li {
+  display: flex;
+  gap: 10px;
+}
+
+.credits__use {
+  color: var(--glaze-muted);
+  font-weight: 350;
+}
+
+.notices {
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.notices summary {
+  width: fit-content;
+  padding: 2px 0;
+  cursor: pointer;
+  color: var(--glaze);
+}
+
+.notices pre {
+  max-height: 240px;
+  margin: 12px 0 0;
+  padding: 16px;
+  overflow: auto;
+  border-radius: 12px;
+  font: 12px/1.5 ui-monospace, Consolas, monospace;
+  white-space: pre-wrap;
+  color: var(--glaze-muted);
+  background: rgb(3 8 30 / 0.35);
+}

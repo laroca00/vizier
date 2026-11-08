@@ -1,6 +1,7 @@
 import { translate, useLang, type Lang } from "./i18n";
 import { phaseLabel, type LcuStatus } from "./lcu";
 import { LiquidGlass } from "./ui/LiquidGlass";
+import "./ClientStatus.css";
 
 function describe(status: LcuStatus, lang: Lang): { title: string; detail: string | null } {
   switch (status.state) {
