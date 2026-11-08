@@ -12,6 +12,7 @@ import { Scatter } from "../charts";
 import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
+import { changeText, trendOf } from "./trend";
 import { sortTiers, type TierSort } from "./tierSort";
 import "./TierListPage.css";
 
@@ -191,8 +192,10 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
                         </button>
                       </td>
                       <td>{percent(c.winRate)}</td>
-                      <td className="tiers__change" data-trend={c.winRateChange == null ? undefined : c.winRateChange >= 0 ? "up" : "down"}>
-                        {c.winRateChange == null ? "–" : signed(c.winRateChange)}
+                      <td className="tiers__change" data-trend={trendOf(c.winRateChange) ?? undefined}
+                        title={c.winRateChange == null ? t("Önceki yamada yeterli maç yok.") : t("Önceki yamaya göre {change} puan", { change: signed(c.winRateChange) })}
+                      >
+                        {changeText(c.winRateChange)}
                       </td>
                       <td>{percent(c.pickRate)}</td>
                       {ranked && <td>{c.banRate == null ? "–" : percent(c.banRate)}</td>}
