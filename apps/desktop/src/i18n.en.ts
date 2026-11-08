@@ -1170,4 +1170,5 @@ export const EN: Record<string, string> = {
   "Kodu kopyala": "Copy code",
   "Geri al": "Undo",
   "Yinele": "Redo",
+  "Yaz, Enter ile ilk sonucu seç, Tab ile sıradaki yere geç.": "Type, press Enter to pick the first result, Tab to move to the next slot.",
 };

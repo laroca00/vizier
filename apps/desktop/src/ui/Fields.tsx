@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { useId, type KeyboardEventHandler, type ReactNode, type Ref } from "react";
 import { NavIcon } from "./NavIcon";
 import "./Fields.css";
 
@@ -44,17 +44,21 @@ export function SearchInput({
   onChange,
   placeholder,
   autoFocus,
+  inputRef,
+  onKeyDown,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   autoFocus?: boolean;
+  inputRef?: Ref<HTMLInputElement>;
+  onKeyDown?: KeyboardEventHandler<HTMLInputElement>;
 }) {
   return (
     <span className="search-input">
       <NavIcon name="search" size={16} className="search-input__icon" />
-      <input type="search" aria-label={label} placeholder={placeholder} value={value} autoFocus={autoFocus} onChange={(event) => onChange(event.target.value)} />
+      <input ref={inputRef} onKeyDown={onKeyDown} type="search" aria-label={label} placeholder={placeholder} value={value} autoFocus={autoFocus} onChange={(event) => onChange(event.target.value)} />
     </span>
   );
 }

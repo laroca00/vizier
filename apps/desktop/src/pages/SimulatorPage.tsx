@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { cycleSlot, firstPickable } from "../simulator/keys";
 import { useDraftHistory } from "../simulator/history";
 import { CompSummary, PhaseCurves, WinConditions } from "../CompAnalysis";
 import { championIconUrl, roleIconUrl, type Champion } from "../data/ddragon";
@@ -91,6 +92,19 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const [compareWith, setCompareWith] = useState<string>("");
   const [banning, setBanning] = useState(false);
   const [codeText, setCodeText] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // Typing anywhere on the page starts a champion search.
+  useEffect(() => {
+    const onType = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1 || e.key === " ") return;
+      if (target && (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable)) return;
+      searchRef.current?.focus();
+    };
+    window.addEventListener("keydown", onType);
+    return () => window.removeEventListener("keydown", onType);
+  }, []);
 
   const picked = new Set([...draft.blue, ...draft.red].filter((id) => id > 0));
   const unavailable = new Set([...picked, ...draft.bans]);
@@ -99,6 +113,22 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const pool = [...data.champions.values()]
     .filter((c) => (!needle || c.name.toLocaleLowerCase(lang).includes(needle)) && (!role || data.roles.get(c.key)?.has(role)))
     .sort((a, b) => a.name.localeCompare(b.name, lang));
+
+  const isDisabled = (id: number) => (banning ? picked.has(id) || (draft.bans.length >= MAX_BANS && !draft.bans.includes(id)) : !active || unavailable.has(id));
+
+  function searchKey(e: ReactKeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const found = firstPickable(pool, isDisabled);
+      if (!found) return;
+      choose(found.key);
+      setQuery("");
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      setBanning(false);
+      setActive({ ...cycleSlot(active, e.shiftKey), explicit: true });
+    }
+  }
 
   function choose(championId: number) {
     if (banning) {
@@ -252,6 +282,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
                 : t("Sıra {side} takımda; şampiyon boşsa kendi rolüne yerleşir.", { side: active.side === "blue" ? t("Mavi") : t("Kırmızı") })
               : t("İki takım da dolu. Değiştirmek için bir yere tıkla.")}
           </p>
+          <p className="build__note">{t("Yaz, Enter ile ilk sonucu seç, Tab ile sıradaki yere geç.")}</p>
           <div className="sim__picker-filters">
             <Tabs
               label={t("Ne seçiliyor")}
@@ -263,7 +294,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
               value={banning ? "ban" : "pick"}
               onChange={(id) => setBanning(id === "ban")}
             />
-            <SearchInput label={t("Şampiyon ara")} value={query} onChange={setQuery} placeholder={t("Şampiyon ara")} />
+            <SearchInput label={t("Şampiyon ara")} value={query} onChange={setQuery} placeholder={t("Şampiyon ara")} inputRef={searchRef} onKeyDown={searchKey} />
             <Select
               label={t("Rol")}
               hideLabel
@@ -315,7 +346,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
               <li key={c.key}>
                 <button
                   type="button"
-                  disabled={banning ? picked.has(c.key) || (draft.bans.length >= MAX_BANS && !draft.bans.includes(c.key)) : !active || unavailable.has(c.key)}
+                  disabled={isDisabled(c.key)}
                   aria-pressed={banning ? draft.bans.includes(c.key) : undefined}
                   title={c.name}
                   aria-label={c.name}
