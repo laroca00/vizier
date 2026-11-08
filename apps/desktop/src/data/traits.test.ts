@@ -1,0 +1,38 @@
+import { describe, expect, it } from "vitest";
+import type { Champion } from "./ddragon";
+import { adviceAgainst, analyzeComp, compDimensions, dimensionText } from "./traits";
+
+function champion(id: string, tags: string[], info: Partial<Champion["info"]> = {}): Champion {
+  const full = { attack: 5, defense: 5, magic: 5, difficulty: 5, ...info };
+  return { id, key: id.length, name: id, magic: full.magic > full.attack, tank: tags[0] === "Tank", tags, info: full };
+}
+
+const MALPHITE = champion("Malphite", ["Tank", "Fighter"], { attack: 5, magic: 7, defense: 9 });
+const ORIANNA = champion("Orianna", ["Mage", "Support"], { attack: 4, magic: 9, defense: 3 });
+const JINX = champion("Jinx", ["Marksman"], { attack: 9, magic: 4, defense: 2 });
+const THRESH = champion("Thresh", ["Support", "Fighter"], { attack: 5, magic: 6, defense: 6 });
+const XERATH = champion("Xerath", ["Mage"], { attack: 1, magic: 10, defense: 3 });
+const ZIGGS = champion("Ziggs", ["Mage"], { attack: 2, magic: 9, defense: 4 });
+
+describe("composition analysis", () => {
+  it("names who brings each dimension", () => {
+    const dims = Object.fromEntries(compDimensions([MALPHITE, ORIANNA, JINX, THRESH]).map((d) => [d.dimension, d]));
+    // Thresh is a Support first in Data Dragon, so he engages but doesn't count as frontline.
+    expect(dims.frontline.names).toEqual(["Malphite"]);
+    expect(dims.backline.names).toEqual(["Orianna", "Jinx"]);
+    expect(dims.pick.names).toEqual(["Thresh"]);
+    expect(dims.teamfight.names).toEqual(["Malphite", "Orianna", "Jinx"]);
+    expect(dims.poke.names).toEqual(["Orianna"]);
+    expect(dimensionText(dims.frontline)).toContain("{names}");
+  });
+
+  it("only reports weaknesses once most of the team is in", () => {
+    expect(analyzeComp([JINX, XERATH, ZIGGS]).weaknesses).toEqual([]);
+    expect(analyzeComp([JINX, XERATH, ZIGGS, ORIANNA]).weaknesses).toContain("noTank");
+  });
+
+  it("plans against a poke-heavy enemy", () => {
+    const enemy = analyzeComp([XERATH, ZIGGS, JINX]);
+    expect(adviceAgainst(enemy, analyzeComp([MALPHITE])).map((a) => a.title)).toContain("Rakip uzaktan yıpratıyor");
+  });
+});

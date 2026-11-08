@@ -1,6 +1,14 @@
 # Vizier
 
-A lightweight League of Legends companion for Windows, for preparing games rather than grading them. Vizier shows builds, matchups and team composition during champion select and imports runes, summoner spells and item sets into the client. Out of game it has tier lists, champion pages and pro players' builds.
+A lightweight League of Legends companion for Windows, for preparing games rather than grading them.
+
+- Champion select: the build for your pick with style and matchup tabs, pro players' builds against the same or a similar opponent, a lane opponent guess, pick suggestions, a matchup guide and both teams' composition. Runes, summoner spells and item sets go into the client on their own or with a click.
+- Build library: search every champion's recommended build by role, style, keystone and item, and keep your own builds in collections.
+- Champions: the full list with roles and difficulty, a page per champion with stats, abilities, lore and base stats, and a champion pool of main and backup picks.
+- Pro builds from Worlds players, Turkish pros and the Challenger ladders, filtered by champion, team, player, region and patch.
+- A draft simulator and a patch tracker that compares any two recent Data Dragon versions.
+
+Your own builds, drafts, pool and notes stay on your computer.
 
 Early development. The plan is in [docs/IMPLEMENTATION_ROADMAP.md](docs/IMPLEMENTATION_ROADMAP.md).
 
@@ -30,6 +38,8 @@ Requirements: Node 22+, pnpm, Rust (stable, MSVC toolchain) and the Visual Studi
 ```sh
 pnpm install
 pnpm dev
+pnpm --filter @vizier/desktop test   # desktop logic and translation checks
+pnpm --filter @vizier/desktop lint
 ```
 
 ### API service

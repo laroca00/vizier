@@ -34,10 +34,10 @@ Status values: permitted, restricted (allowed only in the form described), uncer
 | Champion Select build, runes, spells, item preview | LCU champ select session, our stats, Data Dragon | Permitted | The local player only; ally and enemy names are dropped in `lcu/champ_select.rs` | Declare the LCU endpoints in the portal |
 | Rune, spell and item set import | LCU writes (`lol-perks`, `lol-champ-select` spells, `lol-item-sets`) | Permitted in practice; the docs don't mention LCU writes | Reuses the Vizier rune page, never replaces presets, asks before replacing a player page, keeps other item sets; each import can be switched off | Declare the endpoints in the portal |
 | Matchup guide, composition analysis | Public champ select picks, Data Dragon tags and info, our aggregates | Permitted | Only champions already visible in champ select; general advice, no prediction of hidden picks | None |
-| Pro Builds | Riot Web API for known pro and Challenger accounts | Permitted, with care | Builds and public names only; no live tracking of a pro's current game | None |
+| Pro Builds | Riot Web API for known pro and Challenger accounts | Permitted, with care | Builds and public names only; filters by player, team, region and patch over finished games; no live tracking of a pro's current game | None |
 | Build Library, personal builds, collections | Local data, our aggregates, Data Dragon | Permitted | No account; stored locally | None |
 | Champion database | Data Dragon (and CommunityDragon for missing assets) | Permitted | Only values Data Dragon publishes; nothing invented | None |
-| Draft simulator | Data Dragon, our aggregates | Permitted | No win probability unless a validated model exists | None |
+| Draft simulator | Data Dragon, our aggregates | Permitted | No win probability; the page says so | None |
 | Patch tracker | Data Dragon version diffs; links to Riot's patch notes | Permitted | Notes are linked, not scraped or copied | None |
 | Overlay: custom timer and stopwatch | User input only | Permitted | No game data | None |
 | Overlay: quick notes, rune page reference, ability reference, item lookup | Local notes, the player's own rune page, Data Dragon | Permitted ("static data that is available prior to the game") | Read only, nothing about other players | None |
@@ -55,7 +55,7 @@ Status values: permitted, restricted (allowed only in the form described), uncer
 ## Product obligations
 
 - Register Vizier on the Developer Portal before opening it to other players, and declare the LCU endpoints it uses. A production key needs a working prototype and a description of the user flows. One product per key.
-- The Riot key stays a Worker secret. The desktop app never holds it.
+- The Riot key stays on the crawler's server. Neither the Worker nor the desktop app holds it.
 - A free tier must exist. Ads are not allowed in the overlay or on the loading screen.
 - Show the legal boilerplate in the README, the About screen and any website footer: "Vizier isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc."
 - Publish custom game match history only with the player's opt-in. Vizier publishes none today.

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { getBuild, getBuildIndex, type BuildIndexEntry, type BuildStyle } from "../api";
 import { STYLE_NAMES } from "../buildStyles";
 import { championIconUrl, itemIconUrl, roleIconUrl, runeIconUrl } from "../data/ddragon";
@@ -79,7 +79,7 @@ function Explore({ data, onOpenChampion, onSaved }: { data: LibraryData; onOpenC
   const builds = index.status === "done" ? index.value.builds : [];
 
   // Options only list what some build actually has, so no filter leads nowhere by itself.
-  const options = useMemo(() => {
+  const options = (() => {
     const styles = new Set<BuildStyle>();
     const keystones = new Set<number>();
     const items = new Set<number>();
@@ -94,7 +94,7 @@ function Explore({ data, onOpenChampion, onSaved }: { data: LibraryData; onOpenC
       keystones: [...keystones].map((k) => ({ value: String(k), label: data.runes.get(k)?.name ?? String(k) })).sort(byName),
       items: [...items].filter((i) => data.items.get(i)?.complete).map((i) => ({ value: String(i), label: data.items.get(i)?.name ?? String(i) })).sort(byName),
     };
-  }, [builds, data]);
+  })();
 
   const needle = query.trim().toLocaleLowerCase("tr");
   const results = builds

@@ -19,15 +19,15 @@ The plan for turning Vizier into a preparation and reference app: prepare, explo
 | 0. Audit, policy review, roadmap | Done (this document) |
 | 1. Removal and cleanup | Code done; deploy steps open (see below) |
 | 2. Design system components | Done, except splitting `App.css` per page |
-| 3. Navigation and Home | Done for the sections that exist |
+| 3. Navigation and Home | Done |
 | 4. Champion Select 2.0 | Done; needs a check against a live client |
-| 5. Build Library | Not started |
-| 6. Champions and champion pool | Not started |
-| 7. Pro Builds | Not started |
-| 8. Draft Simulator | On hold until the owner and I agree on its design |
-| 9. Patch Tracker | Not started |
+| 5. Build Library | Done; search needs the Worker deployed and the crawler restarted |
+| 6. Champions and champion pool | Done |
+| 7. Pro Builds | Done; server-side player, region and patch filters need the Worker deployed |
+| 8. Draft Simulator | Done (owner asked for it on 2026-11-08) |
+| 9. Patch Tracker | Done |
 | 10. Overlay 2.0 | Owner's design, not in this plan |
-| 11. Polish and release | Not started |
+| 11. Polish and release | Done except the release itself, which waits for the owner |
 
 Every phase ends the same way: typecheck, the existing tests and new tests pass, `pnpm build:web` succeeds, the affected screens are checked at 1280×720 and 1920×1080, this table is updated, and the work goes in small commits.
 
@@ -147,6 +147,10 @@ Acceptance:
 
 ## Phase 5: Build Library
 
+Done: the crawler publishes a `buildindex` doc, served at `/v1/builds/index`, and the desktop library searches it locally. Saved builds live under `vizier.library` with ids only; they can come from the library, a champion page, champ select or a pro game, and export through the existing importers. Collections start as Ana, Dereceli, Deneysel and ARAM. Until the new Worker is live the search tab says the index isn't published yet.
+
+The plan as written before the work:
+
 Work:
 - Search and filters by champion, role, style, patch, item and keystone over the published build docs.
 - Build detail: overview, runes (trees, keystone, shards), spells, items, skill order, description.
@@ -166,6 +170,10 @@ Acceptance:
 
 ## Phase 6: Champions and champion pool
 
+Done: a Champions page (roles from the five ranked tier lists, Data Dragon difficulty in three bands, favourite stars) and a pool manager with main and backup picks per role, a note and a saved build. `parsePersonal` turns old pool entries into main picks. Champion pages gained the title, lore and base stats; Data Dragon text is stripped to plain text, never rendered as HTML.
+
+The plan as written before the work:
+
 Work:
 - A champion list with portraits, search, role and difficulty filters (Data Dragon `info.difficulty`), sorting and favourites.
 - A champion detail page built from today's `ChampionPage`: splash, title, lore, passive and abilities with icons, base stats, strengths and weaknesses, builds, matchups.
@@ -181,6 +189,10 @@ Acceptance:
 
 ## Phase 7: Pro Builds
 
+Done: champion, team, player, region and patch filters, `/v1/pros/patches`, and a detail view per game. The client checks every answer against its filters, so an older Worker that ignores the new parameters can't show games that don't match.
+
+The plan as written before the work:
+
 Work: filters by champion, player, team, role, region and patch; a detail view with runes, spells, items, skill order, match time and patch; empty states when a filter has no games.
 
 Dependencies: Phase 2. The data already exists.
@@ -191,6 +203,10 @@ Acceptance: no fabricated entries, and every filter combination shows either res
 
 ## Phase 8: Draft Simulator
 
+Done: five role slots per side, a picker filtered by the selected slot's role, an optional ranked pick order that drops a champion into its usual role when free, swaps, reset, saved drafts with duplicate, delete and a side-by-side comparison. The analysis is the same `analyzeComp`, `compDimensions` and `adviceAgainst` champ select uses. No bans and no win probability.
+
+The plan as written before the work:
+
 Work: blue and red sides, picks with roles, an optional pick order, search and filters, reset; both compositions analysed with the Phase 4 analysis; saved drafts with name, edit, duplicate, delete and compare.
 
 Dependencies: Phase 4 (analysis) and Phase 2.
@@ -200,6 +216,10 @@ Risks: no win probability. Presenting one as fact is against the brief.
 Acceptance: drafts survive a restart, and the analysis matches champ select for the same teams.
 
 ## Phase 9: Patch Tracker
+
+Done on the device: `patches/diff.ts` compares `championFull.json`, `item.json` and `runesReforged.json` of two versions and caches the result per version pair outside the exported settings. Spot-checked against the raw JSON for 16.21.1 to 16.22.1: the same five champions and two items, same values. The page links to Riot's game update news rather than guessing a per-patch URL.
+
+The plan as written before the work:
 
 Work:
 - Diff Data Dragon versions: champion base stats and per-level stats, ability cooldowns, costs and ranges where Data Dragon publishes them, item stats, prices and build paths, runes added and removed.
@@ -236,6 +256,10 @@ Acceptance:
 - The layout survives restarts and monitor changes.
 
 ## Phase 11: polish and release
+
+Done: ESLint (`pnpm --filter @vizier/desktop lint`, no errors; the remaining warnings are deliberate hook dependencies in older code), a Vitest suite for the local stores, build export mapping, draft and composition analysis, the patch diff and a translation check that fails on any Turkish string without English. Checked at 1280×720. The 1024×640 minimum was only checked by zooming the page in a browser, which does not trigger the narrow-width media queries, so it still needs a look in the real window. Testing Library was left out; the logic it would cover is tested directly. The release waits for the owner, together with the Phase 1 deploy steps.
+
+The plan as written before the work:
 
 Work:
 - A visual pass at the four target resolutions.
