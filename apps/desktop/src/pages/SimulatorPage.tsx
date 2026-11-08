@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useDraftHistory } from "../simulator/history";
-import { CompSummary } from "../CompAnalysis";
+import { CompSummary, PhaseCurves, WinConditions } from "../CompAnalysis";
 import { championIconUrl, roleIconUrl, type Champion } from "../data/ddragon";
-import { adviceAgainst, analyzeComp, compDimensions, DIMENSION_NAMES } from "../data/traits";
+import { adviceAgainst, analyzeComp, compDimensions, curveRead, DIMENSION_NAMES, teamCurve } from "../data/traits";
 import { useChampSelect } from "../lcu";
 import { draftCode, fromChampSelect, readDraftCode } from "../simulator/transfer";
 import { formatPercent, useLang, useT } from "../i18n";
@@ -33,6 +33,7 @@ import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
 import { useToast } from "../ui/Toast";
 import { useAsync } from "../useAsync";
+import { ThreatsPanel } from "../draft/ThreatsPanel";
 import { PickSuggestions } from "../draft/PickSuggestions";
 import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
 
@@ -141,6 +142,10 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const red = team(draft.red);
   const blueReport = analyzeComp(blue);
   const redReport = analyzeComp(red);
+  const blueCurve = teamCurve(blue);
+  const redCurve = teamCurve(red);
+  const curveLine = curveRead(blueCurve, redCurve);
+  const curve = blueCurve && redCurve && curveLine ? { ours: blueCurve, theirs: redCurve, read: curveLine } : null;
 
   return (
     <>
@@ -335,16 +340,28 @@ function Simulator({ data }: { data: ChampionRoles }) {
         />
       </div>
 
+      {curve && (
+        <section aria-label={t("Oyun evreleri")}>
+          <h2 className="draft__heading">{t("Oyun evreleri")}</h2>
+          <p className="build__note">{t("Yorum mavi takımın gözünden.")}</p>
+          <PhaseCurves ours={curve.ours} theirs={curve.theirs} read={curve.read} ourLabel={t("mavi")} theirLabel={t("kırmızı")} />
+        </section>
+      )}
+
       <div className="sim__analysis">
         <section aria-label={t("Mavi takım")}>
           <h2 className="draft__heading">{t("Mavi takım")}</h2>
           {blue.length === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary team={blue} report={blueReport} label={t("Mavi takım")} />}
+          {blue.length >= 3 && <WinConditions team={blue} />}
           <Plans advice={adviceAgainst(redReport, blueReport)} title={t("Kırmızıya karşı plan")} />
+          <ThreatsPanel enemies={red} title={t("Kırmızı takımın tehditleri")} />
         </section>
         <section aria-label={t("Kırmızı takım")}>
           <h2 className="draft__heading">{t("Kırmızı takım")}</h2>
           {red.length === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary team={red} report={redReport} label={t("Kırmızı takım")} />}
+          {red.length >= 3 && <WinConditions team={red} />}
           <Plans advice={adviceAgainst(blueReport, redReport)} title={t("Maviye karşı plan")} />
+          <ThreatsPanel enemies={blue} title={t("Mavi takımın tehditleri")} />
         </section>
       </div>
 

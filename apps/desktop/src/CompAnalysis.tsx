@@ -1,5 +1,5 @@
 import type { Champion } from "./data/ddragon";
-import { adviceAgainst, analyzeComp, curveRead, teamCurve, teamDamage, compDimensions, DIMENSION_NAMES, dimensionText, PHASE_TEXT, WEAKNESS_TEXT, type CompReport } from "./data/traits";
+import { adviceAgainst, type PhaseCurve, analyzeComp, curveRead, teamCurve, teamDamage, compDimensions, DIMENSION_NAMES, dimensionText, PHASE_TEXT, WEAKNESS_TEXT, type CompReport } from "./data/traits";
 import { aramPlan, ARCHETYPE_NAMES, ARCHETYPE_PLANS, winConditions } from "./draft/winConditions";
 import { formatPercent, useLang, useT } from "./i18n";
 
@@ -61,7 +61,7 @@ export function CompSummary({ team, report, label }: { team: Champion[]; report:
   );
 }
 
-function WinConditions({ team, aram }: { team: Champion[]; aram?: boolean }) {
+export function WinConditions({ team, aram }: { team: Champion[]; aram?: boolean }) {
   const t = useT();
   const list = winConditions(team, aram);
   if (list.length === 0) return null;
@@ -76,6 +76,31 @@ function WinConditions({ team, aram }: { team: Champion[]; aram?: boolean }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+type CurveProps = { ours: PhaseCurve; theirs: PhaseCurve; read: string; ourLabel?: string; theirLabel?: string };
+
+/** Early, mid and late strength of two teams as paired bars with a one-line read. */
+export function PhaseCurves({ ours, theirs, read, ourLabel, theirLabel }: CurveProps) {
+  const t = useT();
+  const mine = ourLabel ?? t("sen");
+  const other = theirLabel ?? t("rakip");
+  return (
+    <>
+      <ul className="curve" aria-label={t("Oyun evreleri")}>
+        {PHASES.map((phase) => (
+          <li key={phase}>
+            <span className="curve__name">{t(PHASE_TEXT[phase])}</span>
+            <span className="curve__bars" role="img" aria-label={t("{phase}: {mine} {ours}, {other} {theirs} (4 üzerinden)", { phase: t(PHASE_TEXT[phase]), mine, other, ours: ours[phase].toFixed(1), theirs: theirs[phase].toFixed(1) })}>
+              <span data-side="ours" style={{ width: `${(ours[phase] / 4) * 100}%` }} />
+              <span data-side="theirs" style={{ width: `${(theirs[phase] / 4) * 100}%` }} />
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="draft__empty">{t(read)}</p>
+    </>
   );
 }
 
@@ -120,18 +145,7 @@ export function CompAnalysis({ allies, enemies, champions, aram }: Props) {
       {curve && (
         <>
           <h2 className="draft__heading">{t("Oyun evreleri")}</h2>
-          <ul className="curve" aria-label={t("Oyun evreleri")}>
-            {PHASES.map((phase) => (
-              <li key={phase}>
-                <span className="curve__name">{t(PHASE_TEXT[phase])}</span>
-                <span className="curve__bars" role="img" aria-label={t("{phase}: sen {ours}, rakip {theirs} (4 üzerinden)", { phase: t(PHASE_TEXT[phase]), ours: curve.ours[phase].toFixed(1), theirs: curve.theirs[phase].toFixed(1) })}>
-                  <span data-side="ours" style={{ width: `${(curve.ours[phase] / 4) * 100}%` }} />
-                  <span data-side="theirs" style={{ width: `${(curve.theirs[phase] / 4) * 100}%` }} />
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="draft__empty">{t(curve.read)}</p>
+          <PhaseCurves ours={curve.ours} theirs={curve.theirs} read={curve.read} />
         </>
       )}
       {advice.length > 0 && (
