@@ -60,3 +60,17 @@
 .tiers__change[data-trend="down"] {
   color: #f08a7c;
 }
+
+/* The player's own champions stand out in the list. */
+.tiers__table tr[data-mine] td:first-child {
+  box-shadow: inset 2px 0 0 var(--gilt);
+}
+
+.tiers__mine {
+  margin-left: var(--space-2);
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: var(--text-meta);
+  color: var(--gilt);
+  background: rgb(214 180 106 / 0.14);
+}

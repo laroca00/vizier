@@ -6,6 +6,7 @@ import { POSITIONS } from "../labels";
 import { ARENA, QUEUES, RANKED, winLabel } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { useAsync } from "../useAsync";
+import { usePersonal } from "../personal";
 import { Scatter } from "../charts";
 import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
@@ -42,6 +43,8 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
   const [position, setPosition] = useState("MIDDLE");
   const [state, retry] = useAsync(`${queue}:${position}`, () => load(queue, position));
   const ranked = queue === RANKED;
+  const personal = usePersonal();
+  const poolIds = new Set(personal.pool.filter((p) => !ranked || !p.position || p.position === position).map((p) => p.championId));
 
   return (
     <LiquidGlass className="panel tiers" radius={28} strength={2.5} scroll>
@@ -149,8 +152,9 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
               <tbody>
                 {state.value.list.champions.map((c) => {
                   const champion = state.value.champions.get(c.championId);
+                  const mine = poolIds.has(c.championId) ? "pool" : personal.favourites.includes(c.championId) ? "favourite" : undefined;
                   return (
-                    <tr key={c.championId}>
+                    <tr key={c.championId} data-mine={mine}>
                       <td>
                         <span className="tier" data-tier={c.tier}>
                           {c.tier}
@@ -164,6 +168,7 @@ export function TierListPage({ onOpenChampion }: { onOpenChampion: (championId: 
                         >
                           {champion && <img src={championIconUrl(state.value.version, champion.id)} alt="" width={26} height={26} />}
                           {champion?.name ?? c.championId}
+                          {mine && <span className="tiers__mine">{mine === "pool" ? t("Havuzunda") : t("Favori")}</span>}
                         </button>
                       </td>
                       <td>{percent(c.winRate)}</td>
