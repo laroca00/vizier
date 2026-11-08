@@ -11,6 +11,7 @@ import { FilterChips, SearchInput, Select } from "../ui/Fields";
 import { Modal } from "../ui/Modal";
 import { duplicateItems, moveItem, runeIssues, type RuneIssue } from "./buildEdit";
 import { fromPicks, runesComplete } from "./convert";
+import { parseTags } from "./organize";
 import { RIFT_SPELLS, SKILL_ORDERS, skillOrderLabel, type LibraryData } from "./data";
 import { RuneEditor } from "./RuneEditor";
 import type { SavedBuild } from "./store";
@@ -207,11 +208,33 @@ export function BuildEditor({ build, data, collections, onSave, onClose }: Props
 
         <FilterChips label={t("Koleksiyonlar")} chips={collections.map((c) => ({ id: c, label: t(c) }))} selected={draft.collections} onChange={(c) => set({ collections: c })} />
 
+        <TagsField value={draft.tags ?? []} onChange={(tags) => set({ tags })} />
+
         <label className="field">
           <span className="field__label">{t("Notlar")}</span>
           <textarea className="text-input editor__notes" value={draft.notes} rows={3} maxLength={2000} onChange={(e) => set({ notes: e.target.value })} />
         </label>
       </div>
     </Modal>
+  );
+}
+
+/** Kept as text while typing, so a comma isn't eaten before the next word. */
+function TagsField({ value, onChange }: { value: string[]; onChange: (tags: string[]) => void }) {
+  const t = useT();
+  const [text, setText] = useState(value.join(", "));
+  return (
+    <label className="field">
+      <span className="field__label">{t("Etiketler")}</span>
+      <input
+        className="text-input"
+        value={text}
+        placeholder={t("virgülle ayır, en çok 6")}
+        onChange={(e) => {
+          setText(e.target.value);
+          onChange(parseTags(e.target.value));
+        }}
+      />
+    </label>
   );
 }

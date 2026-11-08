@@ -22,6 +22,8 @@ export type SavedBuild = {
   skillOrder: number[];
   notes: string;
   collections: string[];
+  /** Free-form labels the player types; absent on builds saved before tags existed. */
+  tags?: string[];
   favourite: boolean;
   /** Where it started: Vizier's stats, a pro game, or from scratch. */
   source: "stats" | "pro" | "custom";
@@ -57,6 +59,7 @@ export function parseLibrary(raw: string | null): Library {
         skillOrder: numbers(b.skillOrder),
         notes: String(b.notes ?? ""),
         collections: Array.isArray(b.collections) ? b.collections.filter((c) => typeof c === "string") : [],
+        tags: Array.isArray(b.tags) ? b.tags.filter((t) => typeof t === "string") : [],
         favourite: b.favourite === true,
       })),
       collections: Array.isArray(data.collections) ? data.collections.filter((c): c is string => typeof c === "string") : DEFAULT_COLLECTIONS,
