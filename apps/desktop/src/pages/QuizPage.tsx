@@ -31,6 +31,7 @@ import { Tabs } from "../ui/Tabs";
 import { useAsync } from "../useAsync";
 import { useToast } from "../ui/Toast";
 import { ItemGame } from "../quiz/ItemGame";
+import { TimedItemGame } from "../quiz/TimedItemGame";
 import { StatsView } from "../quiz/StatsView";
 import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
 
@@ -43,7 +44,7 @@ const MODE_LABELS: Record<QuizMode, { label: string; hint: string }> = {
   item: { label: "Eşya", hint: "Bulanık bir eşya ikonu. Her yanlış tahminde netleşir; sonra fiyatı ve ilk harfi açılır." },
 };
 
-type Play = "daily" | "free" | "stats";
+type Play = "daily" | "free" | "timed" | "stats";
 
 export function QuizPage() {
   const t = useT();
@@ -63,6 +64,7 @@ export function QuizPage() {
             items={[
               { id: "daily" as Play, label: t("Günün bilmecesi") },
               { id: "free" as Play, label: t("Serbest") },
+              ...(mode === "item" ? [{ id: "timed" as Play, label: t("Zamana karşı") }] : []),
               { id: "stats" as Play, label: t("İstatistik") },
             ]}
             value={play}
@@ -74,13 +76,24 @@ export function QuizPage() {
         <StatsView />
       ) : (
         <>
-      <Tabs label={t("Mod")} size="small" items={(Object.keys(MODE_LABELS) as QuizMode[]).map((m) => ({ id: m, label: t(MODE_LABELS[m].label) }))} value={mode} onChange={setMode} />
+      <Tabs
+        label={t("Mod")}
+        size="small"
+        items={(Object.keys(MODE_LABELS) as QuizMode[]).map((m) => ({ id: m, label: t(MODE_LABELS[m].label) }))}
+        value={mode}
+        onChange={(m) => {
+          setMode(m);
+          if (m !== "item" && play === "timed") setPlay("free");
+        }}
+      />
       {data.status === "error" ? (
         <ErrorState message={t("Oyun verisi alınamadı.")} onRetry={retry} />
       ) : data.status !== "done" ? (
         <Skeleton lines={5} label={t("Yükleniyor")} />
       ) : (
-        mode === "item" || mode === "recipe" ? (
+        play === "timed" ? (
+          <TimedItemGame />
+        ) : mode === "item" || mode === "recipe" ? (
           <ItemGame key={`${mode}:${play}:${round}`} mode={mode} play={play} onNext={() => setRound(round + 1)} />
         ) : (
           <Game key={`${mode}:${play}:${round}`} mode={mode} play={play} data={data.value} onNext={() => setRound(round + 1)} />

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Champion } from "../data/ddragon";
 import { EMOJI_HINTS } from "./emoji";
-import { attributesOf, mainRoles, classicGrid, itemBlur, itemPool, abilityView, bestStreak, modeStats, recipePool, recipeParts, combineCost, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinView, streak, type QuizRecord } from "./logic";
+import { attributesOf, mainRoles, classicGrid, itemBlur, itemPool, abilityView, betterScore, shuffled, bestStreak, modeStats, recipePool, recipeParts, combineCost, compareClassic, dailyPick, dayKey, emojisShown, rangeOf, skinView, streak, type QuizRecord } from "./logic";
 
 function champion(id: string, tags: string[], difficulty: number, partype: string, attackRange: number): Champion {
   return { id, key: id.length, name: id, magic: true, tank: false, tags, info: { attack: 5, defense: 5, magic: 5, difficulty }, partype, attackRange };
@@ -140,5 +140,20 @@ describe("statistics", () => {
     const s = modeStats(records, "classic", "2026-11-06");
     expect(s).toMatchObject({ played: 5, solved: 4, best: 3, current: 1 });
     expect(s.distribution).toEqual([1, 1, 1, 0, 0, 1]);
+  });
+});
+
+describe("timed item game", () => {
+  it("shuffles the same way for the same seed and keeps every item", () => {
+    const list = [1, 2, 3, 4, 5, 6, 7, 8];
+    expect(shuffled(list, 42)).toEqual(shuffled(list, 42));
+    expect([...shuffled(list, 42)].sort()).toEqual(list);
+    expect(shuffled(list, 42)).not.toEqual(shuffled(list, 43));
+  });
+
+  it("keeps the best score", () => {
+    expect(betterScore(null, 4)).toBe(4);
+    expect(betterScore(7, 4)).toBe(7);
+    expect(betterScore(7, 9)).toBe(9);
   });
 });

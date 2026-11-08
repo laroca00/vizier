@@ -219,3 +219,25 @@ export function modeStats(records: QuizRecord[], mode: QuizMode, today: string):
   for (const r of own) if (r.solved) distribution[Math.min(r.guesses.length, DISTRIBUTION_BUCKETS) - 1]++;
   return { played: own.length, solved: own.filter((r) => r.solved).length, current: streak(records, mode, today), best: bestStreak(records, mode), distribution };
 }
+
+export const TIMED_SECONDS = 60;
+
+/** A shuffled copy for the timed item game; the same seed gives the same order. */
+export function shuffled<T>(items: T[], seed: number): T[] {
+  const out = [...items];
+  let state = seed >>> 0 || 1;
+  for (let i = out.length - 1; i > 0; i--) {
+    // xorshift32: small and stable across engines.
+    state ^= state << 13;
+    state >>>= 0;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    state >>>= 0;
+    const j = state % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Keeps the better of two timed scores; a first score always counts. */
+export const betterScore = (best: number | null, score: number): number => (best === null ? score : Math.max(best, score));
