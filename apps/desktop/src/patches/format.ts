@@ -56,13 +56,14 @@ export function fieldLabel(field: string, t: T) {
   if (kind === "spell") return t(SPELL_FIELDS[b] ?? b, { key: a });
   if (field === "item:gold") return t("Fiyat");
   if (field === "item:recipe") return t("Tarif");
+  if (field === "item:into") return t("Şuna dönüşür");
   if (kind === "item" && a === "stat") return t(ITEM_STATS[b] ?? b);
   return field;
 }
 
 export function formatValue(change: Change, value: Change["before"], itemNames: Record<string, string>, lang: Lang, t: T) {
   if (value === null) return t("yok");
-  if (change.field === "item:recipe") return String(value).split("+").map((id) => itemNames[id] ?? id).join(" + ");
+  if (change.field === "item:recipe" || change.field === "item:into") return String(value).split("+").map((id) => itemNames[id] ?? id).join(" + ");
   const stat = change.field.split(":").pop() ?? "";
   if (typeof value === "number" && (stat.startsWith("Percent") || stat === "FlatCritChanceMod")) {
     return `${Math.round(value * 1000) / 10}%`;

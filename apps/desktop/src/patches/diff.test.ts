@@ -44,6 +44,21 @@ describe("patch diff", () => {
     expect(diff[0].changes.map((c) => c.field)).toEqual(["item:gold", "item:stat:FlatPhysicalDamageMod", "item:recipe"]);
   });
 
+  it("notices when an item builds into something else", () => {
+    const item = (into: string[]): RawItem => ({ name: "Part", gold: { total: 800, purchasable: true }, into, maps: { "11": true } });
+    const [diff] = diffItems({ "1": item(["5", "7"]) }, { "1": item(["7", "9"]) });
+    expect(diff.changes).toEqual([{ field: "item:into", before: "5+7", after: "7+9" }]);
+  });
+
+  it("writes cooldown and cost changes for every rank", () => {
+    const champ = (cooldown: number[], cost: number[]): RawChampion => ({ id: "A", key: "1", name: "A", stats: {}, spells: [{ cooldown, cost }, {}, {}, {}] });
+    const [diff] = diffChampions({ A: champ([10, 9, 8, 7, 6], [50, 50, 50, 50, 50]) }, { A: champ([10, 9, 8, 7, 5], [50, 55, 60, 65, 70]) });
+    expect(diff.changes).toEqual([
+      { field: "spell:Q:cooldown", before: "10/9/8/7/6", after: "10/9/8/7/5" },
+      { field: "spell:Q:cost", before: 50, after: "50/55/60/65/70" },
+    ]);
+  });
+
   it("lists runes added and removed", () => {
     const style = (ids: number[]) => [{ id: 8000, name: "P", slots: [{ runes: ids.map((id) => ({ id, name: `r${id}` })) }] }];
     expect(diffRunes(style([1, 2]), style([2, 3])).map((d) => [d.id, d.status])).toEqual([

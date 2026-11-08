@@ -18,6 +18,8 @@ export type RawItem = {
   gold: { total: number; purchasable?: boolean };
   stats?: Record<string, number>;
   from?: string[];
+  /** Items this one builds into. */
+  into?: string[];
   maps?: Record<string, boolean>;
   inStore?: boolean;
 };
@@ -78,6 +80,7 @@ export function onRift(item: RawItem) {
 }
 
 const recipe = (item: RawItem) => (item.from ?? []).slice().sort().join("+") || null;
+const buildsInto = (item: RawItem) => (item.into ?? []).slice().sort((a, b) => Number(a) - Number(b)).join("+") || null;
 
 export function diffItems(before: Record<string, RawItem>, after: Record<string, RawItem>): EntityDiff[] {
   const out: EntityDiff[] = [];
@@ -95,6 +98,7 @@ export function diffItems(before: Record<string, RawItem>, after: Record<string,
     const stats = new Set([...Object.keys(prev.stats ?? {}), ...Object.keys(next.stats ?? {})]);
     for (const stat of stats) changed(`item:stat:${stat}`, prev.stats?.[stat] ?? null, next.stats?.[stat] ?? null, changes);
     changed("item:recipe", recipe(prev), recipe(next), changes);
+    changed("item:into", buildsInto(prev), buildsInto(next), changes);
     if (changes.length) out.push({ kind: "item", id, name: next.name, status: "changed", changes });
   }
   for (const [id, prev] of Object.entries(prevShop)) {

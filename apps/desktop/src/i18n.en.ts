@@ -1173,4 +1173,5 @@ export const EN: Record<string, string> = {
   "Yaz, Enter ile ilk sonucu seç, Tab ile sıradaki yere geç.": "Type, press Enter to pick the first result, Tab to move to the next slot.",
   "{stat} (18. seviye)": "{stat} (level 18)",
   "{stat} (1. seviye)": "{stat} (level 1)",
+  "Şuna dönüşür": "Builds into",
 };
