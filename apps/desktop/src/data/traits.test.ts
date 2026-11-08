@@ -36,3 +36,39 @@ describe("composition analysis", () => {
     expect(adviceAgainst(enemy, analyzeComp([MALPHITE])).map((a) => a.title)).toContain("Rakip uzaktan yıpratıyor");
   });
 });
+
+describe("damage profiles", () => {
+  it("has an entry for every champion in the app", async () => {
+    const { CHAMPION_FACTS } = await import("../quiz/championFacts");
+    const { DAMAGE_PROFILES } = await import("./traits");
+    expect(Object.keys(CHAMPION_FACTS).filter((id) => !(id in DAMAGE_PROFILES))).toEqual([]);
+    expect(Object.keys(DAMAGE_PROFILES).filter((id) => !(id in CHAMPION_FACTS))).toEqual([]);
+  });
+
+  it("keeps every split within 100 percent", async () => {
+    const { DAMAGE_PROFILES } = await import("./traits");
+    for (const [id, [ap, fixed = 0]] of Object.entries(DAMAGE_PROFILES)) {
+      expect(ap + fixed, id).toBeLessThanOrEqual(100);
+      expect(ap, id).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("splits a team's damage and always sums to one", async () => {
+    const { damageProfile, teamDamage } = await import("./traits");
+    const veigar = champion("Veigar", ["Mage"]);
+    const draven = champion("Draven", ["Marksman"]);
+    const velkoz = champion("Velkoz", ["Mage"]);
+    expect(damageProfile(velkoz)).toEqual({ ap: 0.4, ad: 0, true: 0.6 });
+    const team = teamDamage([veigar, draven, velkoz]);
+    expect(team.ap).toBeCloseTo((1 + 0 + 0.4) / 3);
+    expect(team.ap + team.ad + team.true).toBeCloseTo(1);
+    expect(teamDamage([])).toEqual({ ap: 0, ad: 0, true: 0 });
+  });
+
+  it("falls back to Data Dragon's ratings for an unknown champion", async () => {
+    const { damageProfile } = await import("./traits");
+    const profile = damageProfile(champion("NewOne", ["Mage"], { attack: 2, magic: 6 }));
+    expect(profile.ap).toBeCloseTo(0.75);
+    expect(profile.true).toBe(0);
+  });
+});

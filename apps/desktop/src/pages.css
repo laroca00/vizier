@@ -86,12 +86,16 @@
   gap: 2px;
 }
 
-.comp__damage span:first-child {
+.comp__damage span[data-kind="ap"] {
   background: var(--data-magic);
 }
 
-.comp__damage span:last-child {
+.comp__damage span[data-kind="ad"] {
   background: var(--data-physical);
+}
+
+.comp__damage span[data-kind="true"] {
+  background: var(--glaze);
 }
 
 .comp__legend {

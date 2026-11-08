@@ -81,6 +81,57 @@ const BURST = new Set([
   "Ambessa", "Fiddlesticks", "Sylas", "Nidalee", "Elise", "Pyke",
 ]);
 
+// Share of each champion's damage dealt as magic (AP), and as true damage
+// (the rest is physical), in percent. Hand-kept from the kits; a test checks
+// that every champion in the app has an entry.
+export const DAMAGE_PROFILES: Record<string, [ap: number, trueDamage?: number]> = {
+  Aatrox: [0], Ahri: [100], Akali: [75], Akshan: [0], Alistar: [90], Ambessa: [0], Amumu: [100], Anivia: [100],
+  Annie: [100], Aphelios: [0], Ashe: [0], AurelionSol: [100], Aurora: [100], Azir: [85], Bard: [70],
+  Belveth: [0, 20], Blitzcrank: [80], Brand: [100], Braum: [50], Briar: [0], Caitlyn: [0, 5], Camille: [0, 15],
+  Cassiopeia: [100], Chogath: [80, 20], Corki: [50], Darius: [0, 20], Diana: [100], Draven: [0], DrMundo: [0],
+  Ekko: [100], Elise: [100], Evelynn: [100], Ezreal: [40], Fiddlesticks: [100], Fiora: [0, 25], Fizz: [100],
+  Galio: [100], Gangplank: [0, 20], Garen: [0, 25], Gnar: [0], Gragas: [100], Graves: [0], Gwen: [85, 10],
+  Hecarim: [0], Heimerdinger: [100], Hwei: [100], Illaoi: [0], Irelia: [0, 5], Ivern: [100], Janna: [100],
+  JarvanIV: [0], Jax: [50], Jayce: [0], Jhin: [0], Jinx: [0], Kaisa: [40], Kalista: [0], Karma: [100],
+  Karthus: [100], Kassadin: [100], Katarina: [70], Kayle: [50], Kayn: [0], Kennen: [100], Khazix: [0], Kindred: [0],
+  Kled: [0], KogMaw: [50], KSante: [0], Leblanc: [100], LeeSin: [0], Leona: [70], Lillia: [100], Lissandra: [100],
+  Lucian: [0], Lulu: [100], Lux: [100], Malphite: [85], Malzahar: [100], Maokai: [90], MasterYi: [0, 45], Mel: [100],
+  Milio: [100], MissFortune: [0], MonkeyKing: [0], Mordekaiser: [100], Morgana: [100], Naafiri: [0], Nami: [100],
+  Nasus: [40], Nautilus: [70], Neeko: [100], Nidalee: [100], Nilah: [0], Nocturne: [0], Nunu: [100], Olaf: [0, 40],
+  Orianna: [100], Ornn: [40], Pantheon: [0], Poppy: [30], Pyke: [0, 25], Qiyana: [15], Quinn: [0], Rakan: [100],
+  Rammus: [70], RekSai: [0], Rell: [70], Renata: [100], Renekton: [0], Rengar: [0], Riven: [0], Rumble: [100],
+  Ryze: [100], Samira: [0], Sejuani: [100], Senna: [0], Seraphine: [100], Sett: [0, 10], Shaco: [50], Shen: [40],
+  Shyvana: [50], Singed: [100], Sion: [15], Sivir: [0], Skarner: [70], Smolder: [0, 10], Sona: [100], Soraka: [100],
+  Swain: [100], Sylas: [100], Syndra: [100], TahmKench: [40], Taliyah: [100], Talon: [0], Taric: [70], Teemo: [90],
+  Thresh: [80], Tristana: [40], Trundle: [0], Tryndamere: [0], TwistedFate: [100], Twitch: [0, 40], Udyr: [50],
+  Urgot: [0], Varus: [40], Vayne: [0, 30], Veigar: [100], Velkoz: [40, 60], Vex: [100], Vi: [0], Viego: [0],
+  Viktor: [100], Vladimir: [100], Volibear: [50], Warwick: [40], Xayah: [0], Xerath: [100], XinZhao: [0], Yasuo: [0],
+  Yone: [50], Yorick: [30], Yunara: [0], Yuumi: [100], Zac: [100], Zed: [0], Zeri: [0], Ziggs: [100], Zilean: [100],
+  Zoe: [100], Zyra: [100],
+};
+
+export type DamageProfile = { ap: number; ad: number; true: number };
+
+/** Damage split for one champion; falls back to Data Dragon's ratings for one not in the table yet. */
+export function damageProfile(c: Champion): DamageProfile {
+  const row = DAMAGE_PROFILES[c.id];
+  if (!row) {
+    const sum = c.info.attack + c.info.magic;
+    const ap = sum > 0 ? c.info.magic / sum : 0.5;
+    return { ap, ad: 1 - ap, true: 0 };
+  }
+  const trueShare = (row[1] ?? 0) / 100;
+  const ap = Math.min(row[0] / 100, 1 - trueShare);
+  return { ap, ad: Math.max(0, 1 - ap - trueShare), true: trueShare };
+}
+
+/** The team's average split; zero everywhere for an empty team. */
+export function teamDamage(team: Champion[]): DamageProfile {
+  if (team.length === 0) return { ap: 0, ad: 0, true: 0 };
+  const sum = team.map(damageProfile).reduce((a, b) => ({ ap: a.ap + b.ap, ad: a.ad + b.ad, true: a.true + b.true }));
+  return { ap: sum.ap / team.length, ad: sum.ad / team.length, true: sum.true / team.length };
+}
+
 export type Phase = "early" | "mid" | "late";
 
 export type Traits = {
@@ -105,9 +156,10 @@ export type Traits = {
 
 export function traitsOf(c: Champion): Traits {
   const tagged = (tag: string) => c.tags.includes(tag);
-  const sum = c.info.attack + c.info.magic;
+  const damage = damageProfile(c);
   return {
-    magic: sum > 0 ? c.info.magic / sum : 0.5,
+    // True damage answers to neither resist, so only the split of the rest counts.
+    magic: damage.ap + damage.ad > 0 ? damage.ap / (damage.ap + damage.ad) : 0.5,
     tank: c.tank || (tagged("Tank") && c.info.defense >= 7),
     engage: ENGAGE.has(c.id) || (c.tags[0] === "Tank" && !DISENGAGE.has(c.id)),
     poke: POKE.has(c.id),

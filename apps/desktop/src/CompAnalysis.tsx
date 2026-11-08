@@ -1,5 +1,5 @@
 import type { Champion } from "./data/ddragon";
-import { adviceAgainst, analyzeComp, compDimensions, DIMENSION_NAMES, dimensionText, PHASE_TEXT, WEAKNESS_TEXT, type CompReport } from "./data/traits";
+import { adviceAgainst, analyzeComp, teamDamage, compDimensions, DIMENSION_NAMES, dimensionText, PHASE_TEXT, WEAKNESS_TEXT, type CompReport } from "./data/traits";
 import { formatPercent, useLang, useT } from "./i18n";
 
 const PIPS = [0, 1, 2];
@@ -9,6 +9,7 @@ export function CompSummary({ team, report, label }: { team: Champion[]; report:
   const t = useT();
   const lang = useLang();
   if (report.champions === 0) return null;
+  const damage = teamDamage(team);
   const extras = [
     { name: "Savaş başlatma", count: report.engage },
     { name: "Koruma", count: report.peel },
@@ -16,13 +17,23 @@ export function CompSummary({ team, report, label }: { team: Champion[]; report:
   ];
   return (
     <div className="comp" aria-label={label}>
-      <div className="comp__damage" role="img" aria-label={t("Büyü hasarı {magic}, fiziksel hasar {physical}", { magic: formatPercent(report.magic, lang), physical: formatPercent(1 - report.magic, lang) })}>
-        <span style={{ width: `${report.magic * 100}%` }} />
-        <span style={{ width: `${(1 - report.magic) * 100}%` }} />
+      <div
+        className="comp__damage"
+        role="img"
+        aria-label={t("Büyü hasarı {magic}, fiziksel hasar {physical}, sabit hasar {fixed}", {
+          magic: formatPercent(damage.ap, lang),
+          physical: formatPercent(damage.ad, lang),
+          fixed: formatPercent(damage.true, lang),
+        })}
+      >
+        <span data-kind="ap" style={{ width: `${damage.ap * 100}%` }} />
+        <span data-kind="ad" style={{ width: `${damage.ad * 100}%` }} />
+        {damage.true >= 0.03 && <span data-kind="true" style={{ width: `${damage.true * 100}%` }} />}
       </div>
       <p className="comp__legend">
-        <span>{t("Büyü {rate}", { rate: formatPercent(report.magic, lang) })}</span>
-        <span>{t("Fiziksel {rate}", { rate: formatPercent(1 - report.magic, lang) })}</span>
+        <span>{t("Büyü {rate}", { rate: formatPercent(damage.ap, lang) })}</span>
+        <span>{t("Fiziksel {rate}", { rate: formatPercent(damage.ad, lang) })}</span>
+        {damage.true >= 0.03 && <span>{t("Sabit {rate}", { rate: formatPercent(damage.true, lang) })}</span>}
       </p>
       <ul className="comp__dims">
         {compDimensions(team).map((d) => (
