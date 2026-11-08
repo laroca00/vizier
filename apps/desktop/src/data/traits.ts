@@ -60,6 +60,27 @@ const TEAMFIGHT = new Set([
   "Gwen", "Kaisa", "Sett", "Nunu", "Ivern", "Zilean", "Karma", "Shen", "Sion", "Viktor", "Velkoz", "Lulu",
 ]);
 
+// Heals or sustains enough that a grievous wounds item pays off against it.
+const HEALING = new Set([
+  "Soraka", "Aatrox", "Vladimir", "Warwick", "Sylas", "DrMundo", "Swain", "Fiora", "Yuumi", "Nami", "Sona", "Briar",
+  "Seraphine", "Trundle", "Milio", "Samira", "Olaf", "Sett", "Illaoi", "Renekton", "Nasus", "Ivern", "Kayn", "Skarner",
+]);
+
+// Two or more hard crowd control effects (stun, root, suppress, knock-up, charm, fear) in one kit.
+const HARD_CC = new Set([
+  "Leona", "Nautilus", "Amumu", "Malphite", "Sejuani", "Alistar", "Blitzcrank", "Thresh", "Morgana", "Lissandra", "Rell",
+  "Ornn", "Skarner", "Zac", "Vi", "JarvanIV", "Lux", "Ashe", "Syndra", "Maokai", "Sion", "Galio", "Fiddlesticks", "Annie",
+  "Xerath", "Veigar", "Zyra", "Neeko", "Cassiopeia", "Warwick", "Pyke", "Rammus", "Bard", "Taric", "Braum", "Gragas",
+  "Nunu", "Poppy", "Rakan", "Kled", "Ahri", "Elise", "Vex", "Janna", "Yone", "Hecarim", "Camille", "Lulu",
+]);
+
+// Kills a squishy target in a couple of seconds before it can answer.
+const BURST = new Set([
+  "Zed", "Talon", "Khazix", "Qiyana", "Akali", "Leblanc", "Fizz", "Evelynn", "Rengar", "Naafiri", "Katarina", "Shaco",
+  "Ekko", "Veigar", "Annie", "Diana", "Nocturne", "Kayn", "Vex", "Syndra", "Pantheon", "Kassadin", "Samira", "Briar",
+  "Ambessa", "Fiddlesticks", "Sylas", "Nidalee", "Elise", "Pyke",
+]);
+
 export type Phase = "early" | "mid" | "late";
 
 export type Traits = {
@@ -77,6 +98,9 @@ export type Traits = {
   backline: boolean;
   pick: boolean;
   teamfight: boolean;
+  healing: boolean;
+  hardCc: boolean;
+  burst: boolean;
 };
 
 export function traitsOf(c: Champion): Traits {
@@ -94,6 +118,9 @@ export function traitsOf(c: Champion): Traits {
     backline: c.tags[0] === "Marksman" || (c.tags[0] === "Mage" && !tagged("Tank")),
     pick: PICK.has(c.id),
     teamfight: TEAMFIGHT.has(c.id),
+    healing: HEALING.has(c.id),
+    hardCc: HARD_CC.has(c.id),
+    burst: BURST.has(c.id),
   };
 }
 

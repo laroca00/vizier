@@ -15,6 +15,7 @@ import {
 import { autoView, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";
+import { ItemAdvicePanel } from "../draft/ItemAdvice";
 import { PoolBuild } from "../draft/PoolBuild";
 import { useOpponent, type Opponent } from "../draft/useOpponent";
 import { formatPercent, useLang, useT } from "../i18n";
@@ -147,6 +148,13 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 enemies={enemyPicks}
                 showPros
               />
+              {enemyPicks.length >= 3 && (
+                <ItemAdvicePanel
+                  championId={myChampion}
+                  position={me.position || null}
+                  enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c): c is Champion => c !== undefined)}
+                />
+              )}
             </>
           ) : (
             <p className="draft__empty">{t("Bir şampiyonun üzerine geldiğinde build burada açılır.")}</p>
