@@ -81,6 +81,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
               })}
             </p>
           )}
+          <Tabs className="champion__queues" size="small" label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
         </div>
         <button
           type="button"
@@ -99,8 +100,6 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           {pooled ? t("Havuzunda") : t("Havuzuna ekle")}
         </button>
       </header>
-
-      <Tabs label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
 
       {state.status === "error" ? (
         <ErrorState message={t("Şampiyon istatistikleri alınamadı. Vizier sunucusuna şu an ulaşılamıyor.")} onRetry={retry} />
