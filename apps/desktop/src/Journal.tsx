@@ -4,6 +4,19 @@ import { useLang, useT } from "./i18n";
 import { noteToStore } from "./journal";
 import { matchupNoteKey, notedMatchups, setNote, usePersonal } from "./personal";
 
+/** The saved note as read-only text, for places where there's no room for the editor. Nothing without a note. */
+export function NotePreview({ noteKey, label }: { noteKey: string; label: string }) {
+  const { notes } = usePersonal();
+  const text = notes[noteKey]?.trim();
+  if (!text) return null;
+  return (
+    <p className="note-preview">
+      <span className="note-preview__label">{label}</span>
+      {text}
+    </p>
+  );
+}
+
 /** A matchup note starts with these headings; the player deletes the ones they don't need. */
 export function useMatchupTemplate(): string {
   const t = useT();

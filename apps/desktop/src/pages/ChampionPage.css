@@ -239,3 +239,9 @@
 .champion__queues {
   margin-top: 10px;
 }
+
+.matchups__note {
+  flex: none;
+  opacity: 0.7;
+  font-size: 0.85em;
+}

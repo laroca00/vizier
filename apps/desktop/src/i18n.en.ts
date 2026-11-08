@@ -655,6 +655,7 @@ export const EN: Record<string, string> = {
   "Favorilerde": "In favourites",
   "Havuza ekle": "Add to pool",
   Günlük: "Journal",
+  "Notun var": "You have a note",
   "Hat planı": "Lane plan",
   "Hepsini verme penceresi": "All-in window",
   "Kaçınılacaklar": "What to avoid",
