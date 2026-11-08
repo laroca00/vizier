@@ -18,12 +18,12 @@ const load = async () => {
 };
 
 /** Every keystone with the champions that take it most and the win rate of those games. */
-export function RunesPage({ onOpenChampion }: { onOpenChampion: (championId: number, position: string | null) => void }) {
+export function RunesPage({ onOpenChampion, initialRune = null }: { onOpenChampion: (championId: number, position: string | null) => void; initialRune?: number | null }) {
   const t = useT();
   const lang = useLang();
   const [data, retry] = useAsync("runes-page", load);
   const [index, retryIndex] = useAsync("build-index", getBuildIndex);
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(initialRune);
 
   if (data.status === "error") return <ErrorState message={t("Oyun verisi alınamadı.")} onRetry={retry} />;
   if (data.status !== "done") return <Skeleton lines={6} label={t("Yükleniyor")} />;

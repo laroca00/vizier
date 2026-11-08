@@ -10,7 +10,7 @@ export type Route =
   | { page: "tiers"; view?: TierView }
   | { page: "pros" }
   | { page: "pro"; player: string }
-  | { page: "builds" }
+  | { page: "builds"; buildId?: string }
   | { page: "champions" }
   | { page: "simulator" }
   | { page: "patches" }
@@ -19,8 +19,8 @@ export type Route =
   | { page: "matchup"; championId: number | null; opponentId: number | null; position: string }
   | { page: "champion"; championId: number; position: string | null; queue: number }
   | { page: "journal" }
-  | { page: "items" }
-  | { page: "runes" }
+  | { page: "items"; itemId?: number }
+  | { page: "runes"; runeId?: number }
   | { page: "overlay" }
   | { page: "settings" }
   | { page: "about" };

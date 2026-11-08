@@ -1,12 +1,14 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { championIconUrl, champions, latestVersion } from "./data/ddragon";
+import { championIconUrl, champions, itemIconUrl, items, latestVersion, runeIconUrl, runes } from "./data/ddragon";
+import { useLibrary } from "./library/store";
+import type { Route } from "./router";
 import { useT } from "./i18n";
 import { NavIcon } from "./ui/NavIcon";
 import { useAsync } from "./useAsync";
 import { getProTeams } from "./api";
 import { useOpenPro } from "./proLink";
 import { guessPosition } from "./pages/matchupRoute";
-import { search, type PaletteLink, type Pro, type Result } from "./paletteSearch";
+import { search, type Entry, type PaletteLink, type Pro, type Result } from "./paletteSearch";
 
 export type { PaletteLink };
 import "./SearchPalette.css";
@@ -23,6 +25,18 @@ async function loadStatic() {
   return { version, list: [...byKey.values()] };
 }
 
+// Finished items and keystones, the two lists the item and rune explorers show.
+async function loadCatalog(): Promise<{ items: Entry[]; runes: Entry[] }> {
+  const [version, itemList, styles] = await Promise.all([latestVersion(), items(), runes()]);
+  return {
+    // Data Dragon repeats an item under other ids for Arena and other modes; the lowest id is the Rift one.
+    items: [...new Map([...itemList.values()].filter((i) => i.complete).sort((a, b) => b.id - a.id).map((i) => [i.name, i])).values()]
+      .sort((a, b) => a.id - b.id)
+      .map((i) => ({ id: String(i.id), name: i.name, icon: itemIconUrl(version, i.id) })),
+    runes: [...styles.values()].flatMap((style) => style.slots[0] ?? []).map((r) => ({ id: String(r.id), name: r.name, icon: runeIconUrl(r.icon) })),
+  };
+}
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -32,15 +46,21 @@ type Props = {
   onLink?: (id: string) => void;
   /** Opens the matchup page for "Ahri vs Zed". */
   onMatchup?: (championId: number, opponentId: number, position: string) => void;
+  /** Opens a saved build, an item or a keystone on its page. */
+  onRoute?: (route: Route) => void;
 };
 
-export function SearchPalette({ open, onClose, onChampion, links = [], onLink, onMatchup }: Props) {
+const KIND_NAMES = { build: "Build", item: "Eşya", rune: "Ana rün" } as const;
+
+export function SearchPalette({ open, onClose, onChampion, links = [], onLink, onMatchup, onRoute }: Props) {
   const t = useT();
   const dialog = useRef<HTMLDialogElement>(null);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const [data] = useAsync(open ? "static" : null, loadStatic);
   const [pros] = useAsync(open ? "palette-pros" : null, loadPros);
+  const [catalog] = useAsync(open ? "palette-catalog" : null, () => loadCatalog().catch(() => ({ items: [], runes: [] })));
+  const library = useLibrary();
   const openPro = useOpenPro();
   const listId = useId();
 
@@ -55,8 +75,15 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink, o
     if (!open && element.open) element.close();
   }, [open]);
 
-  const results = search(query, data.status === "done" ? data.value.list : [], links, pros.status === "done" ? pros.value : []);
   const version = data.status === "done" ? data.value.version : "";
+  const championIcon = (id: number) => {
+    const c = data.status === "done" ? data.value.list.find((x) => x.key === id) : undefined;
+    return c && version ? championIconUrl(version, c.id) : null;
+  };
+  const results = search(query, data.status === "done" ? data.value.list : [], links, pros.status === "done" ? pros.value : [], {
+    builds: library.builds.map((b) => ({ id: b.id, name: b.name, icon: championIcon(b.championId) })),
+    ...(catalog.status === "done" ? catalog.value : {}),
+  });
 
   function choose(result: Result | undefined) {
     if (!result) return;
@@ -64,6 +91,9 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink, o
     if (result.kind === "champion") onChampion(result.champion.key);
     else if (result.kind === "matchup") onMatchup?.(result.a.key, result.b.key, guessPosition(result.a));
     else if (result.kind === "pro") openPro(result.pro.player);
+    else if (result.kind === "build") onRoute?.({ page: "builds", buildId: result.entry.id });
+    else if (result.kind === "item") onRoute?.({ page: "items", itemId: Number(result.entry.id) });
+    else if (result.kind === "rune") onRoute?.({ page: "runes", runeId: Number(result.entry.id) });
     else onLink?.(result.link.id);
   }
 
@@ -126,6 +156,8 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink, o
                         ? `m${result.a.key}:${result.b.key}`
                         : result.kind === "pro"
                           ? `r${result.pro.player}`
+                          : result.kind === "build" || result.kind === "item" || result.kind === "rune"
+                            ? `${result.kind}${result.entry.id}`
                           : `p${result.link.id}`
                   }
                   id={optionId(i)}
@@ -146,6 +178,12 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink, o
                       <img src={championIconUrl(version, result.a.id)} alt="" width={28} height={28} />
                       <span>{t("{a} - {b}", { a: result.a.name, b: result.b.name })}</span>
                       <span className="palette__kind">{t("Eşleşme")}</span>
+                    </>
+                  ) : result.kind === "build" || result.kind === "item" || result.kind === "rune" ? (
+                    <>
+                      {result.entry.icon ? <img src={result.entry.icon} alt="" width={28} height={28} /> : <span className="palette__page-icon" />}
+                      <span>{result.entry.name}</span>
+                      <span className="palette__kind">{t(KIND_NAMES[result.kind])}</span>
                     </>
                   ) : result.kind === "pro" ? (
                     <>

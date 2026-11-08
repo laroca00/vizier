@@ -26,11 +26,11 @@ const ALL = "ALL";
 const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
 const SHOWN_RESULTS = 60;
 
-type Props = { onOpenChampion: (championId: number, position: string | null) => void };
+type Props = { onOpenChampion: (championId: number, position: string | null) => void; /** Opens "my builds" with this saved build selected. */ initialBuild?: string | null };
 
-export function BuildsPage({ onOpenChampion }: Props) {
+export function BuildsPage({ onOpenChampion, initialBuild = null }: Props) {
   const t = useT();
-  const [view, setView] = useState<View>("explore");
+  const [view, setView] = useState<View>(initialBuild ? "mine" : "explore");
   const [data] = useAsync("library-data", loadLibraryData);
   const library = useLibrary();
 
@@ -58,7 +58,7 @@ export function BuildsPage({ onOpenChampion }: Props) {
       ) : view === "explore" ? (
         <Explore data={data.value} onOpenChampion={onOpenChampion} onSaved={() => setView("mine")} />
       ) : (
-        <Mine data={data.value} />
+        <Mine data={data.value} initialBuild={initialBuild} />
       )}
     </LiquidGlass>
   );
@@ -217,12 +217,12 @@ function Explore({ data, onOpenChampion, onSaved }: { data: LibraryData; onOpenC
 
 const FAVOURITES = "__favourites";
 
-function Mine({ data }: { data: LibraryData }) {
+function Mine({ data, initialBuild = null }: { data: LibraryData; initialBuild?: string | null }) {
   const t = useT();
   const toast = useToast();
   const library = useLibrary();
   const [filter, setFilter] = useState<string>(ALL);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(initialBuild);
   const [editing, setEditing] = useState<SavedBuild | null>(null);
   const [newCollection, setNewCollection] = useState("");
   const [newChampion, setNewChampion] = useState<string>("");
