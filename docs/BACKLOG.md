@@ -111,14 +111,14 @@ Help players build a pool that covers their role, not only store it.
 
 ## 9. Build library improvements
 
-- [ ] 9.1 Build comparison 2.0: most popular vs highest win rate (with a minimum games bar) vs against AP / AD / tank teams, side by side with game counts.
-- [ ] 9.2 Item explorer page: every item with stats, cost, build path, gold efficiency (base stat prices, tested) and the champions that build it most (from the build index). Filters by stat and price.
-- [ ] 9.3 Rune explorer page: every keystone with the champions that use it most and their win rate with it.
-- [ ] 9.4 Build editor: drag to reorder items, item search with stat filters, duplicate warning; rune editor validation and "copy from recommended".
-- [ ] 9.5 Tags and sorting in the library (last edited, champion, collection).
+- [x] 9.1 Build comparison 2.0: most popular vs highest win rate (with a minimum games bar) vs against AP / AD / tank teams, side by side with game counts. (fddc671; the comparison opens with the popular build, the best win rate above a games bar and the AP, AD and tank answers side by side; the foe columns have no win rate because the data only counts games)
+- [x] 9.2 Item explorer page: every item with stats, cost, build path, gold efficiency (base stat prices, tested) and the champions that build it most (from the build index). Filters by stat and price. (fddc671; Items page; gold efficiency uses the hand-kept stat prices in data/itemGold.ts; "builds it" means the item is in the champion build index, not that every game has it)
+- [x] 9.3 Rune explorer page: every keystone with the champions that use it most and their win rate with it. (fddc671; Runes page lists keystones; win rate is the weighted rate of the champion builds that take the keystone)
+- [x] 9.4 Build editor: drag to reorder items, item search with stat filters, duplicate warning; rune editor validation and "copy from recommended". (fddc671; drag or Alt+arrows to reorder, stat filter in the item search, repeated item warning, rune page checks, copy runes or items from the recommended build)
+- [x] 9.5 Tags and sorting in the library (last edited, champion, collection). (fddc671; free-form tags (up to 6 per build) with a tag filter, and sorting by last edit, champion, name or collection)
 - [ ] 9.6 Share codes v2: shorter codes that still read v1; pasting a code anywhere in the app offers to open it.
 - [ ] 9.7 Build diff between two saved builds.
-- [ ] 9.8 Search the build index by item ("who builds Rabadon's") and keystone.
+- [x] 9.8 Search the build index by item ("who builds Rabadon's") and keystone. (fddc671; the build explorer already filtered by item and keystone; no new work)
 
 ## 10. Queue and lobby companion
 
