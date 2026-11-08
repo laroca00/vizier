@@ -9,6 +9,7 @@ import { Home } from "./pages/Home";
 import { noteRecent } from "./personal";
 import { pageRoute, useNavigation, type Page, type Route } from "./router";
 import { OpenMatchupProvider } from "./matchupLink";
+import { useReadyCheckAlert } from "./readyCheck";
 import { SearchPalette } from "./SearchPalette";
 import { SharePaste } from "./library/SharePaste";
 import { setClientLocale, useT } from "./i18n";
@@ -133,6 +134,7 @@ function App() {
   const clientLocale = lcu.state === "connected" ? (lcu.region?.locale ?? null) : null;
 
   useEffect(() => setClientLocale(clientLocale), [clientLocale]);
+  useReadyCheckAlert(phase, settings.readyCheckAlert);
 
   // Nobody looks at Vizier while the game is in front, so WebView2 can hand
   // memory back to the game until the player switches over.

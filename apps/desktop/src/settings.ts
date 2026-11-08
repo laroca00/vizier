@@ -6,6 +6,8 @@ export type Settings = {
   autoImportSpells: boolean;
   autoImportItems: boolean;
   showOnChampSelect: boolean;
+  /** A tone and a taskbar flash when a match is found; off unless the player asks. */
+  readyCheckAlert: boolean;
   overlay: boolean;
   overlaySkills: boolean;
   overlayObjectives: boolean;
@@ -28,6 +30,7 @@ const DEFAULTS: Settings = {
   autoImportSpells: false,
   autoImportItems: true,
   showOnChampSelect: true,
+  readyCheckAlert: false,
   overlay: true,
   overlaySkills: true,
   overlayObjectives: true,

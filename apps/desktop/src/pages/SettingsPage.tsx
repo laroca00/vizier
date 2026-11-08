@@ -24,6 +24,7 @@ const CLIENT_TOGGLES: { key: ToggleKey; label: string; hint: string }[] = [
   { key: "autoImportRunes", label: "Rünleri kendiliğinden aktar", hint: "Şampiyonunu kilitlediğinde önerilen rün sayfası Vizier sayfasına yazılır." },
   { key: "autoImportSpells", label: "Büyüleri kendiliğinden aktar", hint: "Flash kullandığın tuşta kalır." },
   { key: "autoImportItems", label: "Eşya setini kendiliğinden aktar", hint: "Önerilen eşyalar oyun içi mağazada Vizier seti olarak görünür." },
+  { key: "readyCheckAlert", label: "Maç bulununca haber ver", hint: "Kısa bir ses çalar ve görev çubuğundaki simge yanıp söner." },
   { key: "showOnChampSelect", label: "Şampiyon seçiminde Vizier'i öne getir", hint: "Tepsideyken bile seçim başlayınca pencere açılır." },
 ];
 

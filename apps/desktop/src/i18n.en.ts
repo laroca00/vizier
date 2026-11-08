@@ -655,6 +655,8 @@ export const EN: Record<string, string> = {
   "Favorilerde": "In favourites",
   "Havuza ekle": "Add to pool",
   Günlük: "Journal",
+  "Maç bulununca haber ver": "Alert me when a match is found",
+  "Kısa bir ses çalar ve görev çubuğundaki simge yanıp söner.": "Plays a short tone and flashes the taskbar icon.",
   "Aynı eşyalar, farklı sıra": "Same items, different order",
   "Sadece bunda": "Only in this one",
   "Sadece diğerinde": "Only in the other",
