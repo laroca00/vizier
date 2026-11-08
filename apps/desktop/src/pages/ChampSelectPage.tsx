@@ -15,6 +15,7 @@ import {
 import { checkRole } from "../draft/allyRole";
 import { BenchHelper } from "../draft/BenchHelper";
 import { HoverMatchup } from "../draft/HoverMatchup";
+import { ChampionAugments } from "../augments/ChampionAugments";
 import { BanPlanner } from "../draft/BanPlanner";
 import { autoView, draftQueue, duoPartnerRole, hasBench, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
@@ -28,6 +29,7 @@ import { JournalNote } from "../Journal";
 import { draftPhaseLabel, positionLabel } from "../labels";
 import type { ChampSelect, DraftMember } from "../lcu";
 import { championNoteKey, matchupNoteKey, usePersonal } from "../personal";
+import { MAYHEM } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { useSplash } from "../ui/Splash";
 import { Tabs } from "../ui/Tabs";
@@ -188,6 +190,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 showPros
                 queue={queue}
               />
+              {hasBench(draft) && <ChampionAugments championId={myChampion} queue={MAYHEM} limit={6} title={t("Mayhem ise: ilk bakılacak augment'ler")} hideEmpty />}
               {enemyPicks.length >= 3 && (
                 <ItemAdvicePanel
                   championId={myChampion}

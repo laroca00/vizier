@@ -954,4 +954,6 @@ export const EN: Record<string, string> = {
   "ARAM planı: {names} ile uzun savaşlara girin, canınızı koruyup rakibi eritin.": "ARAM plan: take long fights with {names}; stay healthy and wear them down.",
   "ARAM planı: {names} ile savaşı hızlı açın; rakip yıpratmadan önce iç içe girin.": "ARAM plan: start the fight fast with {names}; get in before they can poke you.",
   "ARAM planı: Net bir yıpratma ya da başlatma aracı yok; birlikte durun ve rakibin hatasını bekleyin.": "ARAM plan: no clear poke or engage; stay together and wait for their mistake.",
+  "Mayhem ise: ilk bakılacak augment'ler": "If this is Mayhem: augments to look for first",
+  "{games} oyunluk veriden": "From {games} games",
 };
