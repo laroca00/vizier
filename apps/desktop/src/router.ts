@@ -13,6 +13,7 @@ export type Route =
   | { page: "simulator" }
   | { page: "patches" }
   | { page: "quiz" }
+  | { page: "augments" }
   | { page: "champion"; championId: number; position: string | null; queue: number }
   | { page: "overlay" }
   | { page: "settings" }

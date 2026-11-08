@@ -8,6 +8,7 @@ A lightweight League of Legends companion for Windows, for preparing games rathe
 - Pro builds from Worlds players, Turkish pros and the Challenger ladders, filtered by champion, team, player, region and patch.
 - A draft simulator with bans and pick suggestions, and a patch tracker that compares any two recent Data Dragon versions.
 - A daily champion riddle in four modes: classic, ability, emoji and skin.
+- Arena and ARAM Mayhem augments by tier, pick rate and win rate, overall or per champion.
 
 Your own builds, drafts, pool and notes stay on your computer.
 

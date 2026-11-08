@@ -76,6 +76,19 @@ export async function getBuild(championId: number, position: string | null, vs: 
   }
 }
 
+export type AugmentStat = { augmentId: number; games: number; pickRate: number; winRate: number; tier: string };
+export type AugmentStats = { patches: string[]; games: number; augments: AugmentStat[] };
+
+/** Null while the server has augment stats switched off. */
+export async function getAugments(queue: number, championId: number | null): Promise<AugmentStats | null> {
+  try {
+    return await get<AugmentStats>(`/v1/augments?queue=${queue}${championId ? `&champion=${championId}` : ""}`);
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 403 || error.status === 404)) return null;
+    throw error;
+  }
+}
+
 export type BuildIndexEntry = {
   championId: number;
   position: string;

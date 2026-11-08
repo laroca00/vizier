@@ -17,7 +17,8 @@ export type IconName =
   | "champions"
   | "simulator"
   | "patches"
-  | "quiz";
+  | "quiz"
+  | "augments";
 
 // Drawn for Vizier on a 20px grid with a 1.6 stroke, so they sit with the
 // Geologica text at the same weight.
@@ -40,6 +41,7 @@ const PATHS: Record<IconName, string> = {
   simulator: "M3.5 4.5h5v11h-5zM11.5 4.5h5v11h-5zM5 8h2M5 11h2M13 8h2M13 11h2",
   patches: "M5 3.5h7l3 3v10H5zM12 3.5v3h3M7.5 10h5M7.5 13h3",
   quiz: "M10 3.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zM8 8a2 2 0 1 1 2.8 1.8c-.5.3-.8.7-.8 1.3v.4M10 13.6v.1",
+  augments: "M10 3l6 7-6 7-6-7zM10 7l2.5 3L10 13l-2.5-3z",
   library: "M4 3.5h3v13H4zM8.5 3.5h3v13h-3zM13.2 4.3l2.7-.7 2.6 12.3-2.7.6z",
 };
 

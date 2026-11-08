@@ -1,0 +1,33 @@
+/* Augment tier table, laid out like the champion tier list. */
+
+.augments__table {
+  width: 100%;
+  margin-top: var(--space-3);
+  border-collapse: collapse;
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.augments__table th,
+.augments__table td {
+  padding: 6px var(--space-2);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.augments__table thead th {
+  font-weight: 350;
+  color: var(--glaze-muted);
+}
+
+.augments__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-medium);
+}
+
+.augments__name img {
+  display: block;
+  border-radius: 6px;
+}

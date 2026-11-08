@@ -29,6 +29,7 @@ const BuildsPage = lazy(() => import("./pages/BuildsPage").then((m) => ({ defaul
 const ChampionsPage = lazy(() => import("./pages/ChampionsPage").then((m) => ({ default: m.ChampionsPage })));
 const SimulatorPage = lazy(() => import("./pages/SimulatorPage").then((m) => ({ default: m.SimulatorPage })));
 const PatchesPage = lazy(() => import("./pages/PatchesPage").then((m) => ({ default: m.PatchesPage })));
+const AugmentsPage = lazy(() => import("./pages/AugmentsPage").then((m) => ({ default: m.AugmentsPage })));
 const QuizPage = lazy(() => import("./pages/QuizPage").then((m) => ({ default: m.QuizPage })));
 const ProsPage = lazy(() => import("./pages/ProsPage").then((m) => ({ default: m.ProsPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
@@ -44,6 +45,7 @@ const LABELS: Record<Page, string> = {
   simulator: "Draft simülatörü",
   patches: "Yama takibi",
   quiz: "Şampiyon bilmecesi",
+  augments: "Augment'ler",
   champion: "Şampiyonlar",
   overlay: "Overlay",
   settings: "Ayarlar",
@@ -175,6 +177,7 @@ function App() {
         { id: "tiers", label: "Tier listesi", icon: "tiers" },
         { id: "builds", label: "Build kütüphanesi", icon: "library" },
         { id: "pros", label: "Pro build'ler", icon: "pros" },
+        { id: "augments", label: "Augment'ler", icon: "augments" },
         { id: "simulator", label: "Draft simülatörü", icon: "simulator" },
         { id: "patches", label: "Yama takibi", icon: "patches" },
         { id: "quiz", label: "Şampiyon bilmecesi", icon: "quiz" },
@@ -255,6 +258,8 @@ function App() {
               <OverlayPage />
             ) : route.page === "tiers" ? (
               <TierListPage onOpenChampion={openChampion} />
+            ) : route.page === "augments" ? (
+              <AugmentsPage />
             ) : route.page === "quiz" ? (
               <QuizPage />
             ) : route.page === "patches" ? (

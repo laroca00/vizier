@@ -48,7 +48,7 @@ Status values: permitted, restricted (allowed only in the form described), uncer
 | Overlay: item gold difference and scoreboard difference | Live Client Data API (items visible on the scoreboard) and Data Dragon prices | Uncertain; the items are visible in game, the computed difference is not | Still in the app until the overlay redesign | Ask Riot if kept |
 | Overlay: benchmarks, pace, coach goal | Live Client Data API, our aggregates | Removed by product decision | Deleted in Phase 1 | Not applicable |
 | Loading screen scouting (ranks, mastery of all ten players) | Spectator-v5, league-v4, champion-mastery-v4 | Removed by product decision; policy unclear for named players | Deleted in Phase 1 | Not applicable |
-| Arena and ARAM Mayhem augment win rates | Our aggregates | Prohibited without written approval | The computation, docs and endpoints are deleted (Phase 1). Raw augment ids are still stored for three days | Written approval through the Developer Portal before any display |
+| Arena and ARAM Mayhem augment pick and win rates | Our aggregates | Prohibited without written approval | Shown since 2026-11-08 by the owner's decision after asking Riot, before a written answer. The Worker serves them only while `AUGMENTS` is `on` in `wrangler.jsonc`; setting it to `off` and deploying hides them for every installed copy at once | Written approval through the Developer Portal; switch off if Riot objects |
 | Post-game coach, profiles, dashboard, LP history | Riot Web API, Workers AI, Anthropic | Permitted by policy ("Post-game analysis", "Showing (self) player stats") but removed by product decision | Deleted in Phase 1 | Not applicable |
 | Game memory reading or writing | None | Prohibited | Not used anywhere; only the LCU, the Live Client Data API, the Riot Web API and Data Dragon | Not applicable |
 
@@ -64,4 +64,4 @@ Status values: permitted, restricted (allowed only in the form described), uncer
 
 1. Objective respawn timers and manual jungle camp timers in an overlay.
 2. Showing the next step of the player's own chosen skill order during the game.
-3. Arena and ARAM Mayhem augment win rates, which the owner wants. They need written approval.
+3. Arena and ARAM Mayhem augment win rates. The owner asked Riot and turned them on before a written answer; switch them off if Riot says no.
