@@ -21,6 +21,7 @@ import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
+import { PoolMoves } from "../PoolMoves";
 import { PoolCoverage } from "./PoolCoverage";
 import { useAsync } from "../useAsync";
 
@@ -271,6 +272,7 @@ function PoolManager({ data, onOpenChampion }: { data: Data; onOpenChampion: Pro
             ))}
         </div>
       )}
+      <PoolMoves onOpenChampion={onOpenChampion} />
       <PoolCoverage data={data} />
     </>
   );

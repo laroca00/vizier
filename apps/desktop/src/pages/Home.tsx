@@ -17,6 +17,7 @@ import { dayKey, MODES } from "../quiz/logic";
 import { useQuizRecords } from "../quiz/store";
 import "./Home.css";
 import { PoolPatch } from "./PoolPatch";
+import { PoolMoves } from "../PoolMoves";
 
 type Props = {
   lcu: LcuStatus;
@@ -135,6 +136,7 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
         </div>
 
         <PoolPatch onNavigate={onNavigate} />
+        <PoolMoves onOpenChampion={onOpenChampion} />
 
         <MetaPicks onOpenChampion={onOpenChampion} />
         <MetaMovers onOpenChampion={onOpenChampion} />
