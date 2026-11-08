@@ -23,3 +23,14 @@ export function augmentInfo(lang: Lang): Promise<Map<number, AugmentInfo>> {
 
 /** CommunityDragon's rarity numbers. */
 export const RARITY: Record<number, string> = { 0: "Gümüş", 1: "Altın", 2: "Prizmatik", 4: "Özel" };
+
+const TIER_ORDER = ["S", "A", "B", "C", "D"];
+
+/** The augments to look for first: best tier, then win rate. The API's own order is not relied on. */
+export function pickOrder<T extends { tier: string; winRate: number }>(augments: T[], count: number): T[] {
+  const rank = (tier: string) => {
+    const i = TIER_ORDER.indexOf(tier);
+    return i < 0 ? TIER_ORDER.length : i;
+  };
+  return [...augments].sort((a, b) => rank(a.tier) - rank(b.tier) || b.winRate - a.winRate).slice(0, count);
+}

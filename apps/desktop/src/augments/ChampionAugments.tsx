@@ -1,22 +1,23 @@
 import { getAugments } from "../api";
 import { formatPercent, useLang, useT } from "../i18n";
 import { useAsync } from "../useAsync";
-import { augmentInfo } from "./data";
+import { augmentInfo, pickOrder } from "./data";
 
 const SHOWN = 8;
 
 /** The champion's best augments in Arena or ARAM Mayhem, best tier first. */
-export function ChampionAugments({ championId, queue }: { championId: number; queue: number }) {
+export function ChampionAugments({ championId, queue, limit = SHOWN, title, hideEmpty = false }: { championId: number; queue: number; limit?: number; title?: string; hideEmpty?: boolean }) {
   const t = useT();
   const lang = useLang();
   const [stats] = useAsync(`augments:${queue}:${championId}`, () => getAugments(queue, championId));
   const [info] = useAsync(`augment-info:${lang}`, () => augmentInfo(lang));
   if (stats.status !== "done" || !stats.value) return null;
   const names = info.status === "done" ? info.value : new Map();
-  const best = stats.value.augments.slice(0, SHOWN);
+  const best = limit === SHOWN ? stats.value.augments.slice(0, SHOWN) : pickOrder(stats.value.augments, limit);
+  if (hideEmpty && best.length === 0) return null;
   return (
-    <section className="champion-augments enter" aria-label={t("En iyi augment'ler")}>
-      <h2 className="draft__heading">{t("En iyi augment'ler")}</h2>
+    <section className="champion-augments enter" aria-label={title ?? t("En iyi augment'ler")}>
+      <h2 className="draft__heading">{title ?? t("En iyi augment'ler")}</h2>
       {best.length === 0 ? (
         <p className="build__note">{t("Bu şampiyonla bu modda henüz yeterli maç yok.")}</p>
       ) : (
@@ -41,6 +42,7 @@ export function ChampionAugments({ championId, queue }: { championId: number; qu
           })}
         </ul>
       )}
+      {title && best.length > 0 && <p className="build__note">{t("{games} oyunluk veriden", { games: stats.value.games })}</p>}
     </section>
   );
 }

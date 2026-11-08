@@ -50,16 +50,16 @@ function count(traits: Traits[], pick: (t: Traits) => boolean) {
  * The two or three play styles this draft supports best, strongest first.
  * Needs three champions; a style needs at least two points to count.
  */
-export function winConditions(team: Champion[]): WinCondition[] {
+export function winConditions(team: Champion[], aram = false): WinCondition[] {
   if (team.length < 3) return [];
   const rows = team.map((c) => ({ name: c.name, t: traitsOf(c) }));
   const traits = rows.map((r) => r.t);
   const who = (pick: (t: Traits) => boolean) => rows.filter((r) => pick(r.t)).map((r) => r.name);
   const scores: Record<Archetype, number> = {
     dive: count(traits, (t) => t.engage && !t.poke) + count(traits, (t) => t.burst) * 0.5 - (count(traits, (t) => t.peel) >= 3 ? 1 : 0),
-    poke: count(traits, (t) => t.poke) * 1.5 - (count(traits, (t) => t.engage) >= 3 ? 1 : 0),
+    poke: count(traits, (t) => t.poke) * (aram ? 2 : 1.5) - (count(traits, (t) => t.engage) >= 3 ? 1 : 0),
     protect: count(traits, (t) => t.backline) >= 2 ? Math.min(count(traits, (t) => t.backline), count(traits, (t) => t.peel) + count(traits, (t) => t.frontline)) : 0,
-    split: count(traits, (t) => t.splitPush) * 2 - (count(traits, (t) => t.teamfight) >= 4 ? 1 : 0),
+    split: aram ? 0 : count(traits, (t) => t.splitPush) * 2 - (count(traits, (t) => t.teamfight) >= 4 ? 1 : 0),
     pick: count(traits, (t) => t.pick) - 0.5,
     teamfight: count(traits, (t) => t.teamfight) - 1 + (count(traits, (t) => t.engage) >= 1 ? 0.5 : 0),
   };
@@ -76,4 +76,23 @@ export function winConditions(team: Champion[]): WinCondition[] {
     .sort((a, b) => scores[b] - scores[a])
     .slice(0, 3)
     .map((archetype) => ({ archetype, names: who(members[archetype]) }));
+}
+
+/**
+ * One line on how the team should play ARAM, where one narrow lane and no
+ * way to hide make poke and sustain count for more than split pushing.
+ */
+export function aramPlan(team: Champion[]): { line: string; names: string[] } | null {
+  if (team.length < 3) return null;
+  const rows = team.map((c) => ({ name: c.name, t: traitsOf(c) }));
+  const who = (pick: (t: Traits) => boolean) => rows.filter((r) => pick(r.t)).map((r) => r.name);
+  const poke = who((t) => t.poke);
+  const sustain = who((t) => t.healing || (t.peel && !t.frontline));
+  const engage = who((t) => t.engage);
+  if (poke.length >= 2 && sustain.length >= 1)
+    return { line: "ARAM planı: {names} ile köprüde yıpratın, yaşayan taraf savaşı kazanır.", names: poke };
+  if (poke.length >= 2) return { line: "ARAM planı: {names} ile köprüde yıpratın; kısa savaşlara girmeyin.", names: poke };
+  if (sustain.length >= 2) return { line: "ARAM planı: {names} ile uzun savaşlara girin, canınızı koruyup rakibi eritin.", names: sustain };
+  if (engage.length >= 2) return { line: "ARAM planı: {names} ile savaşı hızlı açın; rakip yıpratmadan önce iç içe girin.", names: engage };
+  return { line: "ARAM planı: Net bir yıpratma ya da başlatma aracı yok; birlikte durun ve rakibin hatasını bekleyin.", names: [] };
 }

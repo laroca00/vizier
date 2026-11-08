@@ -15,8 +15,9 @@ import {
 import { checkRole } from "../draft/allyRole";
 import { BenchHelper } from "../draft/BenchHelper";
 import { HoverMatchup } from "../draft/HoverMatchup";
+import { ChampionAugments } from "../augments/ChampionAugments";
 import { BanPlanner } from "../draft/BanPlanner";
-import { autoView, duoPartnerRole, hasBench, shownChampion, type DraftView } from "../draft/logic";
+import { autoView, draftQueue, duoPartnerRole, hasBench, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";
 import { ThreatsPanel } from "../draft/ThreatsPanel";
@@ -28,6 +29,7 @@ import { JournalNote } from "../Journal";
 import { draftPhaseLabel, positionLabel } from "../labels";
 import type { ChampSelect, DraftMember } from "../lcu";
 import { championNoteKey, matchupNoteKey, usePersonal } from "../personal";
+import { MAYHEM } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { useSplash } from "../ui/Splash";
 import { Tabs } from "../ui/Tabs";
@@ -62,6 +64,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const ready = data.status === "done" ? data.value : null;
   const myChampion = me ? shownChampion(me) : 0;
   const locked = !!me && me.championId !== 0;
+  const queue = draftQueue(draft);
   const role = me?.position ? me.position.toUpperCase() : null;
   useSplash(myChampion || null);
 
@@ -170,7 +173,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 </>
               )}
               {ready && enemyPicks.length > 0 && <ThreatsPanel enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c): c is Champion => c !== undefined)} />}
-              {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} />}
+              {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} aram={hasBench(draft)} />}
               {ready && me && <PoolStrip position={me.position} data={ready} opponentId={vs} />}
             </>
           ) : me && ready && myChampion > 0 ? (
@@ -185,11 +188,14 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                 vs={vs}
                 enemies={enemyPicks}
                 showPros
+                queue={queue}
               />
+              {hasBench(draft) && <ChampionAugments championId={myChampion} queue={MAYHEM} limit={6} title={t("Mayhem ise: ilk bakılacak augment'ler")} hideEmpty />}
               {enemyPicks.length >= 3 && (
                 <ItemAdvicePanel
                   championId={myChampion}
                   position={me.position || null}
+                  queue={queue}
                   enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c): c is Champion => c !== undefined)}
                 />
               )}
