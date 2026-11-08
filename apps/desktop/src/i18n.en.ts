@@ -1178,4 +1178,8 @@ export const EN: Record<string, string> = {
   "Zayıflatma": "Nerf",
   "Karışık": "Mixed",
   "bu yamada değişti": "changed this patch",
+  "Kazanma oranı yükleniyor": "Loading win rate",
+  "Kazanma oranı farkı için yeterli maç yok": "Not enough games to compare the win rate",
+  "Kazanma oranı: {before} → {after}, son yama {games} maç": "Win rate: {before} → {after}, {games} games on the latest patch",
+  "Kazanma oranına bak": "Show win rate",
 };

@@ -7,6 +7,7 @@ import { direction, verdict, type EntityDiff, type Kind, type Verdict } from "..
 import { patchDiff, patchName, patchVersions, type PatchDiff } from "../patches/load";
 import "../patches/patches.css";
 import { fieldLabel, formatValue } from "../patches/format";
+import { WinRateShift } from "../patches/WinRateShift";
 import { poolFirst } from "../patches/pool";
 import { usePersonal } from "../personal";
 import { Button } from "../ui/Button";
@@ -67,7 +68,7 @@ export function PatchesPage({ onOpenChampion }: { onOpenChampion: (championId: n
           ) : diff.status !== "done" ? (
             <Skeleton lines={8} label={t("İki sürüm karşılaştırılıyor")} />
           ) : (
-            <DiffView diff={diff.value} onOpenChampion={onOpenChampion} />
+            <DiffView diff={diff.value} newest={target === list[0]} onOpenChampion={onOpenChampion} />
           )}
         </>
       )}
@@ -75,7 +76,7 @@ export function PatchesPage({ onOpenChampion }: { onOpenChampion: (championId: n
   );
 }
 
-function DiffView({ diff, onOpenChampion }: { diff: PatchDiff; onOpenChampion: (championId: number) => void }) {
+function DiffView({ diff, newest, onOpenChampion }: { diff: PatchDiff; newest: boolean; onOpenChampion: (championId: number) => void }) {
   const t = useT();
   const lang = useLang();
   const personal = usePersonal();
@@ -132,6 +133,7 @@ function DiffView({ diff, onOpenChampion }: { diff: PatchDiff; onOpenChampion: (
                     : null
               }
               itemNames={diff.itemNames}
+              shift={newest && entry.kind === "champion" && entry.status === "changed" ? { auto: mine.has(entry.id) } : undefined}
               lang={lang}
               onOpen={entry.kind === "champion" && entry.status !== "removed" ? () => onOpenChampion(Number(entry.id)) : undefined}
             />
@@ -146,7 +148,7 @@ const VERDICT_NAMES: Record<Verdict, string> = { buff: "Güçlendirme", nerf: "Z
 
 const STATUS: Record<EntityDiff["status"], string> = { added: "Yeni", removed: "Kaldırıldı", changed: "Değişti" };
 
-function Entry({ entry, icon, itemNames, lang, onOpen }: { entry: EntityDiff; icon: string | null; itemNames: Record<string, string>; lang: Lang; onOpen?: () => void }) {
+function Entry({ entry, icon, itemNames, lang, onOpen, shift }: { entry: EntityDiff; icon: string | null; itemNames: Record<string, string>; lang: Lang; onOpen?: () => void; shift?: { auto: boolean } }) {
   const t = useT();
   const name = (
     <>
@@ -173,6 +175,7 @@ function Entry({ entry, icon, itemNames, lang, onOpen }: { entry: EntityDiff; ic
           {t(STATUS[entry.status])}
         </span>
       </div>
+      {shift && <WinRateShift championId={Number(entry.id)} auto={shift.auto} />}
       {entry.changes.length > 0 && (
         <ul className="patches__changes">
           {entry.changes.map((change) => (
