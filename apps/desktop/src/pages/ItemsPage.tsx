@@ -26,7 +26,7 @@ const load = async () => {
 };
 
 /** Every finished item with its stats, recipe, gold efficiency and the champions that build it. */
-export function ItemsPage({ onOpenChampion }: { onOpenChampion: (championId: number, position: string | null) => void }) {
+export function ItemsPage({ onOpenChampion, initialItem = null }: { onOpenChampion: (championId: number, position: string | null) => void; initialItem?: number | null }) {
   const t = useT();
   const lang = useLang();
   const [data, retry] = useAsync("items-page", load);
@@ -35,7 +35,7 @@ export function ItemsPage({ onOpenChampion }: { onOpenChampion: (championId: num
   const [stat, setStat] = useState(ANY);
   const [price, setPrice] = useState(ANY);
   const [sort, setSort] = useState<ItemSort>("price");
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(initialItem);
 
   if (data.status === "error") return <ErrorState message={t("Oyun verisi alınamadı.")} onRetry={retry} />;
   if (data.status !== "done") return <Skeleton lines={6} label={t("Yükleniyor")} />;

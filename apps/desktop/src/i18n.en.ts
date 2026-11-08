@@ -1257,4 +1257,5 @@ export const EN: Record<string, string> = {
   "Yükselenler ve düşenler": "Risers and fallers",
   "{card} aşağı": "{card} down",
   "{card} yukarı": "{card} up",
+  "Ana rün": "Keystone",
 };

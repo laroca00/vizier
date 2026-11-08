@@ -319,9 +319,9 @@ function App() {
             ) : route.page === "matchup" ? (
               <MatchupPage route={route} onChange={replace} />
             ) : route.page === "items" ? (
-              <ItemsPage onOpenChampion={(id, position) => openChampion(id, position)} />
+              <ItemsPage onOpenChampion={(id, position) => openChampion(id, position)} initialItem={route.itemId ?? null} />
             ) : route.page === "runes" ? (
-              <RunesPage onOpenChampion={(id, position) => openChampion(id, position)} />
+              <RunesPage onOpenChampion={(id, position) => openChampion(id, position)} initialRune={route.runeId ?? null} />
             ) : route.page === "journal" ? (
               <JournalPage onOpenChampion={(id) => openChampion(id)} onOpenMatchup={openMatchup} />
             ) : route.page === "quiz" ? (
@@ -333,7 +333,7 @@ function App() {
             ) : route.page === "champions" ? (
               <ChampionsPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "builds" ? (
-              <BuildsPage onOpenChampion={(id, position) => openChampion(id, position)} />
+              <BuildsPage onOpenChampion={(id, position) => openChampion(id, position)} initialBuild={route.buildId ?? null} />
             ) : route.page === "pros" ? (
               <ProsPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "pro" ? (
@@ -360,6 +360,7 @@ function App() {
         links={[...groups.flatMap((g) => g.items), ...footItems].map((item) => ({ id: item.id, label: t(item.label), icon: item.icon }))}
         onLink={(id) => go(pageRoute(id as Page))}
         onMatchup={openMatchup}
+        onRoute={go}
       />
     </div>
     </OpenProProvider>
