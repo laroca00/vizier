@@ -21,7 +21,8 @@ export type IconName =
   | "augments"
   | "matchup"
   | "journal"
-  | "items";
+  | "items"
+  | "runes";
 
 // Drawn for Vizier on a 20px grid with a 1.6 stroke, so they sit with the
 // Geologica text at the same weight.
@@ -48,6 +49,7 @@ const PATHS: Record<IconName, string> = {
   augments: "M10 3l6 7-6 7-6-7zM10 7l2.5 3L10 13l-2.5-3z",
   journal: "M5 3.5h10v13H5zM8 7.5h4M8 10.5h4M8 13.5h2.5",
   items: "M10 3l6 3.5v7L10 17l-6-3.5v-7zM4 6.5 10 10l6-3.5M10 10v7",
+  runes: "M10 3.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zM10 6.5l2.2 3.5L10 13.5 7.8 10zM10 3.5v3M10 13.5v3",
   library: "M4 3.5h3v13H4zM8.5 3.5h3v13h-3zM13.2 4.3l2.7-.7 2.6 12.3-2.7.6z",
 };
 

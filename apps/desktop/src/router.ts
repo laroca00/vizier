@@ -19,6 +19,7 @@ export type Route =
   | { page: "champion"; championId: number; position: string | null; queue: number }
   | { page: "journal" }
   | { page: "items" }
+  | { page: "runes" }
   | { page: "overlay" }
   | { page: "settings" }
   | { page: "about" };
