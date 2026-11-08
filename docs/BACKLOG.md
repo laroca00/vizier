@@ -6,9 +6,11 @@ Product scope: prepare, explore, customize. No post-game analysis, coaching or p
 
 ## How to work through this file
 
-- Epics are in priority order. Inside an epic, slices are in order. Take the first unchecked slice of the highest epic that isn't blocked.
-- Each slice is a shippable, user-visible step. Mark it `[x]` with the merge commit hash when it lands, e.g. `- [x] 3.2 ... (a1b2c3d)`.
-- A slice that is too big gets split in place (`3.2a`, `3.2b`) and you do the first part.
+- Epics are in priority order. Inside an epic, slices are in order.
+- **One run is one job: the next 4–5 unchecked slices of the highest epic that isn't blocked**, built together as one feature on one branch (`auto/<epic>-<topic>`), one commit per slice. If the epic has fewer slices left, take the rest of it plus the start of the next epic. Don't stop after a single slice; a run should be long, finishing the whole job, and then start the next job if time is left.
+- Merge the branch into main when the whole job is done and green. If time runs out mid-job, merge the slices that are finished and green, and leave a `<!-- in progress: ... -->` line under the next slice saying where you stopped.
+- Mark each slice `[x]` with the merge commit hash when it lands, e.g. `- [x] 3.2 ... (a1b2c3d)`.
+- Don't split slices into smaller ones unless one is genuinely too big for a run.
 - A slice that can't be done (missing data, needs a live client, needs an owner decision) gets `[-]` and one line saying why. Move on.
 - Every slice ends with `pnpm --filter @vizier/desktop test`, `pnpm --filter @vizier/desktop lint` and `pnpm build:web` passing; API and crawler slices also run `pnpm --filter @vizier/api test`.
 - New logic gets Vitest tests. New Turkish strings get an English entry in `i18n.en.ts`. UI copy is short and plain.
