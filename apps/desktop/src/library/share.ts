@@ -25,9 +25,9 @@ function fromBase64Url(code: string): string {
   return new TextDecoder().decode(bytes);
 }
 
-const toBase64UrlBytes = (bytes: number[]) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+export const toBase64UrlBytes = (bytes: number[]) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
-function varint(out: number[], value: number) {
+export function varint(out: number[], value: number) {
   let n = value;
   while (n >= 0x80) {
     out.push((n & 0x7f) | 0x80);
@@ -60,7 +60,7 @@ export function shareCode(build: SavedBuild): string {
 }
 
 /** Reads varints and lists from a code's bytes; throws when the code ends early or carries something absurd. */
-class Reader {
+export class Reader {
   private at = 0;
   constructor(private bytes: Uint8Array) {}
   varint(): number {

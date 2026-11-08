@@ -1,7 +1,11 @@
-import { useState } from "react";
-import { CompSummary } from "../CompAnalysis";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { cycleSlot, firstPickable } from "../simulator/keys";
+import { useDraftHistory } from "../simulator/history";
+import { CompSummary, PhaseCurves, WinConditions } from "../CompAnalysis";
 import { championIconUrl, roleIconUrl, type Champion } from "../data/ddragon";
-import { adviceAgainst, analyzeComp, compDimensions, DIMENSION_NAMES } from "../data/traits";
+import { adviceAgainst, analyzeComp, compDimensions, curveRead, DIMENSION_NAMES, teamCurve } from "../data/traits";
+import { useChampSelect } from "../lcu";
+import { draftCode, fromChampSelect, readDraftCode } from "../simulator/transfer";
 import { formatPercent, useLang, useT } from "../i18n";
 import { POSITIONS } from "../labels";
 import "../library/library.css";
@@ -17,7 +21,6 @@ import {
   swap,
   toggleBan,
   useSavedDrafts,
-  type Draft,
   type SavedDraft,
   type Side,
 } from "../simulator/store";
@@ -31,6 +34,7 @@ import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
 import { useToast } from "../ui/Toast";
 import { useAsync } from "../useAsync";
+import { ThreatsPanel } from "../draft/ThreatsPanel";
 import { PickSuggestions } from "../draft/PickSuggestions";
 import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
 
@@ -59,7 +63,23 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const lang = useLang();
   const toast = useToast();
   const saved = useSavedDrafts();
-  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const session = useChampSelect();
+  const { draft, set: setDraft, undo, redo, canUndo, canRedo } = useDraftHistory();
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const key = e.key.toLowerCase();
+      if (key === "z" && !e.shiftKey) undo();
+      else if (key === "y" || (key === "z" && e.shiftKey)) redo();
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [undo, redo]);
   // Explicit when the player clicked the slot; otherwise Vizier may move the pick to its role.
   const [active, setActive] = useState<{ side: Side; slot: number; explicit?: boolean } | null>({ side: "blue", slot: 0 });
   const [pickOrder, setPickOrder] = useState(false);
@@ -71,6 +91,20 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const [compare, setCompare] = useState<[string, string] | null>(null);
   const [compareWith, setCompareWith] = useState<string>("");
   const [banning, setBanning] = useState(false);
+  const [codeText, setCodeText] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // Typing anywhere on the page starts a champion search.
+  useEffect(() => {
+    const onType = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1 || e.key === " ") return;
+      if (target && (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable)) return;
+      searchRef.current?.focus();
+    };
+    window.addEventListener("keydown", onType);
+    return () => window.removeEventListener("keydown", onType);
+  }, []);
 
   const picked = new Set([...draft.blue, ...draft.red].filter((id) => id > 0));
   const unavailable = new Set([...picked, ...draft.bans]);
@@ -79,6 +113,22 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const pool = [...data.champions.values()]
     .filter((c) => (!needle || c.name.toLocaleLowerCase(lang).includes(needle)) && (!role || data.roles.get(c.key)?.has(role)))
     .sort((a, b) => a.name.localeCompare(b.name, lang));
+
+  const isDisabled = (id: number) => (banning ? picked.has(id) || (draft.bans.length >= MAX_BANS && !draft.bans.includes(id)) : !active || unavailable.has(id));
+
+  function searchKey(e: ReactKeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const found = firstPickable(pool, isDisabled);
+      if (!found) return;
+      choose(found.key);
+      setQuery("");
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      setBanning(false);
+      setActive({ ...cycleSlot(active, e.shiftKey), explicit: true });
+    }
+  }
 
   function choose(championId: number) {
     if (banning) {
@@ -122,13 +172,39 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const red = team(draft.red);
   const blueReport = analyzeComp(blue);
   const redReport = analyzeComp(red);
+  const blueCurve = teamCurve(blue);
+  const redCurve = teamCurve(red);
+  const curveLine = curveRead(blueCurve, redCurve);
+  const curve = blueCurve && redCurve && curveLine ? { ours: blueCurve, theirs: redCurve, read: curveLine } : null;
 
   return (
     <>
       <div className="library__filters">
         <Toggle label={t("Dereceli seçim sırası")} hint={t("Boş yerler B1, R1, R2, B2... sırasıyla dolar.")} checked={pickOrder} onChange={setPickOrder} />
+        <Button variant="ghost" disabled={!canUndo} title="Ctrl+Z" onClick={undo}>
+          {t("Geri al")}
+        </Button>
+        <Button variant="ghost" disabled={!canRedo} title="Ctrl+Y" onClick={redo}>
+          {t("Yinele")}
+        </Button>
         <Button variant="ghost" onClick={reset}>
           {t("Sıfırla")}
+        </Button>
+        <Button
+          variant="ghost"
+          disabled={!session}
+          title={session ? undefined : t("Şampiyon seçimi açıkken kullanılabilir.")}
+          onClick={() => {
+            if (!session) return;
+            const next = fromChampSelect(session);
+            setDraft(next);
+            setCurrentId(null);
+            setName("");
+            setActive(nextSlot(next, pickOrder, { side: "blue", slot: 0 }));
+            toast("success", t("Şampiyon seçimi yüklendi"));
+          }}
+        >
+          {t("Şampiyon seçimini yükle")}
         </Button>
         <Button
           variant="ghost"
@@ -140,7 +216,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
                 .filter(Boolean)
                 .join(", ")}`;
             const bans = draft.bans.map((id) => data.champions.get(id)?.name ?? id).join(", ");
-            const text = [line(t("Mavi takım"), draft.blue), line(t("Kırmızı takım"), draft.red), bans ? `${t("Yasaklar")}: ${bans}` : null].filter(Boolean).join("\n");
+            const text = [line(t("Mavi takım"), draft.blue), line(t("Kırmızı takım"), draft.red), bans ? `${t("Yasaklar")}: ${bans}` : null, draftCode(draft)].filter(Boolean).join("\n");
             navigator.clipboard.writeText(text).then(
               () => toast("success", t("Draft panoya kopyalandı")),
               () => toast("error", t("Panoya kopyalanamadı.")),
@@ -150,6 +226,41 @@ function Simulator({ data }: { data: ChampionRoles }) {
           {t("Kopyala")}
         </Button>
       </div>
+
+      <form
+        className="library__collection-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const next = readDraftCode(codeText);
+          if (!next) {
+            toast("error", t("Bu bir Vizier draft kodu değil."));
+            return;
+          }
+          setDraft(next);
+          setCurrentId(null);
+          setName("");
+          setActive(nextSlot(next, pickOrder, { side: "blue", slot: 0 }));
+          setCodeText("");
+          toast("success", t("Draft koddan yüklendi"));
+        }}
+      >
+        <input className="text-input" aria-label={t("Draft kodu")} placeholder={t("Draft kodu yapıştır")} value={codeText} onChange={(e) => setCodeText(e.target.value)} />
+        <Button type="submit" disabled={!codeText.trim()}>
+          {t("Koddan yükle")}
+        </Button>
+        <Button
+          variant="ghost"
+          disabled={picked.size === 0}
+          onClick={() =>
+            navigator.clipboard.writeText(draftCode(draft)).then(
+              () => toast("success", t("Draft kodu kopyalandı")),
+              () => toast("error", t("Panoya kopyalanamadı.")),
+            )
+          }
+        >
+          {t("Kodu kopyala")}
+        </Button>
+      </form>
 
       <div className="sim">
         <TeamColumn
@@ -171,6 +282,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
                 : t("Sıra {side} takımda; şampiyon boşsa kendi rolüne yerleşir.", { side: active.side === "blue" ? t("Mavi") : t("Kırmızı") })
               : t("İki takım da dolu. Değiştirmek için bir yere tıkla.")}
           </p>
+          <p className="build__note">{t("Yaz, Enter ile ilk sonucu seç, Tab ile sıradaki yere geç.")}</p>
           <div className="sim__picker-filters">
             <Tabs
               label={t("Ne seçiliyor")}
@@ -182,7 +294,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
               value={banning ? "ban" : "pick"}
               onChange={(id) => setBanning(id === "ban")}
             />
-            <SearchInput label={t("Şampiyon ara")} value={query} onChange={setQuery} placeholder={t("Şampiyon ara")} />
+            <SearchInput label={t("Şampiyon ara")} value={query} onChange={setQuery} placeholder={t("Şampiyon ara")} inputRef={searchRef} onKeyDown={searchKey} />
             <Select
               label={t("Rol")}
               hideLabel
@@ -234,7 +346,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
               <li key={c.key}>
                 <button
                   type="button"
-                  disabled={banning ? picked.has(c.key) || (draft.bans.length >= MAX_BANS && !draft.bans.includes(c.key)) : !active || unavailable.has(c.key)}
+                  disabled={isDisabled(c.key)}
                   aria-pressed={banning ? draft.bans.includes(c.key) : undefined}
                   title={c.name}
                   aria-label={c.name}
@@ -259,16 +371,28 @@ function Simulator({ data }: { data: ChampionRoles }) {
         />
       </div>
 
+      {curve && (
+        <section aria-label={t("Oyun evreleri")}>
+          <h2 className="draft__heading">{t("Oyun evreleri")}</h2>
+          <p className="build__note">{t("Yorum mavi takımın gözünden.")}</p>
+          <PhaseCurves ours={curve.ours} theirs={curve.theirs} read={curve.read} ourLabel={t("mavi")} theirLabel={t("kırmızı")} />
+        </section>
+      )}
+
       <div className="sim__analysis">
         <section aria-label={t("Mavi takım")}>
           <h2 className="draft__heading">{t("Mavi takım")}</h2>
           {blue.length === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary team={blue} report={blueReport} label={t("Mavi takım")} />}
+          {blue.length >= 3 && <WinConditions team={blue} />}
           <Plans advice={adviceAgainst(redReport, blueReport)} title={t("Kırmızıya karşı plan")} />
+          <ThreatsPanel enemies={red} title={t("Kırmızı takımın tehditleri")} />
         </section>
         <section aria-label={t("Kırmızı takım")}>
           <h2 className="draft__heading">{t("Kırmızı takım")}</h2>
           {red.length === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary team={red} report={redReport} label={t("Kırmızı takım")} />}
+          {red.length >= 3 && <WinConditions team={red} />}
           <Plans advice={adviceAgainst(blueReport, redReport)} title={t("Maviye karşı plan")} />
+          <ThreatsPanel enemies={blue} title={t("Mavi takımın tehditleri")} />
         </section>
       </div>
 
