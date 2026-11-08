@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
+import { useToast } from "../ui/Toast";
+import { getBuild } from "../api";
 import { itemIconUrl } from "../data/ddragon";
+import { STAT_PRICES } from "../data/itemGold";
+import { filterItems, NO_FILTER, offeredStats } from "../itemExplorer";
 import { useT } from "../i18n";
 import { POSITIONS } from "../labels";
 import { Button } from "../ui/Button";
 import { FilterChips, SearchInput, Select } from "../ui/Fields";
 import { Modal } from "../ui/Modal";
-import { runesComplete } from "./convert";
+import { duplicateItems, moveItem, runeIssues, type RuneIssue } from "./buildEdit";
+import { fromPicks, runesComplete } from "./convert";
 import { RIFT_SPELLS, SKILL_ORDERS, skillOrderLabel, type LibraryData } from "./data";
 import { RuneEditor } from "./RuneEditor";
 import type { SavedBuild } from "./store";
@@ -19,6 +24,15 @@ const LISTS: { id: ItemList; label: string; max: number }[] = [
 ];
 
 const ANY = "ANY";
+
+const RUNE_ISSUES: Record<RuneIssue, string> = {
+  "same-tree": "Ana ve ikincil ağaç aynı olamaz.",
+  primary: "Ana ağaçta her sıradan bir rün seçilmeli.",
+  secondary: "İkincil ağaçtan iki rün seçilmeli.",
+  "secondary-rows": "İkincil ağaçtaki iki rün farklı sıralardan olmalı.",
+  shards: "Üç bonus da seçilmeli.",
+  "wrong-tree": "Bir rün seçili ağaca ait değil.",
+};
 
 type Props = {
   build: SavedBuild | null;
@@ -34,6 +48,9 @@ export function BuildEditor({ build, data, collections, onSave, onClose }: Props
   const [draft, setDraft] = useState<SavedBuild | null>(build);
   const [list, setList] = useState<ItemList>("coreItems");
   const [query, setQuery] = useState("");
+  const [stat, setStat] = useState("");
+  const [dragging, setDragging] = useState<{ list: ItemList; index: number } | null>(null);
+  const toast = useToast();
   useEffect(() => setDraft(build), [build]);
   if (!draft) return <Modal open={false} title="" onClose={onClose}>{null}</Modal>;
 
@@ -41,11 +58,23 @@ export function BuildEditor({ build, data, collections, onSave, onClose }: Props
   const championOptions = [...data.champions.values()].sort((a, b) => a.name.localeCompare(b.name, "tr")).map((c) => ({ value: String(c.key), label: c.name }));
   const spellOptions = RIFT_SPELLS.map((id) => ({ value: String(id), label: data.spells.get(id)?.name ?? String(id) }));
   const needle = query.trim().toLocaleLowerCase("tr");
-  const found = needle
-    ? [...data.items.values()].filter((i) => i.gold > 0 && i.name.toLocaleLowerCase("tr").includes(needle)).slice(0, 12)
-    : [];
+  const buyable = [...data.details.values()].filter((i) => i.gold.total > 0 && i.gold.purchasable);
+  const found = needle || stat ? filterItems(buyable, { ...NO_FILTER, query, stat: stat || null }, "tr").sort((a, b) => a.gold.total - b.gold.total).slice(0, 12) : [];
+  const statOptions = offeredStats(buyable);
+  const repeated = duplicateItems(draft);
+  const issues = runeIssues(draft.runes, data.styles);
   const current = LISTS.find((l) => l.id === list)!;
   const valid = draft.name.trim().length > 0 && runesComplete(draft.runes);
+
+  async function copyRecommended(part: "runes" | "items") {
+    const build = await getBuild(draft!.championId, draft!.position).catch(() => null);
+    if (!build) {
+      toast("error", t("Bu şampiyon için önerilen build bulunamadı."));
+      return;
+    }
+    const copy = fromPicks({ name: draft!.name, championId: draft!.championId, position: draft!.position }, build, (id) => !!data.items.get(id)?.complete);
+    set(part === "runes" ? { runes: copy.runes } : { startItems: copy.startItems, coreItems: copy.coreItems, items: copy.items });
+  }
 
   function addItem(id: number) {
     const items = draft![list];
@@ -95,6 +124,21 @@ export function BuildEditor({ build, data, collections, onSave, onClose }: Props
         </div>
 
         <RuneEditor value={draft.runes} styles={data.styles} onChange={(runes) => set({ runes })} />
+        {issues.length > 0 && (
+          <ul className="editor__hint editor__issues" role="status">
+            {issues.map((issue) => (
+              <li key={issue}>{t(RUNE_ISSUES[issue])}</li>
+            ))}
+          </ul>
+        )}
+        <div>
+          <Button size="small" variant="ghost" onClick={() => copyRecommended("runes")}>
+            {t("Rünleri önerilenden kopyala")}
+          </Button>
+          <Button size="small" variant="ghost" onClick={() => copyRecommended("items")}>
+            {t("Eşyaları önerilenden kopyala")}
+          </Button>
+        </div>
 
         <section className="editor__items" aria-label={t("Eşyalar")}>
           {LISTS.map((l) => (
@@ -104,9 +148,25 @@ export function BuildEditor({ build, data, collections, onSave, onClose }: Props
               </button>
               <ul>
                 {draft[l.id].map((id, i) => (
-                  <li key={`${id}-${i}`}>
+                  <li
+                    key={`${id}-${i}`}
+                    draggable
+                    data-repeated={(l.id !== "startItems" && repeated.includes(id)) || undefined}
+                    onDragStart={() => setDragging({ list: l.id, index: i })}
+                    onDragOver={(e) => dragging?.list === l.id && e.preventDefault()}
+                    onDrop={() => {
+                      if (dragging?.list === l.id) set({ [l.id]: moveItem(draft[l.id], dragging.index, i) } as Partial<SavedBuild>);
+                      setDragging(null);
+                    }}
+                    onDragEnd={() => setDragging(null)}
+                  >
                     <button
                       type="button"
+                      onKeyDown={(e) => {
+                        if (!e.altKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+                        e.preventDefault();
+                        set({ [l.id]: moveItem(draft[l.id], i, i + (e.key === "ArrowLeft" ? -1 : 1)) } as Partial<SavedBuild>);
+                      }}
                       title={t("{item} kaldır", { item: data.items.get(id)?.name ?? "" })}
                       aria-label={t("{item} kaldır", { item: data.items.get(id)?.name ?? "" })}
                       onClick={() => set({ [l.id]: draft[l.id].filter((_, j) => j !== i) } as Partial<SavedBuild>)}
@@ -118,14 +178,26 @@ export function BuildEditor({ build, data, collections, onSave, onClose }: Props
               </ul>
             </div>
           ))}
+          <p className="editor__hint">{t("Sıralamayı değiştirmek için eşyayı sürükle, ya da Alt ve ok tuşlarını kullan.")}</p>
+          {repeated.length > 0 && (
+            <p className="editor__hint" role="status">
+              {t("Birden fazla alınan eşya: {items}", { items: repeated.map((id) => data.items.get(id)?.name ?? id).join(", ") })}
+            </p>
+          )}
           <SearchInput label={t("Eşya ara")} value={query} onChange={setQuery} placeholder={t("{list} listesine eşya ekle", { list: t(current.label) })} />
+          <Select
+            label={t("Özellik")}
+            value={stat}
+            options={[{ value: "", label: t("Her özellik") }, ...statOptions.map((key) => ({ value: key, label: t(STAT_PRICES[key].label) }))]}
+            onChange={setStat}
+          />
           {found.length > 0 && (
             <ul className="editor__found">
               {found.map((item) => (
                 <li key={item.id}>
                   <button type="button" onClick={() => addItem(item.id)} disabled={draft[list].length >= current.max}>
                     <img src={itemIconUrl(data.version, item.id)} alt="" width={24} height={24} />
-                    {item.name}
+                    {item.name} · {item.gold.total}
                   </button>
                 </li>
               ))}
