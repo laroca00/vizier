@@ -30,6 +30,7 @@ export type Participant = {
   playerAugment4?: number;
   playerAugment5?: number;
   playerAugment6?: number;
+  firstBloodKill?: boolean;
   kills?: number;
   deaths?: number;
   assists?: number;

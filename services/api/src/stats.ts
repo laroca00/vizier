@@ -387,3 +387,45 @@ export async function arenaItems(db: D1Database, championId: number): Promise<{ 
     .map(({ score: _, ...i }) => i);
   return { patches, games, items };
 }
+
+export type LaneStat = {
+  games: number;
+  /** Averages from the champion's side: positive means ahead of the opponent. */
+  csDiff10: number;
+  csDiff15: number;
+  goldDiff10: number;
+  goldDiff15: number;
+  firstBloodRate: number;
+};
+
+// Timelines are fetched for few games, so lane numbers come from small samples; the count is always shown.
+const MIN_LANE_GAMES = 10;
+
+/** Lane differences against each opponent with enough timeline games, keyed by opponent id. */
+export async function laneStats(db: D1Database, championId: number, position: string): Promise<Record<number, LaneStat>> {
+  const patches = await latestPatches(db);
+  if (patches.length === 0) return {};
+  const { results } = await db
+    .prepare(
+      `SELECT opponent_id, SUM(games) AS games, SUM(cs10) AS cs10, SUM(cs15) AS cs15, SUM(gold10) AS gold10,
+          SUM(gold15) AS gold15, SUM(first_bloods) AS first_bloods
+        FROM lane_sums WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ?
+        GROUP BY opponent_id HAVING SUM(games) >= ?`,
+    )
+    .bind(...patches, championId, position, MIN_LANE_GAMES)
+    .all<{ opponent_id: number; games: number; cs10: number; cs15: number; gold10: number; gold15: number; first_bloods: number }>();
+  const avg = (sum: number, games: number) => Math.round((sum / games) * 10) / 10;
+  return Object.fromEntries(
+    results.map((r) => [
+      r.opponent_id,
+      {
+        games: r.games,
+        csDiff10: avg(r.cs10, r.games),
+        csDiff15: avg(r.cs15, r.games),
+        goldDiff10: Math.round(r.gold10 / r.games),
+        goldDiff15: Math.round(r.gold15 / r.games),
+        firstBloodRate: round3(r.first_bloods / r.games),
+      },
+    ]),
+  );
+}

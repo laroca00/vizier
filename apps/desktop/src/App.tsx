@@ -8,6 +8,7 @@ import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { noteRecent } from "./personal";
 import { pageRoute, useNavigation, type Page, type Route } from "./router";
+import { OpenMatchupProvider } from "./matchupLink";
 import { SearchPalette } from "./SearchPalette";
 import { setClientLocale, useT } from "./i18n";
 import { updateSettings, useSettings } from "./settings";
@@ -180,6 +181,10 @@ function App() {
     go({ page: "champion", championId, position, queue });
   }
 
+  function openMatchup(championId: number | null, opponentId: number | null, position: string) {
+    go({ page: "matchup", championId, opponentId, position });
+  }
+
   const groups: NavGroup<Page>[] = [
     { items: [{ id: "home", label: "Ana sayfa", icon: "home" }] },
     {
@@ -220,6 +225,7 @@ function App() {
   return (
     <FlatGlass.Provider value={true}>
     <ToastProvider>
+    <OpenMatchupProvider value={openMatchup}>
     <div className="shell" data-navigated={navigated || undefined} data-collapsed={settings.sidebarCollapsed || undefined}>
       <Sidebar
         lcu={lcu}
@@ -316,8 +322,10 @@ function App() {
         onChampion={(id) => openChampion(id)}
         links={[...groups.flatMap((g) => g.items), ...footItems].map((item) => ({ id: item.id, label: t(item.label), icon: item.icon }))}
         onLink={(id) => go(pageRoute(id as Page))}
+        onMatchup={openMatchup}
       />
     </div>
+    </OpenMatchupProvider>
     </ToastProvider>
     </FlatGlass.Provider>
   );

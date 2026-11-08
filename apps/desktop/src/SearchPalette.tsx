@@ -4,24 +4,26 @@ import { fold } from "./fold";
 import { useT } from "./i18n";
 import { NavIcon, type IconName } from "./ui/NavIcon";
 import { useAsync } from "./useAsync";
+import { guessPosition, parseMatchupQuery } from "./pages/matchupRoute";
 import "./SearchPalette.css";
 
 const SHOWN = 8;
 
 export type PaletteLink = { id: string; label: string; icon: IconName };
 
-type Result = { kind: "page"; link: PaletteLink } | { kind: "champion"; champion: Champion };
+type Result = { kind: "page"; link: PaletteLink } | { kind: "champion"; champion: Champion } | { kind: "matchup"; a: Champion; b: Champion };
 
 /** Names that start with the query come first; matching pages lead. */
 function search(query: string, list: Champion[], links: PaletteLink[]): Result[] {
   const needle = fold(query);
   if (!needle) return [];
+  const versus = parseMatchupQuery(query, list);
   const rank = (name: string) => Number(!fold(name).startsWith(needle));
   const pages = links.filter((l) => fold(l.label).includes(needle)).sort((a, b) => rank(a.label) - rank(b.label));
   const champs = list
     .filter((c) => fold(c.name).includes(needle))
     .sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name, "tr"));
-  return [...pages.map((link) => ({ kind: "page" as const, link })), ...champs.map((champion) => ({ kind: "champion" as const, champion }))].slice(0, SHOWN);
+  return [...(versus ? [{ kind: "matchup" as const, ...versus }] : []), ...pages.map((link) => ({ kind: "page" as const, link })), ...champs.map((champion) => ({ kind: "champion" as const, champion }))].slice(0, SHOWN);
 }
 
 async function loadStatic() {
@@ -36,9 +38,11 @@ type Props = {
   /** Sections of the app, already translated, reachable by name. */
   links?: PaletteLink[];
   onLink?: (id: string) => void;
+  /** Opens the matchup page for "Ahri vs Zed". */
+  onMatchup?: (championId: number, opponentId: number, position: string) => void;
 };
 
-export function SearchPalette({ open, onClose, onChampion, links = [], onLink }: Props) {
+export function SearchPalette({ open, onClose, onChampion, links = [], onLink, onMatchup }: Props) {
   const t = useT();
   const dialog = useRef<HTMLDialogElement>(null);
   const [query, setQuery] = useState("");
@@ -64,6 +68,7 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink }:
     if (!result) return;
     onClose();
     if (result.kind === "champion") onChampion(result.champion.key);
+    else if (result.kind === "matchup") onMatchup?.(result.a.key, result.b.key, guessPosition(result.a));
     else onLink?.(result.link.id);
   }
 
@@ -119,7 +124,7 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink }:
             ) : (
               results.map((result, i) => (
                 <li
-                  key={result.kind === "champion" ? `c${result.champion.key}` : `p${result.link.id}`}
+                  key={result.kind === "champion" ? `c${result.champion.key}` : result.kind === "matchup" ? `m${result.a.key}:${result.b.key}` : `p${result.link.id}`}
                   id={optionId(i)}
                   role="option"
                   aria-selected={i === active}
@@ -132,6 +137,12 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink }:
                       <img src={championIconUrl(version, result.champion.id)} alt="" width={28} height={28} />
                       <span>{result.champion.name}</span>
                       <span className="palette__kind">{t("Şampiyon")}</span>
+                    </>
+                  ) : result.kind === "matchup" ? (
+                    <>
+                      <img src={championIconUrl(version, result.a.id)} alt="" width={28} height={28} />
+                      <span>{t("{a} - {b}", { a: result.a.name, b: result.b.name })}</span>
+                      <span className="palette__kind">{t("Eşleşme")}</span>
                     </>
                   ) : (
                     <>

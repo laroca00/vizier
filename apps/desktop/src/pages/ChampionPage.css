@@ -98,7 +98,7 @@
 
 .matchups__list li {
   display: grid;
-  grid-template-columns: minmax(0, 9rem) minmax(48px, 1fr) 3.4rem 4.6rem;
+  grid-template-columns: minmax(0, 9rem) minmax(48px, 1fr) 3.4rem 4.6rem auto;
   align-items: center;
   gap: 10px;
 }

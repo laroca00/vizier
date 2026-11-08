@@ -47,3 +47,49 @@
   font-weight: var(--weight-medium);
   color: var(--glaze-text, inherit);
 }
+
+.ability-compare__cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ability-compare__cell img {
+  border-radius: 6px;
+}
+
+.spikes__row {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.spikes__name {
+  margin: 0 0 var(--space-1);
+  font-weight: var(--weight-medium);
+}
+
+.spikes__levels,
+.spikes__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-1) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spikes__levels li,
+.spikes__items li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.spikes__level {
+  color: var(--glaze-muted);
+  font-size: var(--text-small);
+}
+
+.spikes__levels img {
+  border-radius: 6px;
+}
