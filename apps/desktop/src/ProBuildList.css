@@ -101,3 +101,28 @@
   flex-wrap: wrap;
   min-width: 0;
 }
+
+.pros__follow {
+  margin-left: 4px;
+  padding: 0;
+  border: 0;
+  vertical-align: middle;
+  color: var(--glaze-faint);
+  background: none;
+  cursor: pointer;
+}
+
+.pros__follow path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.pros__follow[aria-pressed="true"] {
+  color: var(--gilt);
+}
+
+.pros__follow[aria-pressed="true"] path {
+  fill: currentColor;
+}

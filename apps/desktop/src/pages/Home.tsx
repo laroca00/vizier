@@ -136,6 +136,17 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
       </div>
 
       <LiquidGlass className="panel home__pros" radius={28} strength={2.5} scroll>
+        {personal.followed.length > 0 && (
+          <>
+            <h2 className="section-title">{t("Takip ettiğin pro'lar")}</h2>
+            <ProBuildList
+              filter={{ limit: 4 }}
+              players={personal.followed}
+              compact
+              emptyText={t("Takip ettiğin oyuncuların son 30 günde maçı yok.")}
+            />
+          </>
+        )}
         <h2 className="section-title">{t("Son pro build'ler")}</h2>
         <ProBuildList
           filter={{ limit: 6 }}

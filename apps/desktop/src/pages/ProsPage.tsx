@@ -9,6 +9,7 @@ import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
 import { Tabs } from "../ui/Tabs";
 import { useAsync } from "../useAsync";
+import { usePersonal } from "../personal";
 import "./ProsPage.css";
 
 const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
@@ -37,6 +38,7 @@ export function ProsPage() {
   const [region, setRegion] = useState<string>(ALL);
   const [patch, setPatch] = useState<string>(ALL);
   const [teams] = useAsync("pro-teams", getProTeams);
+  const personal = usePersonal();
   const [patches] = useAsync("pro-patches", getProPatches);
   const [championList] = useAsync("champions", champions);
   const groupTeams = teams.status === "done" ? teams.value.filter((entry) => entry.group === group && entry.team) : [];
@@ -74,6 +76,17 @@ export function ProsPage() {
         onChange={setPosition}
       />
 
+      {personal.followed.length > 0 && (
+        <div className="pros__followed" role="group" aria-label={t("Takip ettiklerin")}>
+          <span className="build__stat">{t("Takip ettiklerin")}</span>
+          {personal.followed.map((p) => (
+            <button key={p} type="button" className="chips__chip" aria-pressed={player === p} onClick={() => setPlayer(player === p ? ALL : p)}>
+              {p}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="pros__filters">
         <Select label={t("Şampiyon")} value={champion} options={[all, ...championOptions.map((c) => ({ value: String(c.key), label: c.name }))]} onChange={setChampion} />
         {groupTeams.length > 1 && (
@@ -87,7 +100,9 @@ export function ProsPage() {
             }}
           />
         )}
-        {players.length > 1 && <Select label={t("Oyuncu")} value={player} options={[all, ...players.map((p) => ({ value: p, label: p }))]} onChange={setPlayer} />}
+        {players.length > 1 && (
+          <Select label={t("Oyuncu")} value={player} options={[all, ...[...new Set([...players, ...(player !== ALL ? [player] : [])])].map((p) => ({ value: p, label: p }))]} onChange={setPlayer} />
+        )}
         <Select label={t("Bölge")} value={region} options={[all, ...REGIONS]} onChange={setRegion} />
         {patches.status === "done" && patches.value.length > 0 && (
           <Select label={t("Yama")} value={patch} options={[all, ...patches.value.map((p) => ({ value: p, label: p }))]} onChange={setPatch} />
@@ -96,7 +111,8 @@ export function ProsPage() {
 
       <ProBuildList
         filter={{
-          group,
+          // A followed player may belong to another group; their games show either way.
+          group: player === ALL ? group : undefined,
           position: pick(position),
           team: pick(team),
           player: pick(player),

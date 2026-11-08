@@ -784,4 +784,9 @@ export const EN: Record<string, string> = {
   "{name} buildlerine eklendi": "{name} added to your builds",
   "Bir arkadaşının paylaşım kodunu yapıştır": "Paste a friend's share code",
   "Kodla ekle": "Add from code",
+  "{player} takibini bırak": "Unfollow {player}",
+  "{player} oyuncusunu takip et": "Follow {player}",
+  "Takip ettiğin pro'lar": "Pros you follow",
+  "Takip ettiğin oyuncuların son 30 günde maçı yok.": "The players you follow have no games in the last 30 days.",
+  "Takip ettiklerin": "Following",
 };

@@ -20,13 +20,15 @@ export type Personal = {
   pool: PoolPick[];
   /** Champion ids marked with a star, separate from the pool. */
   favourites: number[];
+  /** Pro players followed, by the name the pro list uses. */
+  followed: string[];
   /** "c:103" for a champion, "m:103:238" for Ahri against Zed. */
   notes: Record<string, string>;
   /** Champion ids, most recently opened first. */
   recent: number[];
 };
 
-const DEFAULTS: Personal = { pool: [], favourites: [], notes: {}, recent: [] };
+const DEFAULTS: Personal = { pool: [], favourites: [], followed: [], notes: {}, recent: [] };
 const MAX_RECENT = 8;
 const KEY = "vizier.personal";
 const listeners = new Set<() => void>();
@@ -51,7 +53,8 @@ export function parsePersonal(raw: string | null): Personal {
       }));
     const notes = data.notes && typeof data.notes === "object" ? data.notes : {};
     // Older versions also kept goals here; they are dropped on the next write.
-    return { pool, favourites: ids(data.favourites), notes, recent: ids(data.recent) };
+    const followed = Array.isArray(data.followed) ? data.followed.filter((p): p is string => typeof p === "string") : [];
+    return { pool, favourites: ids(data.favourites), followed, notes, recent: ids(data.recent) };
   } catch {
     return DEFAULTS;
   }
@@ -122,6 +125,10 @@ export function removeFromPool(pick: Pick<PoolPick, "championId" | "position">) 
 
 export function toggleFavouriteChampion(championId: number) {
   update((p) => ({ favourites: p.favourites.includes(championId) ? p.favourites.filter((id) => id !== championId) : [...p.favourites, championId] }));
+}
+
+export function toggleFollow(player: string) {
+  update((p) => ({ followed: p.followed.includes(player) ? p.followed.filter((x) => x !== player) : [...p.followed, player] }));
 }
 
 export const championNoteKey = (championId: number) => `c:${championId}`;

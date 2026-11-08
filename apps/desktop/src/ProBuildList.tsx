@@ -24,6 +24,7 @@ import { useAsync } from "./useAsync";
 import { fromPro } from "./library/convert";
 import { createBuild } from "./library/store";
 import { useToast } from "./ui/Toast";
+import { toggleFollow, usePersonal } from "./personal";
 import { Button } from "./ui/Button";
 import { ErrorState } from "./ui/States";
 import "./ProBuildList.css";
@@ -75,12 +76,27 @@ async function importBuild(build: ProBuild, championName: string, finished: (id:
     : t("Eşya seti aktarıldı. Rün sayfaların dolu; şampiyon seçiminde Vizier önerisinden bir sayfanın yerine yazabilirsin.");
 }
 
-type Props = { filter: ProFilter; compact?: boolean; emptyText: string };
+type Props = {
+  filter: ProFilter;
+  /** Games of any of these players instead, newest first; the filter's limit applies to the merged list. */
+  players?: string[];
+  compact?: boolean;
+  emptyText: string;
+};
 
-export function ProBuildList({ filter, compact = false, emptyText }: Props) {
+async function loadBuilds(filter: ProFilter, players?: string[]): Promise<ProBuild[]> {
+  if (!players) return getProBuilds(filter);
+  const lists = await Promise.all(players.map((player) => getProBuilds({ ...filter, player }).catch(() => [])));
+  return lists
+    .flat()
+    .sort((a, b) => b.gameStart - a.gameStart)
+    .slice(0, filter.limit ?? 30);
+}
+
+export function ProBuildList({ filter, players, compact = false, emptyText }: Props) {
   const t = useT();
-  const key = JSON.stringify(filter);
-  const [state, retry] = useAsync(key, () => getProBuilds(filter));
+  const key = JSON.stringify([filter, players]);
+  const [state, retry] = useAsync(key, () => loadBuilds(filter, players));
   const [data] = useAsync("pro-static", loadProStatic);
 
   if (state.status === "error") {
@@ -105,6 +121,7 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: ProStatic; co
   const lang = useLang();
   const [importState, setImportState] = useState<ImportState>({ status: "idle" });
   const [open, setOpen] = useState(false);
+  const following = usePersonal().followed.includes(build.player);
   const toast = useToast();
   const champion = data.champions.get(build.championId);
   const opponent = build.opponentChampionId ? data.champions.get(build.opponentChampionId) : undefined;
@@ -124,7 +141,21 @@ function ProRow({ build, data, compact }: { build: ProBuild; data: ProStatic; co
   return (
     <li className="pros__row" data-result={build.win ? "win" : "loss"}>
       <span className="pros__who">
-        <span className="pros__player">{build.player}</span>
+        <span className="pros__player">
+          {build.player}
+          <button
+            type="button"
+            className="pros__follow"
+            aria-pressed={following}
+            aria-label={following ? t("{player} takibini bırak", { player: build.player }) : t("{player} oyuncusunu takip et", { player: build.player })}
+            title={following ? t("{player} takibini bırak", { player: build.player }) : t("{player} oyuncusunu takip et", { player: build.player })}
+            onClick={() => toggleFollow(build.player)}
+          >
+            <svg viewBox="0 0 20 20" width={14} height={14} aria-hidden="true">
+              <path d="M10 3.2l2 4.1 4.5.6-3.3 3.1.8 4.5L10 13.4l-4 2.1.8-4.5-3.3-3.1 4.5-.6z" />
+            </svg>
+          </button>
+        </span>
         <span className="pros__team">
           {build.team || t("Takımsız")}
           {build.style && <span className="pros__style">{t(STYLE_NAMES[build.style])}</span>}

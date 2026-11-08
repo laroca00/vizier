@@ -11,6 +11,7 @@ describe("personal data", () => {
     ]);
     expect(personal.notes).toEqual({ "c:103": "x" });
     expect(personal.favourites).toEqual([]);
+    expect(personal.followed).toEqual([]);
     expect("goals" in personal).toBe(false);
   });
 
