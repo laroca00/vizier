@@ -6,6 +6,7 @@ import type { LcuStatus } from "../lcu";
 import { MetaMovers } from "../MetaMovers";
 import { MetaPicks } from "../MetaPicks";
 import { usePersonal } from "../personal";
+import { usePoolChanges } from "../patches/usePoolChanges";
 import { ProBuildList } from "../ProBuildList";
 import type { Route } from "../router";
 import { formatPercent, useLang, useT } from "../i18n";
@@ -172,11 +173,13 @@ function PoolCard({ version, champion, position, onOpen }: { version: string; ch
   const [state] = useAsync(`ally:${champion.key}:${position}`, () => getChampion(champion.key, position));
   const o = state.status === "done" ? state.value : null;
   const change = o?.winRateChange;
+  const patched = usePoolChanges().has(String(champion.key));
   const detail = o
     ? [
         o.tier ? t("{tier} tier", { tier: o.tier }) : null,
         formatPercent(o.winRate, lang, 1),
         change != null && Math.abs(change) >= 0.005 ? t("geçen yamaya göre {change}", { change: `${change > 0 ? "+" : "−"}${Math.abs(change * 100).toFixed(1)}` }) : null,
+        patched ? t("bu yamada değişti") : null,
       ]
         .filter(Boolean)
         .join(", ")

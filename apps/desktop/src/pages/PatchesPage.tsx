@@ -7,6 +7,7 @@ import { direction, verdict, type EntityDiff, type Kind, type Verdict } from "..
 import { patchDiff, patchName, patchVersions, type PatchDiff } from "../patches/load";
 import "../patches/patches.css";
 import { fieldLabel, formatValue } from "../patches/format";
+import { poolFirst } from "../patches/pool";
 import { usePersonal } from "../personal";
 import { Button } from "../ui/Button";
 import { FilterChips, SearchInput, Select } from "../ui/Fields";
@@ -87,7 +88,7 @@ function DiffView({ diff, onOpenChampion }: { diff: PatchDiff; onOpenChampion: (
   const mine = new Set([...personal.favourites, ...personal.pool.map((p) => p.championId)].map(String));
 
   const needle = query.trim().toLocaleLowerCase(lang);
-  const shown = diff.entries.filter(
+  const shown = poolFirst(diff.entries, mine).filter(
     (e) =>
       (category === "all" || e.kind === category) &&
       (!needle || e.name.toLocaleLowerCase(lang).includes(needle)) &&

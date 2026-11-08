@@ -1177,4 +1177,5 @@ export const EN: Record<string, string> = {
   "Güçlendirme": "Buff",
   "Zayıflatma": "Nerf",
   "Karışık": "Mixed",
+  "bu yamada değişti": "changed this patch",
 };
