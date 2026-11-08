@@ -179,7 +179,7 @@
 .quiz__board-head,
 .quiz__board-row {
   display: grid;
-  grid-template-columns: minmax(130px, 1.3fr) repeat(5, minmax(86px, 1fr));
+  grid-template-columns: minmax(124px, 1.2fr) repeat(7, minmax(78px, 1fr));
   gap: 6px;
 }
 
@@ -207,7 +207,7 @@
   box-shadow: inset 0 0 0 1px var(--line);
   transform-origin: 50% 50%;
   animation: tile-turn var(--duration-standard) var(--ease-enter) both;
-  animation-delay: calc(var(--i, 0) * 90ms);
+  animation-delay: calc(var(--i, 0) * 70ms);
 }
 
 .quiz__tile--champion {

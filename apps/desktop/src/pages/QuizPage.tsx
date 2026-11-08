@@ -5,6 +5,7 @@ import { POSITIONS } from "../labels";
 import { EMOJI_HINTS } from "../quiz/emoji";
 import {
   attributesOf,
+  mainRoles,
   classicGrid,
   compareClassic,
   dailyPick,
@@ -19,7 +20,7 @@ import {
   type QuizMode,
 } from "../quiz/logic";
 import "../quiz/quiz.css";
-import { REGION_NAMES } from "../quiz/championFacts";
+import { GENDER_NAMES, REGION_NAMES, SPECIES_NAMES } from "../quiz/championFacts";
 import { recordFor, saveRecord, useQuizRecords } from "../quiz/store";
 import { Button } from "../ui/Button";
 import { LiquidGlass } from "../ui/LiquidGlass";
@@ -32,7 +33,7 @@ import { ItemGame } from "../quiz/ItemGame";
 import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
 
 const MODE_LABELS: Record<QuizMode, { label: string; hint: string }> = {
-  classic: { label: "Klasik", hint: "Her tahmin; bölge, kaynak, menzil, çıkış yılı ve rollerde ne kadar yaklaştığını gösterir." },
+  classic: { label: "Klasik", hint: "Her tahmin; cinsiyet, pozisyon, tür, kaynak, menzil, bölge ve çıkış yılında ne kadar yaklaştığını gösterir." },
   ability: { label: "Yetenek", hint: "Bu yetenek kimin? Yanlış tahminlerde ikon renklenir, sonra tuşu ve adı açılır." },
   emoji: { label: "Emoji", hint: "Her yanlış tahminde bir emoji daha açılır." },
   skin: { label: "Kostüm", hint: "Bir kostüm görselinin yakın planı. Her yanlış tahminde görüntü uzaklaşır." },
@@ -86,8 +87,7 @@ function pool(mode: QuizMode, data: ChampionRoles): Champion[] {
   return mode === "emoji" ? all.filter((c) => EMOJI_HINTS[c.id]) : all;
 }
 
-const rolesOf = (data: ChampionRoles, key: number) =>
-  [...(data.roles.get(key)?.entries() ?? [])].sort((a, b) => b[1].games - a[1].games).map(([role]) => role);
+const rolesOf = (data: ChampionRoles, key: number) => mainRoles([...(data.roles.get(key)?.entries() ?? [])].map(([role, stats]) => [role, stats.games]));
 
 function Game({ mode, play, data, onNext }: { mode: QuizMode; play: Play; data: ChampionRoles; onNext: () => void }) {
   const t = useT();
@@ -297,7 +297,7 @@ const TITLE_HINT_AFTER = 5;
 
 const MATCH_LABEL: Record<Match, string> = { yes: "Doğru", partial: "Kısmen", no: "Yanlış" };
 
-const COLUMNS = ["Bölge", "Kaynak", "Menzil", "Çıkış yılı", "Roller"];
+const COLUMNS = ["Cinsiyet", "Pozisyon", "Tür", "Kaynak", "Menzil tipi", "Bölge", "Çıkış yılı"];
 
 /** Rows of tiles, newest on top; a new row's tiles turn over one after another. */
 function ClassicTable({ guesses, answer, data }: { guesses: number[]; answer: Champion; data: ChampionRoles }) {
@@ -339,11 +339,13 @@ function ClassicTable({ guesses, answer, data }: { guesses: number[]; answer: Ch
               <img src={championIconUrl(data.version, c.id)} alt="" width={44} height={44} />
               <span>{c.name}</span>
             </div>
-            {tile(1, r.region, mine.region ? t(REGION_NAMES[mine.region]) : "–")}
-            {tile(2, r.resource, mine.resource)}
-            {tile(3, r.range, rangeOf(c) === "ranged" ? t("Uzak") : t("Yakın"))}
-            {tile(4, r.year, mine.year ? String(mine.year) : "–", r.yearArrow)}
-            {tile(5, r.roles, mine.roles.map((role) => t(POSITIONS[role] ?? role)).join(", ") || "–")}
+            {tile(1, r.gender, mine.gender ? t(GENDER_NAMES[mine.gender]) : "–")}
+            {tile(2, r.roles, mine.roles.map((role) => t(POSITIONS[role] ?? role)).join(", ") || "–")}
+            {tile(3, r.species, mine.species.map((s) => t(SPECIES_NAMES[s])).join(", ") || "–")}
+            {tile(4, r.resource, mine.resource)}
+            {tile(5, r.range, rangeOf(c) === "ranged" ? t("Uzak") : t("Yakın"))}
+            {tile(6, r.region, mine.region ? t(REGION_NAMES[mine.region]) : "–")}
+            {tile(7, r.year, mine.year ? String(mine.year) : "–", r.yearArrow)}
           </div>
         );
       })}

@@ -1,5 +1,5 @@
 import type { Champion } from "../data/ddragon";
-import { CHAMPION_FACTS, type Region } from "./championFacts";
+import { CHAMPION_FACTS, CHAMPION_TRAITS, type Gender, type Region, type Species } from "./championFacts";
 
 // The champion riddle: one answer per mode per day, the same for every
 // player, or a random one in free play. Pure, so it is tested without a page.
@@ -32,7 +32,9 @@ export type Match = "yes" | "partial" | "no";
 export type Arrow = "higher" | "lower" | null;
 
 export type ClassicAttributes = {
-  /** Null for champions newer than the facts table. */
+  /** Null for champions newer than the facts tables. */
+  gender: Gender | null;
+  species: Species[];
   region: Region | null;
   resource: string;
   range: "melee" | "ranged";
@@ -43,9 +45,21 @@ export type ClassicAttributes = {
 /** Data Dragon gives ranged champions 300 or more attack range. */
 export const rangeOf = (champion: Pick<Champion, "attackRange">): "melee" | "ranged" => ((champion.attackRange ?? 0) >= 300 ? "ranged" : "melee");
 
+/**
+ * The lanes a champion is known for: the most played one, plus a second when
+ * it holds a quarter of the games. Off-role picks would otherwise make every
+ * guess look partly right.
+ */
+export function mainRoles(played: [role: string, games: number][]): string[] {
+  const sorted = [...played].filter(([, games]) => games > 0).sort((a, b) => b[1] - a[1]);
+  const total = sorted.reduce((sum, [, games]) => sum + games, 0);
+  return sorted.slice(0, 2).filter(([, games], i) => i === 0 || games >= total * 0.25).map(([role]) => role);
+}
+
 export function attributesOf(champion: Champion, roles: string[]): ClassicAttributes {
   const facts = CHAMPION_FACTS[champion.id];
-  return { region: facts?.region ?? null, resource: champion.partype || "Yok", range: rangeOf(champion), year: facts?.year ?? null, roles };
+  const traits = CHAMPION_TRAITS[champion.id];
+  return { gender: traits?.gender ?? null, species: traits?.species ?? [], region: facts?.region ?? null, resource: champion.partype || "Yok", range: rangeOf(champion), year: facts?.year ?? null, roles };
 }
 
 function overlap(a: string[], b: string[]): Match {
@@ -54,6 +68,8 @@ function overlap(a: string[], b: string[]): Match {
 }
 
 export type ClassicResult = {
+  gender: Match;
+  species: Match;
   region: Match;
   resource: Match;
   range: Match;
@@ -67,6 +83,8 @@ export type ClassicResult = {
 export function compareClassic(guess: ClassicAttributes, answer: ClassicAttributes): ClassicResult {
   const years = guess.year !== null && answer.year !== null;
   return {
+    gender: guess.gender !== null && guess.gender === answer.gender ? "yes" : "no",
+    species: guess.species.length === 0 || answer.species.length === 0 ? "no" : overlap(guess.species, answer.species),
     region: guess.region !== null && guess.region === answer.region ? "yes" : "no",
     resource: guess.resource === answer.resource ? "yes" : "no",
     range: guess.range === answer.range ? "yes" : "no",
@@ -80,7 +98,7 @@ const SQUARES: Record<Match, string> = { yes: "🟩", partial: "🟧", no: "🟥
 
 /** One line of squares per guess, oldest first, for sharing a classic result without the answer. */
 export function classicGrid(results: ClassicResult[]): string {
-  return results.map((r) => [r.region, r.resource, r.range, r.year, r.roles].map((m) => SQUARES[m]).join("")).join("\n");
+  return results.map((r) => [r.gender, r.roles, r.species, r.resource, r.range, r.region, r.year].map((m) => SQUARES[m]).join("")).join("\n");
 }
 
 /**
