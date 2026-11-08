@@ -35,16 +35,16 @@ The page players open most. Make every minute of champ select useful.
 - [x] 1.8 Ban planner in the ban phase: suggest bans from three sources with the reason shown — meta (`/v1/bans`), the worst matchups of the champion the player is hovering or plans to play (pool main), and what is strong into the player's team so far. (7eed8fd)
 - [x] 1.9 Pick suggestions "from my pool first" toggle and a score breakdown tooltip on each suggestion. (7eed8fd)
 - [x] 1.10 Teammate picks: for each ally, the champion's win rate and games in that role, and a warning when the role looks off (champion rarely played there). (7eed8fd)
-- [ ] 1.11 Duo synergy hint for bot lane and jungle–mid from `/synergies`, shown next to the relevant ally slot.
-- [ ] 1.12 Hover advice: when hovering a champion, show the matchup line against the guessed lane opponent before locking (win rate, games, difficulty) so the player can change their mind.
+- [x] 1.11 Duo synergy hint for bot lane and jungle–mid from `/synergies`, shown next to the relevant ally slot. (74f7224)
+- [x] 1.12 Hover advice: when hovering a champion, show the matchup line against the guessed lane opponent before locking (win rate, games, difficulty) so the player can change their mind. (74f7224)
 
 ## 2. ARAM and Mayhem companion
 
 ARAM players get almost nothing from current tools. Make Vizier the best ARAM helper.
 
-- [ ] 2.1 LCU: read the ARAM bench (`benchChampions` in the champ select session) and the player's reroll count in the Rust champ select state; expose them to the frontend. Rust tests with a recorded session.
-- [ ] 2.2 Bench helper: rank the player's current champion, the bench and teammates' champions by ARAM win rate (queue 450) with game counts, and highlight "take this from the bench" when a bench champion is clearly better.
-- [ ] 2.3 Reroll advice: when the current champion is in the bottom part of the ARAM tier list and rerolls are left, say so.
+- [x] 2.1 LCU: read the ARAM bench (`benchChampions` in the champ select session) and the player's reroll count in the Rust champ select state; expose them to the frontend. Rust tests with a recorded session. (74f7224)
+- [x] 2.2 Bench helper: rank the player's current champion, the bench and teammates' champions by ARAM win rate (queue 450) with game counts, and highlight "take this from the bench" when a bench champion is clearly better. (74f7224)
+- [x] 2.3 Reroll advice: when the current champion is in the bottom part of the ARAM tier list and rerolls are left, say so. (74f7224)
 - [ ] 2.4 ARAM team composition: the same composition analysis tuned for ARAM (poke and sustain matter more, split push doesn't), with one line on the team's plan.
 - [ ] 2.5 ARAM builds in champ select: when the queue is ARAM or Mayhem, the build tab uses the queue's build docs and imports the ARAM item set.
 - [ ] 2.6 Mayhem augments in champ select: the champion's best augments for Mayhem (from the existing augment docs; respects the `AUGMENTS` switch), shown as a short pick order.
