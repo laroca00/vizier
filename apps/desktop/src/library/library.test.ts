@@ -82,7 +82,7 @@ describe("saved builds", () => {
       updatedAt: 0,
     };
     const code = shareCode(build);
-    expect(code.startsWith("VZB1:")).toBe(true);
+    expect(code.startsWith("VZ2:")).toBe(true);
     const back = readShareCode(`  ${code}\n`)!;
     expect(back.name).toBe("Ahri ğüşıöç burst");
     expect(back.runes).toEqual(build.runes);

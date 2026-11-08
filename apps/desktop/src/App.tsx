@@ -10,6 +10,7 @@ import { noteRecent } from "./personal";
 import { pageRoute, useNavigation, type Page, type Route } from "./router";
 import { OpenMatchupProvider } from "./matchupLink";
 import { SearchPalette } from "./SearchPalette";
+import { SharePaste } from "./library/SharePaste";
 import { setClientLocale, useT } from "./i18n";
 import { updateSettings, useSettings } from "./settings";
 import { FlatGlass } from "./ui/LiquidGlass";
@@ -331,6 +332,7 @@ function App() {
           </ErrorBoundary>
         </main>
       </SplashProvider>
+      <SharePaste onAdded={() => go({ page: "builds" })} />
       <SearchPalette
         open={searching}
         onClose={() => setSearching(false)}
