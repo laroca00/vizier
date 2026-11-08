@@ -937,4 +937,5 @@ export const EN: Record<string, string> = {
   "{role} rolünde nadir oynanıyor; genelde {usual} oynanıyor": "Rarely played in {role}; usually played in {usual}",
   "{role} rolünde nadir oynanıyor": "Rarely played in {role}",
   "Rol dışı": "Off role",
+  "Birlikte {rate}, {games} maç": "Together {rate}, {games} games",
 };

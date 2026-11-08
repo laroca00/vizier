@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ProBuild, TierEntry } from "../api";
 import type { Champion } from "../data/ddragon";
 import type { ChampSelect, DraftMember } from "../lcu";
-import { autoView, difficultyOf, guessOpponent, matchupItems, rankProBuilds, suggestPicks, teamNeeds, type RoleShares } from "./logic";
+import { autoView, duoPartnerRole, difficultyOf, guessOpponent, matchupItems, rankProBuilds, suggestPicks, teamNeeds, type RoleShares } from "./logic";
 
 function champion(key: number, id: string, tags: string[], info: Partial<Champion["info"]> = {}): Champion {
   const full = { attack: 5, defense: 5, magic: 5, difficulty: 5, ...info };
@@ -201,5 +201,20 @@ describe("suggestPicks pool and breakdown", () => {
     expect(pick.breakdown.meta).toBeCloseTo(2);
     expect(pick.breakdown.counter).toBeCloseTo(9);
     expect(pick.score).toBeCloseTo(pick.breakdown.meta + pick.breakdown.counter + pick.breakdown.needs);
+  });
+});
+
+describe("duoPartnerRole", () => {
+  it("pairs bot with support and jungle with mid", () => {
+    expect(duoPartnerRole("bottom")).toBe("UTILITY");
+    expect(duoPartnerRole("UTILITY")).toBe("BOTTOM");
+    expect(duoPartnerRole("JUNGLE")).toBe("MIDDLE");
+    expect(duoPartnerRole("MIDDLE")).toBe("JUNGLE");
+  });
+
+  it("has no partner for top or an unknown role", () => {
+    expect(duoPartnerRole("TOP")).toBeNull();
+    expect(duoPartnerRole("")).toBeNull();
+    expect(duoPartnerRole(undefined)).toBeNull();
   });
 });

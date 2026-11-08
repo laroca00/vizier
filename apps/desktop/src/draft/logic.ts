@@ -227,3 +227,11 @@ export function matchupItems(
     .sort((a, b) => b.lift - a.lift)
     .map((i) => i.id);
 }
+
+// Bot lane is played in pairs; the jungler works most with the mid laner.
+const DUO_PARTNER: Record<string, string> = { BOTTOM: "UTILITY", UTILITY: "BOTTOM", JUNGLE: "MIDDLE", MIDDLE: "JUNGLE" };
+
+/** The role whose champion pairs with ours, or null for top and unknown roles. */
+export function duoPartnerRole(role: string | null | undefined): string | null {
+  return (role && DUO_PARTNER[role.toUpperCase()]) || null;
+}
