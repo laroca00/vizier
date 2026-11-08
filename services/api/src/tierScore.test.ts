@@ -16,3 +16,11 @@ describe("tierScore", () => {
     expect(tierScore(520, 1000, 0.5, -3)).toBeLessThan(tierScore(520, 1000, 0.5, 0));
   });
 });
+
+describe("tierRule", () => {
+  it("lists the cut-offs best tier first", async () => {
+    const { tierRule } = await import("./stats.ts");
+    expect(tierRule().cuts.map((c) => c.tier)).toEqual(["S", "A", "B", "C"]);
+    expect(tierRule().priorGames).toBeGreaterThan(0);
+  });
+});

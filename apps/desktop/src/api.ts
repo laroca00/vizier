@@ -112,7 +112,9 @@ export type TierEntry = {
   /** Pick rate change over the same two patches; absent on servers that predate it. */
   pickRateChange?: number | null;
 };
-export type TierList = { patches: string[]; games: number; champions: TierEntry[] };
+/** The numbers behind a tier; absent on servers that predate it. */
+export type TierRule = { priorGames: number; presenceWeight: number; listGames: number; tierGames: number; cuts: { tier: string; score: number }[] };
+export type TierList = { patches: string[]; games: number; champions: TierEntry[]; rule?: TierRule };
 
 /** Queues without roles take position ALL. */
 export function getTierList(position: string, queue = 420) {

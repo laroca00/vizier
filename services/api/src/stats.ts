@@ -74,6 +74,17 @@ export function tierScore(wins: number, games: number, roleAverage: number, lift
   return round3(win + PRESENCE_WEIGHT * lift);
 }
 
+export type TierRule = { priorGames: number; presenceWeight: number; listGames: number; tierGames: number; cuts: { tier: string; score: number }[] };
+
+/** The numbers behind a tier, so the app explains the rule it is really using. */
+export const tierRule = (): TierRule => ({
+  priorGames: sampleLimits.tierPriorGames,
+  presenceWeight: PRESENCE_WEIGHT,
+  listGames: sampleLimits.listGames,
+  tierGames: sampleLimits.tierGames,
+  cuts: TIER_CUTS.map(([score, tier]) => ({ tier, score })),
+});
+
 export const tierOf = (score: number) => TIER_CUTS.find(([cut]) => score >= cut)?.[1] ?? "D";
 
 function assignTiers(entries: Unranked[]): TierEntry[] {
@@ -112,9 +123,9 @@ export async function tierList(
   db: D1Database,
   position: string,
   queue = RANKED,
-): Promise<{ patches: string[]; games: number; champions: TierEntry[] }> {
+): Promise<{ patches: string[]; games: number; champions: TierEntry[]; rule: TierRule }> {
   const patches = await latestPatches(db);
-  if (patches.length === 0) return { patches, games: 0, champions: [] };
+  if (patches.length === 0) return { patches, games: 0, champions: [], rule: tierRule() };
   const { results: byPatch } = await db
     .prepare(
       `SELECT champion_id, patch, games, wins FROM stat_counts
@@ -168,7 +179,7 @@ export async function tierList(
         pickRateChange: pickChange(patches, c.patches, patchGames, slotsPerGame(queue)),
       };
     });
-  return { patches, games: total, champions: assignTiers(entries) };
+  return { patches, games: total, champions: assignTiers(entries), rule: tierRule() };
 }
 
 function patchChange(patches: string[], byPatch: Map<string, { games: number; wins: number }>): number | null {
