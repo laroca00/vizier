@@ -992,4 +992,9 @@ export const EN: Record<string, string> = {
   "{first} → {max} sn": "{first} → {max} s",
   "{opponent} ultisi ({name}) 6. seviyeden gelir ve ilk rankta {seconds} sn bekler; bitince daha rahat girersin.": "{opponent}'s ultimate ({name}) arrives at level 6 with a {seconds} s cooldown at rank 1; once it is spent you can play more freely.",
   "{opponent} {key} ({name}) ilk rankta {seconds} sn bekler: bekleme sürerken takas yap.": "{opponent}'s {key} ({name}) has a {seconds} s cooldown at rank 1: trade while it is down.",
+  "Güç eşikleri": "Power spikes",
+  "Sv. {level}": "Lv. {level}",
+  "Çekirdek eşyalar": "Core items",
+  "{games} maçta en sık çekirdek eşyalar, sırayla": "Most common core items in {games} games, in buy order",
+  "Çekirdek eşyalar için yeterli maç yok.": "Not enough games for core items.",
 };
