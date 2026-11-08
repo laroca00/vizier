@@ -130,6 +130,25 @@ function Simulator({ data }: { data: ChampionRoles }) {
         <Button variant="ghost" onClick={reset}>
           {t("Sıfırla")}
         </Button>
+        <Button
+          variant="ghost"
+          disabled={picked.size === 0}
+          onClick={() => {
+            const line = (label: string, ids: number[]) =>
+              `${label}: ${ids
+                .map((id, slot) => (id ? `${data.champions.get(id)?.name ?? id} (${t(POSITIONS[ROLES[slot]])})` : null))
+                .filter(Boolean)
+                .join(", ")}`;
+            const bans = draft.bans.map((id) => data.champions.get(id)?.name ?? id).join(", ");
+            const text = [line(t("Mavi takım"), draft.blue), line(t("Kırmızı takım"), draft.red), bans ? `${t("Yasaklar")}: ${bans}` : null].filter(Boolean).join("\n");
+            navigator.clipboard.writeText(text).then(
+              () => toast("success", t("Draft panoya kopyalandı")),
+              () => toast("error", t("Panoya kopyalanamadı.")),
+            );
+          }}
+        >
+          {t("Kopyala")}
+        </Button>
       </div>
 
       <div className="sim">
