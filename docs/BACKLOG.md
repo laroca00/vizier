@@ -170,9 +170,9 @@ Worlds and pro builds are a top priority for the EUW audience.
 
 ## 14. Home
 
-- [ ] 14.1 "This patch for you" card: pool champions' tier, win rate change and patch changes in one glance.
-- [ ] 14.2 Meta movers card (6.5) and followed pros card (11.3).
-- [ ] 14.3 Customisable Home: show, hide and reorder cards; saved in settings.
+- [x] 14.1 "This patch for you" card: pool champions' tier, win rate change and patch changes in one glance. (replaces the separate pool patch and pool win rate sections on Home; patch changes come from the tracker's cache)
+- [x] 14.2 Meta movers card (6.5) and followed pros card (11.3). (both were already on Home)
+- [x] 14.3 Customisable Home: show, hide and reorder cards; saved in settings. ("Ana sayfayı düzenle" under the greeting; the pro panel stays in the right column and can only be hidden)
 - [ ] 14.4 Search palette: items, runes, pro players, saved builds and "X vs Y" matchups as result types.
 
 ## 15. Riddle and fun
