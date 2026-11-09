@@ -150,6 +150,30 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           </div>
         </section>
       )}
+      {id === "window" && (
+        <section className="overlay__card overlay__window" data-kind="push">
+          <p className="overlay__window-line">{t("{n} rakip ölü, {s} sn: {objectives} açık", { n: 2, s: 19, objectives: t("Ejder") })}</p>
+          <ul className="overlay__fallen">
+            <li data-ours="false">
+              <span className="widget-preview__icon" />
+              <span className="overlay__value">19</span>
+            </li>
+            <li data-ours="false">
+              <span className="widget-preview__icon" />
+              <span className="overlay__value">27</span>
+            </li>
+          </ul>
+        </section>
+      )}
+      {id === "spikes" && (
+        <section className="overlay__card overlay__spikes">
+          <p className="overlay__spike" data-lane>
+            <span className="widget-preview__icon" />
+            <span>{t("{champion} {level}. seviye", { champion: "Zed", level: 6 })}</span>
+            <span className="overlay__spike-ult">R</span>
+          </p>
+        </section>
+      )}
       {id === "scoreboard" && (
         <ol className="overlay__scoreboard widget-preview__rows">
           <li data-ahead="true">+0.9k</li>

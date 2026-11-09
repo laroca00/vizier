@@ -3,7 +3,7 @@ import type { Settings } from "../settings";
 // What the overlay can show. This file holds only data; each widget's
 // drawing lives in widgets/ and is looked up by id.
 
-export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build" | "reference";
+export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build" | "reference" | "window" | "spikes";
 export type OverlayMode = "rift" | "aram" | "arena" | "mayhem";
 export type Spot = { x: number; y: number };
 
@@ -73,6 +73,20 @@ export const WIDGETS: readonly WidgetDef[] = [
     modes: ["rift", "aram"],
     settings: ["overlayMinimap"],
     fixed: true,
+  },
+  {
+    id: "window",
+    name: "Fırsat penceresi",
+    hint: "Ölü oyuncuların dönüş süreleri; bir takımda iki ya da daha fazla kişi ölüyken kaç saniye kaldığını ve açık olan objektifleri yazar.",
+    modes: ["rift", "aram"],
+    settings: ["overlayWindow"],
+  },
+  {
+    id: "spikes",
+    name: "Güç eşikleri",
+    hint: "Bir rakip 6, 11 ya da 16. seviyeye geldiğinde veya bir eşyayı tamamladığında kısa bir bildirim; koridor rakibin en üstte.",
+    modes: ["rift", "aram"],
+    settings: ["overlaySpikes"],
   },
   { id: "items", name: "Eşya altını farkı", hint: "Koridor rakibine ve rakip takıma göre eşyalarına harcanan altın.", modes: MODES, settings: ["overlayItems"] },
   { id: "bench", name: "Karşılaştırma", hint: "İlk 15 dakikada minyon, seviye, K/D/A ve kill katılımın, aynı şampiyon ve rolün Emerald+ ortalamasıyla (veri yeterliyse).", modes: ["rift"], settings: ["overlayBench"] },

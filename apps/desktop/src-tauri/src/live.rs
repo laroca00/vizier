@@ -80,6 +80,11 @@ pub struct Player {
     #[serde(default)]
     pub items: Vec<Item>,
     pub scores: Scores,
+    #[serde(default)]
+    pub is_dead: bool,
+    /// Seconds until the player is back; the game keeps the last value while alive, so read it only with `is_dead`.
+    #[serde(default)]
+    pub respawn_timer: f64,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
@@ -418,7 +423,11 @@ mod tests {
         {"riotId": "Vizier#TR1", "rawChampionName": "game_character_displayname_Ahri", "championName": "Ahri",
          "team": "ORDER", "position": "MIDDLE", "level": 7,
          "items": [{"itemID": 1056, "count": 1, "slot": 0, "price": 400}],
-         "scores": {"kills": 2, "deaths": 1, "assists": 3, "creepScore": 64, "wardScore": 4.2}}
+         "scores": {"kills": 2, "deaths": 1, "assists": 3, "creepScore": 64, "wardScore": 4.2},
+         "isDead": false, "respawnTimer": 0.0},
+        {"riotId": "Enemy#TR1", "rawChampionName": "game_character_displayname_Zed", "championName": "Zed",
+         "team": "CHAOS", "position": "MIDDLE", "level": 6, "isDead": true, "respawnTimer": 21.4,
+         "scores": {"kills": 1, "deaths": 2, "assists": 0, "creepScore": 58}}
       ],
       "events": {"Events": [
         {"EventID": 0, "EventName": "GameStart", "EventTime": 0.04},
@@ -439,5 +448,9 @@ mod tests {
         let names: Vec<_> = game.events.iter().map(|e| e.name.as_str()).collect();
         assert_eq!(names, ["DragonKill", "InhibKilled"]);
         assert_eq!(game.events[0].dragon_type.as_deref(), Some("Fire"));
+        assert!(!game.players[0].is_dead);
+        assert!(game.players[1].is_dead);
+        assert_eq!(game.players[1].respawn_timer, 21.4);
+        assert!(game.players[1].items.is_empty());
     }
 }
