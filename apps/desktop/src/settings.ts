@@ -3,6 +3,8 @@ import { DEFAULT_HOME, type HomeLayout } from "./home/layout";
 import { withAutoImportOn } from "./autoImportDefault";
 import type { AutopilotMode } from "./autopilot";
 import type { LanguageSetting } from "./i18n";
+import { DEFAULT_REF, type RefSection } from "./overlay/reference";
+import type { OverlayTheme, WidgetStyles } from "./overlay/appearance";
 
 export type Settings = {
   autoImportRunes: boolean;
@@ -24,6 +26,10 @@ export type Settings = {
   overlay: boolean;
   /** Size of every overlay box, 0.8 to 1.4. */
   overlayScale: number;
+  /** Colour of the overlay cards. */
+  overlayTheme: OverlayTheme;
+  /** Size and opacity the player set for single widgets. */
+  overlayWidgetStyles: WidgetStyles;
   /** On the loading screen, rank and champion mastery of all ten players. */
   overlayScouting: boolean;
   /** Your CS and level against the ranked average at this minute. */
@@ -38,6 +44,9 @@ export type Settings = {
   overlayTimers: boolean;
   /** In Arena and ARAM Mayhem, the champion's best augments of each rarity. */
   overlayAugments: boolean;
+  /** The quick reference panel and the blocks it holds, in order. */
+  overlayReference: boolean;
+  overlayRefSections: RefSection[];
   /** The build panel that opens on its hotkey. */
   overlayBuild: boolean;
   /** Objective and camp timers drawn on the minimap. */
@@ -73,6 +82,8 @@ const DEFAULTS: Settings = {
   autoAcceptReady: false,
   overlay: true,
   overlayScale: 1,
+  overlayTheme: "navy",
+  overlayWidgetStyles: {},
   overlayScouting: true,
   overlayBench: true,
   hotkeys: {},
@@ -84,6 +95,8 @@ const DEFAULTS: Settings = {
   overlayTimers: true,
   overlayAugments: true,
   overlayBuild: true,
+  overlayReference: true,
+  overlayRefSections: DEFAULT_REF,
   overlayMinimap: true,
   overlayMinimapSide: "right",
   overlayMinimapSize: 0.5,

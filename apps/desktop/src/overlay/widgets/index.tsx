@@ -9,11 +9,13 @@ import { MinimapWidget } from "./MinimapWidget";
 import { NextItemWidget } from "./NextItemWidget";
 import { ScoreboardWidget } from "./ScoreboardWidget";
 import { SkillOrderWidget } from "./SkillOrderWidget";
+import { ReferenceWidget } from "./ReferenceWidget";
 import { SkillWidget } from "./SkillWidget";
 import { TimersWidget } from "./TimersWidget";
 
 export const WIDGET_VIEWS: Record<WidgetId, ComponentType<WidgetContext>> = {
   build: BuildWidget,
+  reference: ReferenceWidget,
   skill: SkillWidget,
   skillOrder: SkillOrderWidget,
   next: NextItemWidget,

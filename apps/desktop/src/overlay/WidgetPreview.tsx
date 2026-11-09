@@ -1,4 +1,6 @@
 import { useT } from "../i18n";
+import { useSettings } from "../settings";
+import { rootVars, widgetVars } from "./appearance";
 import type { WidgetId } from "./registry";
 import "./overlay.css";
 import "./WidgetPreview.css";
@@ -6,8 +8,10 @@ import "./WidgetPreview.css";
 /** A small still of each widget with made-up numbers, drawn with the overlay's own card styles. */
 export function WidgetPreview({ id }: { id: WidgetId }) {
   const t = useT();
+  const settings = useSettings();
   return (
-    <div className="widget-preview" aria-hidden="true">
+    <div className="widget-preview" aria-hidden="true" style={{ ...rootVars(settings.overlayTheme, 1), ...widgetVars(settings.overlayWidgetStyles[id]) }}>
+      <div className="overlay__zoom">
       {id === "skill" && (
         <section className="overlay__card overlay__skill">
           <span className="overlay__key">Q</span>
@@ -37,6 +41,25 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           <p className="overlay__row">
             <span>Rabadon</span>
             <span className="overlay__value">{t("{gold} altın kaldı", { gold: 640 })}</span>
+          </p>
+        </section>
+      )}
+      {id === "reference" && (
+        <section className="overlay__card">
+          <p className="overlay__skillstrip">
+            {["Q", "W", "E", "Q", "Q", "R"].map((k, i) => (
+              <span key={i} data-done={i < 2 || undefined}>
+                {k}
+              </span>
+            ))}
+          </p>
+          <p className="overlay__row">
+            <span>Q → AA → W</span>
+            <span className="overlay__value">{t("Kombo")}</span>
+          </p>
+          <p className="overlay__row">
+            <span>{t("Eşleşme notu")}</span>
+            <span className="overlay__value">···</span>
           </p>
         </section>
       )}
@@ -132,6 +155,7 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           <span className="overlay__value">+0.5k</span>
         </p>
       )}
+      </div>
     </div>
   );
 }

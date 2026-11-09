@@ -7,6 +7,8 @@ import { Select, Toggle } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
 import { HOTKEY_ACTIONS, changedHotkeys, clashing, comboFromEvent, effectiveHotkeys } from "../overlay/hotkeys";
+import { OPACITY_RANGE, SCALE_RANGE, THEMES, normalizeStyle, withWidgetStyle, type OverlayTheme } from "../overlay/appearance";
+import { REF_NAMES, REF_SECTIONS, moveRef, toggleRef } from "../overlay/reference";
 import { WIDGETS, type OverlayMode } from "../overlay/registry";
 import { WidgetPreview } from "../overlay/WidgetPreview";
 import type { ToggleKey } from "./SettingsPage";
@@ -72,6 +74,14 @@ export function OverlayPage() {
             <span>{Math.round(settings.overlayScale * 100)}%</span>
           </label>
         </div>
+        <div className="settings__actions">
+          <Select
+            label={t("Renk")}
+            value={settings.overlayTheme}
+            options={THEMES.map((th) => ({ value: th.id, label: t(th.name) }))}
+            onChange={(overlayTheme: OverlayTheme) => updateSettings({ overlayTheme })}
+          />
+        </div>
         <Toggle
           label={t("Yükleme ekranında oyuncuları göster")}
           hint={t("Dereceleri, ustalıkları ve takımların hasar dağılımını gösterir. Dereceler Vizier'in sunucusundan gelir; ayarlanmamışsa yalnızca hasar dağılımı görünür. Gizlemek için paneli gizleme kısayolunu kullan.")}
@@ -92,6 +102,52 @@ export function OverlayPage() {
                 <h3 className="overlay-widgets__name">{t(def.name)}</h3>
                 <p className="settings__note">{t(def.hint)}</p>
                 <p className="overlay-widgets__modes">{def.modes.map((m) => t(MODE_NAMES[m])).join(" · ")}</p>
+                <div className="overlay-widgets__style">
+                  {!def.fixed && (
+                    <label className="settings__number">
+                      <span className="toggle__label">{t("Boyut")}</span>
+                      <input
+                        type="range"
+                        {...SCALE_RANGE}
+                        value={normalizeStyle(settings.overlayWidgetStyles[def.id]).scale}
+                        disabled={off}
+                        aria-label={`${t(def.name)}: ${t("Boyut")}`}
+                        onChange={(event) => updateSettings({ overlayWidgetStyles: withWidgetStyle(settings.overlayWidgetStyles, def.id, { scale: Number(event.target.value) }) })}
+                      />
+                      <span>{Math.round(normalizeStyle(settings.overlayWidgetStyles[def.id]).scale * 100)}%</span>
+                    </label>
+                  )}
+                  <label className="settings__number">
+                    <span className="toggle__label">{t("Saydamlık")}</span>
+                    <input
+                      type="range"
+                      {...OPACITY_RANGE}
+                      value={normalizeStyle(settings.overlayWidgetStyles[def.id]).opacity}
+                      disabled={off}
+                      aria-label={`${t(def.name)}: ${t("Saydamlık")}`}
+                      onChange={(event) => updateSettings({ overlayWidgetStyles: withWidgetStyle(settings.overlayWidgetStyles, def.id, { opacity: Number(event.target.value) }) })}
+                    />
+                    <span>{Math.round(normalizeStyle(settings.overlayWidgetStyles[def.id]).opacity * 100)}%</span>
+                  </label>
+                </div>
+                {def.id === "reference" && (
+                  <ul className="overlay-widgets__ref" aria-label={t("Bloklar")}>
+                    {[...settings.overlayRefSections, ...REF_SECTIONS.filter((s) => !settings.overlayRefSections.includes(s))].map((section) => {
+                      const on = settings.overlayRefSections.includes(section);
+                      return (
+                        <li key={section}>
+                          <Toggle label={t(REF_NAMES[section])} checked={on} disabled={off} onChange={() => updateSettings({ overlayRefSections: toggleRef(settings.overlayRefSections, section) })} />
+                          {on && (
+                            <span className="overlay-widgets__move">
+                              <button type="button" aria-label={t("Yukarı taşı")} onClick={() => updateSettings({ overlayRefSections: moveRef(settings.overlayRefSections, section, -1) })}>↑</button>
+                              <button type="button" aria-label={t("Aşağı taşı")} onClick={() => updateSettings({ overlayRefSections: moveRef(settings.overlayRefSections, section, 1) })}>↓</button>
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
                 {def.settings.map((key) => (
                   <Toggle
                     key={key}

@@ -5,6 +5,8 @@ import type { BenchRead } from "../bench";
 import type { PanelItem, PanelRunes } from "../buildPanel";
 import type { MinimapBox, CampSide } from "../minimap";
 import type { ManualTimers } from "../Timers";
+import type { Combo } from "../../data/combos";
+import type { RefSection } from "../reference";
 import type { LiveGame, LivePlayer, SkillKey, Timer } from "../live";
 
 export type AugmentGroup = { rarity: number; augments: { augmentId: number; tier: string; winRate: number; games: number }[] };
@@ -34,6 +36,8 @@ export type WidgetContext = {
   /** The build panel: shown only while its hotkey has it open. */
   buildPanel: { shown: boolean; items: PanelItem[]; runes: PanelRunes | null };
   rowsTotal: number | null;
+  /** The quick reference panel: open only while its hotkey has it so. */
+  reference: { shown: boolean; sections: RefSection[]; combos: Combo[]; note: { text: string; matchup: boolean } | null; opponent: string | null; lang: "tr" | "en" };
   rowGap: number;
   /** Your CS and level against the average, with the CS gap over time; null without data or after minute 15. */
   bench: { read: BenchRead; history: number[] } | null;

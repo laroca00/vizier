@@ -21,6 +21,7 @@ export const HOTKEY_ACTIONS: readonly HotkeyAction[] = [
   { id: "skills", label: "Yetenek sırasını göster ya da gizle", combo: "Ctrl+Shift+K" },
   { id: "augments", label: "Augment kartını göster ya da gizle", combo: "Ctrl+Shift+A" },
   { id: "build", label: "Build panelini göster ya da gizle", combo: "Ctrl+Shift+I" },
+  { id: "reference", label: "Hızlı bakış panelini göster ya da gizle", combo: "Ctrl+Shift+J" },
 ];
 
 type KeyEvent = Pick<KeyboardEvent, "code" | "ctrlKey" | "shiftKey" | "altKey" | "metaKey">;
