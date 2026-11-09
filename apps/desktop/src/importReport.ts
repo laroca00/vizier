@@ -1,5 +1,6 @@
 export type ImportKind = "runes" | "spells" | "items";
-export type ImportOutcome = { ok: true } | { ok: false; reason: "noSlot" | "client" | "failed" };
+/** `unconfirmed` is set when the client did not show a set back after it was written. */
+export type ImportOutcome = { ok: true; unconfirmed?: boolean } | { ok: false; reason: "noSlot" | "client" | "failed" };
 
 /** Tells a closed client apart from a request the client refused. */
 export function reasonOf(error: unknown): "client" | "failed" {
@@ -29,7 +30,9 @@ export function importSummary(
 ): { kind: "success" | "error"; message: string } {
   const entries = (Object.keys(DONE) as ImportKind[]).flatMap((k) => (results[k] ? [[k, results[k]] as const] : []));
   const done = entries.filter(([, r]) => r.ok).map(([k]) => t(DONE[k]));
-  const failed = entries.flatMap(([k, r]) => (r.ok ? [] : [`${t(DONE[k])}: ${t(FAILED[r.reason])}`]));
+  const failed = entries.flatMap(([k, r]) =>
+    r.ok ? (r.unconfirmed ? [`${t(DONE[k])}: ${t("istemcide görünmedi")}`] : []) : [`${t(DONE[k])}: ${t(FAILED[r.reason])}`],
+  );
   const joined = done.length > 1 ? `${done.slice(0, -1).join(", ")} ${t("ve")} ${done[done.length - 1]}` : done.join("");
   if (failed.length === 0) return { kind: "success", message: t("{champion}: {parts} aktarıldı", { champion, parts: joined }) };
   const bad = t("{champion}: aktarılamadı, {parts}", { champion, parts: failed.join("; ") });

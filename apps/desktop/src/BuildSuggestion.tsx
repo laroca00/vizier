@@ -271,7 +271,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
     const forChampion = championId;
     setItemImport({ status: "working" });
     try {
-      await invoke("import_item_set", {
+      const confirmed = await invoke<boolean>("import_item_set", {
         championId,
         title: setName,
         blocks: [
@@ -282,7 +282,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
         ],
       });
       report(setItemImport, forChampion, { status: "done", message: t("{champion} eşya seti aktarıldı", { champion: championName }) }, quiet);
-      return { ok: true };
+      return { ok: true, unconfirmed: !confirmed };
     } catch (error) {
       report(setItemImport, forChampion, { status: "error", message: t("Eşya seti aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene.") }, quiet);
       return { ok: false, reason: reasonOf(error) };

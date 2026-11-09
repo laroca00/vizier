@@ -76,7 +76,7 @@ async fn import_item_set(
     champion_id: i64,
     title: String,
     blocks: Vec<ItemBlock>,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     let client = api.get().ok_or(NOT_CONNECTED)?;
     lcu::writes::import_item_set(&client, champion_id, &title, &blocks).await
 }

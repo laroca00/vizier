@@ -16,6 +16,14 @@ describe("importSummary", () => {
   });
 });
 
+describe("importSummary read-back", () => {
+  it("warns when the client did not keep the item set", () => {
+    const r = importSummary(t, "Ahri", { runes: { ok: true }, items: { ok: true, unconfirmed: true } });
+    expect(r.kind).toBe("error");
+    expect(r.message).toContain("eşya seti: istemcide görünmedi");
+  });
+});
+
 describe("reasonOf", () => {
   it("separates a closed client from a refusal", () => {
     expect(reasonOf("not connected to the League client")).toBe("client");

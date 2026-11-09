@@ -149,7 +149,22 @@ fn item_set_uid(champion_id: i64) -> String {
     format!("5a1e7000-0000-4000-8000-{:012}", champion_id.rem_euclid(1_000_000_000_000))
 }
 
-pub async fn import_item_set(api: &LcuClient, champion_id: i64, title: &str, blocks: &[ItemBlock]) -> Result<(), String> {
+/// True when the document holds our set for this champion with the items we meant to write.
+/// The client may rewrite the uid, so the set is found by its title and champion.
+fn has_item_set(document: &serde_json::Value, champion_id: i64, blocks: &[ItemBlock]) -> bool {
+    let wanted: usize = blocks.iter().map(|b| b.items.len()).sum();
+    document["itemSets"].as_array().is_some_and(|sets| {
+        sets.iter().any(|set| {
+            let ours = set["title"].as_str().is_some_and(|t| t.starts_with(PAGE_PREFIX))
+                && set["associatedChampions"].as_array().is_some_and(|c| c.iter().any(|id| id.as_i64() == Some(champion_id)));
+            let items: usize = set["blocks"].as_array().map(|b| b.iter().map(|b| b["items"].as_array().map_or(0, Vec::len)).sum()).unwrap_or(0);
+            ours && items == wanted
+        })
+    })
+}
+
+/// Writes the set, reads the document back and says whether the client kept it.
+pub async fn import_item_set(api: &LcuClient, champion_id: i64, title: &str, blocks: &[ItemBlock]) -> Result<bool, String> {
     if !title.starts_with(PAGE_PREFIX) {
         return Err("item set title must start with Vizier".into());
     }
@@ -158,7 +173,9 @@ pub async fn import_item_set(api: &LcuClient, champion_id: i64, title: &str, blo
     let document: serde_json::Value = api.get(&path).await.map_err(|e| e.to_string())?;
     let uid = item_set_uid(champion_id);
     let merged = merge_item_set(document, champion_id, title, blocks, &uid);
-    api.send(Method::PUT, &path, &merged).await.map_err(|e| e.to_string())
+    api.send(Method::PUT, &path, &merged).await.map_err(|e| e.to_string())?;
+    let stored: serde_json::Value = api.get(&path).await.map_err(|e| e.to_string())?;
+    Ok(has_item_set(&stored, champion_id, blocks))
 }
 
 pub async fn import_spells(api: &LcuClient, spells: [i64; 2]) -> Result<(), String> {
@@ -220,6 +237,17 @@ mod tests {
         assert_eq!(merged["itemSets"][3]["blocks"][0]["items"][1]["id"], "3020");
         assert_eq!(merged["itemSets"][3]["associatedMaps"], json!([]));
         assert!(merged["timestamp"].as_u64().unwrap() > 5);
+    }
+
+    #[test]
+    fn finds_our_set_after_the_write() {
+        let blocks = [ItemBlock { title: "Core".into(), items: vec![3157, 3020] }];
+        let merged = merge_item_set(json!({ "itemSets": [] }), 103, "Vizier Ahri", &blocks, "uid-1");
+        assert!(has_item_set(&merged, 103, &blocks));
+        assert!(!has_item_set(&merged, 238, &blocks));
+        assert!(!has_item_set(&json!({ "itemSets": [] }), 103, &blocks));
+        let shorter = [ItemBlock { title: "Core".into(), items: vec![3157] }];
+        assert!(!has_item_set(&merged, 103, &shorter));
     }
 
     #[test]

@@ -1269,4 +1269,5 @@ export const EN: Record<string, string> = {
   "Oyun bitince, açıksa, pencere geri gelir.": "The window comes back when the game ends, if it was open.",
   "League açılınca Vizier'i göster": "Show Vizier when League opens",
   "Windows ile gizli başlayan Vizier, istemci açılınca pencereyi getirir.": "A Vizier that started hidden with Windows comes up when the client opens.",
+  "istemcide görünmedi": "the client did not show it",
 };
