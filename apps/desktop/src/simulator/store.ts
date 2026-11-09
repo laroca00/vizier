@@ -185,3 +185,11 @@ export function duplicateDraft(id: string, copyName: (name: string) => string): 
 export function deleteDraft(id: string) {
   write(current.filter((d) => d.id !== id));
 }
+
+export const getSavedDrafts = (): SavedDraft[] => current;
+
+/** Adds drafts read from a file; ids that clash with a saved draft get a new one. */
+export function importDrafts(drafts: SavedDraft[]) {
+  const ids = new Set(current.map((d) => d.id));
+  write([...drafts.map((d) => (ids.has(d.id) ? { ...d, id: newId() } : d)), ...current]);
+}
