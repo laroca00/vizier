@@ -1,6 +1,6 @@
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
-import { DEFAULT_BRACKET, REGION_BRACKETS, isRegion, parseBracket, type Bracket, type Region } from "@vizier/shared/brackets";
+import { BRACKETS, DEFAULT_BRACKET, REGION_BRACKETS, isRegion, parseBracket, type Bracket, type Region } from "@vizier/shared/brackets";
 import { HTTPException } from "hono/http-exception";
 import type { Catalog } from "./archetypes.ts";
 import { POSITIONS, type Build } from "./builds.ts";
@@ -296,6 +296,11 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
   app.get("/v1/pros/teams", async (c) => {
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json({ teams: await cached("pro-teams", 60 * MINUTE, () => proTeams(statsDb)) });
+  });
+
+  app.get("/v1/meta/rank-curve", async (c) => {
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json((await readDoc(statsDb, docKey.rankCurve(420))) ?? { patches: [], brackets: BRACKETS, entries: [] });
   });
 
   app.get("/v1/meta/coverage", async (c) => {

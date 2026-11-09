@@ -100,3 +100,32 @@ describe("?region= on the routes", () => {
     expect(docKey.championRegions(1, "all")).toBe("champregions:420:1:r=all");
   });
 });
+
+describe("rank curve", () => {
+  it("lays the six brackets side by side and serves it", async () => {
+    const { db, sqlite } = fakeD1();
+    // Ahri: 60 silver games (all wins), 80 emerald games (40 wins), 70 diamond games (14 wins).
+    for (let i = 0; i < 60; i++) game(sqlite, `EUW1_s${i}`, "silver", true);
+    for (let i = 0; i < 80; i++) game(sqlite, `EUW1_e${i}`, "emerald", i < 40);
+    for (let i = 0; i < 70; i++) game(sqlite, `EUW1_d${i}`, "diamond", i < 14);
+    await rollup(db, async () => ({ ...emptyCatalog(), finished: new Set([3157]) }));
+    const { rankCurveDocs } = await import("./statDocs.ts");
+    const docs: [string, any][] = [];
+    for await (const doc of rankCurveDocs(db)) docs.push(doc as [string, any]);
+    expect(docs.map(([key]) => key)).toEqual(["rankcurve:420"]);
+    const curve = docs[0][1];
+    expect(curve.brackets).toEqual(["all", "gold_minus", "platinum_plus", "emerald_plus", "diamond_plus", "master_plus"]);
+    const ahri = curve.entries.find((e: { championId: number; position: string }) => e.championId === 103 && e.position === "MIDDLE");
+    expect(ahri.points[0]).toMatchObject([210, 0.543, expect.any(Number)]);
+    expect(ahri.points[1]).toMatchObject([60, 1, expect.any(Number)]);
+    expect(ahri.points[3]).toMatchObject([150, 0.36, expect.any(Number)]);
+    expect(ahri.points[4]).toMatchObject([70, 0.2, expect.any(Number)]);
+    expect(ahri.points[5]).toBeNull();
+
+    await db.prepare("INSERT INTO stat_docs (key, body, updated_at) VALUES ('rankcurve:420', ?, 9)").bind(JSON.stringify(curve)).run();
+    const app = createApp(new MemoryStore(), { statsDb: db });
+    expect(((await (await app.request("/v1/meta/rank-curve")).json()) as any).entries.length).toBe(curve.entries.length);
+    const empty = createApp(new MemoryStore(), { statsDb: fakeD1().db });
+    expect(await (await empty.request("/v1/meta/rank-curve")).json()).toMatchObject({ entries: [] });
+  });
+});

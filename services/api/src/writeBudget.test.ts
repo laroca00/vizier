@@ -113,6 +113,9 @@ describe("D1 write budget", () => {
         rows.push({ bracket: `${bracket} (regions)`, kind, docs, perDay: 1, writes });
       }
     }
+    // One rank curve doc a day.
+    total += WRITES_PER_DOC;
+    rows.push({ bracket: "(all)", kind: "rankcurve", docs: 1, perDay: 1, writes: WRITES_PER_DOC });
     const other = OTHER_QUEUE_DOCS * WRITES_PER_DOC * OTHER_QUEUES_PER_DAY;
     total += other;
     rows.push({ bracket: "(other queues)", kind: "all", docs: OTHER_QUEUE_DOCS, perDay: OTHER_QUEUES_PER_DAY, writes: other });

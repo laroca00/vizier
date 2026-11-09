@@ -1,12 +1,12 @@
 // Stats are computed by services/crawler next to its raw games and published
 // to D1's stat_docs as finished JSON; the Worker only reads them. Keys are
 // shared here so both sides agree.
-import { DEFAULT_BRACKET, REGIONS, isBracket, type Bracket, type Region } from "@vizier/shared/brackets";
+import { BRACKETS, DEFAULT_BRACKET, REGIONS, isBracket, type Bracket, type Region } from "@vizier/shared/brackets";
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
 import { buildHistory } from "./snapshots.ts";
 import { coverage } from "./coverage.ts";
 import { scope } from "./localSchema.ts";
-import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
+import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, championOverview, counters, itemTimes, laneStats, latestPatches, rankCurve, synergies, tierList } from "./stats.ts";
 
 // Queues with augments: Arena and ARAM Mayhem.
 export const AUGMENT_QUEUES = [1700, 2400];
@@ -66,6 +66,8 @@ export const docKey = {
   tierRegion: (position: string, region: Region, bracket: Bracket = DEFAULT_BRACKET) => `tierregion:${RANKED}:${position}:${region}${rank(bracket)}`,
   /** A champion's overview per region and role: { ANY: { tr, euw, kr }, MIDDLE: { ... } }. */
   championRegions: (championId: number, bracket: Bracket = DEFAULT_BRACKET) => `champregions:${RANKED}:${championId}${rank(bracket)}`,
+  /** Win rate, pick rate and games of every champion and role in all six brackets; ranked solo only. */
+  rankCurve: (queue: number) => `rankcurve:${queue}`,
   bans: () => "bans",
   /** How many games, timelines and followed players sit behind the stats. */
   coverage: () => "coverage",
@@ -227,4 +229,11 @@ export async function* regionDocs(db: D1Database, bracket: Bracket): AsyncGenera
     }
     if (Object.keys(roles).length > 0) yield [docKey.championRegions(championId, bracket), roles];
   }
+}
+
+/** The rank curve doc: one small doc, sent once a day. */
+export async function* rankCurveDocs(db: D1Database): AsyncGenerator<[string, unknown]> {
+  if ((await latestPatches(db)).length === 0) return;
+  const curve = await rankCurve(db, BRACKETS, [...POSITIONS]);
+  if (curve.entries.length > 0) yield [docKey.rankCurve(RANKED), curve];
 }

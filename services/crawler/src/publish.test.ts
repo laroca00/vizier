@@ -88,7 +88,7 @@ describe("publish schedule", () => {
   });
 
   it("sends Emerald+ ranked docs every time and one extra set a publish", async () => {
-    const local = await seeded(1, 12);
+    const local = await seeded(1, 40);
     const remote = fakeRemote();
     const keysOf = () => remote.statements.flatMap((s) => s.params.filter((_, i) => i % 3 === 0 && typeof s.params[i] === "string") as string[]);
 
@@ -115,6 +115,7 @@ describe("publish schedule", () => {
     expect(regionKeys).toContain("tierregion:420:MIDDLE:tr:r=all");
     expect(regionKeys).toContain("champregions:420:103");
     expect(regionKeys).toContain("champregions:420:103:r=all");
+    expect(local.sqlite.prepare("SELECT key FROM published_docs WHERE key = 'rankcurve:420'").all()).toHaveLength(1);
   });
 
   it("keeps other-queue docs out of the ranked publish", async () => {
