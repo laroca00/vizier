@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { confidenceOf, hasEnoughGames, patchOf, wilson } from "./confidence";
+import { confidenceOf, hasEnoughGames, patchOf, pooled, wilson } from "./confidence";
 
 describe("wilson", () => {
   it("matches the textbook interval for 50% over 100 games", () => {
@@ -45,5 +45,14 @@ describe("hasEnoughGames", () => {
     expect(hasEnoughGames(400, 0.5)).toBe(true);
     // The same rate is judged on its own interval at either end of the scale.
     expect(hasEnoughGames(60, 0.95)).toBe(true);
+  });
+});
+
+describe("pooled", () => {
+  it("adds wins and games of several rows", () => {
+    expect(pooled([{ games: 100, winRate: 0.6 }, { games: 300, winRate: 0.5 }])).toEqual({ games: 400, winRate: 0.525 });
+  });
+  it("is empty for no rows", () => {
+    expect(pooled([])).toEqual({ games: 0, winRate: 0 });
   });
 });

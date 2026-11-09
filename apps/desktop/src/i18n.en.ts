@@ -111,6 +111,8 @@ export const EN: Record<string, string> = {
   "{games} maç": "{games} games",
   "Güvenilir veri": "Reliable data",
   "Vizier crawler, dereceli maçlar": "Vizier crawler, ranked games",
+  "Vizier crawler, Arena maçları": "Vizier crawler, Arena games",
+  "Profesyonel maçlar": "Professional games",
   "Sınırlı örneklem": "Limited sample",
   "Yetersiz veri": "Insufficient data",
   "Eski veri": "Outdated data",

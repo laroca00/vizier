@@ -757,3 +757,7 @@ button.champion-card:hover {
 .data-badge[data-confidence="editorial"] {
   --badge: var(--turquoise);
 }
+
+.section-badge {
+  margin: -2px 0 8px;
+}

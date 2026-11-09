@@ -14,6 +14,7 @@ import { PageHeader } from "../ui/Page";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
 import { useAsync } from "../useAsync";
+import { sampleTitle } from "../ui/sampleTitle";
 
 const ARENA = 1700;
 const MAYHEM = 2400;
@@ -189,7 +190,7 @@ export function AugmentsPage({ onOpenChampion }: { onOpenChampion?: (championId:
                     </th>
                     <td>{meta ? t(RARITY[meta.rarity] ?? "") : ""}</td>
                     <td>{formatPercent(a.pickRate, lang, 1)}</td>
-                    <td>
+                    <td title={sampleTitle(t, lang, { ...a, patches: stats.value?.patches })}>
                       {formatPercent(a.winRate, lang, 1)}
                       {delta && (
                         <span className="augments__delta" data-sign={signOf(a.delta)}>

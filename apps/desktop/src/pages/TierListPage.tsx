@@ -17,6 +17,7 @@ import { SearchInput, Toggle } from "../ui/Fields";
 import { changeText, trendOf } from "./trend";
 import { DEFAULT_TIER_VIEW, isThin, THIN_GAMES, viewTiers, type TierColumn, type TierSort, type TierView } from "./tierSort";
 import "./TierListPage.css";
+import { sampleTitle } from "../ui/sampleTitle";
 
 // The most picked champions only; past this the plot turns into a pile of icons.
 const PLOTTED = 40;
@@ -232,7 +233,7 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
                             {mine && <span className="tiers__mine">{mine === "pool" ? t("Havuzunda") : t("Favori")}</span>}
                           </button>
                         </td>
-                        <td>{percent(c.winRate)}</td>
+                        <td title={sampleTitle(t, lang, { ...c, patches: state.value.list.patches })}>{percent(c.winRate)}</td>
                         <td className="tiers__change" data-trend={trendOf(c.winRateChange) ?? undefined}
                           title={c.winRateChange == null ? t("Önceki yamada yeterli maç yok.") : t("Önceki yamaya göre {change} puan", { change: signed(c.winRateChange) })}
                         >
