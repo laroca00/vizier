@@ -1,4 +1,4 @@
-import type { Combo } from "../data/combos";
+import type { Combo } from "../data/comboTypes";
 import { matchupNoteKey } from "../personal";
 import type { LiveGame, LivePlayer } from "./live";
 

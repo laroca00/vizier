@@ -1,5 +1,5 @@
 import { itemIconUrl, runeIconUrl } from "../../data/ddragon";
-import { CATEGORY_TEXT, comboText } from "../../data/combos";
+import { CATEGORY_TEXT, comboText } from "../../data/comboTypes";
 import type { ReactNode } from "react";
 import type { RefSection } from "../reference";
 import type { WidgetContext } from "./context";
