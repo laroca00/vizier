@@ -9,6 +9,7 @@ import { Home } from "./pages/Home";
 import { noteRecent, usePersonal } from "./personal";
 import { pageRoute, useNavigation, type Page, type Route } from "./router";
 import { OpenProProvider } from "./proLink";
+import { OpenChampionProvider } from "./championLink";
 import { OpenMatchupProvider } from "./matchupLink";
 import { useReadyCheckAlert } from "./readyCheck";
 import { enteredQueueFlow, planPreload, runPreload } from "./preload";
@@ -253,6 +254,7 @@ function App() {
     <FlatGlass.Provider value={true}>
     <ToastProvider>
     <OpenMatchupProvider value={openMatchup}>
+    <OpenChampionProvider value={openChampion}>
     <OpenProProvider value={(player) => go({ page: "pro", player })}>
     <div className="shell" data-navigated={navigated || undefined} data-collapsed={settings.sidebarCollapsed || undefined}>
       <Sidebar
@@ -364,6 +366,7 @@ function App() {
       />
     </div>
     </OpenProProvider>
+    </OpenChampionProvider>
     </OpenMatchupProvider>
     </ToastProvider>
     </FlatGlass.Provider>

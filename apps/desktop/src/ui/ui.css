@@ -464,6 +464,21 @@
   flex: 1;
 }
 
+.toast__action {
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--turquoise);
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toast__action:hover {
+  background: var(--hover);
+}
+
 .toast__close {
   display: grid;
   place-items: center;

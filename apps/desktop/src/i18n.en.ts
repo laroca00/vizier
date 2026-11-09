@@ -1258,4 +1258,11 @@ export const EN: Record<string, string> = {
   "{card} aşağı": "{card} down",
   "{card} yukarı": "{card} up",
   "Ana rün": "Keystone",
+  "Build'i değiştir": "Change build",
+  "{champion}: {parts} aktarıldı": "{champion}: {parts} imported",
+  "{champion}: aktarılamadı, {parts}": "{champion}: not imported, {parts}",
+  "ve": "and",
+  "boş rün sayfası yok": "no free rune page",
+  "istemci kapalı": "client is closed",
+  "istemci reddetti": "client refused it",
 };
