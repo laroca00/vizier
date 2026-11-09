@@ -67,7 +67,7 @@ export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange
   const opponent = route.opponentId === null ? undefined : byKey.get(route.opponentId);
 
   return (
-    <LiquidGlass className="panel matchup-page" radius={28} strength={2.5} scroll>
+    <LiquidGlass className="panel tiers matchup-page" radius={28} strength={2.5} scroll>
       <PageHeader title={t("Eşleşme çalışması")} subtitle={t("İki şampiyonun bir rolde karşılaşmasını oyundan önce incele.")} />
       {data.status !== "done" ? (
         <Skeleton lines={6} label={t("Yükleniyor")} />
