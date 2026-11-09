@@ -330,9 +330,13 @@ Builds on: `personal` (pool, favourites, followed pros, notes), the library, jou
 Builds on: the search palette (champions, pros, matchups, items, keystones, saved builds) and the customisable Home (14.3).
 
 - [ ] 30.1 Palette result types: abilities, draft templates, composition templates, combos, quiz categories, notes, archetypes, academy pages, the lab.
+<!-- claimed: auto/30-search-home 2026-11-09T14:35:00Z -->
 - [ ] 30.2 Intent searches: "anti tank build", "güçlü engage", "protect the carry", "Ahri combo" map to lab directions, archetypes, templates and combos (rules, tested; Turkish and English words).
+<!-- claimed: auto/30-search-home 2026-11-09T14:35:00Z -->
 - [ ] 30.3 Recent searches, category tabs, suggestions on an empty query, full keyboard navigation.
+<!-- claimed: auto/30-search-home 2026-11-09T14:35:00Z -->
 - [ ] 30.4 Home 2.0 cards: continue where you left off (recent champions, matchups, builds, drafts), favourites, saved templates, patch and meta changes, new pro builds, quick links to the lab, simulator and academy; all hideable and reorderable with the existing editor. No decorative charts.
+<!-- claimed: auto/30-search-home 2026-11-09T14:35:00Z -->
 
 ## 31. Overlay 2.0 polish (after epic 19)
 
