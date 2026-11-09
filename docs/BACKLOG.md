@@ -258,21 +258,16 @@ Builds on: build docs and variants (`Build.variants`, `situational`), the item e
 
 - [x] 23.1 Lab page (`{ page: "lab", championId, position }`, menu, palette, `?view=lab`): pick champion and role, then up to three build columns side by side. Each column: items in order with cost, total gold, runes, boots, spells, patch, games and badge. Columns start as popular / highest win rate / the player's saved build. (cad7db6; lab page `?view=lab`, menu, palette: popular, best win rate (enough games) and saved build columns with items, cost, spike gold, boots, spells, runes)
 - [x] 23.2 Build directions: standard, burst, anti-tank, sustain, defensive, hybrid, poke, utility. A direction is a rule over item stats and tags (tested), applied to the champion's item pool from the build index; directions with real data (situational vs AP / AD / tank) use it and say so; the rest are labelled editorial. (cad7db6; 8 directions as tested tag/stat rules over the champion's build items; anti-tank uses the vs-tank item data, the rest are labelled editorial)
-- [ ] 23.3 Stat totals per column: AD, AP, HP, armor, MR, haste, attack speed, crit, penetration, lifesteal/omnivamp, from Data Dragon item stats summed at full build and after each item. A row chart compares the columns. No damage or DPS numbers.
-<!-- claimed: auto/23-lab-academy 2026-11-09T13:38:18Z -->
-- [ ] 23.4 Custom column: edit items with the existing build editor inside the lab, compare against popular, pro and saved builds, save to the library in one click.
-<!-- claimed: auto/23-lab-academy 2026-11-09T13:38:18Z -->
-- [ ] 23.5 "Bu build ne için" line per column from its stat profile ("magic pen and burst: kills squishy targets; little survival"), from tested rules.
-<!-- claimed: auto/23-lab-academy 2026-11-09T13:38:18Z -->
+- [x] 23.3 Stat totals per column: AD, AP, HP, armor, MR, haste, attack speed, crit, penetration, lifesteal/omnivamp, from Data Dragon item stats summed at full build and after each item. A row chart compares the columns. No damage or DPS numbers. (ec1a42c; stat totals per column (AD, AP, HP, armor, MR, attack speed, crit, life steal, mana, move speed) at full build and after each item, bars on one scale; penetration, haste and omnivamp are not in Data Dragon item stats so they are not shown)
+- [x] 23.4 Custom column: edit items with the existing build editor inside the lab, compare against popular, pro and saved builds, save to the library in one click. (ec1a42c; custom column edited with the build editor, pro build column (one pro game, no badge), one-click save to the library)
+- [x] 23.5 "Bu build ne için" line per column from its stat profile ("magic pen and burst: kills squishy targets; little survival"), from tested rules. (ec1a42c; purpose line from tested stat rules, labelled editorial)
 
 ## 24. Matchup Academy and Combo Library (C1, C3)
 
 Builds on: the matchup page (4.1–4.6: lane stats, stats duel, ability compare, power spikes, build vs), threats (`draft/threats.ts`), the journal notes and templates (8.x).
 
-- [ ] 24.1 Academy layout for the matchup page: sections for strengths, weaknesses, abilities to track (cooldowns from Data Dragon), early / mid / late (from the phase curves), level and item breakpoints (power spikes), item interactions (item advice rules), lane stats. Each section marks its source: Data Dragon, crawler or editorial.
-<!-- claimed: auto/23-lab-academy 2026-11-09T13:38:18Z -->
-- [ ] 24.2 Champion strengths and weaknesses table (hand-kept, every champion, tested for coverage), written plainly; used by the academy and the champion page.
-<!-- claimed: auto/23-lab-academy 2026-11-09T13:38:18Z -->
+- [x] 24.1 Academy layout for the matchup page: sections for strengths, weaknesses, abilities to track (cooldowns from Data Dragon), early / mid / late (from the phase curves), level and item breakpoints (power spikes), item interactions (item advice rules), lane stats. Each section marks its source: Data Dragon, crawler or editorial. (ec1a42c; academy sections each with a source tag (Data Dragon, crawler, editorial); new phase read and strengths sections, existing guide, abilities, spikes, item advice and lane stats moved in)
+- [x] 24.2 Champion strengths and weaknesses table (hand-kept, every champion, tested for coverage), written plainly; used by the academy and the champion page. (ec1a42c; data/strengths.ts, 16 strength and 10 weakness phrases, every champion in the quiz facts table covered (test); shown on the champion page and in the academy with the editorial badge)
 - [ ] 24.3 Personal academy notes: reminders and favourite plans per matchup on top of the journal note (same store, new optional fields), shown in champ select.
 - [ ] 24.4 Combo data model and the first 40 champions (most played in the crawler): name, difficulty, ability sequence, purpose, timing notes, common mistakes, category (basic, trading, all-in, burst, escape, flash, teamfight, animation), patch checked. Stored in the repo as JSON with a schema test; all labelled editorial.
 - [ ] 24.5 Combos section on the champion page and a Combo Library page with search and category filters; the sequence is drawn with ability icons and arrows (original drawing, no video or copied art).
