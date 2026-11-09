@@ -271,9 +271,7 @@ Builds on: the matchup page (4.1–4.6: lane stats, stats duel, ability compare,
 - [x] 24.3 Personal academy notes: reminders and favourite plans per matchup on top of the journal note (same store, new optional fields), shown in champ select. (85cbcf1; reminders and favourite plans per matchup (up to 5 each) in personal.academy, edited on the matchup page and shown read-only in champ select)
 - [x] 24.4 Combo data model and the first 40 champions (most played in the crawler): name, difficulty, ability sequence, purpose, timing notes, common mistakes, category (basic, trading, all-in, burst, escape, flash, teamfight, animation), patch checked. Stored in the repo as JSON with a schema test; all labelled editorial. (85cbcf1; data/combos.json: 45 combos for 40 champions, Turkish and English, tested schema; written from game knowledge against 16.21, editorial and unreviewed by the owner)
 - [x] 24.5 Combos section on the champion page and a Combo Library page with search and category filters; the sequence is drawn with ability icons and arrows (original drawing, no video or copied art). (85cbcf1; combos on the champion page and a Combo Library page with search and category filters; sequences drawn with Data Dragon ability icons and arrows)
-- [ ] 24.6 Combos for the remaining champions, plus a patch check that flags combos whose abilities changed in the patch tracker's diff.
-<!-- in progress: 105 of 171 champions have combos (the patch check is done); the next free ones are the champions not yet in data/combos.json, e.g. Akshan, Ambessa, Aphelios, Bard, Braum, Corki, Galio, Gwen, Janna, Kayn, Kennen, Kled, Lillia, Milio, Nocturne, Nunu, Ryze, Sejuani, Senna, Seraphine, Sion, Soraka, Taliyah, Teemo, Trundle, Tryndamere, Udyr, Urgot, Vex, Viego, Yorick, Zeri -->
-<!-- claimed: auto/24-combos-final 2026-11-09T18:52Z -->
+- [x] 24.6 Combos for the remaining champions, plus a patch check that flags combos whose abilities changed in the patch tracker's diff. (3a95a12; all 171 champions have at least one combo, written from game knowledge against 16.21, editorial and unreviewed by the owner)
 
 ## 25. Champion intelligence (A1–A4)
 
