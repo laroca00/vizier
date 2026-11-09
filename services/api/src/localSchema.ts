@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { groupsSql } from "@vizier/shared/brackets";
+import { BRACKETS, DEFAULT_BRACKET, groupsSql, type Bracket } from "@vizier/shared/brackets";
 
 /**
  * Local-only schema, applied on every start after the D1 migrations. The
@@ -13,6 +13,13 @@ import { groupsSql } from "@vizier/shared/brackets";
  * washes them out).
  */
 export const LEGACY_GROUP = "emerald";
+
+/**
+ * The view a bracket's reads go through. Emerald+ keeps the plain table name;
+ * every other bracket has `<table>__<bracket>`.
+ */
+export const scope = (table: "stat_counts" | "lane_sums" | "bench_sums" | "item_time_sums", bracket: Bracket = DEFAULT_BRACKET) =>
+  bracket === DEFAULT_BRACKET ? table : `${table}__${bracket}`;
 
 type Spec = { name: string; key: string[]; values: string[]; index?: string };
 
@@ -63,6 +70,19 @@ function split(sqlite: DatabaseSync, spec: Spec) {
   return all;
 }
 
+function bracketViews(sqlite: DatabaseSync, spec: Spec) {
+  const { name, key, values } = spec;
+  for (const bracket of BRACKETS) {
+    if (bracket === DEFAULT_BRACKET) continue;
+    const view = scope(name as "stat_counts", bracket);
+    sqlite.exec(`DROP VIEW IF EXISTS ${view}`);
+    sqlite.exec(
+      `CREATE VIEW ${view} AS SELECT ${key.join(", ")}, ${values.map((v) => `SUM(${v}) AS ${v}`).join(", ")}
+        FROM ${name}_g WHERE rank_group IN (${groupsSql(bracket)}) GROUP BY ${key.join(", ")}`,
+    );
+  }
+}
+
 function emeraldView(sqlite: DatabaseSync, spec: Spec) {
   const { name, key, values } = spec;
   const groups = groupsSql("emerald_plus");
@@ -93,5 +113,6 @@ export function localSchema(sqlite: DatabaseSync) {
   for (const spec of TABLES) {
     if (isTable(sqlite, spec.name)) split(sqlite, spec);
     emeraldView(sqlite, spec);
+    bracketViews(sqlite, spec);
   }
 }
