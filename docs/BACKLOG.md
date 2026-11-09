@@ -465,6 +465,7 @@ Ideas the owner asked for on top of the data work: overlay, design and new tools
 - [x] 42.7 Keyboard shortcuts list on "?": app keys and overlay keys with the player's bindings. (f3db503)
 - [x] 42.8 Overlay "Oyun başı planı": for two minutes, the lane opponent, our record against them (confidence rule), the ability to respect and the matchup note; new cards start in the upper middle. (f0b6e0e)
 - [x] 42.9 First-run welcome: champ select, in game and keyboard in three steps with the auto-import and overlay switches inline; shown once. (dbeb73a)
+- [x] 42.10 Draft picture from the simulator: both teams, each side's plan, bans; shared drawing helpers in ui/cardCanvas.ts. (4389bb3)
 
 ## 16. Only when a feature needs it
 
