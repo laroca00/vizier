@@ -350,30 +350,10 @@ Code health tasks. Do one only when a feature above depends on it.
 
 ## Owner deploy queue
 
-- Benchmark kills and assists (19.4b): apply D1 migration 0017 (kda_minutes, bench_sums kda columns) remotely, then deploy the Worker and pull and restart the crawler; the KDA and kill participation rows appear once a minute has 20 timeline games with the new series.
-- Release a desktop version to ship epic 31 (new hotkey Ctrl+Shift+J for the quick reference panel, so Rust changed; `cargo test --lib` passed).
-- Deploy the Worker so stat docs carry `updatedAt` (22.4); the app works without it.
-
 Steps that need the owner's credentials or approval. Add to this list; don't run them.
 
-- Release a desktop version to ship epic 17 (auto-import on by default, tray menu, follow the client; Rust changed, so it needs a full build).
-- Release a desktop version to ship epic 18 (auto pick, ban and lock, ready check accept; Rust changed). Auto pick and ban are off by default and set in Settings.
-- Epic 19 (so far): apply D1 migration 0015 (bench sums) remotely before the next crawler run; deploy the Worker; set the Worker secret `RIOT_KEY` (`wrangler secret put RIOT_KEY`) to turn on loading screen scouting (the route answers 503 and the panel shows only the damage split until then); pull and restart the crawler so timelines fill `bench:420` docs; release a desktop version (Rust changed: hotkeys, roster, tray).
-- Release a desktop version (`pnpm release`) after bumping the patch version.
-- Release a desktop version to ship the overlay changes of 19.6–19.10 (two new hotkeys, Ctrl+Shift+A and Ctrl+Shift+I, so Rust changed; `cargo test --lib` passed).
-- Release a desktop version to ship epic 21 (lobby reading is new Rust; `cargo test --lib` passed here, the real lobby shape should be checked once against a live client).
-- Deploy the Worker (`pnpm --filter @vizier/api deploy`).
-- Coverage (20.1): after the Worker deploy and a crawler restart, `/v1/meta/coverage` fills on the next publish and the crawler logs an hourly coverage line. Ranked timelines cover about a quarter of games (2 of ~8 per run); raise `timelinesPerRun` only if the log shows it lagging.
-- Apply pending D1 migrations remotely.
-- Build history (28.1): deploy the Worker for `/v1/builds/history/:championId`, then pull and restart the crawler on the VM. The crawler applies migration 0016 to its own database by itself (the Worker never reads that table, so no remote migration). The first snapshot is written when the next patch has taken over; until then the history is empty and the app says so.
-- Pull and restart the crawler on the VM (Arena duo and item docs appear after the next rollup and publish; duo counts start from games crawled after the update).
-- Apply D1 migration 0013 (lane stats) remotely before the next crawler run on the VM; lane docs fill as timelines are crawled.
-- After the Worker and crawler update, the build docs gain `perks`, `perkGames` and `skillOptions` on the next publish; single-rune counts only cover games rolled up after the crawler update.
-- Apply D1 migration 0014 (item completion times) remotely before the next crawler run on the VM; times fill as timelines are crawled.
-- Release a desktop version to ship the Journal, item and rune explorers, pool export, ready check alert and share codes v2 (the new window permission needs a rebuild).
-- Deploy the Worker for `/v1/pros/meta` (the Pro meta tab shows an empty list until then) and release a desktop version to ship the pro player page.
-- Release a desktop version to ship the simulator changes (load champ select, codes, undo, analysis, keyboard flow).
-- Augments 2.0 and Şamata: deploy the Worker, then pull and restart the crawler. Augment rows gain `delta`, the `augmentchamps:<queue>` docs appear after the next publish, and Mayhem games start to arrive. Older apps keep working.
-- Run the queue probe on the VM once to see which Mayhem queue id is live (README, "Finding a mode's live queue"), then trim `MAYHEM_QUEUES` to it.
-- Release a desktop version to ship the augment tier board, the reworked augments page, the in-game augment card and the Şamata name.
+Everything up to 0.8.6 is shipped (2026-11-10): D1 migrations through 0017 applied, Worker deployed, crawler pulled and restarted, `RIOT_KEY` set, desktop 0.8.6 released.
+
+- Mayhem queue id: the probe on euw1 found no 2400/2401/2403/2405/2410/2450 games among Challenger players. Run it with the Riot ID of someone who plays Mayhem (`probeQueues.ts euw1 "Name#TAG"`), then trim `MAYHEM_QUEUES`.
+- Check the lobby reading (epic 21) once against a live client.
 - Optional: set `ARENA_ITEMS=off` on the Worker to hide Arena item stats; they are on by default.
