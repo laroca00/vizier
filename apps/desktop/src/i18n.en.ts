@@ -553,6 +553,8 @@ export const EN: Record<string, string> = {
   "Toplam minyon ve kamp sayın, aynı şampiyonu oynayan Emerald+ oyuncuların o dakikadaki medyanıyla. İlk 15 dakika.":
     "Your minions and camps against Emerald+ players on the same champion at the same minute. First 15 minutes.",
   "Eşya altını farkı": "Item gold difference",
+  "Seçim süresi bitmeden uyar": "Warn before the pick timer runs out",
+  "Seçim sıran sendeyken son 10 saniyede kısa bir ses çalar; süre dolup maçtan düşmeni önler.": "Plays a short tone in the last 10 seconds of your pick turn, so the timer doesn't run out and dodge the game.",
   "Rakip takıma göre işe yarayan eşyalar (iyileşme kesici, büyü direnci, zırh...), yalnızca şampiyonunun build'lerinde olanlardan; aldığın an listeden düşer.": "Items that answer the enemy team (anti-heal, magic resist, armor...), only from your champion's own builds; each drops off once you buy it.",
   "Rakibe karşı": "Against them",
   "İyileşme kesici": "Anti-heal",
