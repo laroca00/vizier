@@ -40,6 +40,8 @@ export type Settings = {
   overlaySpikes: boolean;
   /** Dragons per team and the soul. */
   overlayDragons: boolean;
+  /** The lane plan card for the first two minutes. */
+  overlayPlan: boolean;
   /** The player's own overlay hotkeys, by action id; anything missing keeps its default. */
   hotkeys: Record<string, string>;
   overlaySkills: boolean;
@@ -97,6 +99,7 @@ const DEFAULTS: Settings = {
   overlayWindow: true,
   overlaySpikes: true,
   overlayDragons: true,
+  overlayPlan: true,
   hotkeys: {},
   overlaySkills: true,
   overlayObjectives: true,

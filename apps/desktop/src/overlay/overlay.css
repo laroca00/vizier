@@ -647,3 +647,51 @@ html:has(.overlay) body {
 .overlay__dragon-line[data-soon] {
   color: var(--gilt);
 }
+
+/* Game-start plan: the opponent on top, then the record, the ability and the note. */
+.overlay__plan {
+  gap: 6px;
+  max-width: 260px;
+}
+
+.overlay__plan-head,
+.overlay__plan-threat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.overlay__plan-head img,
+.overlay__plan-head .widget-preview__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  box-shadow: 0 0 0 1.5px var(--gilt);
+}
+
+.overlay__plan-head > span,
+.overlay__plan-threat > span {
+  display: grid;
+}
+
+.overlay__plan-head .overlay__caption,
+.overlay__plan-threat .overlay__caption {
+  margin: 0;
+}
+
+.overlay__plan-name {
+  font-weight: 500;
+}
+
+.overlay__plan-threat img {
+  border-radius: 6px;
+}
+
+.overlay__plan-note {
+  margin: 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--gilt);
+  color: var(--glaze-muted);
+}

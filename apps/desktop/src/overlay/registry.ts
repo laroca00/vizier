@@ -3,7 +3,7 @@ import type { Settings } from "../settings";
 // What the overlay can show. This file holds only data; each widget's
 // drawing lives in widgets/ and is looked up by id.
 
-export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build" | "reference" | "window" | "spikes" | "dragons";
+export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build" | "reference" | "window" | "spikes" | "dragons" | "plan";
 export type OverlayMode = "rift" | "aram" | "arena" | "mayhem";
 export type Spot = { x: number; y: number };
 
@@ -28,8 +28,13 @@ export const SCOREBOARD_SPOT: Spot = { x: 0.482, y: 0.318 };
 // Just above the ability bar on a 16:9 screen at the default HUD scale.
 export const SKILL_SPOT: Spot = { x: 0.372, y: 0.82 };
 export const SKILL_ORDER_SPOT: Spot = { x: 0.3, y: 0.74 };
-export const BUILD_SPOT: Spot = { x: 0.012, y: 0.3 };
-export const REFERENCE_SPOT: Spot = { x: 0.012, y: 0.62 };
+// Beside the left column rather than over it, even on a 1280-wide screen.
+export const BUILD_SPOT: Spot = { x: 0.19, y: 0.3 };
+export const REFERENCE_SPOT: Spot = { x: 0.19, y: 0.62 };
+// Across the upper middle, which the game leaves clear; low enough to sit under the edit-mode bar.
+export const PLAN_SPOT: Spot = { x: 0.36, y: 0.15 };
+export const WINDOW_SPOT: Spot = { x: 0.56, y: 0.15 };
+export const SPIKES_SPOT: Spot = { x: 0.76, y: 0.15 };
 
 export const WIDGETS: readonly WidgetDef[] = [
   {
@@ -80,6 +85,7 @@ export const WIDGETS: readonly WidgetDef[] = [
     hint: "Ölü oyuncuların dönüş süreleri; bir takımda iki ya da daha fazla kişi ölüyken kaç saniye kaldığını ve açık olan objektifleri yazar.",
     modes: ["rift", "aram"],
     settings: ["overlayWindow"],
+    defaultSpot: WINDOW_SPOT,
   },
   {
     id: "spikes",
@@ -87,6 +93,15 @@ export const WIDGETS: readonly WidgetDef[] = [
     hint: "Bir rakip 6, 11 ya da 16. seviyeye geldiğinde veya bir eşyayı tamamladığında kısa bir bildirim; koridor rakibin en üstte.",
     modes: ["rift", "aram"],
     settings: ["overlaySpikes"],
+    defaultSpot: SPIKES_SPOT,
+  },
+  {
+    id: "plan",
+    name: "Oyun başı planı",
+    hint: "İlk iki dakika: koridor rakibine karşı kazanma oranın (veri yeterliyse), dikkat etmen gereken yeteneği ve bu eşleşme için yazdığın not.",
+    modes: ["rift"],
+    settings: ["overlayPlan"],
+    defaultSpot: PLAN_SPOT,
   },
   {
     id: "dragons",

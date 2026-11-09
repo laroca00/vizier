@@ -174,6 +174,21 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           </p>
         </section>
       )}
+      {id === "plan" && (
+        <section className="overlay__card overlay__plan">
+          <p className="overlay__plan-head">
+            <span className="widget-preview__icon" />
+            <span>
+              <span className="overlay__caption">{t("Koridor rakibin")}</span>
+              <span className="overlay__plan-name">Zed</span>
+            </span>
+          </p>
+          <p className="overlay__row">
+            <span>{t("Eşleşme")}</span>
+            <span className="overlay__value">{t("{rate}, {games} maç", { rate: "%52,7", games: 239 })}</span>
+          </p>
+        </section>
+      )}
       {id === "dragons" && (
         <section className="overlay__card overlay__dragons">
           <p className="overlay__row overlay__dragon-row" data-point>

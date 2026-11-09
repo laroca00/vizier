@@ -547,6 +547,10 @@ export const EN: Record<string, string> = {
   "Toplam minyon ve kamp sayın, aynı şampiyonu oynayan Emerald+ oyuncuların o dakikadaki medyanıyla. İlk 15 dakika.":
     "Your minions and camps against Emerald+ players on the same champion at the same minute. First 15 minutes.",
   "Eşya altını farkı": "Item gold difference",
+  "Oyun başı planı": "Game start plan",
+  "İlk iki dakika: koridor rakibine karşı kazanma oranın (veri yeterliyse), dikkat etmen gereken yeteneği ve bu eşleşme için yazdığın not.": "First two minutes: your win rate against the lane opponent (when the data is enough), the ability to watch for and your note for this matchup.",
+  "Koridor rakibin": "Your lane opponent",
+  "{s} sn": "{s}s",
   "{name} zamanlayıcısı": "{name} timer",
   "Ara: şampiyon, eşya, sayfa, eşleşme": "Search: champions, items, pages, matchups",
   "Geri": "Back",
