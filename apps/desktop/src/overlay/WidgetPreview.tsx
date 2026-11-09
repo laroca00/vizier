@@ -47,6 +47,16 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           </p>
         </section>
       )}
+      {id === "minimap" && (
+        <section className="overlay__card widget-preview__minimap">
+          <span className="overlay__pin widget-preview__pin" style={{ left: "68%", top: "66%" }}>
+            2:37
+          </span>
+          <span className="overlay__pin widget-preview__pin" data-soon style={{ left: "30%", top: "30%" }}>
+            0:24
+          </span>
+        </section>
+      )}
       {id === "items" && (
         <section className="overlay__card">
           <p className="overlay__caption">{t("Eşya altını farkı")}</p>

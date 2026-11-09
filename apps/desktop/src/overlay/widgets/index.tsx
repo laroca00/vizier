@@ -4,6 +4,7 @@ import { AugmentsWidget } from "./AugmentsWidget";
 import type { WidgetContext } from "./context";
 import { BenchWidget } from "./BenchWidget";
 import { ItemGoldWidget } from "./ItemGoldWidget";
+import { MinimapWidget } from "./MinimapWidget";
 import { NextItemWidget } from "./NextItemWidget";
 import { ScoreboardWidget } from "./ScoreboardWidget";
 import { SkillOrderWidget } from "./SkillOrderWidget";
@@ -16,6 +17,7 @@ export const WIDGET_VIEWS: Record<WidgetId, ComponentType<WidgetContext>> = {
   next: NextItemWidget,
   timers: TimersWidget,
   items: ItemGoldWidget,
+  minimap: MinimapWidget,
   bench: BenchWidget,
   augments: AugmentsWidget,
   scoreboard: ScoreboardWidget,

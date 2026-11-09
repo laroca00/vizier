@@ -38,6 +38,14 @@ export type Settings = {
   overlayTimers: boolean;
   /** In Arena and ARAM Mayhem, the champion's best augments of each rarity. */
   overlayAugments: boolean;
+  /** Objective and camp timers drawn on the minimap. */
+  overlayMinimap: boolean;
+  /** The corner the game's minimap sits in. */
+  overlayMinimapSide: "left" | "right";
+  /** 0 to 1; matches the game's minimap scale, 0.5 is its default. */
+  overlayMinimapSize: number;
+  /** Whose jungle the manual camp timers are drawn in. */
+  overlayCampSide: "enemy" | "own";
   /** A short tone when a manual timer or an objective is about to come up. */
   timerSound: boolean;
   /** Length of the Ctrl+Shift+T timer. */
@@ -73,6 +81,10 @@ const DEFAULTS: Settings = {
   overlayScoreboard: true,
   overlayTimers: true,
   overlayAugments: true,
+  overlayMinimap: true,
+  overlayMinimapSide: "right",
+  overlayMinimapSize: 0.5,
+  overlayCampSide: "enemy",
   timerSound: true,
   customTimerSeconds: 90,
   sidebarCollapsed: false,

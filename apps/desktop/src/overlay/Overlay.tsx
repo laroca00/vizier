@@ -30,6 +30,8 @@ import { hasContent } from "./widgets/active";
 import type { WidgetContext } from "./widgets/context";
 import { WIDGET_VIEWS } from "./widgets";
 import { sampleGame } from "./sample";
+import { minimapBox } from "./minimap";
+import { useManualTimers } from "./Timers";
 import "./overlay.css";
 
 /** Subscribes to a value the Rust side reports through an event, and a getter command for its current value. */
@@ -112,6 +114,7 @@ export function Overlay() {
   const game = liveGame ?? (editing ? sampleGame() : null);
   const settings = useSettings();
   const time = useGameClock(game);
+  const manualTimers = useManualTimers(game, time);
   const [data] = useAsync(game ? "static" : null, loadStatic);
   const me = game ? findMe(game) : undefined;
   const championId = me && data.status === "done" ? (data.value.championIds.get(championKey(me)) ?? null) : null;
@@ -173,6 +176,8 @@ export function Overlay() {
     skill,
     skillOrder: { keys: picks?.skills ? skillSequence(picks.skills) : [], ranked: game.skills.reduce((sum, n) => sum + n, 0), shown: orderOpen || editing },
     objectives: timers,
+    manualTimers,
+    minimap: { box: minimapBox(size, settings.overlayMinimapSide, settings.overlayMinimapSize), campSide: settings.overlayCampSide },
     itemGold,
     nextItem: next,
     bench: benchNow ? { read: benchNow, history: csHistory.map((p) => p.diff) } : null,
@@ -189,7 +194,9 @@ export function Overlay() {
   const move = (id: WidgetId, spot: Spot, done: boolean) => (done ? save : preview)({ ...layout, [id]: spot });
 
   // Widgets that have nothing to show take no box.
-  const boxes = widgetsFor(mode).filter((def) => def.settings.some((key) => settings[key]) && hasContent[def.id](ctx, settings));
+  const shown = widgetsFor(mode).filter((def) => def.settings.some((key) => settings[key]) && hasContent[def.id](ctx, settings));
+  const boxes = shown.filter((def) => !def.fixed);
+  const pinned = shown.filter((def) => def.fixed);
 
   return (
     <div className="overlay-root" data-editing={editing || undefined} aria-hidden={!editing} style={{ "--overlay-scale": settings.overlayScale } as CSSProperties}>
@@ -219,6 +226,12 @@ export function Overlay() {
             {createElement(WIDGET_VIEWS[def.id], ctx)}
           </Draggable>
         ))}
+
+      {pinned.map((def) => (
+        <div key={def.id} className="overlay__pins">
+          {createElement(WIDGET_VIEWS[def.id], ctx)}
+        </div>
+      ))}
 
       {editing && <EditBar onReset={reset} />}
     </div>

@@ -399,3 +399,28 @@ html:has(.overlay) body {
   font-weight: 400;
   color: var(--glaze-faint);
 }
+
+/* Pins are placed in screen pixels over the minimap; the layer itself takes no space. */
+.overlay__pins {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.overlay__pin {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  padding: 1px 5px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze);
+  background: rgb(8 18 54 / 0.85);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18);
+}
+
+.overlay__pin[data-soon] {
+  color: var(--gilt);
+  box-shadow: inset 0 0 0 1px rgb(214 180 106 / 0.7);
+}

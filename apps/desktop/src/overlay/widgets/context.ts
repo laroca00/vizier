@@ -2,6 +2,8 @@ import type { Params } from "../../i18n";
 import type { Item } from "../../data/ddragon";
 import type { Picks } from "../../api";
 import type { BenchRead } from "../bench";
+import type { MinimapBox, CampSide } from "../minimap";
+import type { ManualTimers } from "../Timers";
 import type { LiveGame, LivePlayer, SkillKey, Timer } from "../live";
 
 export type AugmentGroup = { rarity: number; augments: { augmentId: number; tier: string }[] };
@@ -21,6 +23,9 @@ export type WidgetContext = {
   /** The full 18-level order of the build, empty without a build; `ranked` levels are already spent. */
   skillOrder: { keys: SkillKey[]; ranked: number; shown: boolean };
   objectives: Timer[];
+  /** Timers the player started with shortcuts, kept here so the minimap can draw them too. */
+  manualTimers: ManualTimers;
+  minimap: { box: MinimapBox; campSide: CampSide };
   itemGold: { lane: number | null; team: number } | null;
   nextItem: number | null;
   rows: { ally: LivePlayer; diff: number | null }[];
