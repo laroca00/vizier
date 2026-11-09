@@ -13,6 +13,7 @@ import type { Spike } from "../spikes";
 import type { DragonRead } from "../dragons";
 import type { Plan } from "../plan";
 import type { FlashTimer } from "../flash";
+import type { ItemAdvice } from "../../draft/itemAdvice";
 
 export type AugmentGroup = { rarity: number; augments: { augmentId: number; tier: string; winRate: number; games: number }[] };
 
@@ -64,4 +65,6 @@ export type WidgetContext = {
   plan: Plan | null;
   /** Enemy Flashes on cooldown that the player marked. */
   flashes: FlashTimer[];
+  /** Item answers to the enemy team the player hasn't bought yet. */
+  itemAnswers: ItemAdvice[];
 };

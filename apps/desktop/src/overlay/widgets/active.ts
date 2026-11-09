@@ -20,6 +20,7 @@ export const hasContent: Record<WidgetId, (ctx: WidgetContext, settings: Setting
   dragons: (ctx) => ctx.dragons !== null,
   plan: (ctx) => ctx.plan !== null,
   flash: (ctx) => ctx.flashes.length > 0,
+  answers: (ctx) => ctx.itemAnswers.length > 0 && ctx.version !== null,
 };
 
 /**

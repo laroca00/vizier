@@ -3,7 +3,7 @@ import type { Settings } from "../settings";
 // What the overlay can show. This file holds only data; each widget's
 // drawing lives in widgets/ and is looked up by id.
 
-export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build" | "reference" | "window" | "spikes" | "dragons" | "plan" | "flash";
+export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build" | "reference" | "window" | "spikes" | "dragons" | "plan" | "flash" | "answers";
 export type OverlayMode = "rift" | "aram" | "arena" | "mayhem";
 export type Spot = { x: number; y: number };
 
@@ -95,6 +95,13 @@ export const WIDGETS: readonly WidgetDef[] = [
     modes: ["rift", "aram"],
     settings: ["overlaySpikes"],
     defaultSpot: SPIKES_SPOT,
+  },
+  {
+    id: "answers",
+    name: "Rakibe karşı eşyalar",
+    hint: "Rakip takıma göre işe yarayan eşyalar (iyileşme kesici, büyü direnci, zırh...), yalnızca şampiyonunun build'lerinde olanlardan; aldığın an listeden düşer.",
+    modes: ["rift", "aram"],
+    settings: ["overlayItemAnswers"],
   },
   {
     id: "flash",

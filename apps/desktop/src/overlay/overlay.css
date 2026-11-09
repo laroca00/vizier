@@ -721,3 +721,24 @@ html:has(.overlay) body {
 .overlay__flash[data-ready] .overlay__value {
   color: #f08a7c;
 }
+
+/* Item answers: the need on the left, the items that meet it on the right. */
+.overlay__answers {
+  gap: 4px;
+}
+
+.overlay__answer {
+  align-items: center;
+}
+
+.overlay__answer-items {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.overlay__answer-items img,
+.overlay__answer-items .widget-preview__icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+}
