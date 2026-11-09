@@ -1,3 +1,4 @@
+import { BuildEvolution } from "../patches/BuildEvolution";
 import { ChampionHistory } from "../patches/ChampionHistory";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { useState } from "react";
@@ -271,6 +272,7 @@ function Overview({ overview, championId, championName, champions, version, queu
             queue={queue}
           />
         </section>
+        {ranked && position && version && <BuildEvolution key={`${championId}:${position}`} championId={championId} position={position} version={version} />}
         {ranked && (
           <section className="enter champion__pros" aria-label={t("Pro maçları")}>
             <h2 className="draft__heading">{t("Pro'lar bu şampiyonu nasıl oynadı")}</h2>
