@@ -9,6 +9,10 @@ export type LivePlayer = {
   level: number;
   items: { itemId: number; count: number }[];
   scores: { kills: number; deaths: number; assists: number; creepScore: number; wardScore?: number };
+  /** Missing from builds of the app before they were sent. */
+  isDead?: boolean;
+  /** Seconds until respawn; only meaningful while `isDead`. */
+  respawnTimer?: number;
 };
 
 export type LiveEvent = {

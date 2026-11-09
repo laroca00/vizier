@@ -8,6 +8,8 @@ import type { ManualTimers } from "../Timers";
 import type { Combo } from "../../data/combos";
 import type { RefSection } from "../reference";
 import type { LiveGame, LivePlayer, SkillKey, Timer } from "../live";
+import type { Fallen, Window } from "../opportunity";
+import type { Spike } from "../spikes";
 
 export type AugmentGroup = { rarity: number; augments: { augmentId: number; tier: string; winRate: number; games: number }[] };
 
@@ -47,4 +49,10 @@ export type WidgetContext = {
   /** The card shows unless the player hid it with its hotkey. */
   augmentsShown: boolean;
   augmentNames: Map<number, { name: string }> | null;
+  /** Data Dragon id to the champion's name. */
+  championName: (key: string) => string;
+  /** Dead players and the window their deaths open. */
+  opportunity: { fallen: Fallen[]; window: Window | null };
+  /** Fresh notices of enemy ultimate ranks and finished items. */
+  spikes: Spike[];
 };

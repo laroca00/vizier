@@ -15,6 +15,8 @@ export const hasContent: Record<WidgetId, (ctx: WidgetContext, settings: Setting
   augments: (ctx) => ctx.augmentsShown && ctx.augments.length > 0 && ctx.augmentNames !== null,
   minimap: (ctx) => ctx.objectives.length > 0 || ctx.manualTimers.manual.length > 0,
   scoreboard: (ctx) => ctx.rows.length > 0,
+  window: (ctx) => ctx.opportunity.fallen.some((f) => f.backAt > ctx.time),
+  spikes: (ctx) => ctx.spikes.length > 0 && ctx.version !== null,
 };
 
 /**

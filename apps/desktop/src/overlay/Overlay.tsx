@@ -39,6 +39,9 @@ import { usePersonal } from "../personal";
 import { laneOpponent, panelCombos, referenceNote } from "./reference";
 import { CLOCK_TICK_MS } from "./tick";
 import { useManualTimers } from "./Timers";
+import { fallenPlayers, readWindow } from "./opportunity";
+import { newSpikes, sampleSpikes, shownSpikes, type Spike } from "./spikes";
+import type { LiveGame as Game } from "./live";
 import "./overlay.css";
 
 /** Subscribes to a value the Rust side reports through an event, and a getter command for its current value. */
@@ -86,12 +89,19 @@ function useGameClock(game: LiveGame | null) {
 type Static = {
   version: string;
   championIds: Map<string, number>;
+  /** Data Dragon id to the name players read. */
+  championNames: Map<string, string>;
   items: Map<number, Item>;
 };
 
 async function loadStatic(): Promise<Static> {
   const [version, byKey, itemList] = await Promise.all([latestVersion(), champions(), items()]);
-  return { version, championIds: new Map([...byKey.values()].map((c) => [c.id, c.key])), items: itemList };
+  return {
+    version,
+    championIds: new Map([...byKey.values()].map((c) => [c.id, c.key])),
+    championNames: new Map([...byKey.values()].map((c) => [c.id, c.name])),
+    items: itemList,
+  };
 }
 
 // A rare pick can have no build; the panels that need it just stay hidden.
@@ -195,6 +205,26 @@ export function Overlay() {
     return () => void off.then((stop) => stop());
   }, []);
 
+  // Enemy power spikes come from comparing each update with the one before.
+  const [spikeLog, setSpikeLog] = useState<Spike[]>([]);
+  const lastGame = useRef<Game | null>(null);
+  const itemTable = data.status === "done" ? data.value.items : null;
+  useEffect(() => {
+    if (!liveGame || !settings.overlaySpikes || !itemTable) {
+      lastGame.current = liveGame;
+      return;
+    }
+    const self = findMe(liveGame);
+    if (self) {
+      const fresh = newSpikes(lastGame.current, liveGame, self, laneOpponent(liveGame, self), (id) => {
+        const item = itemTable.get(id);
+        return !!item?.complete && !item.boots;
+      });
+      if (fresh.length > 0) setSpikeLog((log) => [...log.filter((s) => liveGame.gameTime - s.at < 60), ...fresh]);
+    }
+    lastGame.current = liveGame;
+  }, [liveGame, settings.overlaySpikes, itemTable]);
+
   // The loading screen gets nothing; the overlay starts with the game.
   if (hidden || !settings.overlay) return null;
   // The loading screen gets the scouting panel; the boxes start with the game.
@@ -225,6 +255,8 @@ export function Overlay() {
   });
 
   const names = augmentNames.status === "done" ? augmentNames.value : null;
+  const fallen = settings.overlayWindow ? fallenPlayers(game, me.team) : [];
+  const championNames = data.status === "done" ? data.value.championNames : null;
   const ctx: WidgetContext = {
     t,
     game,
@@ -258,6 +290,9 @@ export function Overlay() {
     augmentPatches: augments.status === "done" && augments.value ? augments.value.patches : [],
     augmentsShown,
     augmentNames: names,
+    championName: (key) => championNames?.get(key) ?? key,
+    opportunity: { fallen, window: readWindow(fallen, time, timers, mode === "rift") },
+    spikes: settings.overlaySpikes ? shownSpikes(liveGame ? spikeLog : editing ? sampleSpikes(game.gameTime) : [], time) : [],
   };
 
   const move = (id: WidgetId, spot: Spot, done: boolean) => (done ? save : preview)({ ...layout, [id]: spot });

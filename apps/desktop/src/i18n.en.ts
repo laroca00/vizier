@@ -542,6 +542,14 @@ export const EN: Record<string, string> = {
   "Toplam minyon ve kamp sayın, aynı şampiyonu oynayan Emerald+ oyuncuların o dakikadaki medyanıyla. İlk 15 dakika.":
     "Your minions and camps against Emerald+ players on the same champion at the same minute. First 15 minutes.",
   "Eşya altını farkı": "Item gold difference",
+  "Fırsat penceresi": "Window of opportunity",
+  "Ölü oyuncuların dönüş süreleri; bir takımda iki ya da daha fazla kişi ölüyken kaç saniye kaldığını ve açık olan objektifleri yazar.": "Respawn countdowns of dead players; when two or more are down on one side, how many seconds are left and which objectives are up.",
+  "Bir rakip 6, 11 ya da 16. seviyeye geldiğinde veya bir eşyayı tamamladığında kısa bir bildirim; koridor rakibin en üstte.": "A short notice when an enemy reaches level 6, 11 or 16 or finishes an item; your lane opponent comes first.",
+  "{n} rakip ölü, {s} sn: {objectives} açık": "{n} enemies dead, {s}s: {objectives} up",
+  "{n} rakip ölü, {s} sn": "{n} enemies dead, {s}s",
+  "{n} takım arkadaşın ölü, {s} sn": "{n} allies dead, {s}s",
+  "{champion} {level}. seviye": "{champion} level {level}",
+  "{champion}: {item}": "{champion}: {item}",
   "Koridor rakibine ve rakip takıma göre eşyalarına harcanan altın.": "Gold spent on items against your lane opponent and the enemy team.",
 
   // Overlay

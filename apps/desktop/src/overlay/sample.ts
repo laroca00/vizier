@@ -25,10 +25,10 @@ export function sampleGame(): LiveGame {
       player("Bot#TR1", "Jinx", "ORDER", "BOTTOM", [3031, 3006], 3, 120),
       player("Sup#TR1", "Thresh", "ORDER", "UTILITY", [3190], 0, 20),
       player("Enemy1#TR1", "Darius", "CHAOS", "TOP", [6631, 3047, 1028], 3, 104),
-      player("Other#TR1", "Vi", "CHAOS", "JUNGLE", [6692], 2, 80),
+      { ...player("Other#TR1", "Vi", "CHAOS", "JUNGLE", [6692], 2, 80), isDead: true, respawnTimer: 27 },
       player("Enemy#TR1", "Zed", "CHAOS", "MIDDLE", [3142, 1036, 3158], 3, 110),
       player("Enemy4#TR1", "Kaisa", "CHAOS", "BOTTOM", [3115, 3006], 1, 98),
-      player("Enemy5#TR1", "Leona", "CHAOS", "UTILITY", [3109, 3047], 1, 18),
+      { ...player("Enemy5#TR1", "Leona", "CHAOS", "UTILITY", [3109, 3047], 1, 18), isDead: true, respawnTimer: 19 },
     ],
     events: [
       { name: "DragonKill", time: 700, dragonType: "Fire", inhibKilled: null, killerName: "Ally" },

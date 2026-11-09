@@ -34,6 +34,10 @@ export type Settings = {
   overlayScouting: boolean;
   /** Your CS and level against the ranked average at this minute. */
   overlayBench: boolean;
+  /** Dead players' respawn countdowns and the window they open. */
+  overlayWindow: boolean;
+  /** Notices when an enemy gets an ultimate rank or finishes an item. */
+  overlaySpikes: boolean;
   /** The player's own overlay hotkeys, by action id; anything missing keeps its default. */
   hotkeys: Record<string, string>;
   overlaySkills: boolean;
@@ -86,6 +90,8 @@ const DEFAULTS: Settings = {
   overlayWidgetStyles: {},
   overlayScouting: true,
   overlayBench: true,
+  overlayWindow: true,
+  overlaySpikes: true,
   hotkeys: {},
   overlaySkills: true,
   overlayObjectives: true,

@@ -525,3 +525,87 @@ html:has(.overlay) body {
 .overlay__empty {
   opacity: 0.75;
 }
+
+/* Respawn countdowns: enemy icons read good for us, ally icons bad, same as the timer rows. */
+.overlay__window {
+  gap: 6px;
+}
+
+.overlay__window-line {
+  margin: 0;
+  font-weight: 500;
+}
+
+.overlay__window[data-kind="push"] .overlay__window-line {
+  color: #5fd3c8;
+}
+
+.overlay__window[data-kind="danger"] .overlay__window-line {
+  color: #f08a7c;
+}
+
+.overlay__fallen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overlay__fallen li {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  font-size: 12px;
+}
+
+.overlay__fallen img,
+.overlay__fallen .widget-preview__icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  filter: grayscale(1) brightness(0.8);
+  box-shadow: 0 0 0 1.5px #5fd3c8;
+}
+
+.overlay__fallen li[data-ours="true"] img {
+  box-shadow: 0 0 0 1.5px #f08a7c;
+}
+
+/* Enemy power spikes: a short stack of notices, the lane opponent marked in gilt. */
+.overlay__spikes {
+  gap: 5px;
+}
+
+.overlay__spike {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.overlay__spike img,
+.overlay__spike .widget-preview__icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+.overlay__spike[data-lane] > img:first-child,
+.overlay__spike[data-lane] > .widget-preview__icon:first-child {
+  box-shadow: 0 0 0 1.5px var(--gilt);
+}
+
+.overlay__spike-ult {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--gilt);
+}
