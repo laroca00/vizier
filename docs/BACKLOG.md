@@ -460,6 +460,7 @@ Ideas the owner asked for on top of the data work: overlay, design and new tools
 - [x] 42.2 Overlay "Güç eşikleri": short notices when an enemy reaches level 6, 11 or 16 or completes an item, the lane opponent first. (dea6ebe; widget "Güç eşikleri", boots and components ignored)
 - [x] 42.3 Overlay "Ejder ruhu": dragons per team with their elements from `DragonKill` events, the soul element once the map turns, and a gilt line when a team is on soul point. (304b47c; widget "Ejder ruhu", Rift only)
 - [x] 42.4 Sidebar in groups (Hazırlan, Keşfet, Araçlar) instead of one long list, and a calmer Home header that greets by client state. (8832a1e; groups fold and remember it, shortcuts unchanged, greeting by hour)
+- [x] 42.5 Build picture: "Görsel olarak kopyala" on a saved build draws a 1200x630 card (splash, runes, spells, items, skill order) to the clipboard for chats. (4f8ccfa)
 
 ## 16. Only when a feature needs it
 
