@@ -18,6 +18,7 @@ export const HOTKEY_ACTIONS: readonly HotkeyAction[] = [
   { id: "stopwatch", label: "Kronometreyi başlat ya da durdur", combo: "Ctrl+Shift+S" },
   { id: "custom", label: "Özel zamanlayıcı", combo: "Ctrl+Shift+T" },
   { id: "clear", label: "Hepsini temizle", combo: "Ctrl+Shift+X" },
+  { id: "skills", label: "Yetenek sırasını göster ya da gizle", combo: "Ctrl+Shift+K" },
 ];
 
 type KeyEvent = Pick<KeyboardEvent, "code" | "ctrlKey" | "shiftKey" | "altKey" | "metaKey">;

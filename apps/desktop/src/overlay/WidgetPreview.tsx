@@ -14,6 +14,17 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           <span>{t("yükselt")}</span>
         </section>
       )}
+      {id === "skillOrder" && (
+        <section className="overlay__card">
+          <p className="overlay__skillstrip">
+            {["Q", "W", "E", "Q", "Q", "R", "Q", "W"].map((k, i) => (
+              <span key={i} data-done={i < 3 || undefined}>
+                {k}
+              </span>
+            ))}
+          </p>
+        </section>
+      )}
       {id === "next" && (
         <section className="overlay__card overlay__next">
           <span className="widget-preview__icon" />

@@ -1340,4 +1340,6 @@ export const EN: Record<string, string> = {
   "Minyon, ortalama {cs}": "CS, average {cs}",
   "Seviye, ortalama {level}": "Level, average {level}",
   "{games} maçın ortalaması": "Average of {games} games",
+  "18 seviyenin tamamı; kısayolla açılır ve kapanır.": "All 18 levels; opens and closes with a hotkey.",
+  "Yetenek sırasını göster ya da gizle": "Show or hide the skill order",
 };

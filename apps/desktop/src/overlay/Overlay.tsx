@@ -22,6 +22,7 @@ import {
   scoreboardRows,
   type LiveGame,
 } from "./live";
+import { skillSequence } from "../SkillGrid";
 import { benchRead, expectedAt, pushHistory, BENCH_END_MINUTE } from "./bench";
 import { GRID, ROW_GAP, snapSpot, useLayout, type ScreenSize } from "./layout";
 import { modeOf, widgetsFor, type Spot, type WidgetId } from "./registry";
@@ -133,6 +134,14 @@ export function Overlay() {
     if (csDiff !== undefined) setCsHistory((h) => pushHistory(h, time, csDiff));
   }, [time, csDiff]);
 
+  // The skill order opens and closes on its hotkey, which arrives like a timer key.
+  const [orderOpen, setOrderOpen] = useState(false);
+  useEffect(() => {
+    if (!isTauri()) return;
+    const off = listen<string>("overlay-timer", ({ payload }) => payload === "skills" && setOrderOpen((open) => !open));
+    return () => void off.then((stop) => stop());
+  }, []);
+
   // The loading screen gets nothing; the overlay starts with the game.
   if (hidden || !settings.overlay) return null;
   // The loading screen gets the scouting panel; the boxes start with the game.
@@ -162,6 +171,7 @@ export function Overlay() {
     gold,
     picks,
     skill,
+    skillOrder: { keys: picks?.skills ? skillSequence(picks.skills) : [], ranked: game.skills.reduce((sum, n) => sum + n, 0), shown: orderOpen || editing },
     objectives: timers,
     itemGold,
     nextItem: next,

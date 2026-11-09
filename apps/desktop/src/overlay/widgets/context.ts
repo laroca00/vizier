@@ -18,6 +18,8 @@ export type WidgetContext = {
   gold: (itemId: number) => number;
   picks: Picks | null;
   skill: SkillKey | null;
+  /** The full 18-level order of the build, empty without a build; `ranked` levels are already spent. */
+  skillOrder: { keys: SkillKey[]; ranked: number; shown: boolean };
   objectives: Timer[];
   itemGold: { lane: number | null; team: number } | null;
   nextItem: number | null;
