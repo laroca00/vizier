@@ -3,13 +3,13 @@ import { useT } from "../i18n";
 import { DataBadge } from "../ui/DataBadge";
 
 /** What a champion is good and bad at, from Vizier's hand-kept table. */
-export function StrengthsPanel({ championId }: { championId: string }) {
+export function StrengthsPanel({ championId, name }: { championId: string; name?: string }) {
   const t = useT();
   const entry = strengthsOf(championId);
   if (!entry) return null;
   return (
     <section className="strengths" aria-label={t("Güçlü ve zayıf yönler")}>
-      <h2 className="draft__heading">{t("Güçlü ve zayıf yönler")}</h2>
+      <h2 className="draft__heading">{name ? `${name}: ${t("Güçlü ve zayıf yönler")}` : t("Güçlü ve zayıf yönler")}</h2>
       <p className="section-badge">
         <DataBadge editorial source={t("Vizier'in elle yazdığı bir değerlendirme; maç verisi değil.")} />
       </p>

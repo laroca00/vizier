@@ -1,6 +1,10 @@
 import { useId } from "react";
 import { BuildSuggestion } from "../BuildSuggestion";
 import { championIconUrl, champions, latestVersion, type Champion } from "../data/ddragon";
+import { AcademyBlock } from "../draft/AcademyBlock";
+import { ItemAdvicePanel } from "../draft/ItemAdvicePanel";
+import { PhaseRead } from "../draft/PhaseRead";
+import { StrengthsPanel } from "../draft/StrengthsPanel";
 import { AbilityCompare } from "../draft/AbilityCompare";
 import { LaneStats } from "../draft/LaneStatsPanel";
 import { PowerSpikes } from "../draft/PowerSpikes";
@@ -93,11 +97,35 @@ export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange
           </div>
           {isComplete(route) && me && opponent ? (
             <div className="matchup-page__body">
-              <MatchupGuide championId={route.championId} position={route.position} opponent={opponent} version={data.value.version} />
-              <LaneStats championId={route.championId} position={route.position} opponentId={route.opponentId} />
-              <StatsDuel champion={me} opponent={opponent} />
-              <PowerSpikes champion={me} opponent={opponent} position={route.position} version={data.value.version} />
-              <AbilityCompare champion={me} opponent={opponent} version={data.value.version} />
+              <AcademyBlock sources={["crawler", "ddragon"]}>
+                <MatchupGuide championId={route.championId} position={route.position} opponent={opponent} version={data.value.version} />
+              </AcademyBlock>
+              <AcademyBlock sources={["editorial"]}>
+                <section aria-label={t("Güçlü ve zayıf yönler")}>
+                  <div className="academy__pair">
+                    <StrengthsPanel championId={me.id} name={me.name} />
+                    <StrengthsPanel championId={opponent.id} name={opponent.name} />
+                  </div>
+                </section>
+              </AcademyBlock>
+              <AcademyBlock sources={["ddragon"]}>
+                <AbilityCompare champion={me} opponent={opponent} version={data.value.version} />
+              </AcademyBlock>
+              <AcademyBlock sources={["editorial"]}>
+                <PhaseRead champion={me} opponent={opponent} />
+              </AcademyBlock>
+              <AcademyBlock sources={["crawler", "ddragon"]}>
+                <PowerSpikes champion={me} opponent={opponent} position={route.position} version={data.value.version} />
+              </AcademyBlock>
+              <AcademyBlock sources={["editorial", "crawler"]}>
+                <ItemAdvicePanel championId={route.championId} position={route.position} enemies={[opponent]} />
+              </AcademyBlock>
+              <AcademyBlock sources={["crawler"]}>
+                <LaneStats championId={route.championId} position={route.position} opponentId={route.opponentId} />
+              </AcademyBlock>
+              <AcademyBlock sources={["ddragon"]}>
+                <StatsDuel champion={me} opponent={opponent} />
+              </AcademyBlock>
               <section aria-label={t("Build")}>
                 <h2 className="draft__heading">{t("{champion} için {opponent} karşısında build", { champion: me.name, opponent: opponent.name })}</h2>
                 <BuildSuggestion

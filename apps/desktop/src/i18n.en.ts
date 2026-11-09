@@ -208,6 +208,8 @@ export const EN: Record<string, string> = {
   "Güçlü yönler": "Strengths",
   "Zayıf yönler": "Weaknesses",
   "Vizier'in elle yazdığı bir değerlendirme; maç verisi değil.": "A hand-written assessment by Vizier; not match data.",
+  "Veri kaynağı": "Source",
+  "Erken, orta ve geç oyun": "Early, mid and late game",
   "az önce güncellendi": "updated just now",
   "{n} dakika önce güncellendi": "updated {n} min ago",
   "{n} saat önce güncellendi": "updated {n} h ago",
