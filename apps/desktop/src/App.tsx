@@ -31,6 +31,7 @@ import { useOnline } from "./useOnline";
 import { champions } from "./data/ddragon";
 import { Sidebar, type NavGroup, type NavItem } from "./Sidebar";
 import { ShortcutsHelp } from "./ShortcutsHelp";
+import { Welcome } from "./Welcome";
 import { isTyping } from "./shortcuts";
 import { IconButton } from "./ui/Button";
 import { NavIcon } from "./ui/NavIcon";
@@ -503,6 +504,8 @@ function App() {
         </main>
       </SplashProvider>
       <SharePaste onAdded={() => go({ page: "builds" })} />
+      {/* Dev screenshots open pages directly; the welcome would cover them. */}
+      {!devRoute() && <Welcome onOpenOverlay={() => go({ page: "overlay" })} />}
       <ShortcutsHelp open={showKeys} onClose={() => setShowKeys(false)} pages={shortcutPages.map((item) => t(item.label))} />
       <SearchPalette
         open={searching}

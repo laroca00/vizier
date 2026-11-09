@@ -77,6 +77,8 @@ export type Settings = {
   homeLayout: HomeLayout;
   /** Menu groups the player folded, by heading. */
   navFolded: string[];
+  /** The first-run welcome was closed. */
+  welcomeSeen: boolean;
 };
 
 const DEFAULTS: Settings = {
@@ -121,6 +123,7 @@ const DEFAULTS: Settings = {
   language: "auto",
   homeLayout: DEFAULT_HOME,
   navFolded: [],
+  welcomeSeen: false,
 };
 
 const KEY = "vizier.settings";
