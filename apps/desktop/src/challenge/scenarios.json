@@ -1,0 +1,1626 @@
+[
+ {
+  "id": "front-top-1",
+  "category": "frontline",
+  "difficulty": 1,
+  "role": "TOP",
+  "blue": [
+   null,
+   "LeeSin",
+   "Ahri",
+   "Jinx",
+   "Lulu"
+  ],
+  "red": [
+   "Garen",
+   "Hecarim",
+   "Syndra",
+   "Caitlyn",
+   "Leona"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Üst koridoru sen seçiyorsun. Takıma ne eksik?",
+   "en": "You pick top. What does the team lack?"
+  },
+  "lesson": {
+   "tr": "Takımda ön saf yok; üst koridordan gelmezse taşıyıcılar korunmasız kalır.",
+   "en": "The team has no front line; if it doesn't come from top the carries are exposed."
+  },
+  "accepted": [
+   {
+    "champion": "Ornn",
+    "why": {
+     "tr": "Büyük can havuzu ve kontrol etkisi takıma ön saf verir.",
+     "en": "Big health pool and crowd control give the team a front line."
+    }
+   },
+   {
+    "champion": "Sion",
+    "why": {
+     "tr": "Çok can taşır ve dövüşü başlatır.",
+     "en": "Carries a lot of health and starts fights."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Teemo",
+    "why": {
+     "tr": "Kendisi de kırılgan; ön saf sorunu çözülmez.",
+     "en": "Fragile himself; the front line problem stays."
+    }
+   }
+  ]
+ },
+ {
+  "id": "front-sup-1",
+  "category": "frontline",
+  "difficulty": 1,
+  "role": "UTILITY",
+  "blue": [
+   "Jax",
+   "Elise",
+   "Orianna",
+   "Draven",
+   null
+  ],
+  "red": [
+   "Sion",
+   "Sejuani",
+   "Viktor",
+   "Ashe",
+   "Nautilus"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Destek sensin ve ön saf zayıf. Kimi seçersin?",
+   "en": "You are support and the front line is thin. Who do you pick?"
+  },
+  "lesson": {
+   "tr": "Üstteki Jax tek başına ön saf olmaz; destek de ön saf getirebilir.",
+   "en": "Jax alone is not a front line; support can add one."
+  },
+  "accepted": [
+   {
+    "champion": "Braum",
+    "why": {
+     "tr": "Hem dayanıklı hem taşıyıcıyı korur.",
+     "en": "Tough and protects the carry."
+    }
+   },
+   {
+    "champion": "Alistar",
+    "why": {
+     "tr": "Ön saf ve kontrol getirir.",
+     "en": "Brings a front line and crowd control."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Soraka",
+    "why": {
+     "tr": "Yalnız iyileştirir; ön saf olmaz.",
+     "en": "Heals only; not a front line."
+    }
+   }
+  ]
+ },
+ {
+  "id": "front-jg-2",
+  "category": "frontline",
+  "difficulty": 2,
+  "role": "JUNGLE",
+  "blue": [
+   "Gwen",
+   null,
+   "Zed",
+   "Kaisa",
+   "Karma"
+  ],
+  "red": [
+   "Ornn",
+   "Viego",
+   "Azir",
+   "Jinx",
+   "Thresh"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Ormancı sensin ve takımda hiç tank yok. Ne seçersin?",
+   "en": "You jungle and the team has no tank. What do you pick?"
+  },
+  "lesson": {
+   "tr": "Üç hasarcı ve bir destek var; orman bu boşluğu kapatabilir.",
+   "en": "Three damage dealers and a support: jungle can fill the gap."
+  },
+  "accepted": [
+   {
+    "champion": "Sejuani",
+    "why": {
+     "tr": "Ön saf ve zincirleme kontrol.",
+     "en": "Front line and chained crowd control."
+    }
+   },
+   {
+    "champion": "Zac",
+    "why": {
+     "tr": "Dayanıklı; dövüşe giren bir başlatıcı.",
+     "en": "Tough and engages into the fight."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Khazix",
+    "why": {
+     "tr": "Bir hedef öldürür ama ön saf olmaz.",
+     "en": "Kills a target but is no front line."
+    }
+   }
+  ]
+ },
+ {
+  "id": "engage-sup-1",
+  "category": "engage",
+  "difficulty": 1,
+  "role": "UTILITY",
+  "blue": [
+   "Garen",
+   "Vi",
+   "Syndra",
+   "Ezreal",
+   null
+  ],
+  "red": [
+   "Ahri",
+   "Hecarim",
+   "Zed",
+   "Kaisa",
+   "Lulu"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Takımda dövüşü başlatacak kimse yok. Destek olarak ne seçersin?",
+   "en": "Nobody can start a fight. What support do you pick?"
+  },
+  "lesson": {
+   "tr": "Garen ve Vi yaklaşabilir ama menzilli taraf için güvenilir bir başlatıcı yok.",
+   "en": "Garen and Vi can close in, but the ranged side has no reliable starter."
+  },
+  "accepted": [
+   {
+    "champion": "Leona",
+    "why": {
+     "tr": "Hedefi tutup takımın girmesini sağlar.",
+     "en": "Holds a target so the team can follow."
+    }
+   },
+   {
+    "champion": "Nautilus",
+    "why": {
+     "tr": "Uzaktan yakalar ve kontrol zinciri kurar.",
+     "en": "Grabs from range and chains control."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Janna",
+    "why": {
+     "tr": "Korur ama dövüşü başlatamaz.",
+     "en": "Protects but cannot start fights."
+    }
+   }
+  ]
+ },
+ {
+  "id": "engage-jg-2",
+  "category": "engage",
+  "difficulty": 2,
+  "role": "JUNGLE",
+  "blue": [
+   "Jax",
+   null,
+   "Ryze",
+   "Jinx",
+   "Lux"
+  ],
+  "red": [
+   "Zed",
+   "Nidalee",
+   "Kassadin",
+   "Lucian",
+   "Nami"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Ormancı sensin. Takımda dalış ya da başlatma yok. Seçimin?",
+   "en": "You jungle and the team has no dive or engage. Your pick?"
+  },
+  "lesson": {
+   "tr": "Menzilli bir takım, rakip yaklaşmazsa iyi; yaklaşırsa yakalayacak biri lazım.",
+   "en": "A ranged team is fine if the enemy stays away; someone must catch them when they dive."
+  },
+  "accepted": [
+   {
+    "champion": "Sejuani",
+    "why": {
+     "tr": "Alan kontrolü ve güvenilir başlatma.",
+     "en": "Area control and a reliable start."
+    }
+   },
+   {
+    "champion": "Amumu",
+    "why": {
+     "tr": "Tek hamlede kontrol; takım arkasından girer.",
+     "en": "Control in one move; the team follows."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Karthus",
+    "why": {
+     "tr": "Alan hasarı verir ama başlatamaz.",
+     "en": "Deals area damage but cannot start."
+    }
+   }
+  ]
+ },
+ {
+  "id": "engage-top-2",
+  "category": "engage",
+  "difficulty": 2,
+  "role": "TOP",
+  "blue": [
+   null,
+   "Kindred",
+   "Orianna",
+   "Kaisa",
+   "Lulu"
+  ],
+  "red": [
+   "Rumble",
+   "Sejuani",
+   "Leblanc",
+   "Jinx",
+   "Alistar"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Üst koridorda ne seçersin? Takım dövüşe girecek birini arıyor.",
+   "en": "What do you pick top? The team looks for someone to start fights."
+  },
+  "lesson": {
+   "tr": "Orianna'nın topu iyi bir başlatıcıyla çok daha etkili olur.",
+   "en": "Orianna's ball does much more with a good starter."
+  },
+  "accepted": [
+   {
+    "champion": "Malphite",
+    "why": {
+     "tr": "Kesin bir başlatma ve alan kontrolü.",
+     "en": "A sure start and area control."
+    }
+   },
+   {
+    "champion": "Gnar",
+    "why": {
+     "tr": "Büyüyünce toplu kontrol getirir.",
+     "en": "Brings group control once he grows."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Quinn",
+    "why": {
+     "tr": "Yalnız oynar; takımı başlatmaz.",
+     "en": "Plays alone; does not start for the team."
+    }
+   }
+  ]
+ },
+ {
+  "id": "peel-sup-2",
+  "category": "peel",
+  "difficulty": 2,
+  "role": "UTILITY",
+  "blue": [
+   "Camille",
+   "Hecarim",
+   "Katarina",
+   "Kalista",
+   null
+  ],
+  "red": [
+   "Zed",
+   "Talon",
+   "Akali",
+   "Jinx",
+   "Nami"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Rakipte üç suikastçı var. Taşıyıcını korumak için ne seçersin?",
+   "en": "The enemy has three assassins. What do you pick to protect your carry?"
+  },
+  "lesson": {
+   "tr": "Suikastçıya karşı kontrol ve koruma, hasardan daha değerli.",
+   "en": "Against assassins, control and protection beat damage."
+  },
+  "accepted": [
+   {
+    "champion": "Braum",
+    "why": {
+     "tr": "Kalkanı ve kontrolü suikastçıyı geri atar.",
+     "en": "His shield and control turn assassins back."
+    }
+   },
+   {
+    "champion": "Lulu",
+    "why": {
+     "tr": "Taşıyıcıyı küçültür, hedefi uzaklaştırır.",
+     "en": "Shrinks the carry and pushes the target away."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Brand",
+    "why": {
+     "tr": "Hasar verir ama taşıyıcıyı korumaz.",
+     "en": "Deals damage but doesn't protect the carry."
+    }
+   }
+  ]
+ },
+ {
+  "id": "peel-top-3",
+  "category": "peel",
+  "difficulty": 3,
+  "role": "TOP",
+  "blue": [
+   null,
+   "Vi",
+   "Syndra",
+   "Ashe",
+   "Janna"
+  ],
+  "red": [
+   "Zed",
+   "Fizz",
+   "Khazix",
+   "Caitlyn",
+   "Pyke"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Rakip ağırlıkla dalış kuruyor. Üst koridordan nasıl cevap verirsin?",
+   "en": "The enemy is built around diving. How do you answer from top?"
+  },
+  "lesson": {
+   "tr": "Dalışa karşı kırılgan hedefleri saran ve kontrol eden bir üst iş görür.",
+   "en": "Against dive, a top laner who screens and controls does the job."
+  },
+  "accepted": [
+   {
+    "champion": "Poppy",
+    "why": {
+     "tr": "Dalan hedefi duvara atar, atılımları durdurur.",
+     "en": "Throws diving targets into walls and stops dashes."
+    }
+   },
+   {
+    "champion": "Malphite",
+    "why": {
+     "tr": "Dalış sonrası tek hamlede kontrol.",
+     "en": "One move of control after the dive."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Yasuo",
+    "why": {
+     "tr": "Rüzgar duvarı yardımcı olur ama o da kırılgandır.",
+     "en": "His wall helps, but he is fragile himself."
+    }
+   }
+  ]
+ },
+ {
+  "id": "damage-mid-1",
+  "category": "damage",
+  "difficulty": 1,
+  "role": "MIDDLE",
+  "blue": [
+   "Darius",
+   "Vi",
+   null,
+   "Jhin",
+   "Braum"
+  ],
+  "red": [
+   "Malphite",
+   "Sejuani",
+   "Annie",
+   "Jinx",
+   "Alistar"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Takımın hasarı neredeyse hep fiziksel. Orta için ne seçersin?",
+   "en": "Your damage is nearly all physical. What do you pick mid?"
+  },
+  "lesson": {
+   "tr": "Rakip zırh toplarsa fiziksel hasar etkisini yitirir; büyü hasarı gerekir.",
+   "en": "If the enemy stacks armor, physical damage loses its edge; add magic damage."
+  },
+  "accepted": [
+   {
+    "champion": "Syndra",
+    "why": {
+     "tr": "Büyü hasarı ve patlama getirir.",
+     "en": "Brings magic damage and burst."
+    }
+   },
+   {
+    "champion": "Viktor",
+    "why": {
+     "tr": "Güçlü bir büyü kaynağı; takımı dengeler.",
+     "en": "A strong source of magic damage that balances the team."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Yasuo",
+    "why": {
+     "tr": "Yine fiziksel hasar; denge değişmez.",
+     "en": "More physical damage; the balance stays."
+    }
+   }
+  ]
+ },
+ {
+  "id": "damage-bot-2",
+  "category": "damage",
+  "difficulty": 2,
+  "role": "BOTTOM",
+  "blue": [
+   "Gwen",
+   "Elise",
+   "Ahri",
+   null,
+   "Zyra"
+  ],
+  "red": [
+   "Garen",
+   "Sejuani",
+   "Orianna",
+   "Kaisa",
+   "Leona"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Takımda dört büyü hasarcısı var. Alt koridorda ne seçersin?",
+   "en": "Four magic damage dealers on the team. What do you pick bot?"
+  },
+  "lesson": {
+   "tr": "Fazla büyü hasarı rakibe tek tür direnç almayı kolaylaştırır.",
+   "en": "Too much magic damage makes it easy to buy a single resistance."
+  },
+  "accepted": [
+   {
+    "champion": "Jinx",
+    "why": {
+     "tr": "Fiziksel hasarı dengeler, uzun dövüşte güçlü.",
+     "en": "Balances with physical damage and is strong in long fights."
+    }
+   },
+   {
+    "champion": "Caitlyn",
+    "why": {
+     "tr": "Menzilli fiziksel hasar, yapı baskısı.",
+     "en": "Ranged physical damage and structure pressure."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Karthus",
+    "why": {
+     "tr": "Alt koridorda bir büyü hasarcısı daha olur.",
+     "en": "Adds yet another magic damage dealer."
+    }
+   }
+  ]
+ },
+ {
+  "id": "damage-top-2",
+  "category": "damage",
+  "difficulty": 2,
+  "role": "TOP",
+  "blue": [
+   null,
+   "Hecarim",
+   "Zed",
+   "Jhin",
+   "Pyke"
+  ],
+  "red": [
+   "Malphite",
+   "Sejuani",
+   "Ahri",
+   "Leona",
+   "Ashe"
+  ],
+  "bans": [
+   "Gwen"
+  ],
+  "question": {
+   "tr": "Rakip zırh topluyor ve takımda büyü hasarı yok. Üst için fikrin?",
+   "en": "The enemy is stacking armor and you have no magic damage. Your top pick?"
+  },
+  "lesson": {
+   "tr": "Hasar türünü çeşitlendirmek rakibin eşya seçimini zorlaştırır.",
+   "en": "Mixing damage types makes the enemy's item choices harder."
+  },
+  "accepted": [
+   {
+    "champion": "Kennen",
+    "why": {
+     "tr": "Büyü hasarı verir ve dövüşte toplu kontrol sağlar.",
+     "en": "Deals magic damage and gives group control in fights."
+    }
+   },
+   {
+    "champion": "Mordekaiser",
+    "why": {
+     "tr": "Büyü hasarı ve dayanıklılık bir arada.",
+     "en": "Magic damage and toughness together."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Darius",
+    "why": {
+     "tr": "Yine fiziksel hasar.",
+     "en": "More physical damage."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wave-mid-2",
+  "category": "waveclear",
+  "difficulty": 2,
+  "role": "MIDDLE",
+  "blue": [
+   "Renekton",
+   "Khazix",
+   null,
+   "Vayne",
+   "Pyke"
+  ],
+  "red": [
+   "Orianna",
+   "Sejuani",
+   "Ziggs",
+   "Jinx",
+   "Nautilus"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Rakip uzaktan dalga baskısı kuruyor. Ortada ne seçersin?",
+   "en": "The enemy pushes waves from range. What do you pick mid?"
+  },
+  "lesson": {
+   "tr": "Dalgayı temizleyemezsen kule hasar yer ve harita baskısı rakibe geçer.",
+   "en": "If you can't clear waves you lose towers and map pressure."
+  },
+  "accepted": [
+   {
+    "champion": "Anivia",
+    "why": {
+     "tr": "Duvar ve alan hasarıyla dalgayı hızla siler.",
+     "en": "Wipes waves quickly with her wall and area damage."
+    }
+   },
+   {
+    "champion": "Cassiopeia",
+    "why": {
+     "tr": "Dalgayı tek başına eritir.",
+     "en": "Melts a wave alone."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Zed",
+    "why": {
+     "tr": "Dalgayı yavaş temizler; baskıya karşılık veremez.",
+     "en": "Clears slowly and can't answer the pressure."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wave-sup-3",
+  "category": "waveclear",
+  "difficulty": 3,
+  "role": "UTILITY",
+  "blue": [
+   "Fiora",
+   "Nocturne",
+   "Akali",
+   "Draven",
+   null
+  ],
+  "red": [
+   "Ziggs",
+   "Karthus",
+   "Syndra",
+   "Lucian",
+   "Seraphine"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Rakip koridorlarda sürekli dalga itiyor. Destek olarak ne yaparsın?",
+   "en": "The enemy keeps pushing every lane. What do you do as support?"
+  },
+  "lesson": {
+   "tr": "Dalga temizleme yalnız ortanın işi değildir; destek de hasar ve baskı verebilir.",
+   "en": "Wave clear isn't only mid's job; support can add damage and pressure."
+  },
+  "accepted": [
+   {
+    "champion": "Brand",
+    "why": {
+     "tr": "Alan hasarıyla dalgayı eritir ve baskıyı kırar.",
+     "en": "Melts the wave with area damage and breaks the pressure."
+    }
+   },
+   {
+    "champion": "Zyra",
+    "why": {
+     "tr": "Bitkileriyle dalgayı ve koridoru tutar.",
+     "en": "Her plants hold the wave and the lane."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Pyke",
+    "why": {
+     "tr": "Sadece tek hedefe baskı kurar; dalga kalır.",
+     "en": "Pressures a single target; the wave stays."
+    }
+   }
+  ]
+ },
+ {
+  "id": "scale-jg-2",
+  "category": "scaling",
+  "difficulty": 2,
+  "role": "JUNGLE",
+  "blue": [
+   "Nasus",
+   null,
+   "Kayle",
+   "Kassadin",
+   "Vayne"
+  ],
+  "red": [
+   "LeeSin",
+   "Elise",
+   "Draven",
+   "Renekton",
+   "Leona"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Takımın geç oyuna oynuyor, rakip erken güçlü. Ormanda ne seçersin?",
+   "en": "Your team plays for late game while the enemy is strong early. Jungle pick?"
+  },
+  "lesson": {
+   "tr": "Geç oyun takımı erken oyunu sağ atlatmalı; orman bunu kolaylaştırabilir.",
+   "en": "A late-game team must survive early; the jungler can help with that."
+  },
+  "accepted": [
+   {
+    "champion": "Rammus",
+    "why": {
+     "tr": "Erken dalışlara karşı sağlam, kolay kontrol.",
+     "en": "Solid against early dives, easy control."
+    }
+   },
+   {
+    "champion": "Skarner",
+    "why": {
+     "tr": "Dayanıklı; takımı erken oyunda ayakta tutar.",
+     "en": "Tough; keeps the team standing early."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Nidalee",
+    "why": {
+     "tr": "Erken baskı kurar ama savunmada zayıf.",
+     "en": "Pressures early but is weak on defence."
+    }
+   }
+  ]
+ },
+ {
+  "id": "scale-top-1",
+  "category": "scaling",
+  "difficulty": 1,
+  "role": "TOP",
+  "blue": [
+   null,
+   "Amumu",
+   "Orianna",
+   "Jinx",
+   "Thresh"
+  ],
+  "red": [
+   "Draven",
+   "Renekton",
+   "Lucian",
+   "Elise",
+   "Leona"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Rakip erken oyunda çok güçlü. Üst koridorda nasıl seçersin?",
+   "en": "The enemy is strong early. How do you pick top?"
+  },
+  "lesson": {
+   "tr": "Erken oyunda ezilirsen geç oyuna kalamazsın; sağlam bir koridor seçmek gerekir.",
+   "en": "If you're crushed early you never reach late game; pick a sturdy lane."
+  },
+  "accepted": [
+   {
+    "champion": "Malphite",
+    "why": {
+     "tr": "Sağlam koridor ve güvenli geç oyun.",
+     "en": "Sturdy lane and safe late game."
+    }
+   },
+   {
+    "champion": "Ornn",
+    "why": {
+     "tr": "Dayanıklı ve eşyalarla büyür.",
+     "en": "Tough and grows with items."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Kassadin",
+    "why": {
+     "tr": "Çok geç güçlenir; erken oyunda kolay hedef.",
+     "en": "Strong only late; an easy target early."
+    }
+   }
+  ]
+ },
+ {
+  "id": "early-mid-2",
+  "category": "early",
+  "difficulty": 2,
+  "role": "MIDDLE",
+  "blue": [
+   "Camille",
+   "Elise",
+   null,
+   "Draven",
+   "Leona"
+  ],
+  "red": [
+   "Karthus",
+   "Kassadin",
+   "Jinx",
+   "Nasus",
+   "Soraka"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Rakip geç oyun takımı. Ortada ne seçersin?",
+   "en": "The enemy is a late-game team. What do you pick mid?"
+  },
+  "lesson": {
+   "tr": "Geç oyun takımına karşı erken baskıyla oyunu kısa kesmek gerekir.",
+   "en": "Against a late-game team you must end the game short with early pressure."
+  },
+  "accepted": [
+   {
+    "champion": "Talon",
+    "why": {
+     "tr": "Erken yan koridor baskısı ve hızlı öldürme.",
+     "en": "Early side lane pressure and quick kills."
+    }
+   },
+   {
+    "champion": "Diana",
+    "why": {
+     "tr": "Orman ve orta arasında hızlı ve güçlü.",
+     "en": "Fast and strong between jungle and mid."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Azir",
+    "why": {
+     "tr": "Geç güçlenir; rakiple aynı planı oynar.",
+     "en": "Scales late; plays the same plan as the enemy."
+    }
+   }
+  ]
+ },
+ {
+  "id": "poke-jg-2",
+  "category": "poke",
+  "difficulty": 2,
+  "role": "JUNGLE",
+  "blue": [
+   "Jayce",
+   null,
+   "Ziggs",
+   "Caitlyn",
+   "Lux"
+  ],
+  "red": [
+   "Malphite",
+   "Sion",
+   "Kaisa",
+   "Xayah",
+   "Rakan"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Takım uzaktan hasar verip kule kuşatmak istiyor. Ormanda ne seçersin?",
+   "en": "Your team wants to poke and siege towers. What do you pick in jungle?"
+  },
+  "lesson": {
+   "tr": "Poke takımı rakibi dövüşe zorlayamaz; baskıyı koruyacak biri iyi olur.",
+   "en": "A poke team can't force a fight; someone to protect the pressure helps."
+  },
+  "accepted": [
+   {
+    "champion": "Sejuani",
+    "why": {
+     "tr": "Tehdit eder, dövüşe zorlayanı durdurur.",
+     "en": "Threatens and stops those who force a fight."
+    }
+   },
+   {
+    "champion": "Volibear",
+    "why": {
+     "tr": "Dayanıklı, siege sırasında alan tutar.",
+     "en": "Tough and holds space during siege."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Kindred",
+    "why": {
+     "tr": "Tek hedef kovalar; siege için gerekli değil.",
+     "en": "Chases a single target; not needed for a siege."
+    }
+   }
+  ]
+ },
+ {
+  "id": "pick-mid-3",
+  "category": "pick",
+  "difficulty": 3,
+  "role": "MIDDLE",
+  "blue": [
+   "Renekton",
+   "Hecarim",
+   null,
+   "Ashe",
+   "Morgana"
+  ],
+  "red": [
+   "Taric",
+   "Poppy",
+   "Jinx",
+   "Janna",
+   "Orianna"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Rakip toplu dövüşte güçlü, ona karşı takım yakalama arıyor. Ortada ne seçersin?",
+   "en": "The enemy is strong in grouped fights; you want to catch single targets. Mid pick?"
+  },
+  "lesson": {
+   "tr": "Toplu dövüşte kaybedecek takım, yalnız kalanı avlayarak oyunu kazanır.",
+   "en": "A team that loses grouped fights wins by catching stragglers."
+  },
+  "accepted": [
+   {
+    "champion": "Ahri",
+    "why": {
+     "tr": "Atılım ve çekim ile yalnız hedefi yakalar.",
+     "en": "Catches a lone target with dash and charm."
+    }
+   },
+   {
+    "champion": "Leblanc",
+    "why": {
+     "tr": "Hızlı yakalar, kolay kaçar.",
+     "en": "Catches fast and escapes easily."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Anivia",
+    "why": {
+     "tr": "Savunma için iyi, yakalama için yavaş.",
+     "en": "Good defensively, too slow for catches."
+    }
+   }
+  ]
+ },
+ {
+  "id": "pick-sup-2",
+  "category": "pick",
+  "difficulty": 2,
+  "role": "UTILITY",
+  "blue": [
+   "Garen",
+   "Nocturne",
+   "Ahri",
+   "Aphelios",
+   null
+  ],
+  "red": [
+   "Ornn",
+   "Zac",
+   "Azir",
+   "Ezreal",
+   "Karma"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Destek olarak yakalama kurmak istiyorsun. Kimi seçersin?",
+   "en": "You want to set up catches as support. Whom do you pick?"
+  },
+  "lesson": {
+   "tr": "Yakalama için görüş ve uzaktan kontrol birbirini tamamlar.",
+   "en": "For catches, vision and ranged control go together."
+  },
+  "accepted": [
+   {
+    "champion": "Blitzcrank",
+    "why": {
+     "tr": "Çeker; yalnız hedef anında takımın önünde olur.",
+     "en": "Pulls; a lone target lands in front of the team."
+    }
+   },
+   {
+    "champion": "Thresh",
+    "why": {
+     "tr": "Kanca ve zincirle hedefi tutar.",
+     "en": "Holds the target with hook and chain."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Soraka",
+    "why": {
+     "tr": "Yakalama değil, yaşatma aracı.",
+     "en": "A tool for sustaining, not for catching."
+    }
+   }
+  ]
+ },
+ {
+  "id": "comp-top-3",
+  "category": "comp",
+  "difficulty": 3,
+  "role": "TOP",
+  "blue": [
+   null,
+   "Hecarim",
+   "Orianna",
+   "Kaisa",
+   "Rakan"
+  ],
+  "red": [
+   "Garen",
+   "Elise",
+   "Syndra",
+   "Jinx",
+   "Nami"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Takımın girişi güçlü ama ön saf zayıf. Ne seçersin?",
+   "en": "Your team engages well but the front line is weak. What do you pick?"
+  },
+  "lesson": {
+   "tr": "Başlatan çok olunca asıl eksik, dövüşte yaşayacak bir ön saftır.",
+   "en": "With plenty of starters, the real gap is a front line that survives the fight."
+  },
+  "accepted": [
+   {
+    "champion": "Ornn",
+    "why": {
+     "tr": "Ön saf ve takımın girişini destekler.",
+     "en": "Front line that backs the team's start."
+    }
+   },
+   {
+    "champion": "Maokai",
+    "why": {
+     "tr": "Dayanıklı, kontrol getirir.",
+     "en": "Tough and brings control."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Pantheon",
+    "why": {
+     "tr": "Başlatan ama kırılgan; boşluk sürer.",
+     "en": "A starter but fragile; the gap stays."
+    }
+   }
+  ]
+ },
+ {
+  "id": "comp-bot-3",
+  "category": "comp",
+  "difficulty": 3,
+  "role": "BOTTOM",
+  "blue": [
+   "Ornn",
+   "Sejuani",
+   "Syndra",
+   null,
+   "Lulu"
+  ],
+  "red": [
+   "Fiora",
+   "Hecarim",
+   "Zed",
+   "Jhin",
+   "Leona"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Takım ön saf ve kontrol dolu ama sürekli hasar yok. Ne seçersin?",
+   "en": "The team has front line and control but no sustained damage. What do you pick?"
+  },
+  "lesson": {
+   "tr": "Kontrol ve ön saf varsa, onların kazandırdığı vakitte hasarı veren bir taşıyıcı gerekir.",
+   "en": "With front line and control, you need a carry who deals damage in the time they buy."
+  },
+  "accepted": [
+   {
+    "champion": "Jinx",
+    "why": {
+     "tr": "Uzun dövüşte sürekli hasar verir.",
+     "en": "Deals sustained damage in long fights."
+    }
+   },
+   {
+    "champion": "Aphelios",
+    "why": {
+     "tr": "Çok yönlü sürekli hasar, korumayla güçlenir.",
+     "en": "Flexible sustained damage that grows with protection."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Draven",
+    "why": {
+     "tr": "Erken güçlü, ama uzun dövüş taşıyıcısı değil.",
+     "en": "Strong early, but not a long-fight carry."
+    }
+   }
+  ]
+ },
+ {
+  "id": "comp-mid-2",
+  "category": "comp",
+  "difficulty": 2,
+  "role": "MIDDLE",
+  "blue": [
+   "Malphite",
+   "Amumu",
+   null,
+   "Yasuo",
+   "Alistar"
+  ],
+  "red": [
+   "Fiora",
+   "Sejuani",
+   "Ahri",
+   "Jhin",
+   "Leona"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Takım çok kontrol ve başlatma toplamış. Ortada tamamlayıcı ne olur?",
+   "en": "The team has stacked control and engage. What complements it mid?"
+  },
+  "lesson": {
+   "tr": "Çok başlatan bir takım, arkasında alan hasarı veren birine ihtiyaç duyar.",
+   "en": "A team of many starters needs someone behind them dealing area damage."
+  },
+  "accepted": [
+   {
+    "champion": "Orianna",
+    "why": {
+     "tr": "Toplu dövüşte alan hasarı ve hızlandırıcı.",
+     "en": "Area damage and a speed boost in grouped fights."
+    }
+   },
+   {
+    "champion": "Viktor",
+    "why": {
+     "tr": "Dar alanda kalıcı alan hasarı.",
+     "en": "Lasting area damage in tight spaces."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Zed",
+    "why": {
+     "tr": "Tek hedefe yönelik; toplu dövüş kurulumunu boşa çıkarır.",
+     "en": "Single-target; wastes a grouped-fight setup."
+    }
+   }
+  ]
+ },
+ {
+  "id": "lane-top-2",
+  "category": "lane",
+  "difficulty": 2,
+  "role": "TOP",
+  "blue": [
+   null,
+   "Vi",
+   "Ahri",
+   "Jinx",
+   "Lulu"
+  ],
+  "red": [
+   "Teemo",
+   "Elise",
+   "Zed",
+   "Caitlyn",
+   "Nami"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Rakip üst koridorda Teemo seçti (menzilli). Kimi seçersin?",
+   "en": "The enemy picked Teemo top (ranged). Whom do you pick?"
+  },
+  "lesson": {
+   "tr": "Menzilli bir rakibe karşı ya dayanıklılık ya da erken yaklaşma önemlidir.",
+   "en": "Against a ranged enemy, either toughness or an early way to close in matters."
+  },
+  "accepted": [
+   {
+    "champion": "Kayle",
+    "why": {
+     "tr": "Menzil ve dayanıklılık dengesi, geç oyunda güçlü.",
+     "en": "A balance of range and survivability, strong late."
+    }
+   },
+   {
+    "champion": "Gnar",
+    "why": {
+     "tr": "Menzilli başlar, rakibe cevap verir.",
+     "en": "Starts ranged and answers back."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Sion",
+    "why": {
+     "tr": "Menzilli rakip karşısında sürekli zarar görür.",
+     "en": "Takes constant damage from a ranged opponent."
+    }
+   }
+  ]
+ },
+ {
+  "id": "lane-mid-3",
+  "category": "lane",
+  "difficulty": 3,
+  "role": "MIDDLE",
+  "blue": [
+   "Ornn",
+   "Sejuani",
+   null,
+   "Jinx",
+   "Karma"
+  ],
+  "red": [
+   "Zed",
+   "Khazix",
+   "Talon",
+   "Caitlyn",
+   "Leona"
+  ],
+  "bans": [
+   "Akali"
+  ],
+  "question": {
+   "tr": "Rakip kırılgan hedefleri avlayan oyuncularla dolu. Hangi seçimle başlarsın?",
+   "en": "The enemy is full of hunters that kill fragile targets. What do you start with?"
+  },
+  "lesson": {
+   "tr": "Suikastçı takımına karşı erken güvenli koridor ve tek hamlede durdurma önemli.",
+   "en": "Against an assassin team, a safe early lane and a one-move stop matter."
+  },
+  "accepted": [
+   {
+    "champion": "Malzahar",
+    "why": {
+     "tr": "Kendini korur, hedefi susturur ve kontrol eder.",
+     "en": "Protects himself, silences and controls the target."
+    }
+   },
+   {
+    "champion": "Lissandra",
+    "why": {
+     "tr": "Dalışa karşı dondurur ve alan sağlar.",
+     "en": "Freezes and gives space against dives."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Syndra",
+    "why": {
+     "tr": "Güçlü ama dalış karşısında kırılgan.",
+     "en": "Strong but fragile against dives."
+    }
+   }
+  ]
+ },
+ {
+  "id": "shield-sup-1",
+  "category": "peel",
+  "difficulty": 1,
+  "role": "UTILITY",
+  "blue": [
+   "Kassadin",
+   "Kindred",
+   "Katarina",
+   "Jinx",
+   null
+  ],
+  "red": [
+   "Zed",
+   "Nidalee",
+   "Leblanc",
+   "Kaisa",
+   "Pyke"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Rakip hızlı tek hedef öldürüyor; taşıyıcını nasıl korursun?",
+   "en": "The enemy kills single targets fast; how do you protect your carry?"
+  },
+  "lesson": {
+   "tr": "Kalkan ve yavaşlatma, kısa dövüşlerde taşıyıcıyı hayatta tutar.",
+   "en": "Shields and slows keep the carry alive in short fights."
+  },
+  "accepted": [
+   {
+    "champion": "Janna",
+    "why": {
+     "tr": "Rüzgarla itme ve kalkan.",
+     "en": "Knock-away and a shield."
+    }
+   },
+   {
+    "champion": "Lulu",
+    "why": {
+     "tr": "Hedefi dönüştürür, taşıyıcıyı güçlendirir.",
+     "en": "Polymorphs the target and empowers the carry."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Xerath",
+    "why": {
+     "tr": "Hasar verir ama hızlı dalışta kendi hayatta kalamaz.",
+     "en": "Deals damage but can't survive a fast dive himself."
+    }
+   }
+  ]
+ },
+ {
+  "id": "zone-mid-2",
+  "category": "poke",
+  "difficulty": 2,
+  "role": "MIDDLE",
+  "blue": [
+   "Jax",
+   "LeeSin",
+   null,
+   "Jinx",
+   "Braum"
+  ],
+  "red": [
+   "Diana",
+   "Sejuani",
+   "Xayah",
+   "Zyra",
+   "Alistar"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Rakip dövüşe sık giriyor; alanı kapatıp dövüşü zorlaştırmak istiyorsun. Ne seçersin?",
+   "en": "The enemy dives often; you want to zone and make fights hard. What do you pick?"
+  },
+  "lesson": {
+   "tr": "Alanı kapatan hasar, rakibin girişini yavaşlatır.",
+   "en": "Zone-control damage slows the enemy's entry."
+  },
+  "accepted": [
+   {
+    "champion": "Anivia",
+    "why": {
+     "tr": "Duvarla alanı böler.",
+     "en": "Splits the space with her wall."
+    }
+   },
+   {
+    "champion": "Ziggs",
+    "why": {
+     "tr": "Tuzaklarla geçişi pahalı yapar.",
+     "en": "Makes crossing costly with his mines."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Yone",
+    "why": {
+     "tr": "Girişi yavaşlatmak yerine içeri dalar.",
+     "en": "Dives in instead of slowing the entry."
+    }
+   }
+  ]
+ },
+ {
+  "id": "splitpush-top-3",
+  "category": "lane",
+  "difficulty": 3,
+  "role": "TOP",
+  "blue": [
+   null,
+   "Nocturne",
+   "Orianna",
+   "Kalista",
+   "Rakan"
+  ],
+  "red": [
+   "Garen",
+   "Elise",
+   "Syndra",
+   "Draven",
+   "Leona"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Takım dövüşte güçlü, ama haritayı da açmak istiyor. Üst için seçimin?",
+   "en": "The team is strong in fights but wants to open the map too. Your top pick?"
+  },
+  "lesson": {
+   "tr": "Yan koridorda baskı kuran bir üst, rakibi bölmeye zorlar.",
+   "en": "A top laner pressuring a side lane forces the enemy to split."
+  },
+  "accepted": [
+   {
+    "champion": "Camille",
+    "why": {
+     "tr": "Yan koridor baskısı ve hızlı geri dönüş.",
+     "en": "Side lane pressure and a quick return."
+    }
+   },
+   {
+    "champion": "Fiora",
+    "why": {
+     "tr": "Tek başına kule yıkar, düello kazanır.",
+     "en": "Takes towers alone and wins duels."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Sion",
+    "why": {
+     "tr": "Güçlü başlatıcı; yan baskı kurmak yerine takımla durur.",
+     "en": "A strong starter who stays with the team instead of pressuring a side."
+    }
+   }
+  ]
+ },
+ {
+  "id": "antiheal-sup-2",
+  "category": "comp",
+  "difficulty": 2,
+  "role": "UTILITY",
+  "blue": [
+   "Aatrox",
+   "Warwick",
+   "Ahri",
+   "Jinx",
+   null
+  ],
+  "red": [
+   "Vladimir",
+   "Soraka",
+   "Briar",
+   "Samira",
+   "Yuumi"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Rakip yaşatma ve can çalma ile dolu. Destekte ne seçersin?",
+   "en": "The enemy is full of healing and life steal. What do you pick as support?"
+  },
+  "lesson": {
+   "tr": "Yaşatmaya karşı yoğun, kısa patlamalar ya da kontrol hedefleri kısa sürede düşürür.",
+   "en": "Against sustain, short bursts or control drop targets quickly."
+  },
+  "accepted": [
+   {
+    "champion": "Pyke",
+    "why": {
+     "tr": "Hızlı infaz ve kontrol.",
+     "en": "Fast executes and control."
+    }
+   },
+   {
+    "champion": "Brand",
+    "why": {
+     "tr": "Yoğun hasar; iyileşmeyi bastırır.",
+     "en": "Heavy damage that outweighs healing."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Nami",
+    "why": {
+     "tr": "Yaşatır ama rakibi bitirmez.",
+     "en": "Sustains but doesn't finish the enemy."
+    }
+   }
+  ]
+ },
+ {
+  "id": "lane-sup-3",
+  "category": "lane",
+  "difficulty": 3,
+  "role": "UTILITY",
+  "blue": [
+   "Camille",
+   "Rengar",
+   "Ahri",
+   "Kaisa",
+   null
+  ],
+  "red": [
+   "Poppy",
+   "Hecarim",
+   "Viktor",
+   "Caitlyn",
+   "Lux"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Rakip alt koridorda menzilli ve kırılgan; erken oyunda baskı kurmak istiyorsun. Seçimin?",
+   "en": "The enemy bot is ranged and fragile; you want early pressure. Your pick?"
+  },
+  "lesson": {
+   "tr": "Kırılgan rakibi erken baskıyla geri it; yakalayıcı bir destek koridoru kazandırır.",
+   "en": "Push fragile enemies back early; a catching support wins the lane."
+  },
+  "accepted": [
+   {
+    "champion": "Blitzcrank",
+    "why": {
+     "tr": "Çeker ve öldürmeyi başlatır.",
+     "en": "Pulls and starts the kill."
+    }
+   },
+   {
+    "champion": "Pyke",
+    "why": {
+     "tr": "Kancayla yakalar ve infaz eder.",
+     "en": "Hooks and executes."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Soraka",
+    "why": {
+     "tr": "Savunmaya iyi, baskı kurmaz.",
+     "en": "Good at defending, doesn't pressure."
+    }
+   }
+  ]
+ },
+ {
+  "id": "last-mid-1",
+  "category": "damage",
+  "difficulty": 1,
+  "role": "MIDDLE",
+  "blue": [
+   "Garen",
+   "Sejuani",
+   null,
+   "Ashe",
+   "Janna"
+  ],
+  "red": [
+   "Ornn",
+   "Viego",
+   "Azir",
+   "Jinx",
+   "Thresh"
+  ],
+  "bans": [],
+  "question": {
+   "tr": "Takımda hiç büyü hasarı yok. Orta için ne seçersin?",
+   "en": "The team has no magic damage. What do you pick mid?"
+  },
+  "lesson": {
+   "tr": "Hasar türünü dengelemek, rakibin zırh ya da büyü direnci almasını verimsiz kılar.",
+   "en": "Balancing damage types makes it inefficient for the enemy to buy armor or magic resist."
+  },
+  "accepted": [
+   {
+    "champion": "Orianna",
+    "why": {
+     "tr": "Büyü hasarı ve toplu dövüş kontrolü.",
+     "en": "Magic damage and fight control."
+    }
+   },
+   {
+    "champion": "Lux",
+    "why": {
+     "tr": "Menzilli büyü hasarı ve kalkan.",
+     "en": "Ranged magic damage and a shield."
+    }
+   }
+  ],
+  "rejected": [
+   {
+    "champion": "Talon",
+    "why": {
+     "tr": "Yine fiziksel hasar.",
+     "en": "More physical damage."
+    }
+   }
+  ]
+ }
+]

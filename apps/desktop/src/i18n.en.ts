@@ -1525,4 +1525,8 @@ export const EN: Record<string, string> = {
   "Not": "Note",
   "Kayıtlı draftlarda ara": "Search saved drafts",
   "Ad ya da notta ara": "Search name or note",
+  "Başlatma": "Engage",
+  "Takım dengesi": "Team balance",
+  "Uzaktan baskı": "Poke",
+  "Ön saf": "Front line",
 };
