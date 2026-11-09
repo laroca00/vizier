@@ -79,3 +79,26 @@ describe("regions", () => {
     expect(REGION_BRACKETS).toEqual(["emerald_plus", "all"]);
   });
 });
+
+import { bracketForTier } from "./brackets.ts";
+
+describe("bracketForTier", () => {
+  it.each([
+    ["IRON", "gold_minus"],
+    ["BRONZE", "gold_minus"],
+    ["SILVER", "gold_minus"],
+    ["GOLD", "gold_minus"],
+    ["PLATINUM", "platinum_plus"],
+    ["EMERALD", "emerald_plus"],
+    ["DIAMOND", "diamond_plus"],
+    ["MASTER", "master_plus"],
+    ["GRANDMASTER", "master_plus"],
+    ["CHALLENGER", "master_plus"],
+  ])("%s reads %s", (tier, bracket) => expect(bracketForTier(tier)).toBe(bracket));
+
+  it("is null for unranked", () => {
+    expect(bracketForTier("")).toBeNull();
+    expect(bracketForTier("NONE")).toBeNull();
+    expect(bracketForTier(undefined)).toBeNull();
+  });
+});

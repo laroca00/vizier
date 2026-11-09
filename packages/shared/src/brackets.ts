@@ -63,6 +63,23 @@ export function bracketsContaining(group: TierGroup): Bracket[] {
   return BRACKETS.filter((b) => MEMBERS[b].includes(group));
 }
 
+/** The published bracket nearest to a player's own tier group: Silver reads Gold and below, Platinum reads Platinum+, and so on. */
+export const CLOSEST_BRACKET: Record<TierGroup, Bracket> = {
+  iron_bronze: "gold_minus",
+  silver: "gold_minus",
+  gold: "gold_minus",
+  platinum: "platinum_plus",
+  emerald: "emerald_plus",
+  diamond: "diamond_plus",
+  master_plus: "master_plus",
+};
+
+/** A Riot tier name to the bracket that best describes games at that rank; null for unranked or unknown. */
+export function bracketForTier(tier: string | null | undefined): Bracket | null {
+  const group = bracketOfTier(tier);
+  return group ? CLOSEST_BRACKET[group] : null;
+}
+
 export const BRACKET_LABELS: Record<Bracket, { tr: string; en: string }> = {
   all: { tr: "Tüm ligler", en: "All ranks" },
   gold_minus: { tr: "Altın ve altı", en: "Gold and below" },
