@@ -487,6 +487,7 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 Everything up to 0.8.6 is shipped (2026-11-10): D1 migrations through 0017 applied, Worker deployed, crawler pulled and restarted, `RIOT_KEY` set, desktop 0.8.6 released.
 
 - Data expansion: once 32 and 33 are merged, run the steps 32.8 lists, in order. Until then the VM keeps crawling Emerald+ as before.
+  - The crawler now imports the new workspace package `@vizier/shared`: on the VM run `sudo pnpm install --frozen-lockfile` in /opt/vizier after the pull and before the restart, or the crawler fails to start.
 - Mayhem queue id: the probe on euw1 found no 2400/2401/2403/2405/2410/2450 games among Challenger players. Run it with the Riot ID of someone who plays Mayhem (`probeQueues.ts euw1 "Name#TAG"`), then trim `MAYHEM_QUEUES`.
 - Check the lobby reading (epic 21) once against a live client.
 - Optional: set `ARENA_ITEMS=off` on the Worker to hide Arena item stats; they are on by default.
