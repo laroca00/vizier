@@ -333,12 +333,9 @@ Builds on: the search palette (champions, pros, matchups, items, keystones, save
 
 ## 31. Overlay 2.0 polish (after epic 19)
 
-- [ ] 31.1 Overlay themes, transparency and scale per widget; settings preview uses the fixtures.
-<!-- claimed: auto/31-overlay-themes 2026-11-09T17:55:00Z -->
-- [ ] 31.2 Quick reference panels the player builds: pick any of build, runes, skill order, combo, matchup note, item info, and show them on a hotkey.
-<!-- claimed: auto/31-overlay-themes 2026-11-09T17:55:00Z -->
-- [ ] 31.3 Safe fallbacks: every widget shows a quiet empty state when Live Client data is missing or late, and the overlay never blocks the game when the API is down. Performance check: one render per second at most, measured in the fixture preview.
-<!-- claimed: auto/31-overlay-themes 2026-11-09T17:55:00Z -->
+- [x] 31.1 Overlay themes, transparency and scale per widget; settings preview uses the fixtures. (1b1659e; three colour themes, size and opacity sliders per widget in the overlay settings, preview follows them)
+- [x] 31.2 Quick reference panels the player builds: pick any of build, runes, skill order, combo, matchup note, item info, and show them on a hotkey. (b9b5635; "Hızlı bakış" widget: build, runes, skill order, combo, matchup note, next item info in the order the player picks, on Ctrl+Shift+J; cargo test --lib green)
+- [x] 31.3 Safe fallbacks: every widget shows a quiet empty state when Live Client data is missing or late, and the overlay never blocks the game when the API is down. Performance check: one render per second at most, measured in the fixture preview. (d659677; one render per second (pnpm perf:overlay measures 1.00/s in all four fixtures), a broken widget no longer takes the overlay down, opened panels with no data say so quietly; reference images regenerated)
 
 ## 16. Only when a feature needs it
 
