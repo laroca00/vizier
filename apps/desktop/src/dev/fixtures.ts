@@ -55,12 +55,14 @@ export function champSelectFixture(): ChampSelect | null {
   return draft;
 }
 
-/** Dev only: `?fixture=overlay` renders the in-game overlay mid-game without the game. */
+/** Live Client game modes the overlay fixtures play. */
+export const OVERLAY_FIXTURES: Record<string, string> = { overlay: "CLASSIC", rift: "CLASSIC", aram: "ARAM", arena: "CHERRY", mayhem: "KIWI" };
+
+/** Dev only: `?fixture=rift|aram|arena|mayhem` (or `overlay`) renders the in-game overlay mid-game without the game. */
 export function overlayFixture(): LiveGame | null {
   const fixture = import.meta.env.DEV ? new URLSearchParams(location.search).get("fixture") : null;
-  // `?fixture=arena` plays the same game as Arena, for the augment card.
-  if (fixture === "arena") return { ...sampleGame(), gameMode: "CHERRY" };
-  return fixture === "overlay" ? sampleGame() : null;
+  const mode = fixture ? OVERLAY_FIXTURES[fixture] : undefined;
+  return mode ? { ...sampleGame(), gameMode: mode } : null;
 }
 
 /** Dev only: `?fixture=client` shows a connected client without one. */

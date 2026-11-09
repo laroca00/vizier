@@ -1308,4 +1308,6 @@ export const EN: Record<string, string> = {
   "{champion} ile değiştir": "Swap for {champion}",
   "Değiştirilemedi. Şampiyon başkası tarafından alınmış olabilir.": "Could not swap. Someone else may have taken the champion.",
   "Değiştir": "Swap",
+  "Ejder, Baron ve inhibitör süreleri ile elle başlatılan zamanlayıcılar.": "Dragon, Baron and inhibitor respawns, plus the timers you start by hand.",
+  "Tab'a basılıyken her oyuncunun karşısındakine göre eşya altını farkı.": "While Tab is held, each player's item gold against their opponent.",
 };

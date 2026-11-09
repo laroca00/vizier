@@ -7,6 +7,8 @@ html:has(.overlay) body {
 }
 
 .overlay {
+  transform: scale(var(--overlay-scale, 1));
+  transform-origin: top left;
   position: fixed;
   top: 16px;
   left: 16px;
@@ -100,6 +102,8 @@ html:has(.overlay) body {
 
 /* Boxes the player dragged leave the column and sit where they were dropped. */
 .overlay__box[data-placed] {
+  transform: scale(var(--overlay-scale, 1));
+  transform-origin: top left;
   position: fixed;
   width: 210px;
   font-size: 13px;

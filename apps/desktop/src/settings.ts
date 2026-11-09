@@ -22,6 +22,8 @@ export type Settings = {
   /** Accept the ready check as soon as a match is found. */
   autoAcceptReady: boolean;
   overlay: boolean;
+  /** Size of every overlay box, 0.8 to 1.4. */
+  overlayScale: number;
   overlaySkills: boolean;
   overlayObjectives: boolean;
   overlayItems: boolean;
@@ -54,6 +56,7 @@ const DEFAULTS: Settings = {
   autopilotLockSeconds: 0,
   autoAcceptReady: false,
   overlay: true,
+  overlayScale: 1,
   overlaySkills: true,
   overlayObjectives: true,
   overlayItems: true,
