@@ -44,12 +44,57 @@
 }
 
 .side__heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
   margin: 0 0 4px;
-  padding: 0 10px;
+  padding: 2px 10px;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
   font-size: 12px;
   font-weight: 500;
   color: var(--glaze-faint);
   white-space: nowrap;
+  background: none;
+  cursor: pointer;
+  transition: color var(--duration-quick) var(--ease);
+}
+
+.side__heading:hover {
+  color: var(--glaze-muted);
+}
+
+/* The chevron shows only on hover or while folded, so the open menu stays quiet. */
+/* The icon points right; open groups turn it down. */
+.side__heading-chevron {
+  opacity: 0;
+  transform: rotate(90deg);
+  transition:
+    opacity var(--duration-quick) var(--ease),
+    transform var(--duration-standard) var(--ease);
+}
+
+.side__heading:hover .side__heading-chevron,
+.side__heading:focus-visible .side__heading-chevron,
+.side__group[data-folded] .side__heading-chevron {
+  opacity: 1;
+}
+
+.side__group[data-folded] .side__heading-chevron {
+  transform: none;
+}
+
+.side__heading-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side__heading-chevron {
+    transition: none;
+  }
 }
 
 .side__foot {

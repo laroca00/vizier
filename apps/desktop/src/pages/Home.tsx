@@ -1,5 +1,6 @@
 import { Fragment, useState, type ReactNode } from "react";
 import { ClientStatus } from "../ClientStatus";
+import { greeting } from "../home/greeting";
 import { HomeEditor } from "../home/HomeEditor";
 import { homeOrderFor, normalizeHome, type HomeCard } from "../home/layout";
 import { QueueView } from "../home/QueueView";
@@ -129,7 +130,7 @@ export function Home({ lcu, lobby = null, draftActive, onOpenChampion, onNavigat
     <div className="home">
       <div className="home__main">
         <header className="home__hello enter">
-          <h1 className="page__title">{summoner ? t("Merhaba, {name}", { name: summoner.gameName }) : "Vizier"}</h1>
+          <h1 className="page__title">{summoner ? t("{greeting}, {name}", { greeting: t(greeting(new Date().getHours())), name: summoner.gameName }) : t(greeting(new Date().getHours()))}</h1>
           <p className="page__subtitle">
             {patch ? t("Yama {patch}", { patch }) : t("EUW ve TR oyuncuları için League of Legends yardımcısı.")}
             {patch && (

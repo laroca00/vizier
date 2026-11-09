@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { updateSettings, useSettings } from "./settings";
 import { phaseLabel, type LcuStatus } from "./lcu";
 import { useLang, useT } from "./i18n";
 import { NavIcon, type IconName } from "./ui/NavIcon";
@@ -27,6 +28,9 @@ type Props<V extends string> = {
 
 export function Sidebar<V extends string>({ lcu, groups, foot, current, collapsed, onOpen, onSearch }: Props<V>) {
   const t = useT();
+  const { navFolded } = useSettings();
+  const toggleGroup = (heading: string) =>
+    updateSettings({ navFolded: navFolded.includes(heading) ? navFolded.filter((h) => h !== heading) : [...navFolded, heading] });
 
   const item = (entry: NavItem<V>) => (
     <button
@@ -59,14 +63,24 @@ export function Sidebar<V extends string>({ lcu, groups, foot, current, collapse
       </button>
 
       <nav className="side__nav" aria-label={t("Ana menü")}>
-        {groups.map((group, index) =>
-          group.items.length === 0 ? null : (
-            <div className="side__group" key={group.heading ?? index}>
-              {group.heading && <p className="side__heading">{t(group.heading)}</p>}
-              {group.items.map(item)}
+        {groups.map((group, index) => {
+          if (group.items.length === 0) return null;
+          // A folded group still shows the page that is open, so the player never loses their place.
+          const folded = !collapsed && !!group.heading && navFolded.includes(group.heading);
+          const visible = folded ? group.items.filter((entry) => entry.id === current) : group.items;
+          return (
+            <div className="side__group" key={group.heading ?? index} data-folded={folded || undefined}>
+              {group.heading && (
+                <button type="button" className="side__heading" aria-expanded={!folded} onClick={() => toggleGroup(group.heading!)}>
+                  <span>{t(group.heading)}</span>
+                  <NavIcon name="chevron" size={14} className="side__heading-chevron" />
+                  {folded && <span className="side__heading-count">{group.items.length}</span>}
+                </button>
+              )}
+              {visible.map(item)}
             </div>
-          ),
-        )}
+          );
+        })}
       </nav>
 
       <div className="side__foot">{foot.map(item)}</div>

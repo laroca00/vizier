@@ -307,34 +307,51 @@ function App() {
       items: draft ? [{ id: "draft", label: "Şampiyon seçimi", icon: "draft", live: true }] : [],
     },
     {
-      heading: "Keşfet",
+      heading: "Hazırlan",
       items: [
         { id: "champions", label: "Şampiyonlar", icon: "champions" },
         { id: "tiers", label: "Tier listesi", icon: "tiers" },
-        { id: "builds", label: "Build kütüphanesi", icon: "library" },
+        { id: "matchup", label: "Eşleşme", icon: "matchup" },
+        { id: "matrix", label: "Karşı seçim matrisi", icon: "matchup" },
+        { id: "synergy", label: "Sinerji gezgini", icon: "archetypes" },
         { id: "pros", label: "Pro build'ler", icon: "pros" },
         { id: "augments", label: "Augment'ler", icon: "augments" },
-        { id: "simulator", label: "Draft simülatörü", icon: "simulator" },
-        { id: "patches", label: "Yama takibi", icon: "patches" },
-        { id: "quiz", label: "Şampiyon bilmecesi", icon: "quiz" },
-        { id: "matchup", label: "Eşleşme", icon: "matchup" },
+      ],
+    },
+    {
+      heading: "Keşfet",
+      items: [
         { id: "items", label: "Eşyalar", icon: "items" },
         { id: "runes", label: "Rünler", icon: "runes" },
-        { id: "journal", label: "Günlük", icon: "journal" },
-        { id: "favourites", label: "Favoriler", icon: "library" },
-        { id: "lab", label: "Eşya laboratuvarı", icon: "lab" },
         { id: "combos", label: "Kombo kütüphanesi", icon: "combos" },
         { id: "archetypes", label: "Şampiyon tipleri", icon: "archetypes" },
-        { id: "matrix", label: "Karşı seçim matrisi", icon: "matchup" },
-        { id: "challenge", label: "Draft meydan okuması", icon: "quiz" },
         { id: "templates", label: "Takım şablonları", icon: "simulator" },
-        { id: "synergy", label: "Sinerji gezgini", icon: "archetypes" },
+        { id: "patches", label: "Yama takibi", icon: "patches" },
+      ],
+    },
+    {
+      heading: "Araçlar",
+      items: [
+        { id: "builds", label: "Build kütüphanesi", icon: "library" },
+        { id: "lab", label: "Eşya laboratuvarı", icon: "lab" },
+        { id: "simulator", label: "Draft simülatörü", icon: "simulator" },
+        { id: "journal", label: "Günlük", icon: "journal" },
+        { id: "favourites", label: "Favoriler", icon: "library" },
+      ],
+    },
+    {
+      heading: "Oyna",
+      items: [
+        { id: "quiz", label: "Şampiyon bilmecesi", icon: "quiz" },
+        { id: "challenge", label: "Draft meydan okuması", icon: "quiz" },
       ],
     },
   ];
-  // Ctrl+1 to Ctrl+9 open the menu's sections in order; the live champ select
-  // entry is left out so the numbers don't shift during a draft.
-  const shortcutPages = groups.flatMap((g) => g.items).filter((item) => item.id !== "draft").slice(0, 9);
+  // Ctrl+1 to Ctrl+9 keep the pages they opened before the menu was grouped,
+  // so the numbers players learned still work; the live champ select entry is never one.
+  const shortcutOrder: Page[] = ["home", "champions", "tiers", "builds", "pros", "augments", "simulator", "patches", "quiz"];
+  const allItems = groups.flatMap((g) => g.items);
+  const shortcutPages = shortcutOrder.map((id) => allItems.find((item) => item.id === id)).filter((item): item is NavItem<Page> => !!item);
   for (const [i, item] of shortcutPages.entries()) item.shortcut = `Ctrl+${i + 1}`;
   shortcutsRef.current = shortcutPages.map((item) => item.id);
   const footItems: NavItem<Page>[] = [
