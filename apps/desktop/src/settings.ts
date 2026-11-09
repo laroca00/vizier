@@ -24,6 +24,8 @@ export type Settings = {
   overlay: boolean;
   /** Size of every overlay box, 0.8 to 1.4. */
   overlayScale: number;
+  /** On the loading screen, rank and champion mastery of all ten players. */
+  overlayScouting: boolean;
   /** The player's own overlay hotkeys, by action id; anything missing keeps its default. */
   hotkeys: Record<string, string>;
   overlaySkills: boolean;
@@ -59,6 +61,7 @@ const DEFAULTS: Settings = {
   autoAcceptReady: false,
   overlay: true,
   overlayScale: 1,
+  overlayScouting: true,
   hotkeys: {},
   overlaySkills: true,
   overlayObjectives: true,

@@ -72,6 +72,13 @@ export function OverlayPage() {
             <span>{Math.round(settings.overlayScale * 100)}%</span>
           </label>
         </div>
+        <Toggle
+          label={t("Yükleme ekranında oyuncuları göster")}
+          hint={t("Dereceleri, ustalıkları ve takımların hasar dağılımını gösterir. Dereceler Vizier'in sunucusundan gelir; ayarlanmamışsa yalnızca hasar dağılımı görünür. Gizlemek için paneli gizleme kısayolunu kullan.")}
+          checked={settings.overlayScouting}
+          disabled={off}
+          onChange={(overlayScouting) => updateSettings({ overlayScouting })}
+        />
         <p className="settings__note">{t("Yerleşim her oyun türü ve ekran boyutu için ayrı tutulur.")}</p>
       </section>
 

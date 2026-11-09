@@ -6,7 +6,8 @@ import { augmentInfo } from "../augments/data";
 import { augmentQueue, augmentsByRarity } from "../augments/tiers";
 import { readChosenStyle } from "../buildStyles";
 import { champions, items, latestVersion, type Item } from "../data/ddragon";
-import { overlayFixture } from "../dev/fixtures";
+import { overlayFixture, scoutingFixture } from "../dev/fixtures";
+import { ScoutPanel } from "./ScoutPanel";
 import type { LcuStatus } from "../lcu";
 import { setClientLocale, useLang, useT } from "../i18n";
 import { useSettings } from "../settings";
@@ -122,7 +123,9 @@ export function Overlay() {
   const [augmentNames] = useAsync(wantAugments ? `augment-info:${lang}` : null, () => augmentInfo(lang));
 
   // The loading screen gets nothing; the overlay starts with the game.
-  if (hidden || !settings.overlay || (loading && !editing)) return null;
+  if (hidden || !settings.overlay) return null;
+  // The loading screen gets the scouting panel; the boxes start with the game.
+  if ((loading || scoutingFixture()) && !editing) return settings.overlayScouting ? <ScoutPanel /> : null;
   if (!game || !me) return null;
   const extra = { build: build.status === "done" ? build.value : null };
   const itemInfo = data.status === "done" ? data.value.items : null;

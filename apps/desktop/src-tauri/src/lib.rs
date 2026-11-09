@@ -81,6 +81,13 @@ async fn import_item_set(
     lcu::writes::import_item_set(&client, champion_id, &title, &blocks).await
 }
 
+/// The ten players of the game that is loading, for the scouting panel.
+#[tauri::command]
+async fn game_roster(api: tauri::State<'_, LcuApi>) -> Result<Vec<lcu::roster::RosterPlayer>, String> {
+    let client = api.get().ok_or(NOT_CONNECTED)?;
+    lcu::roster::current(&client).await
+}
+
 /// Hovers or locks a champion in the player's open pick or ban; `kind` is "pick" or "ban".
 #[tauri::command]
 async fn champ_select_act(api: tauri::State<'_, LcuApi>, kind: String, champion_id: i64, lock: bool) -> Result<(), String> {
@@ -360,6 +367,7 @@ pub fn run() {
             set_overlay_editing,
             set_background,
             set_hotkeys,
+            game_roster,
             champ_select_act,
             accept_ready_check,
             bench_swap,

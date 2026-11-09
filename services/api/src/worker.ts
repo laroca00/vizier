@@ -3,11 +3,14 @@ import type { Hono } from "hono";
 import { createApp } from "./app.ts";
 import { loadCatalog } from "./ddragon.ts";
 import { pruneOldPatches } from "./crawler.ts";
+import { RiotClient } from "./riot/client.ts";
 import { D1Store } from "./store.ts";
 
 type Env = {
   DB: D1Database;
   UPDATES?: KVNamespace;
+  /** Riot API key for loading screen scouting; the owner sets it as a Worker secret. */
+  RIOT_KEY?: string;
   /** "on" serves Arena and ARAM Mayhem augment stats; anything else hides them at once. */
   AUGMENTS?: string;
   /** "off" hides Arena item stats at once; they are on by default. */
@@ -33,7 +36,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/updates/")) return serveUpdate(env, url.pathname.slice("/updates/".length));
-    app ??= createApp(new D1Store(env.DB), { statsDb: env.DB, catalog: () => loadCatalog(), augments: env.AUGMENTS === "on", arenaItems: env.ARENA_ITEMS !== "off" });
+    app ??= createApp(new D1Store(env.DB), { statsDb: env.DB, catalog: () => loadCatalog(), augments: env.AUGMENTS === "on", arenaItems: env.ARENA_ITEMS !== "off", riot: env.RIOT_KEY ? new RiotClient({ apiKey: env.RIOT_KEY }) : undefined });
     return app.fetch(request, env, ctx);
   },
 

@@ -92,14 +92,6 @@ html:has(.overlay) body {
   }
 }
 
-.overlay:has(.scouting) {
-  width: 300px;
-}
-
-.scouting {
-  gap: 10px;
-}
-
 /* Boxes the player dragged leave the column and sit where they were dropped. */
 .overlay__box[data-placed] {
   transform: scale(var(--overlay-scale, 1));

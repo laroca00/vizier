@@ -65,6 +65,9 @@ export function overlayFixture(): LiveGame | null {
   return mode ? { ...sampleGame(), gameMode: mode } : null;
 }
 
+/** Dev only: `?fixture=scouting` shows the loading screen panel. */
+export const scoutingFixture = () => import.meta.env.DEV && new URLSearchParams(location.search).get("fixture") === "scouting";
+
 /** Dev only: `?fixture=client` shows a connected client without one. */
 export function lcuFixture(): LcuStatus | null {
   if (!import.meta.env.DEV || new URLSearchParams(location.search).get("fixture") !== "client") return null;
