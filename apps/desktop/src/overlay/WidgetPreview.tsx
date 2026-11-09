@@ -101,6 +101,12 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           <li data-ahead="true">+0.2k</li>
         </ol>
       )}
+      {id === "scoreboard" && (
+        <p className="overlay__scoreboard-total" data-ahead="true">
+          <span>{t("Takım")}</span>
+          <span className="overlay__value">+0.5k</span>
+        </p>
+      )}
     </div>
   );
 }

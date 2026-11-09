@@ -24,6 +24,8 @@ export type WidgetContext = {
   itemGold: { lane: number | null; team: number } | null;
   nextItem: number | null;
   rows: { ally: LivePlayer; diff: number | null }[];
+  /** Item gold of the whole team against the enemy team, shown under the scoreboard rows. */
+  rowsTotal: number | null;
   rowGap: number;
   /** Your CS and level against the average, with the CS gap over time; null without data or after minute 15. */
   bench: { read: BenchRead; history: number[] } | null;

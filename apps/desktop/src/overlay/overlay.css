@@ -211,6 +211,37 @@ html:has(.overlay) body {
   color: #f08a7c;
 }
 
+.overlay__scoreboard-wrap {
+  display: grid;
+  gap: 10px;
+}
+
+/* The team total sits under the last row, in the same chip style as the rows. */
+.overlay__scoreboard-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 58px;
+  min-width: max-content;
+  height: 22px;
+  margin: 0;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-radius: 7px;
+  font-size: 12px;
+  background: rgb(8 18 54 / 0.85);
+  box-shadow: inset 0 0 0 1px rgb(214 180 106 / 0.45);
+}
+
+.overlay__scoreboard-total[data-ahead="true"] .overlay__value {
+  color: #5fd3c8;
+}
+
+.overlay__scoreboard-total[data-ahead="false"] .overlay__value {
+  color: #f08a7c;
+}
+
 .overlay__next {
   grid-template-columns: 34px minmax(0, 1fr);
   align-items: center;

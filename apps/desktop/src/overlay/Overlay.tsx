@@ -177,6 +177,7 @@ export function Overlay() {
     nextItem: next,
     bench: benchNow ? { read: benchNow, history: csHistory.map((p) => p.diff) } : null,
     rows,
+    rowsTotal: rows.length > 0 ? (itemDifference(game, gold)?.team ?? null) : null,
     rowGap: layout.rowGap ?? ROW_GAP,
     augments:
       augments.status === "done" && augments.value && names
