@@ -366,21 +366,16 @@ Builds on: `statDocs.ts` (`docKey`), `crawler/src/publish.ts` (changed docs only
 
 - [x] 33.1 Doc keys with a bracket suffix for every non-default bracket (`...:r=gold_minus`); `emerald_plus` keeps today's key. Kinds with bracket docs: tier lists, champion overview, build, counters, matchup builds, lane, bench, synergies. Item times, build history, augments and Arena stay unbracketed. Key round-trip tests. (20d5acf; docKey with :r= suffix, statDocs(db, bracket), per-bracket local views)
 - [x] 33.2 Publish schedule per bracket: emerald_plus every 4 h as today; the other brackets once a day in rotation (one bracket per publish slot) so a day's writes stay inside the 32.6 budget. Changed-docs-only still applies. Budget test updated and green. (20d5acf; publishTick: Emerald+ ranked every 4 h plus one extra set (bracket or other queues) a publish)
-- [ ] 33.3 Routes take `?rank=` (`all`, `gold_minus`, `platinum_plus`, `emerald_plus`, `diamond_plus`, `master_plus`; unknown → 400; missing → emerald_plus). Responses gain `rank` next to `updatedAt`. Cache keys include the bracket. API tests per route.
-<!-- claimed: auto/33-rank-api 2026-11-09T23:25Z -->
-- [ ] 33.4 `?region=` on tier lists and champion overview (`tr`, `euw`, `kr`; missing = pooled as today), published once a day for `emerald_plus` and `all` only. Budget test updated.
-<!-- claimed: auto/33-rank-api 2026-11-09T23:25Z -->
-- [ ] 33.5 Rank curve docs: one small doc per queue with each champion and role's win rate, pick rate and games in every bracket side by side (`rankcurve:<queue>`), published once a day, for the elo views in 35.
-<!-- claimed: auto/33-rank-api 2026-11-09T23:25Z -->
+- [x] 33.3 Routes take `?rank=` (`all`, `gold_minus`, `platinum_plus`, `emerald_plus`, `diamond_plus`, `master_plus`; unknown → 400; missing → emerald_plus). Responses gain `rank` next to `updatedAt`. Cache keys include the bracket. API tests per route. (cf2c63f; ?rank= on tier list, champion, build, counters, synergies, lane, bench; rank in every answer)
+- [x] 33.4 `?region=` on tier lists and champion overview (`tr`, `euw`, `kr`; missing = pooled as today), published once a day for `emerald_plus` and `all` only. Budget test updated. (cf2c63f; ?region= on tier list and champion overview; region docs ride with the all and other-queues extras)
+- [x] 33.5 Rank curve docs: one small doc per queue with each champion and role's win rate, pick rate and games in every bracket side by side (`rankcurve:<queue>`), published once a day, for the elo views in 35. (cf2c63f; rankcurve:420 doc and /v1/meta/rank-curve; published daily with platinum_plus)
 
 ## 34. Rank everywhere in the app
 
 Builds on: the API client (`request<T>()`, per-route TTL cache, `useAsync`), the settings store, tier list, champion page, matchup page, champ select, overlay benchmark, loading screen scouting.
 
-- [ ] 34.1 Rank filter: one `RankPicker` (the six brackets plus "Benim rankım") on every page that shows crawler stats; the choice is saved in settings, shown as a chip in the page header and passed as `?rank=` through the API client. Default stays Emerald+. Tests for the settings migration and query building.
-<!-- claimed: auto/33-rank-api 2026-11-09T23:25Z -->
-- [ ] 34.2 "Benim rankım": read the player's solo queue tier from the LCU (typed Rust command over `/lol-ranked/v1/current-ranked-stats`, fixture test) and map it to the closest published bracket (Silver → gold_minus, Platinum → platinum_plus, Emerald → emerald_plus, ...). Unranked or client closed → Emerald+ with a note.
-<!-- claimed: auto/33-rank-api 2026-11-09T23:25Z -->
+- [x] 34.1 Rank filter: one `RankPicker` (the six brackets plus "Benim rankım") on every page that shows crawler stats; the choice is saved in settings, shown as a chip in the page header and passed as `?rank=` through the API client. Default stays Emerald+. Tests for the settings migration and query building. (cf2c63f; RankPicker on tier list and champion page, rank setting, ?rank= in the API client)
+- [x] 34.2 "Benim rankım": read the player's solo queue tier from the LCU (typed Rust command over `/lol-ranked/v1/current-ranked-stats`, fixture test) and map it to the closest published bracket (Silver → gold_minus, Platinum → platinum_plus, Emerald → emerald_plus, ...). Unranked or client closed → Emerald+ with a note. (cf2c63f; my_rank LCU command (cargo test --lib green), tier to nearest bracket in @vizier/shared)
 - [ ] 34.3 Tier list, champion page (header, builds, runes, counters, synergies) and matchup page follow the filter; every badge tooltip names the bracket. A value too thin in the bracket is greyed with the reason.
 - [ ] 34.4 Champ select follows the player's bracket by default: pick suggestions, ban planner, hover advice, teammate picks and the imported build use it (setting "Şampiyon seçiminde kendi rankımın verisi", on). The import toast names the bracket the build came from.
 - [ ] 34.5 Overlay benchmark and loading screen scouting compare against the player's bracket instead of Emerald+ when it has enough games; the widget says which bracket it uses.
