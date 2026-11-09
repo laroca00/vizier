@@ -25,7 +25,7 @@ export async function publish(db: D1Database, sqlite: DatabaseSync, remote: Remo
 
   const changed: Doc[] = [];
   let total = 0;
-  for await (const [key, value] of statDocs(db, scope.bracket, { regions: scope.only !== "ranked" })) {
+  for await (const [key, value] of statDocs(db, scope.bracket, { daily: scope.only !== "ranked" })) {
     if (value === null) continue;
     if (scope.only && isOtherQueueKey(key) !== (scope.only === "other")) continue;
     total++;

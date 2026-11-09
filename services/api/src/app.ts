@@ -304,6 +304,12 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
     return c.json((await readDoc<Coverage>(statsDb, docKey.coverage())) ?? { patches: [], games: [], timeline: [], players: [] });
   });
 
+  // Ranked solo only; the elo views read it to show a champion across brackets.
+  app.get("/v1/meta/rank-curve", async (c) => {
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json((await readDoc(statsDb, docKey.rankCurve(420))) ?? { patches: [], brackets: [...BRACKETS], champions: [] });
+  });
+
   app.get("/v1/bans", async (c) => {
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json((await readDoc(statsDb, docKey.bans())) ?? { patches: [], champions: [] });

@@ -6,7 +6,7 @@ import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
 import { buildHistory } from "./snapshots.ts";
 import { coverage } from "./coverage.ts";
 import { scope } from "./localSchema.ts";
-import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
+import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, championOverview, counters, itemTimes, laneStats, latestPatches, rankCurve, synergies, tierList } from "./stats.ts";
 
 // Queues with augments: Arena and ARAM Mayhem.
 export const AUGMENT_QUEUES = [1700, 2400];
@@ -34,7 +34,7 @@ export function splitRank(key: string): { base: string; bracket: Bracket } {
 /** Docs of the queues without a ladder (ARAM, Mayhem, Arena, URF): no bracket applies and they move slowly. */
 export function isOtherQueueKey(key: string): boolean {
   const [kind, queue] = splitRank(key).base.split(":");
-  if (["augments", "augmentchamps", "duos", "arenaitems"].includes(kind)) return true;
+  if (["augments", "augmentchamps", "duos", "arenaitems", "rankcurve"].includes(kind)) return true;
   // Region tier lists go out once a day with the other queues.
   if (kind === "tierlist" && splitRank(key).base.includes(":g=")) return true;
   return ["tierlist", "champion", "build", "bench"].includes(kind) && Number(queue) !== RANKED;
@@ -67,6 +67,8 @@ export const docKey = {
   itemTimes: (championId: number, position: string) => `itemtimes:${championId}:${position}`,
   /** Compact builds of the closed patches, newest first. */
   buildHistory: (championId: number, position: string) => `buildhistory:${championId}:${position}`,
+  /** A queue's champions and roles in every bracket side by side; one doc, sent daily. */
+  rankCurve: (queue: number) => `rankcurve:${queue}`,
   bans: () => "bans",
   /** How many games, timelines and followed players sit behind the stats. */
   coverage: () => "coverage",
@@ -126,7 +128,7 @@ export async function readDoc<T>(db: D1Database, key: string): Promise<T | null>
  * published. With a bracket other than Emerald+, only the kinds that exist per
  * bracket (ranked solo) come out, under that bracket's keys.
  */
-export async function* statDocs(db: D1Database, bracket: Bracket = DEFAULT_BRACKET, { regions = false }: { regions?: boolean } = {}): AsyncGenerator<[string, unknown]> {
+export async function* statDocs(db: D1Database, bracket: Bracket = DEFAULT_BRACKET, { daily = false }: { daily?: boolean } = {}): AsyncGenerator<[string, unknown]> {
   if ((await latestPatches(db)).length === 0) return;
   const main = bracket === DEFAULT_BRACKET;
 
@@ -138,7 +140,8 @@ export async function* statDocs(db: D1Database, bracket: Bracket = DEFAULT_BRACK
       yield [docKey.tierList(queue, "ALL"), await tierList(db, "", queue)];
     }
   }
-  if (main && regions) {
+  if (main && daily) yield [docKey.rankCurve(RANKED), await rankCurve(db, RANKED)];
+  if (main && daily) {
     for (const rankBracket of REGION_BRACKETS) {
       for (const region of REGIONS) {
         for (const position of POSITIONS) yield [docKey.tierList(RANKED, position, rankBracket, region), await tierList(db, position, RANKED, rankBracket, region)];

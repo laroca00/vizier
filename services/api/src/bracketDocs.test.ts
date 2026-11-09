@@ -100,7 +100,7 @@ describe("region tier lists", () => {
     await rollup(db, async () => ({ ...emptyCatalog(), finished: new Set([3157]) }));
 
     const docs = new Map<string, any>();
-    for await (const [key, value] of statDocs(db, "emerald_plus", { regions: true })) docs.set(key, value);
+    for await (const [key, value] of statDocs(db, "emerald_plus", { daily: true })) docs.set(key, value);
     const tr = docs.get("tierlist:420:MIDDLE:g=tr");
     const kr = docs.get("tierlist:420:MIDDLE:g=kr");
     expect(tr.champions.find((c: any) => c.championId === 103)).toMatchObject({ games: 40, winRate: 1 });
@@ -114,5 +114,12 @@ describe("region tier lists", () => {
     expect(isOtherQueueKey("tierlist:420:MIDDLE:g=tr:r=all")).toBe(true);
     expect(isOtherQueueKey("tierlist:420:MIDDLE:r=all")).toBe(false);
     expect([...docs.keys()].filter((k) => k.includes(":g=")).length).toBe(2 * 3 * 5);
+    const curve = docs.get("rankcurve:420");
+    const row = curve.champions.find((c: any) => c.championId === 103 && c.position === "MIDDLE");
+    // 40 TR and 40 KR diamond games: KR is outside the pool. Gold: 40 TR losses.
+    expect(row.b.emerald_plus).toEqual([40, 1, expect.any(Number)]);
+    expect(row.b.gold_minus).toEqual([40, 0, expect.any(Number)]);
+    expect(row.b.all[0]).toBe(80);
+    expect(row.b.master_plus).toBeUndefined();
   });
 });

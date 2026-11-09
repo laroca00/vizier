@@ -10,8 +10,8 @@ import { fakeD1 } from "./test/fakeD1.ts";
 const REAL = { champions: 170, pairs: 340 };
 // Docs of the four queues without a ladder: champion and build per champion, a tier list each, augments, Arena duos and items.
 const OTHER_QUEUE_DOCS = 4 * (2 * REAL.champions + 1) + 2 * (REAL.champions + 2) + 2 * REAL.champions;
-// Region tier lists: one per role, region and published bracket, sent once a day with the other queues.
-const REGION_DOCS = REGION_BRACKETS.length * REGIONS.length * 5;
+// Daily docs sent with the other queues: region tier lists (one per role, region and published bracket) and the rank curve.
+const REGION_DOCS = REGION_BRACKETS.length * REGIONS.length * 5 + 1;
 const GROUPS = ["iron_bronze", "silver", "gold", "platinum", "emerald", "diamond", "master_plus"];
 const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
 

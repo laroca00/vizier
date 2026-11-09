@@ -68,6 +68,12 @@ describe("?rank=", () => {
     expect((await app.request("/v1/tierlist/MIDDLE?region=tr&rank=gold_minus")).status).toBe(400);
   });
 
+  it("serves the rank curve doc, empty when none is published", async () => {
+    const withDoc = await setup({ [docKey.rankCurve(420)]: { patches: ["16.21"], brackets: ["all"], champions: [{ championId: 103, position: "MIDDLE", b: { all: [50, 0.5, 0.1] } }] } });
+    expect((await get(withDoc, "/v1/meta/rank-curve")).body.champions).toHaveLength(1);
+    expect((await get(await setup({}), "/v1/meta/rank-curve")).body.champions).toEqual([]);
+  });
+
   it("rejects unknown brackets on every bracketed route", async () => {
     const app = await setup(docs);
     for (const path of [
