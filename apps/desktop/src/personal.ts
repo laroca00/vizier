@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { addToPlan, moveInPlan, parsePlan, removeFromPlan, type PickPlan, type PlanKind } from "./pickPlan";
 
 // What the player keeps for themselves: their champion pool, favourite
 // champions, notes and the champions they looked at last.
@@ -26,9 +27,11 @@ export type Personal = {
   notes: Record<string, string>;
   /** Champion ids, most recently opened first. */
   recent: number[];
+  /** Picks and bans to try in champ select, per role. */
+  plan: PickPlan;
 };
 
-const DEFAULTS: Personal = { pool: [], favourites: [], followed: [], notes: {}, recent: [] };
+const DEFAULTS: Personal = { pool: [], favourites: [], followed: [], notes: {}, recent: [], plan: {} };
 const MAX_RECENT = 8;
 const KEY = "vizier.personal";
 const listeners = new Set<() => void>();
@@ -54,7 +57,7 @@ export function parsePersonal(raw: string | null): Personal {
     const notes = data.notes && typeof data.notes === "object" ? data.notes : {};
     // Older versions also kept goals here; they are dropped on the next write.
     const followed = Array.isArray(data.followed) ? data.followed.filter((p): p is string => typeof p === "string") : [];
-    return { pool, favourites: ids(data.favourites), followed, notes, recent: ids(data.recent) };
+    return { pool, favourites: ids(data.favourites), followed, notes, recent: ids(data.recent), plan: parsePlan(data.plan) };
   } catch {
     return DEFAULTS;
   }
@@ -159,3 +162,7 @@ export function replaceNotes(notes: Record<string, string>) {
 export function noteRecent(championId: number) {
   update((p) => ({ recent: [championId, ...p.recent.filter((id) => id !== championId)].slice(0, MAX_RECENT) }));
 }
+
+export const addPlanned = (role: string, kind: PlanKind, championId: number) => update((p) => ({ plan: addToPlan(p.plan, role, kind, championId) }));
+export const removePlanned = (role: string, kind: PlanKind, championId: number) => update((p) => ({ plan: removeFromPlan(p.plan, role, kind, championId) }));
+export const movePlanned = (role: string, kind: PlanKind, from: number, to: number) => update((p) => ({ plan: moveInPlan(p.plan, role, kind, from, to) }));

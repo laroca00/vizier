@@ -1270,4 +1270,12 @@ export const EN: Record<string, string> = {
   "League açılınca Vizier'i göster": "Show Vizier when League opens",
   "Windows ile gizli başlayan Vizier, istemci açılınca pencereyi getirir.": "A Vizier that started hidden with Windows comes up when the client opens.",
   "istemcide görünmedi": "the client did not show it",
+  "Seçim planı": "Pick plan",
+  "Sıran gelince ilk uygun şampiyon seçilir. Banlı, alınmış veya sahip olmadığın şampiyonlar atlanır. Sürükleyerek sırala.": "On your turn the first usable champion is picked. Banned, taken and unowned champions are skipped. Drag to reorder.",
+  "Seçimler": "Picks",
+  "Banlar": "Bans",
+  "Plana ekle": "Add to plan",
+  "{kind} ({count}/{max})": "{kind} ({count}/{max})",
+  "Yukarı taşı": "Move up",
+  "Aşağı taşı": "Move down",
 };
