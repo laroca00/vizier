@@ -33,6 +33,7 @@ import { champions } from "./data/ddragon";
 import { Sidebar, type NavGroup, type NavItem } from "./Sidebar";
 import { ShortcutsHelp } from "./ShortcutsHelp";
 import { Welcome } from "./Welcome";
+import { useTurnAlarm } from "./draft/turnAlarm";
 import { isTyping } from "./shortcuts";
 import { COMMAND_PREFIX, commandLinks, commandPatch } from "./commands";
 import { IconButton } from "./ui/Button";
@@ -176,6 +177,7 @@ function App() {
 
   useEffect(() => setClientLocale(clientLocale), [clientLocale]);
   useReadyCheckAlert(phase, settings.readyCheckAlert);
+  useTurnAlarm(draft ?? null, settings.turnAlarm);
   useAutoAcceptReady(phase, settings.autoAcceptReady);
 
   // Champ select opens faster when its data is already cached from the lobby.

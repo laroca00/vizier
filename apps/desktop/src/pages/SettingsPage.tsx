@@ -27,6 +27,7 @@ const CLIENT_TOGGLES: { key: ToggleKey; label: string; hint: string }[] = [
   { key: "autoImportSpells", label: "Büyüleri kendiliğinden aktar", hint: "Flash kullandığın tuşta kalır." },
   { key: "autoImportItems", label: "Eşya setini kendiliğinden aktar", hint: "Önerilen eşyalar oyun içi mağazada Vizier seti olarak görünür." },
   { key: "readyCheckAlert", label: "Maç bulununca haber ver", hint: "Kısa bir ses çalar ve görev çubuğundaki simge yanıp söner." },
+  { key: "turnAlarm", label: "Seçim süresi bitmeden uyar", hint: "Seçim sıran sendeyken son 10 saniyede kısa bir ses çalar; süre dolup maçtan düşmeni önler." },
   { key: "autoAcceptReady", label: "Maçı kendiliğinden kabul et", hint: "Maç bulunur bulunmaz kabul edilir. Kabul etmek istemezsen sayaç dolmadan istemciden reddet." },
   { key: "showOnChampSelect", label: "Şampiyon seçiminde Vizier'i öne getir", hint: "Tepsideyken bile seçim başlayınca pencere açılır." },
   { key: "hideOnGame", label: "Oyun başlayınca tepsiye in", hint: "Oyun bitince, açıksa, pencere geri gelir." },

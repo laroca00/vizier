@@ -19,6 +19,8 @@ export type Settings = {
   showOnClientOpen: boolean;
   /** A tone and a taskbar flash when a match is found; off unless the player asks. */
   readyCheckAlert: boolean;
+  /** A tone when the player's pick turn has ten seconds left. */
+  turnAlarm: boolean;
   /** Hover (and lock) the first available champion of the pick plan on the player's turn. */
   autopilot: AutopilotMode;
   /** Lock this many seconds before the timer ends; 0 locks right away. */
@@ -97,6 +99,7 @@ const DEFAULTS: Settings = {
   hideOnGame: true,
   showOnClientOpen: true,
   readyCheckAlert: false,
+  turnAlarm: true,
   autopilot: "off",
   autopilotLockSeconds: 0,
   autoAcceptReady: false,
