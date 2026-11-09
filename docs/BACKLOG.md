@@ -228,8 +228,11 @@ The owner's call: the same overlay features Blitz ships, built fresh in Vizier's
 ## 21. Lobby and queue (picks up 10.1 and 10.2)
 
 - [ ] 21.1 Build 10.1 (gameflow phases and lobby roles in the frontend state, Rust tests with recorded events) using the Rust setup above.
+<!-- claimed: auto/21-lobby 2026-11-09 13:10Z -->
 - [ ] 21.2 Build 10.2 (queue view with the pool for the chosen roles and autofill picks).
+<!-- claimed: auto/21-lobby 2026-11-09 13:10Z -->
 - [ ] 21.3 Home follows the client: client closed → patch and meta card first; lobby → the pool for the chosen roles; in queue → the queue view.
+<!-- claimed: auto/21-lobby 2026-11-09 13:10Z -->
 
 ---
 
@@ -247,7 +250,9 @@ Epics 22–31 come from the owner's product brief. Rules that apply to all of th
 The rule and badge exist (b4b6e62, on the build summary and the matchup guide).
 
 - [ ] 22.1 Replace the scattered sample cut-offs (`MIN_GAMES` in MatchupGuide, banPlanner, MetaPicks, comparison, ChampionPage, proMeta, winRateShift, `BAR_MIN_GAMES`) with `confidenceOf`: hide or grey values that are `insufficient`, badge the rest. Keep each page's behaviour where a cut-off exists for a non-statistical reason, and say why in a comment.
+<!-- claimed: auto/21-lobby 2026-11-09 13:10Z -->
 - [ ] 22.2 Difficulty labels only when the data supports them: "Rahat / Zor eşleşme" shows only when the 95% interval lies fully above or below 50%; otherwise "Dengeli ya da belirsiz" with the badge. Same for counters lists, pick suggestions and the ban planner reasons. Tests with fixed counts.
+<!-- claimed: auto/21-lobby 2026-11-09 13:10Z -->
 - [ ] 22.3 Badges on the tier list, champion page header, counters, synergies, runes, boots and spells tables, augments, Arena items and pro meta. Tier list rows get the badge in the tooltip instead of a chip to keep rows compact.
 - [ ] 22.4 Data freshness: the Worker already knows when each doc was published; add `updatedAt` to responses (backward compatible) and show "güncellendi 3 saat önce" in the badge tooltip. Outdated (older patch) data is labelled on every page.
 - [ ] 22.5 "Veriler nereden geliyor" page under About: sources, regions and ranks, patches kept, the confidence rule in plain words, what is editorial. Linked from every badge tooltip.
