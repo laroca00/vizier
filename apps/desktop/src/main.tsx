@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -9,10 +9,13 @@ import "./ui/ui.css";
 import "./App.css";
 import "./pages.css";
 import "./shell.css";
-import App from "./App";
 import { backupIfDue } from "./backups";
-import { Overlay } from "./overlay/Overlay";
 import { OVERLAY_FIXTURES } from "./dev/fixtures";
+
+// Each window loads only its own code: the overlay runs beside the game and
+// has no use for the pages, and the main window never draws the overlay.
+const App = lazy(() => import("./App"));
+const Overlay = lazy(() => import("./overlay/Overlay").then((m) => ({ default: m.Overlay })));
 
 // One bundle serves both windows; the overlay window is told apart by its label.
 function isOverlay() {
@@ -25,6 +28,6 @@ if (!isOverlay()) backupIfDue();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    {isOverlay() ? <Overlay /> : <App />}
+    <Suspense fallback={null}>{isOverlay() ? <Overlay /> : <App />}</Suspense>
   </React.StrictMode>,
 );

@@ -36,7 +36,6 @@ import { WidgetBoundary, EmptyCard } from "./widgets/WidgetBoundary";
 import { sampleGame } from "./sample";
 import { minimapBox } from "./minimap";
 import { panelItems, panelRunes } from "./buildPanel";
-import { combosOf } from "../data/combos";
 import { usePersonal } from "../personal";
 import { laneOpponent, panelCombos, referenceNote } from "./reference";
 import { CLOCK_TICK_MS } from "./tick";
@@ -206,6 +205,9 @@ export function Overlay() {
   }, []);
   const wantRunes = (settings.overlayBuild && buildOpen) || (settings.overlayReference && refOpen && settings.overlayRefSections.includes("runes")) || editing;
   const [runeData] = useAsync(wantRunes ? "runes" : null, runeStyles);
+  // The combo text is large; it loads only when the quick reference shows combos.
+  const wantCombos = settings.overlayReference && settings.overlayRefSections.includes("combo") && (refOpen || editing);
+  const [comboData] = useAsync(wantCombos ? "combos" : null, () => import("../data/combos"));
 
   // The skill order opens and closes on its hotkey, which arrives like a timer key.
   const [orderOpen, setOrderOpen] = useState(false);
@@ -285,7 +287,7 @@ export function Overlay() {
   const referenceFor = (): WidgetContext["reference"] => ({
     shown: refOpen || editing,
     sections: settings.overlayRefSections,
-    combos: settings.overlayRefSections.includes("combo") ? panelCombos(combosOf(championKey(me))) : [],
+    combos: settings.overlayRefSections.includes("combo") && comboData.status === "done" ? panelCombos(comboData.value.combosOf(championKey(me))) : [],
     note: championId ? referenceNote(notes, championId, opponentId) : null,
     opponent: opponent ? championKey(opponent) : null,
     lang,

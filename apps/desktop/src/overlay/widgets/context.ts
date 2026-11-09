@@ -5,7 +5,7 @@ import type { BenchRead } from "../bench";
 import type { PanelItem, PanelRunes } from "../buildPanel";
 import type { MinimapBox, CampSide } from "../minimap";
 import type { ManualTimers } from "../Timers";
-import type { Combo } from "../../data/combos";
+import type { Combo } from "../../data/comboTypes";
 import type { RefSection } from "../reference";
 import type { LiveGame, LivePlayer, SkillKey, Timer } from "../live";
 import type { Fallen, Window } from "../opportunity";
