@@ -10,7 +10,36 @@ export type Team = number[];
 /** Bans are one list of up to ten; which side banned what doesn't change the analysis. */
 export type Draft = { blue: Team; red: Team; bans: number[] };
 export const MAX_BANS = 10;
-export type SavedDraft = Draft & { id: string; name: string; createdAt: number; updatedAt: number };
+/** The side the player plays, free-text tags and a note: what makes a saved draft a template. */
+export type DraftMeta = { side: Side; tags: string[]; notes: string };
+export type SavedDraft = Draft & DraftMeta & { id: string; name: string; createdAt: number; updatedAt: number };
+
+export const emptyMeta = (): DraftMeta => ({ side: "blue", tags: [], notes: "" });
+export const MAX_TAGS = 6;
+export const MAX_NOTES = 400;
+
+/** "dive, erken oyun" -> ["dive", "erken oyun"]: trimmed, no repeats (case ignored), capped. */
+export function parseTags(text: string): string[] {
+  const seen = new Set<string>();
+  const tags: string[] = [];
+  for (const raw of text.split(/[,;\n]/)) {
+    const tag = raw.trim().slice(0, 24);
+    if (!tag || seen.has(tag.toLocaleLowerCase())) continue;
+    seen.add(tag.toLocaleLowerCase());
+    tags.push(tag);
+  }
+  return tags.slice(0, MAX_TAGS);
+}
+
+/** Saved drafts that carry every selected tag and whose name or note contains the query. */
+export function filterDrafts(drafts: SavedDraft[], tags: string[], query: string): SavedDraft[] {
+  const q = query.trim().toLocaleLowerCase();
+  return drafts.filter(
+    (d) => tags.every((tag) => d.tags.includes(tag)) && (!q || d.name.toLocaleLowerCase().includes(q) || d.notes.toLocaleLowerCase().includes(q)),
+  );
+}
+
+export const tagsOf = (drafts: SavedDraft[]): string[] => [...new Set(drafts.flatMap((d) => d.tags))].sort((a, b) => a.localeCompare(b));
 
 export const emptyTeam = (): Team => ROLES.map(() => 0);
 export const emptyDraft = (): Draft => ({ blue: emptyTeam(), red: emptyTeam(), bans: [] });
@@ -86,6 +115,10 @@ export function parseDrafts(raw: string | null): SavedDraft[] {
         red: team(d.red),
         // Drafts saved before bans existed have none.
         bans: Array.isArray(d.bans) ? d.bans.filter((n: unknown): n is number => typeof n === "number").slice(0, MAX_BANS) : [],
+        // Drafts saved before templates have no side, tags or note.
+        side: d.side === "red" ? ("red" as const) : ("blue" as const),
+        tags: Array.isArray(d.tags) ? parseTags(d.tags.filter((x: unknown) => typeof x === "string").join(",")) : [],
+        notes: typeof d.notes === "string" ? d.notes.slice(0, MAX_NOTES) : "",
         createdAt: Number(d.createdAt) || 0,
         updatedAt: Number(d.updatedAt) || 0,
       }));
@@ -134,19 +167,19 @@ export function useSavedDrafts(): SavedDraft[] {
 
 const newId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-export function saveDraft(draft: Draft, name: string, id: string | null, now = Date.now()): string {
+export function saveDraft(draft: Draft, name: string, id: string | null, meta: DraftMeta = emptyMeta(), now = Date.now()): string {
   if (id && current.some((d) => d.id === id)) {
-    write(current.map((d) => (d.id === id ? { ...d, ...draft, name, updatedAt: now } : d)));
+    write(current.map((d) => (d.id === id ? { ...d, ...draft, ...meta, name, updatedAt: now } : d)));
     return id;
   }
-  const saved: SavedDraft = { ...draft, id: newId(), name, createdAt: now, updatedAt: now };
+  const saved: SavedDraft = { ...draft, ...meta, id: newId(), name, createdAt: now, updatedAt: now };
   write([saved, ...current]);
   return saved.id;
 }
 
 export function duplicateDraft(id: string, copyName: (name: string) => string): string | null {
   const source = current.find((d) => d.id === id);
-  return source ? saveDraft({ blue: [...source.blue], red: [...source.red], bans: [...source.bans] }, copyName(source.name), null) : null;
+  return source ? saveDraft({ blue: [...source.blue], red: [...source.red], bans: [...source.bans] }, copyName(source.name), null, { side: source.side, tags: [...source.tags], notes: source.notes }) : null;
 }
 
 export function deleteDraft(id: string) {

@@ -358,3 +358,7 @@
 .clash__notes {
   margin-top: var(--space-3);
 }
+
+.sim__meta {
+  display: block;
+}

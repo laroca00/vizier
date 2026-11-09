@@ -1518,4 +1518,11 @@ export const EN: Record<string, string> = {
   "Yüksek": "High",
   "Zorluk dağılımı": "Difficulty breakdown",
   "Riot'un resmi zorluk puanı: {score} / 10 (Data Dragon).": "Riot's official difficulty score: {score} / 10 (Data Dragon).",
+  "Oynadığın taraf": "Your side",
+  "Mavi taraf": "Blue side",
+  "Kırmızı taraf": "Red side",
+  "Etiketler (virgülle)": "Tags (comma separated)",
+  "Not": "Note",
+  "Kayıtlı draftlarda ara": "Search saved drafts",
+  "Ad ya da notta ara": "Search name or note",
 };
