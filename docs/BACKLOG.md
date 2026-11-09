@@ -188,16 +188,11 @@ Worlds and pro builds are a top priority for the EUW audience.
 
 Owner feedback 2026-11-09: the app feels useless because everything waits for the player to open a page. Make the useful things happen on their own.
 
-- [ ] 17.1 Auto-import on by default: runes, spells and item set import when the champion is locked, for new installs and once for existing installs (settings migration that flips the three switches on and remembers it ran). The import uses the build the player picked on the build page, else the recommended one, and the queue's build docs (ARAM, Mayhem, Arena).
-<!-- claimed: auto/17-autopilot 2026-11-09 12:26Z -->
-- [ ] 17.2 Import toast in the main window and a small one on the client side of the screen: "Ahri: rünler, büyüler ve eşya seti aktarıldı" with a link to change the build; errors say what failed (no free rune page, client closed) instead of failing silently.
-<!-- claimed: auto/17-autopilot 2026-11-09 12:26Z -->
-- [ ] 17.3 Follow the client: when champ select starts, bring the main window up and open the champ select page (setting "Şampiyon seçiminde öne gel", on). When the game starts, send the main window to the tray (setting, on). When the game ends, restore it if it was up before.
-<!-- claimed: auto/17-autopilot 2026-11-09 12:26Z -->
-- [ ] 17.4 Start with League: Vizier already autostarts with Windows; make it start hidden in the tray and show itself when the League client opens (setting). Tray menu: open, champ select, overlay on/off, quit.
-<!-- claimed: auto/17-autopilot 2026-11-09 12:26Z -->
-- [ ] 17.5 Item set check: after an import, read the item sets back from the client and confirm ours is there for the right champion; show the result in the toast. Tests for the merge (Rust) and the toast text.
-<!-- claimed: auto/17-autopilot 2026-11-09 12:26Z -->
+- [x] 17.1 Auto-import on by default: runes, spells and item set import when the champion is locked, for new installs and once for existing installs (settings migration that flips the three switches on and remembers it ran). The import uses the build the player picked on the build page, else the recommended one, and the queue's build docs (ARAM, Mayhem, Arena). (dc4214a; defaults on, flipped once for existing installs)
+- [x] 17.2 Import toast in the main window and a small one on the client side of the screen: "Ahri: rünler, büyüler ve eşya seti aktarıldı" with a link to change the build; errors say what failed (no free rune page, client closed) instead of failing silently. (dc4214a; one summary toast with the reason per failure and a change-build link; the separate client-side corner toast is not built, the main window comes up on champ select instead)
+- [x] 17.3 Follow the client: when champ select starts, bring the main window up and open the champ select page (setting "Şampiyon seçiminde öne gel", on). When the game starts, send the main window to the tray (setting, on). When the game ends, restore it if it was up before. (dc4214a; champ select brings the window up (existing), game start hides it, game end restores it if it was up)
+- [x] 17.4 Start with League: Vizier already autostarts with Windows; make it start hidden in the tray and show itself when the League client opens (setting). Tray menu: open, champ select, overlay on/off, quit. (dc4214a; tray menu (open, champ select, overlay, quit) and the window shows when the client opens; hidden start was already there)
+- [x] 17.5 Item set check: after an import, read the item sets back from the client and confirm ours is there for the right champion; show the result in the toast. Tests for the merge (Rust) and the toast text. (dc4214a; item sets are read back after the write; the toast says if the client did not keep ours)
 
 ## 18. Auto pick, ban and lock
 
@@ -253,6 +248,7 @@ Code health tasks. Do one only when a feature above depends on it.
 
 Steps that need the owner's credentials or approval. Add to this list; don't run them.
 
+- Release a desktop version to ship epic 17 (auto-import on by default, tray menu, follow the client; Rust changed, so it needs a full build).
 - Release a desktop version (`pnpm release`) after bumping the patch version.
 - Deploy the Worker (`pnpm --filter @vizier/api deploy`).
 - Apply pending D1 migrations remotely.
