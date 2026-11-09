@@ -1,6 +1,7 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow, UserAttentionType } from "@tauri-apps/api/window";
 import { useEffect, useRef } from "react";
+import { acceptReadyCheck } from "./lcuActions";
 
 /** True on the step into a ready check, not while it stays open. */
 export function matchFound(previous: string | null, next: string | null): boolean {
@@ -41,3 +42,12 @@ export function useReadyCheckAlert(phase: string | null, enabled: boolean) {
   }, [phase, enabled]);
 }
 
+
+/** Accepts the match the moment it is found, if the player turned that on. */
+export function useAutoAcceptReady(phase: string | null, enabled: boolean) {
+  const previous = useRef<string | null>(phase);
+  useEffect(() => {
+    if (enabled && isTauri() && matchFound(previous.current, phase)) void acceptReadyCheck().catch(() => {});
+    previous.current = phase;
+  }, [phase, enabled]);
+}

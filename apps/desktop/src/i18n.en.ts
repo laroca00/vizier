@@ -1305,4 +1305,7 @@ export const EN: Record<string, string> = {
   "{champion} üzerine getir": "Hover {champion}",
   "{champion} kilitle": "Lock in {champion}",
   "Kilitle": "Lock in",
+  "{champion} ile değiştir": "Swap for {champion}",
+  "Değiştirilemedi. Şampiyon başkası tarafından alınmış olabilir.": "Could not swap. Someone else may have taken the champion.",
+  "Değiştir": "Swap",
 };
