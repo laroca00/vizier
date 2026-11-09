@@ -7,6 +7,9 @@ export const CARD_NAMES: Record<HomeCard, string> = {
   thisPatch: "Bu yama senin için",
   metaPicks: "Meta seçimler",
   metaMovers: "Yükselenler ve düşenler",
+  resume: "Kaldığın yerden devam et",
+  favourites: "Favorilerin",
+  quickLinks: "Hızlı bağlantılar",
   pros: "Pro build'ler",
 };
 

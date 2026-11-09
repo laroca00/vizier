@@ -2,6 +2,8 @@
 // filed them under. Only a label is kept next to the id so the list reads
 // without loading every source; stored with the other personal data.
 
+import type { Route } from "./router";
+
 export const FAV_KINDS = ["build", "matchup", "item", "rune", "pro", "draft", "comp", "combo"] as const;
 export type FavKind = (typeof FAV_KINDS)[number];
 
@@ -101,3 +103,27 @@ export const recentlyOpened = (list: Favourite[], count = 5): Favourite[] =>
     .slice(0, count);
 
 export const allFavouriteTags = (list: Favourite[]): string[] => [...new Set(list.flatMap((f) => f.tags))].sort();
+
+/** Where a favourite opens: a route, or a champion's page. */
+export function favouriteTarget(f: Favourite): { route: Route } | { champion: number } | null {
+  switch (f.kind) {
+    case "build":
+      return { route: { page: "builds", buildId: f.id } };
+    case "matchup": {
+      const [mine, opponent] = f.id.split(":").map(Number);
+      return Number.isInteger(mine) && Number.isInteger(opponent) ? { route: { page: "matchup", championId: mine, opponentId: opponent, position: "MIDDLE" } } : null;
+    }
+    case "item":
+      return { route: { page: "items", itemId: Number(f.id) } };
+    case "rune":
+      return { route: { page: "runes", runeId: Number(f.id) } };
+    case "pro":
+      return { route: { page: "pro", player: f.id } };
+    case "draft":
+      return { route: { page: "simulator" } };
+    case "comp":
+      return { route: { page: "templates" } };
+    case "combo":
+      return f.championId !== null ? { champion: f.championId } : null;
+  }
+}

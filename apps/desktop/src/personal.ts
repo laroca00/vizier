@@ -20,6 +20,9 @@ export type PoolPick = {
   buildId: string | null;
 };
 
+export type RecentMatchup = { championId: number; opponentId: number; position: string };
+const MAX_RECENT_MATCHUPS = 4;
+
 export type Personal = {
   pool: PoolPick[];
   /** Champion ids marked with a star, separate from the pool. */
@@ -37,16 +40,26 @@ export type Personal = {
   /** Starred items of every kind with their tags and collections; absent in data from before favourites. */
   favs: Favourite[];
   favCollections: string[];
+  /** Matchups opened lately, newest first; absent in data from before Home 2.0. */
+  recentMatchups: RecentMatchup[];
   /** Per champion: preferred role, labels, reminders and links, by champion id. */
   spaces: ChampionSpaces;
 };
 
-const DEFAULTS: Personal = { pool: [], favourites: [], followed: [], notes: {}, recent: [], plan: {}, academy: {}, favs: [], favCollections: [], spaces: {} };
+const DEFAULTS: Personal = { pool: [], favourites: [], followed: [], notes: {}, recent: [], plan: {}, academy: {}, favs: [], favCollections: [], recentMatchups: [], spaces: {} };
 const MAX_RECENT = 8;
 const KEY = "vizier.personal";
 const listeners = new Set<() => void>();
 
 const collections = (value: unknown) => (Array.isArray(value) ? [...new Set(value.filter((v): v is string => typeof v === "string").map((v) => v.trim().slice(0, 30)).filter(Boolean))].slice(0, 12) : []);
+function parseRecentMatchups(value: unknown): RecentMatchup[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((m): m is RecentMatchup => typeof m?.championId === "number" && typeof m?.opponentId === "number" && typeof m?.position === "string")
+    .map((m) => ({ championId: m.championId, opponentId: m.opponentId, position: m.position }))
+    .slice(0, MAX_RECENT_MATCHUPS);
+}
+
 const ids = (value: unknown) => (Array.isArray(value) ? value.filter((n): n is number => typeof n === "number") : []);
 
 /**
@@ -68,7 +81,7 @@ export function parsePersonal(raw: string | null): Personal {
     const notes = data.notes && typeof data.notes === "object" ? data.notes : {};
     // Older versions also kept goals here; they are dropped on the next write.
     const followed = Array.isArray(data.followed) ? data.followed.filter((p): p is string => typeof p === "string") : [];
-    return { pool, favourites: ids(data.favourites), followed, notes, recent: ids(data.recent), plan: parsePlan(data.plan), academy: parseAcademy(data.academy), favs: parseFavourites(data.favs), favCollections: collections(data.favCollections), spaces: parseSpaces(data.spaces) };
+    return { pool, favourites: ids(data.favourites), followed, notes, recent: ids(data.recent), plan: parsePlan(data.plan), academy: parseAcademy(data.academy), favs: parseFavourites(data.favs), favCollections: collections(data.favCollections), spaces: parseSpaces(data.spaces), recentMatchups: parseRecentMatchups(data.recentMatchups) };
   } catch {
     return DEFAULTS;
   }
@@ -188,3 +201,8 @@ export const noteFavouriteOpened = (kind: FavKind, id: string) => update((p) => 
 export const addFavCollection = (name: string) => update((p) => (name.trim() && !p.favCollections.includes(name.trim()) && p.favCollections.length < 12 ? { favCollections: [...p.favCollections, name.trim().slice(0, 30)] } : {}));
 export const removeFavCollection = (name: string) => update((p) => ({ favCollections: p.favCollections.filter((c) => c !== name), favs: dropCollection(p.favs, name) }));
 export const updateSpace = (championId: number, change: (space: ChampionSpace) => ChampionSpace) => update((p) => ({ spaces: changeSpace(p.spaces, championId, change) }));
+
+export const noteMatchupOpened = (matchup: RecentMatchup) =>
+  update((p) => ({
+    recentMatchups: [matchup, ...p.recentMatchups.filter((m) => !(m.championId === matchup.championId && m.opponentId === matchup.opponentId))].slice(0, MAX_RECENT_MATCHUPS),
+  }));

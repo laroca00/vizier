@@ -1,6 +1,6 @@
 // Which Home cards show and in what order; kept in settings.
 
-export const HOME_CARDS = ["lists", "thisPatch", "metaPicks", "metaMovers", "pros"] as const;
+export const HOME_CARDS = ["lists", "resume", "favourites", "thisPatch", "metaPicks", "metaMovers", "quickLinks", "pros"] as const;
 export type HomeCard = (typeof HOME_CARDS)[number];
 export type HomeLayout = { order: HomeCard[]; hidden: HomeCard[] };
 

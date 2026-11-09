@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useEffect, useId } from "react";
 import { BuildSuggestion } from "../BuildSuggestion";
 import { championIconUrl, champions, latestVersion, type Champion } from "../data/ddragon";
 import { AcademyBlock } from "../draft/AcademyBlock";
@@ -14,7 +14,7 @@ import { useLang, useT } from "../i18n";
 import { AcademyNotes } from "../AcademyNotes";
 import { JournalNote, useMatchupTemplate } from "../Journal";
 import { POSITIONS } from "../labels";
-import { matchupNoteKey } from "../personal";
+import { matchupNoteKey, noteMatchupOpened } from "../personal";
 import { Button } from "../ui/Button";
 import { Select } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
@@ -74,6 +74,10 @@ export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange
   const byKey = data.status === "done" ? data.value.champions : new Map<number, Champion>();
   const me = route.championId === null ? undefined : byKey.get(route.championId);
   const opponent = route.opponentId === null ? undefined : byKey.get(route.opponentId);
+  const opened = me && opponent ? { championId: me.key, opponentId: opponent.key, position: route.position } : null;
+  useEffect(() => {
+    if (opened) noteMatchupOpened(opened);
+  }, [opened?.championId, opened?.opponentId, opened?.position]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <LiquidGlass className="panel tiers matchup-page" radius={28} strength={2.5} scroll>

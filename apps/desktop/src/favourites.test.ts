@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allFavouriteTags, dropCollection, filterFavourites, isFavourite, parseFavourites, patchFavourite, recentlyOpened, toggleFavourite, FAV_LIMIT } from "./favourites";
+import { favouriteTarget, allFavouriteTags, dropCollection, filterFavourites, isFavourite, parseFavourites, patchFavourite, recentlyOpened, toggleFavourite, FAV_LIMIT } from "./favourites";
 
 const add = (list: ReturnType<typeof parseFavourites>, kind: "build" | "combo" | "matchup", id: string, label: string, now: number) => toggleFavourite(list, { kind, id, label }, now);
 
@@ -36,5 +36,16 @@ describe("favourites", () => {
     let list = add(add(add([], "build", "1", "A", 1), "build", "2", "B", 2), "build", "3", "C", 3);
     list = patchFavourite(patchFavourite(list, "build", "1", { openedAt: 10 }), "build", "3", { openedAt: 20 });
     expect(recentlyOpened(list).map((f) => f.id)).toEqual(["3", "1"]);
+  });
+});
+
+describe("favourite targets", () => {
+  const f = (kind: Parameters<typeof toggleFavourite>[1]["kind"], id: string, championId: number | null = null) => ({ kind, id, label: "x", championId, tags: [], collection: null, addedAt: 0, openedAt: null });
+  it("opens each kind on its page", () => {
+    expect(favouriteTarget(f("build", "b1"))).toEqual({ route: { page: "builds", buildId: "b1" } });
+    expect(favouriteTarget(f("matchup", "103:238"))).toEqual({ route: { page: "matchup", championId: 103, opponentId: 238, position: "MIDDLE" } });
+    expect(favouriteTarget(f("combo", "Ahri/x", 103))).toEqual({ champion: 103 });
+    expect(favouriteTarget(f("combo", "Ahri/x"))).toBeNull();
+    expect(favouriteTarget(f("matchup", "bad"))).toBeNull();
   });
 });

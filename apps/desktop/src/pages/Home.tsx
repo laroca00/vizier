@@ -4,6 +4,7 @@ import { HomeEditor } from "../home/HomeEditor";
 import { homeOrderFor, normalizeHome, type HomeCard } from "../home/layout";
 import { QueueView } from "../home/QueueView";
 import { flowOf, inQueueFlow, type Lobby } from "../clientFlow";
+import { FavouritesCard, QuickLinksCard, ResumeCard } from "../home/Resume";
 import { ThisPatchCard } from "../home/ThisPatchCard";
 import { useSettings } from "../settings";
 import { openExternal, PATCH_NOTES } from "../links";
@@ -79,6 +80,9 @@ export function Home({ lcu, lobby = null, draftActive, onOpenChampion, onNavigat
   const pool = known(personal.pool.map((p) => p.championId));
 
   const cards: Record<Exclude<HomeCard, "pros">, ReactNode> = {
+    resume: <ResumeCard version={data.status === "done" ? data.value.version : null} champions={data.status === "done" ? data.value.champions : new Map()} onNavigate={onNavigate} />,
+    favourites: <FavouritesCard onOpenChampion={onOpenChampion} onNavigate={onNavigate} />,
+    quickLinks: <QuickLinksCard onNavigate={onNavigate} />,
     lists: (
         <div className="home__lists enter">
           <section aria-labelledby="home-recent">
