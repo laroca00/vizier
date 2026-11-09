@@ -1,4 +1,4 @@
-import type { Favourite } from "./favourites";
+import { favouriteTarget, type Favourite } from "./favourites";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -294,17 +294,10 @@ function App() {
   }
 
   function openFavourite(f: Favourite) {
-    const number = Number(f.id);
-    if (f.kind === "build") go({ page: "builds", buildId: f.id });
-    else if (f.kind === "matchup") {
-      const [mine, opponent] = f.id.split(":").map(Number);
-      openMatchup(mine, opponent, "MIDDLE");
-    } else if (f.kind === "item") go({ page: "items", itemId: number });
-    else if (f.kind === "rune") go({ page: "runes", runeId: number });
-    else if (f.kind === "pro") go({ page: "pro", player: f.id });
-    else if (f.kind === "draft") go({ page: "simulator" });
-    else if (f.kind === "comp") go({ page: "templates" });
-    else if (f.championId !== null) openChampion(f.championId, null);
+    const target = favouriteTarget(f);
+    if (!target) return;
+    if ("champion" in target) openChampion(target.champion, null);
+    else go(target.route);
   }
 
   const groups: NavGroup<Page>[] = [

@@ -175,3 +175,45 @@
     grid-column: 2 / -1;
   }
 }
+
+.home__card {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.home__card ul {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home__resume {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.home__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.04);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home__row:hover {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.home__row img {
+  border-radius: 6px;
+}
