@@ -1,7 +1,7 @@
 export type Entry = { games: number; winRate: number };
 export type ComparisonRow<T> = { entry: T; games: number; winRate: number; pickRate: number };
 
-// Under this many games a row is noise next to the leaders.
+// Not a rate cut-off: rows this rare only clutter the pick-rate list, and each row shows its own game count.
 const MIN_GAMES = 5;
 
 /** Rows with their pick rate out of the build's games, most played first; rare ones are dropped. */

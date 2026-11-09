@@ -1216,7 +1216,7 @@ export const EN: Record<string, string> = {
   "Son maçlar": "Latest games",
   "Maçlar": "Games",
   "Pro meta": "Pro meta",
-  "Seçilme oranı pro maçlarına göre; yasaklar kaydedilmiyor. {min} maçın altındaki kazanma oranları soluk.": "Pick rate is out of pro games; bans are not saved. Win rates under {min} games are dimmed.",
+  "Seçilme oranı pro maçlarına göre; yasaklar kaydedilmiyor. Maç sayısı az olan kazanma oranları soluk.": "Pick rate is out of pro games; bans are not recorded. Win rates over few games are faded.",
   "%{share} seçilme, {games} maç": "{share}% picked, {games} games",
   "%{rate} kazanma, {games} maç": "{rate}% win rate, {games} games",
   "Şampiyon seçimi açıkken kullanılabilir.": "Available while champ select is open.",

@@ -1,6 +1,7 @@
 import type { Build, BuildStyle, Foe } from "./api";
 
 // Fewer games than this and a win rate is mostly noise.
+// Not statistical: the narrowest a bar is drawn, in games' worth of width, so a rare option stays visible.
 export const BAR_MIN_GAMES = 20;
 const SHOWN_ITEMS = 5;
 

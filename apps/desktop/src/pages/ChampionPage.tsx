@@ -409,6 +409,7 @@ function Matchups({ counters, champions, version, onOpenChampion, championId, po
 
 const SHOWN_SIMILAR = 5;
 // Fewer games than this and the win rate says more about luck than the champion.
+// Not a rate cut-off: only champions people actually play are worth listing as similar.
 const SIMILAR_MIN_GAMES = 100;
 
 /**

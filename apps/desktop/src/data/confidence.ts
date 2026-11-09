@@ -50,3 +50,8 @@ export const CONFIDENCE_LABEL: Record<Confidence, string> = {
   outdated: "Eski veri",
   editorial: "Vizier değerlendirmesi",
 };
+
+/** The one cut-off for showing a win rate as a fact: its interval must be narrow enough to mean something. */
+export function hasEnoughGames(games: number, winRate: number): boolean {
+  return confidenceOf({ games, winRate }) !== "insufficient";
+}

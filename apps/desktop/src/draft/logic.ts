@@ -3,6 +3,7 @@ import type { Champion } from "../data/ddragon";
 import { analyzeComp, traitsOf } from "../data/traits";
 import type { ChampSelect, DraftMember } from "../lcu";
 import { ARAM, RANKED } from "../queues";
+import { hasEnoughGames } from "../data/confidence";
 
 export const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"] as const;
 
@@ -144,8 +145,8 @@ export type ScoreBreakdown = { meta: number; counter: number; needs: number };
 
 export type PickSuggestion = { championId: number; score: number; reasons: PickReason[]; breakdown: ScoreBreakdown; inPool: boolean };
 
+// Not a rate cut-off: a champion needs this many games to be a meta pick at all.
 const MIN_TIER_GAMES = 150;
-const MIN_MATCHUP_GAMES = 40;
 const NEED_POINTS = 2;
 const COUNTER_WEIGHT = 1.5;
 const SHOWN_SUGGESTIONS = 6;
@@ -170,7 +171,7 @@ type SuggestInput = {
  */
 export function suggestPicks({ tierList, opponentCounters, opponentId, allies, champions, unavailable, pool }: SuggestInput): PickSuggestion[] {
   const needs = teamNeeds(allies);
-  const against = new Map((opponentCounters?.matchups ?? []).filter((m) => m.games >= MIN_MATCHUP_GAMES).map((m) => [m.championId, m]));
+  const against = new Map((opponentCounters?.matchups ?? []).filter((m) => hasEnoughGames(m.games, m.winRate)).map((m) => [m.championId, m]));
   return tierList
     .filter((entry) => entry.games >= MIN_TIER_GAMES && !unavailable.has(entry.championId))
     .flatMap((entry) => {
@@ -237,15 +238,13 @@ export function duoPartnerRole(role: string | null | undefined): string | null {
   return (role && DUO_PARTNER[role.toUpperCase()]) || null;
 }
 
-const MIN_LINE_GAMES = 40;
-
 /** The champion's matchup against the opponent, or null while the sample is too thin. */
 export function matchupLine(
   counters: { matchups: { championId: number; games: number; winRate: number }[] },
   opponentId: number,
 ): { winRate: number; games: number; difficulty: Difficulty } | null {
   const m = counters.matchups.find((x) => x.championId === opponentId);
-  if (!m || m.games < MIN_LINE_GAMES) return null;
+  if (!m || !hasEnoughGames(m.games, m.winRate)) return null;
   return { winRate: m.winRate, games: m.games, difficulty: difficultyOf(m.winRate) };
 }
 

@@ -1,9 +1,8 @@
 import type { Counters } from "./api";
+import { hasEnoughGames } from "./data/confidence";
 
 export type Matchups = Counters["matchups"];
 
-/** Matchups under this many games are left out; the rate says more about luck than the champion. */
-export const MIN_MATCHUP_GAMES = 30;
 /** From this win rate a matchup counts as covered, below BAD_RATE it counts as a bad one. */
 export const GOOD_RATE = 0.51;
 export const BAD_RATE = 0.49;
@@ -16,7 +15,7 @@ export type CoverageRow = { opponentId: number; best: Cell | null; status: Statu
 /** One pool champion's result against an opponent, or null when it has too few games. */
 export function cellOf(championId: number, matchups: Matchups | undefined, opponentId: number): Cell | null {
   const m = matchups?.find((x) => x.championId === opponentId);
-  return m && m.games >= MIN_MATCHUP_GAMES ? { championId, winRate: m.winRate, games: m.games } : null;
+  return m && hasEnoughGames(m.games, m.winRate) ? { championId, winRate: m.winRate, games: m.games } : null;
 }
 
 export function statusOf(best: Cell | null): Status {

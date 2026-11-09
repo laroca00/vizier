@@ -1,4 +1,5 @@
 import type { BanSuggestions, Counters } from "../api";
+import { hasEnoughGames } from "../data/confidence";
 
 export type BanReason =
   | { kind: "meta"; winRate: number; games: number }
@@ -7,7 +8,6 @@ export type BanReason =
 
 export type BanPick = { championId: number; reasons: BanReason[]; score: number };
 
-const MIN_GAMES = 40;
 const MIN_META_GAMES = 150;
 const SHOWN_BANS = 6;
 /** How far below an even matchup counts as a real problem, as win rate. */
@@ -45,7 +45,7 @@ export function planBans({ meta, own, allies, unavailable }: Input): BanPick[] {
 
   if (own) {
     for (const m of own.counters.matchups) {
-      if (m.games < MIN_GAMES || m.winRate > HARD_BELOW) continue;
+      if (!hasEnoughGames(m.games, m.winRate) || m.winRate > HARD_BELOW) continue;
       add(m.championId, { kind: "hard", vs: own.championId, winRate: m.winRate, games: m.games }, 1.5 + (0.5 - m.winRate) * 10);
     }
   }
@@ -54,7 +54,7 @@ export function planBans({ meta, own, allies, unavailable }: Input): BanPick[] {
   const byEnemy = new Map<number, { allies: number[]; wins: number; games: number }>();
   for (const ally of allies) {
     for (const m of ally.counters.matchups) {
-      if (m.games < MIN_GAMES || m.winRate > HARD_BELOW) continue;
+      if (!hasEnoughGames(m.games, m.winRate) || m.winRate > HARD_BELOW) continue;
       const row = byEnemy.get(m.championId) ?? { allies: [], wins: 0, games: 0 };
       row.allies.push(ally.championId);
       row.wins += (1 - m.winRate) * m.games;

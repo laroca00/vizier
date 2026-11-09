@@ -230,6 +230,12 @@ describe("matchupLine", () => {
     expect(matchupLine(counters, 2)).toBeNull();
     expect(matchupLine(counters, 3)).toBeNull();
   });
+
+  it("follows the confidence rule, not a fixed count", () => {
+    // 50 games at 55% had passed the old 40-game bar; its interval is still ±14 points.
+    expect(matchupLine({ matchups: [{ championId: 4, games: 50, winRate: 0.55 }] }, 4)).toBeNull();
+    expect(matchupLine({ matchups: [{ championId: 4, games: 500, winRate: 0.55 }] }, 4)).not.toBeNull();
+  });
 });
 
 describe("hasBench", () => {
