@@ -22,6 +22,7 @@ import { LiquidGlass } from "../ui/LiquidGlass";
 import { SplashLayers, useSkinSplash, useSplashUrl } from "../ui/Splash";
 import { useAsync } from "../useAsync";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
+import { ComboSection } from "../combos/ComboSection";
 import { Tabs } from "../ui/Tabs";
 import { DataBadge } from "../ui/DataBadge";
 import { sampleTitle } from "../ui/sampleTitle";
@@ -142,6 +143,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           </section>
           <div>
             <StrengthsWeaknesses champion={champion} />
+            <ComboSection champion={champion} version={version} />
             <ChampionReference champion={champion} />
             <ChampionHistory championKey={championId} championName={champion.name} />
             <SkinGallery champion={champion} />

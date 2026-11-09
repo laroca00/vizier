@@ -44,6 +44,7 @@ const SimulatorPage = lazy(() => import("./pages/SimulatorPage").then((m) => ({ 
 const PatchesPage = lazy(() => import("./pages/PatchesPage").then((m) => ({ default: m.PatchesPage })));
 const MatchupPage = lazy(() => import("./pages/MatchupPage").then((m) => ({ default: m.MatchupPage })));
 const AugmentsPage = lazy(() => import("./pages/AugmentsPage").then((m) => ({ default: m.AugmentsPage })));
+const CombosPage = lazy(() => import("./pages/CombosPage").then((m) => ({ default: m.CombosPage })));
 const LabPage = lazy(() => import("./pages/LabPage").then((m) => ({ default: m.LabPage })));
 const JournalPage = lazy(() => import("./pages/JournalPage").then((m) => ({ default: m.JournalPage })));
 const ItemsPage = lazy(() => import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage })));
@@ -69,6 +70,7 @@ const LABELS: Record<Page, string> = {
   matchup: "Eşleşme",
   journal: "Günlük",
   lab: "Eşya laboratuvarı",
+  combos: "Kombo kütüphanesi",
   items: "Eşyalar",
   runes: "Rünler",
   champion: "Şampiyonlar",
@@ -299,6 +301,7 @@ function App() {
         { id: "runes", label: "Rünler", icon: "runes" },
         { id: "journal", label: "Günlük", icon: "journal" },
         { id: "lab", label: "Eşya laboratuvarı", icon: "lab" },
+        { id: "combos", label: "Kombo kütüphanesi", icon: "combos" },
       ],
     },
   ];
@@ -400,6 +403,8 @@ function App() {
               <RunesPage onOpenChampion={(id, position) => openChampion(id, position)} initialRune={route.runeId ?? null} />
             ) : route.page === "journal" ? (
               <JournalPage onOpenChampion={(id) => openChampion(id)} onOpenMatchup={openMatchup} />
+            ) : route.page === "combos" ? (
+              <CombosPage onOpenChampion={(id) => openChampion(id)} />
             ) : route.page === "lab" ? (
               <LabPage route={route} onChange={replace} />
             ) : route.page === "quiz" ? (
