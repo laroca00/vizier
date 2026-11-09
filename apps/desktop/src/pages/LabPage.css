@@ -71,3 +71,11 @@
   cursor: pointer;
   color: var(--glaze-muted);
 }
+
+.lab__controls {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}

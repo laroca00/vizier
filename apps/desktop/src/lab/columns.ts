@@ -7,12 +7,16 @@ import type { BuildDraft, SavedBuild } from "../library/store";
 // wins most among those with enough games, and one of the player's own.
 
 export type LabColumn = {
-  id: "popular" | "winrate" | "saved";
+  id: "popular" | "winrate" | "saved" | "direction";
   /** What the column is, in Turkish for t(). */
   label: string;
   build: BuildDraft;
   /** Null for the player's own build, which has no sample. */
   sample: { games: number; winRate: number } | null;
+  /** What the column rests on: crawler games, the player's own saving, or a hand-kept rule. */
+  basis?: "data" | "own" | "editorial";
+  /** Games behind a column that has no win rate of its own (items bought against a team type). */
+  games?: number;
   /** Variant style when the numbers are for one way of building the champion. */
   style: string | null;
 };
@@ -41,13 +45,14 @@ export function labColumns(build: Build | null, saved: SavedBuild | null, champi
       label,
       build: fromPicks(base, v, ctx.finished),
       sample: { games: v.games, winRate: v.winRate },
+      basis: "data",
       style,
     });
     columns.push(popular ? from("popular", "En çok oynanan", popular, popular.style) : from("popular", "En çok oynanan", build, null));
     if (best && best !== popular) columns.push(from("winrate", "En yüksek kazanma", best, best.style));
   }
   if (saved && columns.length < MAX_COLUMNS) {
-    columns.push({ id: "saved", label: "Kayıtlı build'in", build: saved, sample: null, style: null });
+    columns.push({ id: "saved", label: "Kayıtlı build'in", build: saved, sample: null, basis: "own", style: null });
   }
   return columns;
 }

@@ -5,6 +5,7 @@ import { formatPercent, useLang, useT } from "../i18n";
 import { buildGold } from "../library/gold";
 import { loadLibraryData, type LibraryData } from "../library/data";
 import { useLibrary } from "../library/store";
+import { DIRECTIONS, directionColumn, type DirectionId } from "../lab/directions";
 import { labColumns, savedFor, type LabColumn } from "../lab/columns";
 import { itemIconUrl, spellIconUrl } from "../data/ddragon";
 import { POSITIONS } from "../labels";
@@ -70,6 +71,7 @@ function LabColumns({ data, championId, position }: { data: LibraryData; champio
   const [build, retry] = useAsync(`lab-build:${championId}:${position}`, () => getBuild(championId, position));
   const mine = useMemo(() => savedFor(library.builds, championId, position), [library.builds, championId, position]);
   const [pickedId, setPickedId] = useState<string | null>(null);
+  const [direction, setDirection] = useState<DirectionId>("standard");
   const saved = mine.find((b) => b.id === pickedId) ?? mine[0] ?? null;
 
   if (build.status === "error") return <ErrorState message={t(loadErrorMessage(build.error, online))} onRetry={retry} />;
@@ -77,10 +79,22 @@ function LabColumns({ data, championId, position }: { data: LibraryData; champio
 
   const finished = (id: number) => !!data.items.get(id)?.complete;
   const columns = labColumns(build.value, saved, championId, { position, finished });
+  const extra = build.value ? directionColumn(direction, build.value, data.details, championId, position) : null;
+  if (extra) columns.push(extra);
   if (columns.length === 0) return <EmptyState title={t("Bu rol için build yok")}>{t("Henüz yeterli maç ya da kayıtlı build yok. Başka bir rol dene.")}</EmptyState>;
 
   return (
     <>
+      <div className="lab__controls">
+        <Select
+          label={t("Yön")}
+          value={direction}
+          options={DIRECTIONS.map((d) => ({ value: d.id, label: t(d.label) }))}
+          onChange={setDirection}
+        />
+        <p className="build__stat">{t(DIRECTIONS.find((d) => d.id === direction)?.blurb ?? "")}</p>
+        {direction !== "standard" && !extra && <p className="build__note">{t("Bu yöne uyan yeterli eşya bu şampiyonun build'lerinde yok.")}</p>}
+      </div>
       {mine.length > 1 && (
         <Select
           label={t("Kayıtlı build")}
@@ -116,12 +130,18 @@ function LabCard({ column, data, patches, updatedAt }: { column: LabColumn; data
 
   return (
     <section className="lab__card" aria-label={t(column.label)}>
-      <h2 className="draft__heading">{t(column.label)}</h2>
+      <h2 className="draft__heading">{column.id === "direction" && column.style ? `${t(column.label)}: ${t(column.style)}` : t(column.label)}</h2>
       {column.sample ? (
         <p className="build__stat">
           {t("{games} maçta, {rate} kazanma", { games: column.sample.games, rate: formatPercent(column.sample.winRate, lang, 1) })}
           {column.style && ` · ${column.style}`}{" "}
           <DataBadge {...column.sample} patches={patches} updatedAt={updatedAt} source={t("Vizier crawler, dereceli maçlar")} />
+        </p>
+      ) : column.basis === "data" ? (
+        <p className="build__stat">{t("Tank takımlara karşı alınan eşyalar, {games} maç", { games: column.games ?? 0 })}</p>
+      ) : column.basis === "editorial" ? (
+        <p className="build__stat">
+          {t("Şampiyonun build'lerindeki eşyalar bu yöne göre süzüldü.")} <DataBadge editorial source={t("Eşya etiketlerinden elle yazılmış bir kural; istatistik değil.")} />
         </p>
       ) : (
         <p className="build__stat">{column.build.name}</p>
