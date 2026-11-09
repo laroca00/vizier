@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { DEFAULT_HOME, type HomeLayout } from "./home/layout";
 import { withAutoImportOn } from "./autoImportDefault";
+import type { AutopilotMode } from "./autopilot";
 import type { LanguageSetting } from "./i18n";
 
 export type Settings = {
@@ -14,6 +15,12 @@ export type Settings = {
   showOnClientOpen: boolean;
   /** A tone and a taskbar flash when a match is found; off unless the player asks. */
   readyCheckAlert: boolean;
+  /** Hover (and lock) the first available champion of the pick plan on the player's turn. */
+  autopilot: AutopilotMode;
+  /** Lock this many seconds before the timer ends; 0 locks right away. */
+  autopilotLockSeconds: number;
+  /** Accept the ready check as soon as a match is found. */
+  autoAcceptReady: boolean;
   overlay: boolean;
   overlaySkills: boolean;
   overlayObjectives: boolean;
@@ -43,6 +50,9 @@ const DEFAULTS: Settings = {
   hideOnGame: true,
   showOnClientOpen: true,
   readyCheckAlert: false,
+  autopilot: "off",
+  autopilotLockSeconds: 0,
+  autoAcceptReady: false,
   overlay: true,
   overlaySkills: true,
   overlayObjectives: true,

@@ -1,0 +1,18 @@
+.autopilot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 6px var(--space-3);
+  border-radius: var(--radius-item);
+  background: var(--hover);
+  box-shadow: inset 2px 0 0 var(--turquoise);
+  font-size: var(--text-small);
+}
+
+.autopilot[data-failed] {
+  box-shadow: inset 2px 0 0 var(--bole);
+}
+
+.autopilot__text {
+  flex: 1;
+}

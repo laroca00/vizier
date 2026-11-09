@@ -19,6 +19,7 @@ import { isArena } from "../draft/arena";
 import { BenchHelper } from "../draft/BenchHelper";
 import { HoverMatchup } from "../draft/HoverMatchup";
 import { ChampionAugments } from "../augments/ChampionAugments";
+import { AutopilotBanner } from "../draft/AutopilotBanner";
 import { BanPlanner } from "../draft/BanPlannerPanel";
 import { autoView, draftQueue, duoPartnerRole, hasBench, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
@@ -132,6 +133,8 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
           </span>
         </p>
       </header>
+
+      {ready && <AutopilotBanner draft={draft} seconds={seconds} champions={ready.champions} />}
 
       <div className="draft__body">
         <section key={view} className="draft__main draft__view" aria-label={view === "draft" ? t("Draft") : t("Build")}>

@@ -18,13 +18,14 @@ const LANGUAGES: { id: LanguageSetting; label: string }[] = [
 ];
 
 /** The on/off settings; language is a choice, not a toggle. */
-export type ToggleKey = Exclude<keyof Settings, "language" | "customTimerSeconds" | "homeLayout">;
+export type ToggleKey = Exclude<keyof Settings, "language" | "customTimerSeconds" | "homeLayout" | "autopilot" | "autopilotLockSeconds">;
 
 const CLIENT_TOGGLES: { key: ToggleKey; label: string; hint: string }[] = [
   { key: "autoImportRunes", label: "Rünleri kendiliğinden aktar", hint: "Şampiyonunu kilitlediğinde önerilen rün sayfası Vizier sayfasına yazılır." },
   { key: "autoImportSpells", label: "Büyüleri kendiliğinden aktar", hint: "Flash kullandığın tuşta kalır." },
   { key: "autoImportItems", label: "Eşya setini kendiliğinden aktar", hint: "Önerilen eşyalar oyun içi mağazada Vizier seti olarak görünür." },
   { key: "readyCheckAlert", label: "Maç bulununca haber ver", hint: "Kısa bir ses çalar ve görev çubuğundaki simge yanıp söner." },
+  { key: "autoAcceptReady", label: "Maçı kendiliğinden kabul et", hint: "Maç bulunur bulunmaz kabul edilir. Kabul etmek istemezsen sayaç dolmadan istemciden reddet." },
   { key: "showOnChampSelect", label: "Şampiyon seçiminde Vizier'i öne getir", hint: "Tepsideyken bile seçim başlayınca pencere açılır." },
   { key: "hideOnGame", label: "Oyun başlayınca tepsiye in", hint: "Oyun bitince, açıksa, pencere geri gelir." },
   { key: "showOnClientOpen", label: "League açılınca Vizier'i göster", hint: "Windows ile gizli başlayan Vizier, istemci açılınca pencereyi getirir." },
@@ -97,6 +98,25 @@ export function SettingsPage() {
 
       <section className="settings__section enter" aria-labelledby="settings-client">
         <h2 id="settings-client" className="section-title">{t("League istemcisi")}</h2>
+        <Select
+          label={t("Otomatik seçim ve ban")}
+          value={settings.autopilot}
+          options={[
+            { value: "off" as const, label: t("Kapalı") },
+            { value: "hover" as const, label: t("Sadece üzerine getir") },
+            { value: "lock" as const, label: t("Getir ve kilitle") },
+          ]}
+          onChange={(autopilot) => updateSettings({ autopilot })}
+        />
+        {settings.autopilot === "lock" && (
+          <Select
+            label={t("Kilitleme zamanı")}
+            value={String(settings.autopilotLockSeconds)}
+            options={[0, 3, 5, 10].map((s) => ({ value: String(s), label: s === 0 ? t("Hemen") : t("Süre bitmeden {seconds} sn önce", { seconds: s }) }))}
+            onChange={(seconds) => updateSettings({ autopilotLockSeconds: Number(seconds) })}
+          />
+        )}
+        <p className="settings__note">{t("Seçim planı Şampiyonlar sayfasındaki havuzda hazırlanır. Her oyunda banner'dan iptal edebilirsin.")}</p>
         {CLIENT_TOGGLES.map(({ key, label, hint }) => (
           <Toggle key={key} label={t(label)} hint={t(hint)} checked={settings[key]} onChange={(checked) => updateSettings({ [key]: checked })} />
         ))}
