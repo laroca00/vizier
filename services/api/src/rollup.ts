@@ -1,6 +1,7 @@
 import { buildStyle, foeProfiles, type Catalog } from "./archetypes.ts";
 import { maxOrder, parseRuneKey } from "./builds.ts";
 import { loadCatalog } from "./ddragon.ts";
+import { regionKind, regionOfMatch } from "@vizier/shared/brackets";
 import { LEGACY_GROUP } from "./localSchema.ts";
 import { decodeKda } from "./timeline.ts";
 
@@ -191,6 +192,7 @@ export const inPool = (matchId: string) => /^(TR1|EUW1)_/.test(matchId);
 const POOL = "pool";
 const POOL_BAN = "pool-ban";
 const POOL_GAMES = "pool-games";
+// Region counts are ranked solo only, for ?region= on tier lists. KR counts here although the pool leaves it out.
 const matchRow = (m: { patch: string; queue_id: number; rank_group: string | null }) => ({ rank_group: m.rank_group, patch: m.patch, queue_id: m.queue_id, team_position: "", champion_id: 0 });
 
 /** What a row adds to its champion's build, as [kind, value] pairs. */
@@ -233,6 +235,7 @@ function upserts(db: D1Database, tally: Tally) {
  */
 export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> = loadCatalog): Promise<number> {
   await backfillPool(db);
+  await backfillRegions(db);
   await rollupMatches(db);
   let rolled = 0;
   let catalog: Catalog | null = null;
@@ -264,6 +267,8 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     for (const row of rows) {
       tally.add(row, "games", "", row.win);
       if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
+      const region = regionOfMatch(row.match_id);
+      if (region && row.queue_id === RANKED_SOLO) tally.add(row, regionKind(POOL, region), "", row.win);
       const choices = buildChoices(row, catalog.finished);
       addItemTimes(itemTimes, row, catalog.finished);
       addBench(bench, row);
@@ -328,6 +333,11 @@ type MatchRow = { rank_group: string | null; rowid: number; match_id: string; pa
 
 function tallyPoolMatches(tally: Tally, matches: MatchRow[]) {
   for (const m of matches) {
+    const region = m.queue_id === RANKED_SOLO ? regionOfMatch(m.match_id) : null;
+    if (region) {
+      tally.add(matchRow(m), regionKind(POOL_GAMES, region), "", 0);
+      for (const id of new Set(ids(m.bans ?? ""))) tally.add({ ...matchRow(m), champion_id: id }, regionKind(POOL_BAN, region), "", 0);
+    }
     if (!inPool(m.match_id)) continue;
     tally.add(matchRow(m), POOL_GAMES, "", 0);
     for (const id of new Set(ids(m.bans ?? ""))) tally.add({ ...matchRow(m), champion_id: id }, POOL_BAN, "", 0);
@@ -355,6 +365,36 @@ async function backfillPool(db: D1Database) {
   tallyPoolMatches(tally, games);
   // One batch, flag included, so a crash can't count the backfill twice.
   await db.batch([...upserts(db, tally), setWatermark(db, "pool_backfilled", 1)]);
+}
+
+/**
+ * Region counts arrived after games were already rolled up. Once, count them
+ * from the raw rows still kept, so the first region lists are not empty.
+ * Pool counts are not touched.
+ */
+async function backfillRegions(db: D1Database) {
+  if (await watermark(db, "regions_backfilled")) return;
+  const [participants, matches] = await Promise.all([watermark(db, "rolled_participants"), watermark(db, "rolled_matches")]);
+  const tally = new Tally();
+  const { results: rows } = await db
+    .prepare("SELECT match_id, patch, queue_id, team_position, champion_id, win, rank_group FROM participant_stats WHERE rowid <= ? AND queue_id = ?")
+    .bind(participants, RANKED_SOLO)
+    .all<{ match_id: string; patch: string; queue_id: number; team_position: string; champion_id: number; win: number; rank_group: string | null }>();
+  for (const row of rows) {
+    const region = regionOfMatch(row.match_id);
+    if (region) tally.add(row, regionKind(POOL, region), "", row.win);
+  }
+  const { results: games } = await db
+    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans, rank_group FROM crawled_matches WHERE rowid <= ? AND queue_id = ?")
+    .bind(matches, RANKED_SOLO)
+    .all<MatchRow>();
+  for (const m of games) {
+    const region = regionOfMatch(m.match_id);
+    if (!region) continue;
+    tally.add(matchRow(m), regionKind(POOL_GAMES, region), "", 0);
+    for (const id of new Set(ids(m.bans ?? ""))) tally.add({ ...matchRow(m), champion_id: id }, regionKind(POOL_BAN, region), "", 0);
+  }
+  await db.batch([...upserts(db, tally), setWatermark(db, "regions_backfilled", 1)]);
 }
 
 /** Game counts per patch and queue, and ranked bans. */

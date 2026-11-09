@@ -4,7 +4,7 @@
 // pool (kinds "pool", "pool-ban", "pool-games"); builds and matchups use
 // every crawled game.
 
-import { DEFAULT_BRACKET, type Bracket } from "@vizier/shared/brackets";
+import { DEFAULT_BRACKET, regionKind, type Bracket, type Region } from "@vizier/shared/brackets";
 import { scope } from "./localSchema.ts";
 
 // Shrinks small samples towards 50% so a 3-0 champion doesn't top the list.
@@ -104,7 +104,7 @@ function assignTiers(entries: Unranked[]): TierEntry[] {
 }
 
 /** Pool matches in ranked and how often each champion was banned in them. */
-async function poolBans(db: D1Database, patches: string[], bracket: Bracket): Promise<{ matches: number; bans: Map<number, number> }> {
+async function poolBans(db: D1Database, patches: string[], bracket: Bracket, region?: Region): Promise<{ matches: number; bans: Map<number, number> }> {
   // One query per kind: an IN over two kinds makes SQLite skip stat_counts_by_kind and scan every count.
   const byKind = (kind: string) =>
     db
@@ -114,7 +114,7 @@ async function poolBans(db: D1Database, patches: string[], bracket: Bracket): Pr
       )
       .bind(kind, ...patches)
       .all<{ champion_id: number; games: number }>();
-  const [{ results: matches }, { results: bans }] = await Promise.all([byKind("pool-games"), byKind("pool-ban")]);
+  const [{ results: matches }, { results: bans }] = await Promise.all([byKind(regionKind("pool-games", region)), byKind(regionKind("pool-ban", region))]);
   return { matches: matches[0]?.games ?? 0, bans: new Map(bans.map((r) => [r.champion_id, r.games])) };
 }
 
@@ -127,15 +127,16 @@ export async function tierList(
   position: string,
   queue = RANKED,
   bracket: Bracket = DEFAULT_BRACKET,
+  region?: Region,
 ): Promise<{ patches: string[]; games: number; champions: TierEntry[]; rule: TierRule }> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return { patches, games: 0, champions: [], rule: tierRule() };
   const { results: byPatch } = await db
     .prepare(
       `SELECT champion_id, patch, games, wins FROM ${scope("stat_counts", bracket)}
-        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ? AND kind = 'pool'`,
+        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ? AND kind = ?`,
     )
-    .bind(...patches, position, queue)
+    .bind(...patches, position, queue, regionKind("pool", region))
     .all<{ champion_id: number; patch: string; games: number; wins: number }>();
   const byChampion = new Map<number, { games: number; wins: number; patches: Map<string, { games: number; wins: number }> }>();
   for (const r of byPatch) {
@@ -152,15 +153,15 @@ export async function tierList(
 
   // A ban counts against every role the champion plays, so each role gets its share.
   const ranked = queue === RANKED;
-  const bans = ranked ? await poolBans(db, patches, bracket) : null;
+  const bans = ranked ? await poolBans(db, patches, bracket, region) : null;
   const allRoles = new Map<number, number>();
   if (ranked) {
     const { results } = await db
       .prepare(
         `SELECT champion_id, SUM(games) AS games FROM ${scope("stat_counts", bracket)}
-          WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ${RANKED} AND kind = 'pool' GROUP BY champion_id`,
+          WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ${RANKED} AND kind = ? GROUP BY champion_id`,
       )
-      .bind(...patches)
+      .bind(...patches, regionKind("pool", region))
       .all<{ champion_id: number; games: number }>();
     for (const r of results) allRoles.set(r.champion_id, r.games);
   }

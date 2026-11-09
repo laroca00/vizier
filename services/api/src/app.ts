@@ -1,5 +1,5 @@
 import { Hono, type Context } from "hono";
-import { BRACKETS, parseBracket, type Bracket } from "@vizier/shared/brackets";
+import { BRACKETS, isRegion, parseBracket, REGION_BRACKETS, REGIONS, type Bracket, type Region } from "@vizier/shared/brackets";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import type { Catalog } from "./archetypes.ts";
@@ -40,9 +40,18 @@ function rankOf(c: Context): Bracket {
   return bracket;
 }
 
+/** `?region=`: missing means all regions pooled; region docs exist for Emerald+ and all ranks only. */
+function regionOf(c: Context, bracket: Bracket): Region | undefined {
+  const value = c.req.query("region");
+  if (value === undefined) return undefined;
+  if (!isRegion(value)) badRequest(`region must be one of ${REGIONS.join(", ")}`);
+  if (!REGION_BRACKETS.includes(bracket)) badRequest(`region needs rank=${REGION_BRACKETS.join(" or ")}`);
+  return value;
+}
+
 /** Names the bracket a doc was read for, next to updatedAt; docs of other queues have no ladder. */
-function ranked<T extends object>(doc: T, bracket: Bracket | null): T & { rank?: Bracket } {
-  return bracket ? { ...doc, rank: bracket } : doc;
+function ranked<T extends object>(doc: T, bracket: Bracket | null, region?: Region): T & { rank?: Bracket; region?: Region } {
+  return bracket ? { ...doc, rank: bracket, ...(region ? { region } : {}) } : doc;
 }
 
 /** Ranked solo unless `?queue=` names another stored queue. */
@@ -126,10 +135,23 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
     const position = c.req.param("position").toUpperCase();
     if (queue === 420 ? !POSITIONS.has(position) : position !== "ALL") badRequest("Unsupported position");
     const bracket = rankOf(c);
+    const region = queue === 420 ? regionOf(c, bracket) : undefined;
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
-    const list = await readDoc(statsDb, docKey.tierList(queue, position, bracket));
-    return c.json(ranked(list ?? { patches: [], games: 0, champions: [] }, queue === 420 ? bracket : null));
+    const list = await readDoc(statsDb, docKey.tierList(queue, position, bracket, region));
+    return c.json(ranked(list ?? { patches: [], games: 0, champions: [] }, queue === 420 ? bracket : null, region));
   });
+
+  type RegionalBase = { position: string | null; games: number; winRate: number; pickRate: number; tier: string | null; winRateChange: number | null; banRate: number | null };
+  // The role's numbers come from the region's tier list; a champion below its sample floor there has none, and says so with 0 games.
+  async function regionalOverview(db: D1Database, championId: number, overview: RegionalBase, bracket: Bracket, region: Region) {
+    const list = overview.position
+      ? await readDoc<{ champions: (RegionalBase & { championId: number })[] }>(db, docKey.tierList(420, overview.position, bracket, region))
+      : null;
+    const entry = list?.champions.find((e) => e.championId === championId);
+    if (!entry) return { ...overview, games: 0, winRate: 0, pickRate: 0, tier: null, winRateChange: null, banRate: null };
+    const { games, winRate, pickRate, tier, winRateChange, banRate } = entry;
+    return { ...overview, games, winRate, pickRate, tier, winRateChange, banRate };
+  }
 
   const championRequest = (c: Context) => {
     const championId = Number(c.req.param("championId"));
@@ -143,12 +165,14 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
     const { championId, position } = championRequest(c);
     const queue = queueOf(c.req.query("queue"));
     const bracket = rankOf(c);
+    const region = queue === 420 ? regionOf(c, bracket) : undefined;
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     // A role the champion has no games in gets its most played role, as championOverview does.
     const overview =
       (await readDoc(statsDb, docKey.champion(queue, championId, queue === 420 ? position : null, bracket))) ??
       (position ? await readDoc(statsDb, docKey.champion(queue, championId, null, bracket)) : null);
     if (!overview) return c.json({ error: "No games for this champion yet" }, 404);
+    if (region) return c.json(ranked(await regionalOverview(statsDb, championId, overview as RegionalBase, bracket, region), bracket, region));
     return c.json(ranked(overview, queue === 420 ? bracket : null));
   });
 

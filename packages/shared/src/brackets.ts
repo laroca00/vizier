@@ -86,3 +86,23 @@ export const GROUP_LABELS: Record<TierGroup, { tr: string; en: string }> = {
 export function groupsSql(bracket: Bracket): string {
   return MEMBERS[bracket].map((g) => `'${g}'`).join(",");
 }
+
+/** Where a game was played; tier lists and champion pages can be cut by it. */
+export const REGIONS = ["tr", "euw", "kr"] as const;
+export type Region = (typeof REGIONS)[number];
+
+export function isRegion(value: unknown): value is Region {
+  return typeof value === "string" && (REGIONS as readonly string[]).includes(value);
+}
+
+/** A match id starts with its platform (TR1_..., EUW1_..., KR_...). */
+export function regionOfMatch(matchId: string): Region | null {
+  const platform = matchId.split("_")[0];
+  return platform === "TR1" ? "tr" : platform === "EUW1" ? "euw" : platform === "KR" ? "kr" : null;
+}
+
+/** Brackets that have per-region docs; every other bracket pools the regions. */
+export const REGION_BRACKETS: readonly Bracket[] = ["emerald_plus", "all"];
+
+/** The roll-up kind that counts `kind` for one region only; without a region the kind itself. */
+export const regionKind = (kind: string, region?: Region) => (region ? `${kind}@${region}` : kind);

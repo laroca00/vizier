@@ -21,13 +21,14 @@ describe("?rank=", () => {
   const docs = {
     [docKey.tierList(420, "MIDDLE")]: { patches: ["16.21"], games: 100, champions: [] },
     [docKey.tierList(420, "MIDDLE", "gold_minus")]: { patches: ["16.21"], games: 900, champions: [] },
-    [docKey.champion(420, 103, "MIDDLE")]: { games: 10 },
     [docKey.champion(420, 103, "MIDDLE", "all")]: { games: 99 },
     [docKey.counters(103, "MIDDLE", "diamond_plus")]: { patches: [], games: 7, matchups: [] },
     [docKey.synergies(103, "MIDDLE", "master_plus")]: { patches: [], games: 3, allies: [] },
     [docKey.bench(420, 103, "MIDDLE", "platinum_plus")]: { minutes: [1] },
     [docKey.lane(103, "MIDDLE", "gold_minus")]: { 5: { games: 12 } },
     [docKey.build(420, 103, "MIDDLE", "all")]: { games: 50, variants: [], situational: [] },
+    [docKey.tierList(420, "MIDDLE", "emerald_plus", "tr")]: { patches: [], games: 40, champions: [{ championId: 103, games: 40, winRate: 0.6, pickRate: 0.2, tier: "A", winRateChange: null, banRate: 0.1 }] },
+    [docKey.champion(420, 103, "MIDDLE")]: { position: "MIDDLE", games: 10, winRate: 0.5, pickRate: 0.1, tier: "B", winRateChange: null, banRate: 0 },
     [docKey.matchupBuilds(103, "MIDDLE", "all")]: { 5: { games: 20, vs: 5 } },
   };
 
@@ -54,6 +55,17 @@ describe("?rank=", () => {
     expect((await get(app, "/v1/champions/103/lane?position=MIDDLE&vs=5&rank=gold_minus")).body).toMatchObject({ games: 12, rank: "gold_minus" });
     expect((await get(app, "/v1/builds/103?position=MIDDLE&rank=all")).body).toMatchObject({ games: 50, rank: "all" });
     expect((await get(app, "/v1/builds/103?position=MIDDLE&vs=5&rank=all")).body).toMatchObject({ games: 20, vs: 5 });
+  });
+
+  it("cuts the tier list and champion overview by region, for Emerald+ and all ranks only", async () => {
+    const app = await setup(docs);
+    expect((await get(app, "/v1/tierlist/MIDDLE?region=tr")).body).toMatchObject({ games: 40, region: "tr", rank: "emerald_plus" });
+    // A region without a published list reads as empty, not as the pooled list.
+    expect((await get(app, "/v1/tierlist/MIDDLE?region=kr")).body).toMatchObject({ games: 0, region: "kr" });
+    expect((await get(app, "/v1/champions/103?position=MIDDLE&region=tr")).body).toMatchObject({ games: 40, winRate: 0.6, tier: "A", region: "tr" });
+    expect((await get(app, "/v1/champions/103?position=MIDDLE&region=euw")).body).toMatchObject({ games: 0, tier: null });
+    expect((await app.request("/v1/tierlist/MIDDLE?region=xx")).status).toBe(400);
+    expect((await app.request("/v1/tierlist/MIDDLE?region=tr&rank=gold_minus")).status).toBe(400);
   });
 
   it("rejects unknown brackets on every bracketed route", async () => {

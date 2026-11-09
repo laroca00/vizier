@@ -1,4 +1,4 @@
-import { BRACKETS, type Bracket } from "@vizier/shared/brackets";
+import { BRACKETS, REGION_BRACKETS, REGIONS, type Bracket } from "@vizier/shared/brackets";
 import { beforeAll, describe, expect, it } from "vitest";
 import { emptyCatalog } from "./archetypes.ts";
 import { DAILY_WRITE_LIMIT, OTHER_QUEUES_PER_DAY, PUBLISHES_PER_DAY, VOLATILITY, WRITES_PER_DOC } from "./publishPlan.ts";
@@ -10,6 +10,8 @@ import { fakeD1 } from "./test/fakeD1.ts";
 const REAL = { champions: 170, pairs: 340 };
 // Docs of the four queues without a ladder: champion and build per champion, a tier list each, augments, Arena duos and items.
 const OTHER_QUEUE_DOCS = 4 * (2 * REAL.champions + 1) + 2 * (REAL.champions + 2) + 2 * REAL.champions;
+// Region tier lists: one per role, region and published bracket, sent once a day with the other queues.
+const REGION_DOCS = REGION_BRACKETS.length * REGIONS.length * 5;
 const GROUPS = ["iron_bronze", "silver", "gold", "platinum", "emerald", "diamond", "master_plus"];
 const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
 
@@ -92,6 +94,9 @@ describe("D1 write budget", () => {
     const other = OTHER_QUEUE_DOCS * WRITES_PER_DOC * OTHER_QUEUES_PER_DAY;
     total += other;
     rows.push({ bracket: "(other queues)", kind: "all", docs: OTHER_QUEUE_DOCS, perDay: OTHER_QUEUES_PER_DAY, writes: other });
+    const regions = REGION_DOCS * WRITES_PER_DOC * OTHER_QUEUES_PER_DAY;
+    total += regions;
+    rows.push({ bracket: "(regions)", kind: "tierlist", docs: REGION_DOCS, perDay: OTHER_QUEUES_PER_DAY, writes: regions });
     console.table(rows.filter((r) => r.perDay > 0));
     console.log(`projected D1 row writes a day for stat docs: ${total} of ${DAILY_WRITE_LIMIT}`);
     expect(total).toBeGreaterThan(0);
@@ -102,7 +107,7 @@ describe("D1 write budget", () => {
     let perPublish = 0;
     for (const bracket of BRACKETS) for (const { docs } of scaled(shapes.get(bracket)!, unit)) perPublish += docs;
     // Six slots a day: the reason brackets other than Emerald+ go out in rotation.
-    perPublish += OTHER_QUEUE_DOCS;
+    perPublish += OTHER_QUEUE_DOCS + REGION_DOCS;
     expect(perPublish * WRITES_PER_DOC * 6).toBeGreaterThan(DAILY_WRITE_LIMIT);
   });
 });
