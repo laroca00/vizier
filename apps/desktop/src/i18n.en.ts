@@ -1298,4 +1298,12 @@ export const EN: Record<string, string> = {
   "Plan uygulanamadı. Elle seç.": "The plan could not be applied. Pick by hand.",
   "Yeniden aç": "Turn back on",
   "Bu oyun için iptal et": "Cancel for this game",
+  "Sıra sende değil": "It is not your turn",
+  "Şu an yasak sırası": "It is a ban turn",
+  "Bu şampiyon alınamaz": "This champion is not available",
+  "{champion} seçilemedi. İstemciden elle seç.": "Could not pick {champion}. Pick it in the client.",
+  "{champion} üzerine getir": "Hover {champion}",
+  "{champion} kilitle": "Lock in {champion}",
+  "Seç": "Pick",
+  "Kilitle": "Lock in",
 };
