@@ -227,12 +227,9 @@ The owner's call: the same overlay features Blitz ships, built fresh in Vizier's
 
 ## 21. Lobby and queue (picks up 10.1 and 10.2)
 
-- [ ] 21.1 Build 10.1 (gameflow phases and lobby roles in the frontend state, Rust tests with recorded events) using the Rust setup above.
-<!-- claimed: auto/21-lobby 2026-11-09 13:10Z -->
-- [ ] 21.2 Build 10.2 (queue view with the pool for the chosen roles and autofill picks).
-<!-- claimed: auto/21-lobby 2026-11-09 13:10Z -->
-- [ ] 21.3 Home follows the client: client closed → patch and meta card first; lobby → the pool for the chosen roles; in queue → the queue view.
-<!-- claimed: auto/21-lobby 2026-11-09 13:10Z -->
+- [x] 21.1 Build 10.1 (gameflow phases and lobby roles in the frontend state, Rust tests with recorded events) using the Rust setup above. (52b9d16; lobby.rs reads the queue and own role picks from /lol-lobby/v2/lobby (party and names dropped), `lcu-lobby` event and `lobby` command, `clientFlow.ts` maps phases, preload now fetches the lobby roles; 4 Rust tests)
+- [x] 21.2 Build 10.2 (queue view with the pool for the chosen roles and autofill picks). (52b9d16; queue view: pool picks for the lobby roles with tier, win rate, games, badge, patch change and saved build, plus easy high-win-rate autofill picks for the other roles (home/QueueView.tsx))
+- [x] 21.3 Home follows the client: client closed → patch and meta card first; lobby → the pool for the chosen roles; in queue → the queue view. (52b9d16; Home shows the pool in the lobby and the full queue view while searching; with the client closed the patch and meta cards come first unless the player arranged Home)
 
 ---
 
@@ -249,10 +246,8 @@ Epics 22–31 come from the owner's product brief. Rules that apply to all of th
 
 The rule and badge exist (b4b6e62, on the build summary and the matchup guide).
 
-- [ ] 22.1 Replace the scattered sample cut-offs (`MIN_GAMES` in MatchupGuide, banPlanner, MetaPicks, comparison, ChampionPage, proMeta, winRateShift, `BAR_MIN_GAMES`) with `confidenceOf`: hide or grey values that are `insufficient`, badge the rest. Keep each page's behaviour where a cut-off exists for a non-statistical reason, and say why in a comment.
-<!-- claimed: auto/21-lobby 2026-11-09 13:10Z -->
-- [ ] 22.2 Difficulty labels only when the data supports them: "Rahat / Zor eşleşme" shows only when the 95% interval lies fully above or below 50%; otherwise "Dengeli ya da belirsiz" with the badge. Same for counters lists, pick suggestions and the ban planner reasons. Tests with fixed counts.
-<!-- claimed: auto/21-lobby 2026-11-09 13:10Z -->
+- [x] 22.1 Replace the scattered sample cut-offs (`MIN_GAMES` in MatchupGuide, banPlanner, MetaPicks, comparison, ChampionPage, proMeta, winRateShift, `BAR_MIN_GAMES`) with `confidenceOf`: hide or grey values that are `insufficient`, badge the rest. Keep each page's behaviour where a cut-off exists for a non-statistical reason, and say why in a comment. (52b9d16; one `hasEnoughGames` rule (95% interval within 10 points) replaces the matchup, meta pick, shift and ban planner cut-offs; kept with a reason: pick-rate row floor, bar width, similar champions, tier pick floor)
+- [x] 22.2 Difficulty labels only when the data supports them: "Rahat / Zor eşleşme" shows only when the 95% interval lies fully above or below 50%; otherwise "Dengeli ya da belirsiz" with the badge. Same for counters lists, pick suggestions and the ban planner reasons. Tests with fixed counts. (52b9d16; hard/easy only when the interval clears 50%, otherwise "Dengeli ya da belirsiz"; same for counter lists, pick suggestion reasons and ban reasons)
 - [ ] 22.3 Badges on the tier list, champion page header, counters, synergies, runes, boots and spells tables, augments, Arena items and pro meta. Tier list rows get the badge in the tooltip instead of a chip to keep rows compact.
 - [ ] 22.4 Data freshness: the Worker already knows when each doc was published; add `updatedAt` to responses (backward compatible) and show "güncellendi 3 saat önce" in the badge tooltip. Outdated (older patch) data is labelled on every page.
 - [ ] 22.5 "Veriler nereden geliyor" page under About: sources, regions and ranks, patches kept, the confidence rule in plain words, what is editorial. Linked from every badge tooltip.
@@ -362,6 +357,7 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 - Epic 19 (so far): apply D1 migration 0015 (bench sums) remotely before the next crawler run; deploy the Worker; set the Worker secret `RIOT_KEY` (`wrangler secret put RIOT_KEY`) to turn on loading screen scouting (the route answers 503 and the panel shows only the damage split until then); pull and restart the crawler so timelines fill `bench:420` docs; release a desktop version (Rust changed: hotkeys, roster, tray).
 - Release a desktop version (`pnpm release`) after bumping the patch version.
 - Release a desktop version to ship the overlay changes of 19.6–19.10 (two new hotkeys, Ctrl+Shift+A and Ctrl+Shift+I, so Rust changed; `cargo test --lib` passed).
+- Release a desktop version to ship epic 21 (lobby reading is new Rust; `cargo test --lib` passed here, the real lobby shape should be checked once against a live client).
 - Deploy the Worker (`pnpm --filter @vizier/api deploy`).
 - Coverage (20.1): after the Worker deploy and a crawler restart, `/v1/meta/coverage` fills on the next publish and the crawler logs an hourly coverage line. Ranked timelines cover about a quarter of games (2 of ~8 per run); raise `timelinesPerRun` only if the log shows it lagging.
 - Apply pending D1 migrations remotely.
