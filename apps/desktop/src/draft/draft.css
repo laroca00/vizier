@@ -639,3 +639,49 @@
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: var(--space-4);
 }
+
+.academy-notes__list {
+  margin: 4px 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+
+.academy-notes__list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.academy-notes__remove {
+  border: 0;
+  background: none;
+  color: var(--glaze-muted);
+  cursor: pointer;
+  font: inherit;
+}
+
+.academy-notes__form {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.academy-notes__form input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-item);
+  font: inherit;
+  color: var(--glaze);
+  background: var(--canvas);
+}
+
+.academy-notes__preview {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 2px;
+}

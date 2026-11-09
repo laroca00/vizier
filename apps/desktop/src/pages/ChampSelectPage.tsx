@@ -30,6 +30,7 @@ import { ItemAdvicePanel } from "../draft/ItemAdvicePanel";
 import { PoolBuild } from "../draft/PoolBuild";
 import { useOpponent, type Opponent } from "../draft/useOpponent";
 import { formatPercent, useLang, useT } from "../i18n";
+import { AcademyPreview } from "../AcademyNotes";
 import { JournalNote, NotePreview, useMatchupTemplate } from "../Journal";
 import { draftPhaseLabel, positionLabel } from "../labels";
 import type { ChampSelect, DraftMember, DraftTurn } from "../lcu";
@@ -269,6 +270,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
             myChampion > 0 && (
               <>
                 {vs && <NotePreview noteKey={matchupNoteKey(myChampion, vs)} label={t("{opponent} eşleşmesi notların", { opponent: ready.champions.get(vs)?.name ?? "" })} />}
+                {vs && <AcademyPreview noteKey={matchupNoteKey(myChampion, vs)} label={t("Akademi notların")} />}
                 {vs && role && ready.champions.get(vs) && (
                   <MatchupGuide championId={myChampion} position={role} opponent={ready.champions.get(vs)!} version={ready.version} />
                 )}
