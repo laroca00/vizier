@@ -19,6 +19,10 @@ import {
   MAX_BANS,
   ROLES,
   saveDraft,
+  filterDrafts,
+  parseTags,
+  tagsOf,
+  MAX_NOTES,
   swap,
   toggleBan,
   useSavedDrafts,
@@ -27,7 +31,7 @@ import {
 } from "../simulator/store";
 import "../simulator/simulator.css";
 import { Button } from "../ui/Button";
-import { SearchInput, Select, Toggle } from "../ui/Fields";
+import { FilterChips, SearchInput, Select, Toggle } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { ConfirmDialog, Modal } from "../ui/Modal";
 import { PageHeader } from "../ui/Page";
@@ -93,6 +97,11 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const [compareWith, setCompareWith] = useState<string>("");
   const [banning, setBanning] = useState(false);
   const [codeText, setCodeText] = useState("");
+  const [side, setSide] = useState<Side>("blue");
+  const [tagsText, setTagsText] = useState("");
+  const [notes, setNotes] = useState("");
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [savedQuery, setSavedQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Typing anywhere on the page starts a champion search.
@@ -157,6 +166,9 @@ function Simulator({ data }: { data: ChampionRoles }) {
   function load(d: SavedDraft) {
     setDraft({ blue: [...d.blue], red: [...d.red], bans: [...d.bans] });
     setName(d.name);
+    setSide(d.side);
+    setTagsText(d.tags.join(", "));
+    setNotes(d.notes);
     setCurrentId(d.id);
     setActive(nextSlot(d, pickOrder, { side: "blue", slot: 0 }));
   }
@@ -165,6 +177,9 @@ function Simulator({ data }: { data: ChampionRoles }) {
     setDraft(emptyDraft());
     setCurrentId(null);
     setName("");
+    setSide("blue");
+    setTagsText("");
+    setNotes("");
     setActive({ side: "blue", slot: 0 });
   }
 
@@ -406,12 +421,24 @@ function Simulator({ data }: { data: ChampionRoles }) {
           onSubmit={(e) => {
             e.preventDefault();
             const finalName = name.trim() || t("Draft {n}", { n: saved.length + 1 });
-            setCurrentId(saveDraft(draft, finalName, currentId));
+            setCurrentId(saveDraft(draft, finalName, currentId, { side, tags: parseTags(tagsText), notes: notes.trim() }));
             setName(finalName);
             toast("success", t("{name} kaydedildi", { name: finalName }));
           }}
         >
           <input className="text-input" aria-label={t("Draft adı")} placeholder={t("Draft adı")} value={name} maxLength={40} onChange={(e) => setName(e.target.value)} />
+          <Select
+            label={t("Oynadığın taraf")}
+            hideLabel
+            value={side}
+            options={[
+              { value: "blue", label: t("Mavi taraf") },
+              { value: "red", label: t("Kırmızı taraf") },
+            ]}
+            onChange={setSide}
+          />
+          <input className="text-input" aria-label={t("Etiketler")} placeholder={t("Etiketler (virgülle)")} value={tagsText} onChange={(e) => setTagsText(e.target.value)} />
+          <textarea className="text-input" aria-label={t("Not")} placeholder={t("Not")} value={notes} maxLength={MAX_NOTES} rows={2} onChange={(e) => setNotes(e.target.value)} />
           <Button type="submit" variant="primary">
             {currentId ? t("Güncelle") : t("Kaydet")}
           </Button>
@@ -429,10 +456,19 @@ function Simulator({ data }: { data: ChampionRoles }) {
         {saved.length === 0 ? (
           <p className="draft__empty">{t("Kaydettiğin draftlar burada listelenir.")}</p>
         ) : (
+          <>
+          <SearchInput label={t("Kayıtlı draftlarda ara")} placeholder={t("Ad ya da notta ara")} value={savedQuery} onChange={setSavedQuery} />
+          {tagsOf(saved).length > 0 && (
+            <FilterChips label={t("Etiketler")} chips={tagsOf(saved).map((tag) => ({ id: tag, label: tag }))} selected={tagFilter} onChange={setTagFilter} />
+          )}
           <ul className="sim__saved-list">
-            {saved.map((d) => (
+            {filterDrafts(saved, tagFilter, savedQuery).map((d) => (
               <li key={d.id} data-current={d.id === currentId || undefined}>
-                <span className="library__name">{d.name}</span>
+                <span className="library__name">
+                  {d.name}
+                  <span className="build__stat sim__meta">{[t(d.side === "blue" ? "Mavi taraf" : "Kırmızı taraf"), ...d.tags].join(" · ")}</span>
+                  {d.notes && <span className="build__stat sim__meta">{d.notes}</span>}
+                </span>
                 <span className="sim__mini">
                   {[...d.blue, ...d.red].map((id, i) => {
                     const c = data.champions.get(id);
@@ -454,6 +490,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
               </li>
             ))}
           </ul>
+          </>
         )}
       </section>
 

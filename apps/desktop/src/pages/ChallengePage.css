@@ -1,0 +1,109 @@
+.challenge__filters,
+.challenge__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: end;
+  margin: var(--space-3) 0;
+}
+
+.challenge__teams {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-3) 0;
+}
+
+@media (max-width: 800px) {
+  .challenge__teams {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.challenge__team ul,
+.challenge__choices,
+.challenge__why {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.challenge__why {
+  flex-direction: column;
+}
+
+.challenge__team li {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+.challenge__team img,
+.challenge__choice img {
+  border-radius: 50%;
+}
+
+.challenge__empty {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px dashed var(--line-strong);
+  color: var(--glaze-muted);
+}
+
+.challenge__question {
+  margin: var(--space-4) 0 var(--space-3);
+  font-size: var(--text-section);
+  font-weight: var(--weight-medium);
+}
+
+.challenge__choice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 12px 6px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-item);
+  background: var(--hover);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.challenge__choice:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.challenge__choice[data-picked] {
+  opacity: 1;
+  border-color: var(--glaze);
+}
+
+.challenge__choice[data-verdict="accepted"] {
+  box-shadow: inset 3px 0 0 var(--data-series);
+}
+
+.challenge__choice[data-verdict="rejected"] {
+  box-shadow: inset 3px 0 0 var(--data-physical);
+}
+
+.challenge__answer {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-item);
+}
+
+.challenge__free {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}

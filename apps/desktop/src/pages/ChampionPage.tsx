@@ -9,6 +9,7 @@ import { MatchupLink } from "../matchupLink";
 import { SkinGallery } from "../SkinGallery";
 import { similarChampions } from "../similar";
 import { difficultyOf } from "../draft/logic";
+import { DifficultyPanel } from "../draft/DifficultyPanel";
 import { groupAllies, MIN_ALLY_GAMES } from "../synergy";
 import { championNoteKey, inPool, matchupNoteKey, toggleFavouriteChampion, togglePool, usePersonal } from "../personal";
 import { ProBuildList } from "../ProBuildList";
@@ -144,6 +145,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           <div>
             <StrengthsWeaknesses champion={champion} />
             <ComboSection champion={champion} version={version} />
+            <DifficultyPanel champion={champion} />
             <ChampionReference champion={champion} />
             <ChampionHistory championKey={championId} championName={champion.name} />
             <SkinGallery champion={champion} />

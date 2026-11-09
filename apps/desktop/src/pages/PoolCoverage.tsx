@@ -5,6 +5,7 @@ import { POSITIONS } from "../labels";
 import { MatchupLink } from "../matchupLink";
 import { suggestForGaps } from "../poolSuggest";
 import { COMMON_OPPONENTS, coverage, gaps, poolByRole, safestBlind, type CoverageRow, type Matchups } from "../poolCoverage";
+import { useOpenPage } from "../pageLink";
 import { usePersonal } from "../personal";
 import { useAsync } from "../useAsync";
 import type { ChampionRoles } from "./ChampionsPage";
@@ -35,6 +36,7 @@ export function PoolCoverage({ data }: { data: ChampionRoles }) {
 function RoleCoverage({ role, ids, data }: { role: string; ids: number[]; data: ChampionRoles }) {
   const t = useT();
   const lang = useLang();
+  const openPage = useOpenPage();
   const [state] = useAsync(`pool-coverage:${role}:${ids.join(",")}`, () => loadRole(role, ids));
   const percent = (n: number) => formatPercent(n, lang, 1);
   if (state.status !== "done") return null;
@@ -58,6 +60,9 @@ function RoleCoverage({ role, ids, data }: { role: string; ids: number[]; data: 
           covered: rows.filter((r) => r.status === "covered").length,
         })}
       </p>
+      <button type="button" className="matchups__study" onClick={() => openPage({ page: "matrix", position: role })}>
+        {t("Karşı seçim matrisini aç")}
+      </button>
       {blind && (
         <p className="coverage__blind">
           {icon(blind.championId, 24)}
