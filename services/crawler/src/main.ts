@@ -12,7 +12,7 @@ import { pruneRaw, rollup } from "../../api/src/rollup.ts";
 import { snapshotClosedPatch } from "../../api/src/snapshots.ts";
 import { sqliteD1 } from "../../api/src/sqliteD1.ts";
 import { D1Http } from "./d1Http.ts";
-import { publish } from "./publish.ts";
+import { publishTick } from "./publish.ts";
 import { publishPros } from "./publishPros.ts";
 
 const MINUTE = 60_000;
@@ -149,8 +149,8 @@ if (remote) {
   setTimeout(
     () =>
       every(PUBLISH_EVERY, "publish", async () => {
-        const { total, sent } = await publish(db, sqlite, remote);
-        return `${sent} of ${total} docs changed`;
+        const { total, sent, extra } = await publishTick(db, sqlite, remote);
+        return `${sent} of ${total} docs changed${extra ? ` (with ${extra})` : ""}`;
       }),
     ROLLUP_EVERY + MINUTE,
   );

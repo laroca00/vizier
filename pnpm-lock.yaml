@@ -271,6 +271,10 @@ importers:
         version: 4.156.0(@cloudflare/workers-types@5.20261030.1)(@types/node@26.6.6)
 
   services/crawler:
+    dependencies:
+      '@vizier/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^5.20261030.1

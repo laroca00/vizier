@@ -30,6 +30,13 @@ export function splitRank(key: string): { base: string; bracket: Bracket } {
   return at >= 0 && isBracket(bracket) ? { base: key.slice(0, at), bracket } : { base: key, bracket: DEFAULT_BRACKET };
 }
 
+/** Docs of the queues without a ladder (ARAM, Mayhem, Arena, URF): no bracket applies and they move slowly. */
+export function isOtherQueueKey(key: string): boolean {
+  const [kind, queue] = splitRank(key).base.split(":");
+  if (["augments", "augmentchamps", "duos", "arenaitems"].includes(kind)) return true;
+  return ["tierlist", "champion", "build", "bench"].includes(kind) && Number(queue) !== RANKED;
+}
+
 /** Kinds that exist per bracket; ranked solo only, since other queues have no ladder of their own. */
 export const BRACKET_KINDS = ["tierlist", "champion", "build", "buildvs", "counters", "synergies", "lane", "bench"] as const;
 
