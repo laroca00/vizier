@@ -470,6 +470,7 @@ Ideas the owner asked for on top of the data work: overlay, design and new tools
 - [x] 42.17 Overlay "Rakibe karşı eşyalar": champ select item rules on the live enemy team, from the champion's own build pool, dropping each need once answered. (f3523ab)
 - [x] 42.18 Lighter windows: App and Overlay are lazy roots (entry chunk 680 kB to 238 kB), the overlay loads combo text only for the quick reference. (de02270)
 - [x] 42.19 Loading screen scouting names each team's main plan (composition rules) under its damage bar. (2b84b75)
+- [x] 42.20 Pick timer warning: a tone in the last 10 seconds of the player's own pick turn (setting, on). (47a963c)
 
 ## 16. Only when a feature needs it
 
