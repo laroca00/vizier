@@ -1,3 +1,5 @@
+import { Backups } from "../workspace/Backups";
+import { DataWorkspace } from "../workspace/DataWorkspace";
 import { useEffect, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
@@ -121,6 +123,9 @@ export function SettingsPage() {
           <Toggle key={key} label={t(label)} hint={t(hint)} checked={settings[key]} onChange={(checked) => updateSettings({ [key]: checked })} />
         ))}
       </section>
+
+      <DataWorkspace />
+      <Backups />
 
       <section className="settings__section enter" aria-labelledby="settings-data">
         <h2 id="settings-data" className="section-title">{t("Veriler")}</h2>

@@ -7,6 +7,7 @@ import { buildersOf, explorable, filterItems, NO_FILTER, offeredStats, sortItems
 import { positionLabel } from "../labels";
 import { SearchInput, Select } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
+import { FavouriteButton } from "../workspace/FavouriteButton";
 import { PageHeader } from "../ui/Page";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { useAsync } from "../useAsync";
@@ -148,6 +149,7 @@ function Detail({
         <img src={itemIconUrl(data.version, item.id)} alt="" width={48} height={48} />
         <div>
           <h2 className="section-title">{item.name}</h2>
+          <FavouriteButton kind="item" id={String(item.id)} label={item.name} />
           <p className="state__text">
             {t("{gold} altın", { gold: item.gold.total })}
             {eff !== null && ` · ${t("Özellik değeri altın fiyatının {rate}'i", { rate: formatPercent(eff, lang, 0) })}`}

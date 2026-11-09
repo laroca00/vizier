@@ -31,6 +31,7 @@ import { pooled } from "../data/confidence";
 import { SegmentBar } from "../charts";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { Select } from "../ui/Fields";
+import { ChampionWorkspace } from "../workspace/ChampionWorkspace";
 import "./ChampionPage.css";
 
 const SHOWN_MATCHUPS = 5;
@@ -49,13 +50,16 @@ type Props = {
   initialPosition?: string | null;
   initialQueue?: number;
   onOpenChampion: (championId: number, position: string | null, queue: number) => void;
+  onOpenBuild?: (buildId: string) => void;
+  onOpenMatchup?: (championId: number, opponentId: number, position: string) => void;
 };
 
-export function ChampionPage({ championId, initialPosition = null, initialQueue = RANKED, onOpenChampion }: Props) {
+export function ChampionPage({ championId, initialPosition = null, initialQueue = RANKED, onOpenChampion, onOpenBuild, onOpenMatchup }: Props) {
   const t = useT();
   const lang = useLang();
   const [position, setPosition] = useState<string | null>(initialPosition);
   const [queue, setQueue] = useState(initialQueue);
+  const [view, setView] = useState<"info" | "workspace">("info");
   const [data] = useAsync("static", loadStatic);
   const [state, retry] = useAsync(`${queue}:${championId}:${position}`, () => getChampion(championId, position, queue));
   const queueLabel = t(QUEUES.find((q) => q.id === queue)?.label ?? "");
@@ -137,6 +141,17 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
       {queue === ARENA && <ArenaItems championId={championId} />}
 
       {champion && version && (
+        <Tabs className="champion__queues" size="small" label={t("Görünüm")} items={[{ id: "info" as const, label: t("Bilgi") }, { id: "workspace" as const, label: t("Çalışma alanım") }]} value={view} onChange={setView} />
+      )}
+      {champion && version && view === "workspace" && data.status === "done" && (
+        <ChampionWorkspace
+          champion={champion}
+          champions={data.value.champions}
+          onOpenBuild={(id) => onOpenBuild?.(id)}
+          onOpenMatchup={(opponentId) => onOpenMatchup?.(championId, opponentId, position ?? "MIDDLE")}
+        />
+      )}
+      {champion && version && view === "info" && (
         <div className="champion__body champion__reference">
           <section className="enter" aria-label={t("Yetenekler")}>
             <h2 className="draft__heading">{t("Yetenekler")}</h2>

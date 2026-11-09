@@ -11,6 +11,7 @@ import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
 import { useAsync } from "../useAsync";
 import { useOnline } from "../useOnline";
+import { FavouriteButton } from "../workspace/FavouriteButton";
 import "./TemplatesPage.css";
 
 const SHOWN = 14;
@@ -70,6 +71,7 @@ function TemplateCard({
         <span className="build__stat">{t(PHASE_TEXT[template.phase])}</span>
       </button>
       <p>{template.objective[lang]}</p>
+      <FavouriteButton kind="comp" id={template.id} label={template.name[lang]} />
       {open && (
         <>
           <p className="build__stat">{t("Planı taşıyan roller: {roles}", { roles: template.roles.map((r) => t(POSITIONS[r])).join(", ") })}</p>

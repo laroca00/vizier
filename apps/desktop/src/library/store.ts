@@ -153,3 +153,12 @@ export function removeCollection(name: string) {
     builds: library.builds.map((b) => ({ ...b, collections: b.collections.filter((c) => c !== name) })),
   }));
 }
+
+/** Adds builds read from a file; their ids are kept unless they clash, so a second import never doubles a build. */
+export function importBuilds(builds: SavedBuild[]) {
+  update((library) => {
+    const ids = new Set(library.builds.map((b) => b.id));
+    const fresh = builds.map((b) => (ids.has(b.id) ? { ...b, id: newId() } : b));
+    return { ...library, builds: [...fresh, ...library.builds] };
+  });
+}

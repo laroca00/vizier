@@ -1,3 +1,4 @@
+import type { Favourite } from "./favourites";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -52,6 +53,7 @@ const ChallengePage = lazy(() => import("./pages/ChallengePage").then((m) => ({ 
 const SynergyPage = lazy(() => import("./pages/SynergyPage").then((m) => ({ default: m.SynergyPage })));
 const TemplatesPage = lazy(() => import("./pages/TemplatesPage").then((m) => ({ default: m.TemplatesPage })));
 const LabPage = lazy(() => import("./pages/LabPage").then((m) => ({ default: m.LabPage })));
+const FavouritesPage = lazy(() => import("./pages/FavouritesPage").then((m) => ({ default: m.FavouritesPage })));
 const JournalPage = lazy(() => import("./pages/JournalPage").then((m) => ({ default: m.JournalPage })));
 const ItemsPage = lazy(() => import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage })));
 const RunesPage = lazy(() => import("./pages/RunesPage").then((m) => ({ default: m.RunesPage })));
@@ -75,6 +77,7 @@ const LABELS: Record<Page, string> = {
   augments: "Augment'ler",
   matchup: "Eşleşme",
   journal: "Günlük",
+  favourites: "Favoriler",
   lab: "Eşya laboratuvarı",
   combos: "Kombo kütüphanesi",
   archetypes: "Şampiyon tipleri",
@@ -290,6 +293,20 @@ function App() {
     go({ page: "matchup", championId, opponentId, position });
   }
 
+  function openFavourite(f: Favourite) {
+    const number = Number(f.id);
+    if (f.kind === "build") go({ page: "builds", buildId: f.id });
+    else if (f.kind === "matchup") {
+      const [mine, opponent] = f.id.split(":").map(Number);
+      openMatchup(mine, opponent, "MIDDLE");
+    } else if (f.kind === "item") go({ page: "items", itemId: number });
+    else if (f.kind === "rune") go({ page: "runes", runeId: number });
+    else if (f.kind === "pro") go({ page: "pro", player: f.id });
+    else if (f.kind === "draft") go({ page: "simulator" });
+    else if (f.kind === "comp") go({ page: "templates" });
+    else if (f.championId !== null) openChampion(f.championId, null);
+  }
+
   const groups: NavGroup<Page>[] = [
     { items: [{ id: "home", label: "Ana sayfa", icon: "home" }] },
     {
@@ -311,6 +328,7 @@ function App() {
         { id: "items", label: "Eşyalar", icon: "items" },
         { id: "runes", label: "Rünler", icon: "runes" },
         { id: "journal", label: "Günlük", icon: "journal" },
+        { id: "favourites", label: "Favoriler", icon: "library" },
         { id: "lab", label: "Eşya laboratuvarı", icon: "lab" },
         { id: "combos", label: "Kombo kütüphanesi", icon: "combos" },
         { id: "archetypes", label: "Şampiyon tipleri", icon: "archetypes" },
@@ -420,6 +438,8 @@ function App() {
               <RunesPage onOpenChampion={(id, position) => openChampion(id, position)} initialRune={route.runeId ?? null} />
             ) : route.page === "journal" ? (
               <JournalPage onOpenChampion={(id) => openChampion(id)} onOpenMatchup={openMatchup} />
+            ) : route.page === "favourites" ? (
+              <FavouritesPage onOpen={openFavourite} />
             ) : route.page === "archetypes" ? (
               <ArchetypesPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "combos" ? (
@@ -454,6 +474,8 @@ function App() {
                 initialPosition={route.position}
                 initialQueue={route.queue}
                 onOpenChampion={openChampion}
+                onOpenBuild={(buildId) => go({ page: "builds", buildId })}
+                onOpenMatchup={openMatchup}
               />
             ) : (
               <Home lcu={lcu} lobby={lobby} draftActive={draft !== null} onOpenChampion={openChampion} onNavigate={go} onSearch={() => setSearching(true)} />

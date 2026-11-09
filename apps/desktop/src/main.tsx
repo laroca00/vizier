@@ -10,6 +10,7 @@ import "./App.css";
 import "./pages.css";
 import "./shell.css";
 import App from "./App";
+import { backupIfDue } from "./backups";
 import { Overlay } from "./overlay/Overlay";
 import { OVERLAY_FIXTURES } from "./dev/fixtures";
 
@@ -18,6 +19,9 @@ function isOverlay() {
   if (isTauri()) return getCurrentWindow().label === "overlay";
   return import.meta.env.DEV && [...Object.keys(OVERLAY_FIXTURES), "scouting"].includes(new URLSearchParams(location.search).get("fixture") ?? "");
 }
+
+// The main window makes the weekly copy of local data; the overlay window leaves it alone.
+if (!isOverlay()) backupIfDue();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
