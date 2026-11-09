@@ -22,6 +22,11 @@ export const HOTKEY_ACTIONS: readonly HotkeyAction[] = [
   { id: "augments", label: "Augment kartını göster ya da gizle", combo: "Ctrl+Shift+A" },
   { id: "build", label: "Build panelini göster ya da gizle", combo: "Ctrl+Shift+I" },
   { id: "reference", label: "Hızlı bakış panelini göster ya da gizle", combo: "Ctrl+Shift+J" },
+  { id: "flash1", label: "Rakip üst koridor Flash kullandı", combo: "Ctrl+Shift+F1" },
+  { id: "flash2", label: "Rakip ormancı Flash kullandı", combo: "Ctrl+Shift+F2" },
+  { id: "flash3", label: "Rakip orta koridor Flash kullandı", combo: "Ctrl+Shift+F3" },
+  { id: "flash4", label: "Rakip nişancı Flash kullandı", combo: "Ctrl+Shift+F4" },
+  { id: "flash5", label: "Rakip destek Flash kullandı", combo: "Ctrl+Shift+F5" },
 ];
 
 type KeyEvent = Pick<KeyboardEvent, "code" | "ctrlKey" | "shiftKey" | "altKey" | "metaKey">;

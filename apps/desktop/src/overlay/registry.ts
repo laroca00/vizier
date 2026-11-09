@@ -3,7 +3,7 @@ import type { Settings } from "../settings";
 // What the overlay can show. This file holds only data; each widget's
 // drawing lives in widgets/ and is looked up by id.
 
-export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build" | "reference" | "window" | "spikes" | "dragons" | "plan";
+export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build" | "reference" | "window" | "spikes" | "dragons" | "plan" | "flash";
 export type OverlayMode = "rift" | "aram" | "arena" | "mayhem";
 export type Spot = { x: number; y: number };
 
@@ -35,6 +35,7 @@ export const REFERENCE_SPOT: Spot = { x: 0.19, y: 0.62 };
 export const PLAN_SPOT: Spot = { x: 0.36, y: 0.15 };
 export const WINDOW_SPOT: Spot = { x: 0.56, y: 0.15 };
 export const SPIKES_SPOT: Spot = { x: 0.76, y: 0.15 };
+export const FLASH_SPOT: Spot = { x: 0.56, y: 0.3 };
 
 export const WIDGETS: readonly WidgetDef[] = [
   {
@@ -94,6 +95,14 @@ export const WIDGETS: readonly WidgetDef[] = [
     modes: ["rift", "aram"],
     settings: ["overlaySpikes"],
     defaultSpot: SPIKES_SPOT,
+  },
+  {
+    id: "flash",
+    name: "Rakip Flash takibi",
+    hint: "Bir rakip Flash kullanınca kısayoluna bas (Ctrl+Shift+F1 üst, F2 ormancı, F3 orta, F4 nişancı, F5 destek); geri gelene kadar sayar. Ionian botu hesaba katılır, rünler katılamaz.",
+    modes: ["rift", "aram"],
+    settings: ["overlayFlash"],
+    defaultSpot: FLASH_SPOT,
   },
   {
     id: "plan",

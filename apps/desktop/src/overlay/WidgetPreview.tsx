@@ -174,6 +174,18 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           </p>
         </section>
       )}
+      {id === "flash" && (
+        <section className="overlay__card overlay__flashes">
+          <p className="overlay__caption">{t("Rakip Flash")}</p>
+          <p className="overlay__row overlay__flash">
+            <span className="overlay__flash-who">
+              <span className="widget-preview__icon" />
+              Zed
+            </span>
+            <span className="overlay__value">3:12</span>
+          </p>
+        </section>
+      )}
       {id === "plan" && (
         <section className="overlay__card overlay__plan">
           <p className="overlay__plan-head">

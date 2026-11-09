@@ -42,6 +42,8 @@ export type Settings = {
   overlayDragons: boolean;
   /** The lane plan card for the first two minutes. */
   overlayPlan: boolean;
+  /** Countdowns for enemy Flashes the player marks with hotkeys. */
+  overlayFlash: boolean;
   /** The player's own overlay hotkeys, by action id; anything missing keeps its default. */
   hotkeys: Record<string, string>;
   overlaySkills: boolean;
@@ -102,6 +104,7 @@ const DEFAULTS: Settings = {
   overlaySpikes: true,
   overlayDragons: true,
   overlayPlan: true,
+  overlayFlash: true,
   hotkeys: {},
   overlaySkills: true,
   overlayObjectives: true,

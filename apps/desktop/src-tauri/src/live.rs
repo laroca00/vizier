@@ -85,6 +85,39 @@ pub struct Player {
     /// Seconds until the player is back; the game keeps the last value while alive, so read it only with `is_dead`.
     #[serde(default)]
     pub respawn_timer: f64,
+    /// Data Dragon ids of the two summoner spells ("SummonerFlash"), read from the untranslated names.
+    #[serde(default, deserialize_with = "spell_ids", rename(deserialize = "summonerSpells"))]
+    pub spells: Vec<String>,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct SpellPair {
+    #[serde(default)]
+    summoner_spell_one: Option<SpellName>,
+    #[serde(default)]
+    summoner_spell_two: Option<SpellName>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpellName {
+    #[serde(default)]
+    raw_display_name: String,
+}
+
+/// `GeneratedTip_SummonerSpell_SummonerFlash_DisplayName` -> `SummonerFlash`; the display name is translated, this one isn't.
+fn spell_id(raw: &str) -> Option<String> {
+    raw.split('_').find(|part| part.starts_with("Summoner") && *part != "SummonerSpell").map(str::to_string)
+}
+
+fn spell_ids<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Vec<String>, D::Error> {
+    let pair = Option::<SpellPair>::deserialize(deserializer)?.unwrap_or_default();
+    Ok([pair.summoner_spell_one, pair.summoner_spell_two]
+        .into_iter()
+        .flatten()
+        .filter_map(|s| spell_id(&s.raw_display_name))
+        .collect())
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
@@ -424,7 +457,10 @@ mod tests {
          "team": "ORDER", "position": "MIDDLE", "level": 7,
          "items": [{"itemID": 1056, "count": 1, "slot": 0, "price": 400}],
          "scores": {"kills": 2, "deaths": 1, "assists": 3, "creepScore": 64, "wardScore": 4.2},
-         "isDead": false, "respawnTimer": 0.0},
+         "isDead": false, "respawnTimer": 0.0,
+         "summonerSpells": {
+           "summonerSpellOne": {"displayName": "Sıçra", "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerFlash_DisplayName"},
+           "summonerSpellTwo": {"displayName": "Tutuştur", "rawDisplayName": "GeneratedTip_SummonerSpell_SummonerDot_DisplayName"}}},
         {"riotId": "Enemy#TR1", "rawChampionName": "game_character_displayname_Zed", "championName": "Zed",
          "team": "CHAOS", "position": "MIDDLE", "level": 6, "isDead": true, "respawnTimer": 21.4,
          "scores": {"kills": 1, "deaths": 2, "assists": 0, "creepScore": 58}}
@@ -452,5 +488,7 @@ mod tests {
         assert!(game.players[1].is_dead);
         assert_eq!(game.players[1].respawn_timer, 21.4);
         assert!(game.players[1].items.is_empty());
+        assert_eq!(game.players[0].spells, ["SummonerFlash", "SummonerDot"]);
+        assert!(game.players[1].spells.is_empty());
     }
 }

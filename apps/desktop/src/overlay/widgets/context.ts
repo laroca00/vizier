@@ -12,6 +12,7 @@ import type { Fallen, Window } from "../opportunity";
 import type { Spike } from "../spikes";
 import type { DragonRead } from "../dragons";
 import type { Plan } from "../plan";
+import type { FlashTimer } from "../flash";
 
 export type AugmentGroup = { rarity: number; augments: { augmentId: number; tier: string; winRate: number; games: number }[] };
 
@@ -61,4 +62,6 @@ export type WidgetContext = {
   dragons: DragonRead | null;
   /** The game-start card; null once it has had its two minutes. */
   plan: Plan | null;
+  /** Enemy Flashes on cooldown that the player marked. */
+  flashes: FlashTimer[];
 };

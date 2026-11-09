@@ -19,6 +19,7 @@ export const hasContent: Record<WidgetId, (ctx: WidgetContext, settings: Setting
   spikes: (ctx) => ctx.spikes.length > 0 && ctx.version !== null,
   dragons: (ctx) => ctx.dragons !== null,
   plan: (ctx) => ctx.plan !== null,
+  flash: (ctx) => ctx.flashes.length > 0,
 };
 
 /**
