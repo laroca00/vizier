@@ -7,6 +7,7 @@ export const hasContent: Record<WidgetId, (ctx: WidgetContext, settings: Setting
   skill: (ctx) => ctx.skill !== null,
   next: (ctx) => ctx.nextItem !== null && ctx.version !== null,
   timers: (ctx, settings) => ctx.objectives.length > 0 || settings.overlayTimers,
+  bench: (ctx) => ctx.bench !== null,
   items: (ctx) => ctx.itemGold !== null,
   augments: (ctx) => ctx.augments.length > 0 && ctx.augmentNames !== null,
   scoreboard: (ctx) => ctx.rows.length > 0,

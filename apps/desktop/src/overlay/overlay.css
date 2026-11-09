@@ -329,3 +329,7 @@ html:has(.overlay) body {
   color: var(--ink);
   background: var(--turquoise);
 }
+
+.overlay__spark {
+  color: var(--gilt);
+}

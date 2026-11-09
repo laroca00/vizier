@@ -1,7 +1,7 @@
 import { createElement, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type WheelEvent } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { getAugments, getBuild, type Build, type Picks } from "../api";
+import { getAugments, getBench, getBuild, type Build, type Picks } from "../api";
 import { augmentInfo } from "../augments/data";
 import { augmentQueue, augmentsByRarity } from "../augments/tiers";
 import { readChosenStyle } from "../buildStyles";
@@ -22,6 +22,7 @@ import {
   scoreboardRows,
   type LiveGame,
 } from "./live";
+import { benchRead, expectedAt, pushHistory, BENCH_END_MINUTE } from "./bench";
 import { GRID, ROW_GAP, snapSpot, useLayout, type ScreenSize } from "./layout";
 import { modeOf, widgetsFor, type Spot, type WidgetId } from "./registry";
 import { hasContent } from "./widgets/active";
@@ -122,6 +123,16 @@ export function Overlay() {
   const [augments] = useAsync(wantAugments ? `augments:${queue}:${championId}` : null, () => getAugments(queue!, championId!).catch(() => null));
   const [augmentNames] = useAsync(wantAugments ? `augment-info:${lang}` : null, () => augmentInfo(lang));
 
+  const wantBench = settings.overlayBench && mode === "rift" && championId !== null && position !== null && time / 60 <= BENCH_END_MINUTE;
+  const [benchDoc] = useAsync(wantBench ? `bench:${championId}:${position}` : null, () => getBench(championId!, position!).catch(() => null));
+  const expected = wantBench && benchDoc.status === "done" && benchDoc.value ? expectedAt(benchDoc.value.minutes, time / 60) : null;
+  const benchNow = expected && me ? benchRead({ cs: me.scores.creepScore, level: me.level }, expected) : null;
+  const [csHistory, setCsHistory] = useState<{ at: number; diff: number }[]>([]);
+  const csDiff = benchNow?.csDiff;
+  useEffect(() => {
+    if (csDiff !== undefined) setCsHistory((h) => pushHistory(h, time, csDiff));
+  }, [time, csDiff]);
+
   // The loading screen gets nothing; the overlay starts with the game.
   if (hidden || !settings.overlay) return null;
   // The loading screen gets the scouting panel; the boxes start with the game.
@@ -154,6 +165,7 @@ export function Overlay() {
     objectives: timers,
     itemGold,
     nextItem: next,
+    bench: benchNow ? { read: benchNow, history: csHistory.map((p) => p.diff) } : null,
     rows,
     rowGap: layout.rowGap ?? ROW_GAP,
     augments:

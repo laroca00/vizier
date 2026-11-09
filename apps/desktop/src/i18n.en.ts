@@ -1335,4 +1335,9 @@ export const EN: Record<string, string> = {
   "Ustalık yok": "No mastery",
   "Yükleme ekranında oyuncuları göster": "Show the players on the loading screen",
   "Dereceleri, ustalıkları ve takımların hasar dağılımını gösterir. Dereceler Vizier'in sunucusundan gelir; ayarlanmamışsa yalnızca hasar dağılımı görünür. Gizlemek için paneli gizleme kısayolunu kullan.": "Shows ranks, mastery and each team's damage split. Ranks come from Vizier's server; if it is not set up, only the damage split shows. Use the hide hotkey to hide the panel.",
+  "Karşılaştırma": "Benchmark",
+  "İlk 15 dakikada minyon sayın ve seviyen, aynı şampiyon ve rolün Emerald+ ortalamasıyla.": "Your CS and level in the first 15 minutes against the Emerald+ average for the same champion and role.",
+  "Minyon, ortalama {cs}": "CS, average {cs}",
+  "Seviye, ortalama {level}": "Level, average {level}",
+  "{games} maçın ortalaması": "Average of {games} games",
 };

@@ -26,6 +26,8 @@ export type Settings = {
   overlayScale: number;
   /** On the loading screen, rank and champion mastery of all ten players. */
   overlayScouting: boolean;
+  /** Your CS and level against the ranked average at this minute. */
+  overlayBench: boolean;
   /** The player's own overlay hotkeys, by action id; anything missing keeps its default. */
   hotkeys: Record<string, string>;
   overlaySkills: boolean;
@@ -62,6 +64,7 @@ const DEFAULTS: Settings = {
   overlay: true,
   overlayScale: 1,
   overlayScouting: true,
+  overlayBench: true,
   hotkeys: {},
   overlaySkills: true,
   overlayObjectives: true,

@@ -150,6 +150,13 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
     return c.json((await readDoc(statsDb, docKey.itemTimes(championId, position))) ?? {});
   });
 
+  app.get("/v1/champions/:championId/bench", async (c) => {
+    const { championId, position } = championRequest(c);
+    if (!position) badRequest("position is required");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json((await readDoc(statsDb, docKey.bench(420, championId, position))) ?? { minutes: [] });
+  });
+
   app.get("/v1/champions/:championId/synergies", async (c) => {
     const { championId, position } = championRequest(c);
     if (!position) badRequest("position is required");

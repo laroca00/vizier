@@ -1,6 +1,7 @@
 import type { Params } from "../../i18n";
 import type { Item } from "../../data/ddragon";
 import type { Picks } from "../../api";
+import type { BenchRead } from "../bench";
 import type { LiveGame, LivePlayer, SkillKey, Timer } from "../live";
 
 export type AugmentGroup = { rarity: number; augments: { augmentId: number; tier: string }[] };
@@ -22,6 +23,8 @@ export type WidgetContext = {
   nextItem: number | null;
   rows: { ally: LivePlayer; diff: number | null }[];
   rowGap: number;
+  /** Your CS and level against the average, with the CS gap over time; null without data or after minute 15. */
+  bench: { read: BenchRead; history: number[] } | null;
   augments: AugmentGroup[];
   augmentNames: Map<number, { name: string }> | null;
 };

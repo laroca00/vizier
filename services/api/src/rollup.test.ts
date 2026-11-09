@@ -7,7 +7,7 @@ import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { pruneRaw, rollup } from "./rollup.ts";
 import { docKey, statDocs } from "./statDocs.ts";
-import { arenaDuos, arenaItems, augmentChampions, augmentStats, itemTimes, laneStats, sampleLimits, tierList } from "./stats.ts";
+import { arenaDuos, arenaItems, augmentChampions, augmentStats, benchStats, itemTimes, laneStats, sampleLimits, tierList } from "./stats.ts";
 import { MemoryStore } from "./store.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
@@ -200,6 +200,52 @@ describe("lane stats", () => {
     await seed(db, 1, 12);
     await rollup(db, noCatalog);
     expect(await laneStats(db, 103, "MIDDLE")).toEqual({});
+  });
+});
+
+describe("benchmark", () => {
+  // CS grows by 8 a minute and the level by one every two minutes.
+  const timeline = {
+    info: {
+      frames: Array.from({ length: 17 }, (_, minute) => ({
+        timestamp: minute * 60_000,
+        participantFrames: { 1: { totalGold: 0, xp: 0, minionsKilled: 8 * minute, jungleMinionsKilled: 0, level: 1 + Math.floor(minute / 2) } },
+        events: [],
+      })),
+    },
+  };
+
+  async function seedBench(count: number) {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, noRiot);
+    for (let n = 1; n <= count; n++) {
+      const match = game(n, true);
+      match.metadata.matchId = `TR1_B${n}`;
+      match.info.participants = [player(1, 100, 103, true)];
+      await crawler.save(match, timeline);
+    }
+    await rollup(db, noCatalog);
+    return db;
+  }
+
+  it("averages CS and level at the sample minutes with their game counts", async () => {
+    const db = await seedBench(20);
+    const { minutes } = await benchStats(db, 103, "MIDDLE");
+    expect(minutes.map((m) => m.minute)).toEqual([3, 5, 8, 10, 12, 15]);
+    expect(minutes[3]).toEqual({ minute: 10, games: 20, cs: 80, level: 6 });
+    expect(minutes[5]).toEqual({ minute: 15, games: 20, cs: 120, level: 8 });
+    expect((await benchStats(db, 103, "TOP")).minutes).toEqual([]);
+  });
+
+  it("hides minutes with too few games", async () => {
+    expect((await benchStats(await seedBench(5), 103, "MIDDLE")).minutes).toEqual([]);
+  });
+
+  it("is published as a doc and served", async () => {
+    const db = await seedBench(20);
+    const keys: string[] = [];
+    for await (const [key] of statDocs(db)) keys.push(key);
+    expect(keys).toContain(docKey.bench(420, 103, "MIDDLE"));
   });
 });
 

@@ -3,7 +3,7 @@ import type { Settings } from "../settings";
 // What the overlay can show. This file holds only data; each widget's
 // drawing lives in widgets/ and is looked up by id.
 
-export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard";
+export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench";
 export type OverlayMode = "rift" | "aram" | "arena" | "mayhem";
 export type Spot = { x: number; y: number };
 
@@ -29,6 +29,7 @@ export const WIDGETS: readonly WidgetDef[] = [
   { id: "next", name: "Sıradaki eşya", hint: "Seçtiğin build türünde henüz almadığın ilk eşya ve ona kalan altın.", modes: MODES, settings: ["overlayNextItem"] },
   { id: "timers", name: "Süreler", hint: "Ejder, Baron ve inhibitör süreleri ile elle başlatılan zamanlayıcılar.", modes: MODES, settings: ["overlayObjectives", "overlayTimers"] },
   { id: "items", name: "Eşya altını farkı", hint: "Koridor rakibine ve rakip takıma göre eşyalarına harcanan altın.", modes: MODES, settings: ["overlayItems"] },
+  { id: "bench", name: "Karşılaştırma", hint: "İlk 15 dakikada minyon sayın ve seviyen, aynı şampiyon ve rolün Emerald+ ortalamasıyla.", modes: ["rift"], settings: ["overlayBench"] },
   { id: "augments", name: "Augment önerisi", hint: "Arena ve Şamata'da şampiyonunun her nadirlikteki en iyi augment'leri.", modes: ["arena", "mayhem"], settings: ["overlayAugments"] },
   {
     id: "scoreboard",

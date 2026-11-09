@@ -1,5 +1,5 @@
 import type { Platform, Region, RiotClient } from "./riot/client.ts";
-import { buildPaths, csByMinute, goldAtMinute, type BuildPath, type Timeline } from "./timeline.ts";
+import { buildPaths, csByMinute, goldAtMinute, levelByMinute, type BuildPath, type Timeline } from "./timeline.ts";
 import { patchOf, type LeagueEntryWithPuuid, type LeagueList, type Match, type Participant } from "./riot/types.ts";
 
 const RANKED_SOLO = 420;
@@ -280,11 +280,12 @@ export class Crawler {
         (match_id, patch, champion_id, team_position, win, runes, spells, items,
          opponent_champion_id, duration, deaths, cs10, cs_pm, gold_pm, vision_pm,
          kill_participation, damage_share, start_items, skill_order, purchase_order, cs_minutes,
-         queue_id, team_id, augments, gold10, gold15, first_blood, purchase_times)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         queue_id, team_id, augments, gold10, gold15, first_blood, purchase_times, level_minutes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const paths = timeline ? buildPaths(timeline) : new Map<number, BuildPath>();
     const pace = timeline ? csByMinute(timeline) : new Map<number, number[]>();
+    const levels = timeline ? levelByMinute(timeline) : new Map<number, number[]>();
     const gold10 = timeline ? goldAtMinute(timeline, 10) : new Map<number, number>();
     const gold15 = timeline ? goldAtMinute(timeline, 15) : new Map<number, number>();
     const minutes = info.gameDuration / 60;
@@ -306,6 +307,7 @@ export class Crawler {
       const cs10 = p.teamPosition === "JUNGLE" ? c.jungleCsBefore10Minutes : c.laneMinionsFirst10Minutes;
       const path = p.participantId ? paths.get(p.participantId) : undefined;
       const csMinutes = p.participantId ? pace.get(p.participantId) : undefined;
+      const levelMinutes = p.participantId ? levels.get(p.participantId) : undefined;
       return [
         insert.bind(
           matchId,
@@ -337,6 +339,7 @@ export class Crawler {
           (p.participantId && gold15.get(p.participantId)) ?? null,
           timeline && p.firstBloodKill !== undefined ? Number(p.firstBloodKill) : null,
           path ? path.purchaseTimes.join(",") : null,
+          levelMinutes?.length ? levelMinutes.join(",") : null,
         ),
       ];
     });

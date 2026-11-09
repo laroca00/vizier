@@ -49,6 +49,19 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           </p>
         </section>
       )}
+      {id === "bench" && (
+        <section className="overlay__card">
+          <p className="overlay__caption">{t("Karşılaştırma")}</p>
+          <p className="overlay__row" data-ahead="true">
+            <span>{t("Minyon, ortalama {cs}", { cs: 62 })}</span>
+            <span className="overlay__value">+8</span>
+          </p>
+          <p className="overlay__row" data-ahead="false">
+            <span>{t("Seviye, ortalama {level}", { level: 6.5 })}</span>
+            <span className="overlay__value">−0.5</span>
+          </p>
+        </section>
+      )}
       {id === "augments" && (
         <section className="overlay__card overlay__augments">
           <p className="overlay__caption">{t("En iyi augment'ler")}</p>

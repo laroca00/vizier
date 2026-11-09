@@ -115,6 +115,19 @@ export function csByMinute(timeline: Timeline): Map<number, number[]> {
   return result;
 }
 
+/** Per participant id: champion level at the end of minutes 1 to 15. */
+export function levelByMinute(timeline: Timeline): Map<number, number[]> {
+  const result = new Map<number, number[]>();
+  for (const frame of timeline.info.frames.slice(1, PACE_MINUTES + 1)) {
+    for (const [id, pf] of Object.entries(frame.participantFrames)) {
+      const list = result.get(Number(id)) ?? [];
+      list.push(pf.level);
+      result.set(Number(id), list);
+    }
+  }
+  return result;
+}
+
 /** Per participant id: total gold at the start of the given minute, or none when the game was shorter. */
 export function goldAtMinute(timeline: Timeline, minute: number): Map<number, number> {
   const frame = timeline.info.frames[minute];
