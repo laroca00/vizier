@@ -1,6 +1,7 @@
 import { buildStyle, foeProfiles, type Catalog } from "./archetypes.ts";
 import { maxOrder, parseRuneKey } from "./builds.ts";
 import { loadCatalog } from "./ddragon.ts";
+import { LEGACY_GROUP } from "./localSchema.ts";
 import { decodeKda } from "./timeline.ts";
 
 const RANKED_SOLO = 420;
@@ -40,14 +41,18 @@ type Raw = {
   purchase_times: string | null;
   level_minutes: string | null;
   kda_minutes: string | null;
+  rank_group: string | null;
 };
 
-type Count = { patch: string; queue: number; position: string; champion: number; kind: string; value: string; games: number; wins: number };
+/** Rows from before groups were kept count as Emerald. */
+const groupOf = (row: { rank_group: string | null }) => row.rank_group ?? LEGACY_GROUP;
 
-type LaneSum = { patch: string; position: string; champion: number; opponent: number; games: number; cs10: number; cs15: number; gold10: number; gold15: number; firstBloods: number };
+type Count = { group: string; patch: string; queue: number; position: string; champion: number; kind: string; value: string; games: number; wins: number };
+
+type LaneSum = { group: string; patch: string; position: string; champion: number; opponent: number; games: number; cs10: number; cs15: number; gold10: number; gold15: number; firstBloods: number };
 
 /** Both laners need timeline data, or the difference means nothing. */
-function laneDifference(me: Raw, foe: Raw): Omit<LaneSum, "patch" | "position" | "champion" | "opponent" | "games"> | null {
+function laneDifference(me: Raw, foe: Raw): Omit<LaneSum, "group" | "patch" | "position" | "champion" | "opponent" | "games"> | null {
   if (me.gold10 === null || me.gold15 === null || foe.gold10 === null || foe.gold15 === null) return null;
   const mine = ids(me.cs_minutes ?? "");
   const theirs = ids(foe.cs_minutes ?? "");
@@ -64,8 +69,8 @@ function laneDifference(me: Raw, foe: Raw): Omit<LaneSum, "patch" | "position" |
 function addLane(sums: Map<string, LaneSum>, me: Raw, foe: Raw) {
   const diff = laneDifference(me, foe);
   if (!diff) return;
-  const key = [me.patch, me.team_position, me.champion_id, foe.champion_id].join("\t");
-  const sum = sums.get(key) ?? { patch: me.patch, position: me.team_position, champion: me.champion_id, opponent: foe.champion_id, games: 0, cs10: 0, cs15: 0, gold10: 0, gold15: 0, firstBloods: 0 };
+  const key = [groupOf(me), me.patch, me.team_position, me.champion_id, foe.champion_id].join("\t");
+  const sum = sums.get(key) ?? { group: groupOf(me), patch: me.patch, position: me.team_position, champion: me.champion_id, opponent: foe.champion_id, games: 0, cs10: 0, cs15: 0, gold10: 0, gold15: 0, firstBloods: 0 };
   sum.games++;
   for (const field of ["cs10", "cs15", "gold10", "gold15", "firstBloods"] as const) sum[field] += diff[field];
   sums.set(key, sum);
@@ -73,18 +78,18 @@ function addLane(sums: Map<string, LaneSum>, me: Raw, foe: Raw) {
 
 function laneUpserts(db: D1Database, sums: Map<string, LaneSum>) {
   const statement = db.prepare(
-    `INSERT INTO lane_sums (patch, team_position, champion_id, opponent_id, games, cs10, cs15, gold10, gold15, first_bloods)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO lane_sums_g (rank_group, patch, team_position, champion_id, opponent_id, games, cs10, cs15, gold10, gold15, first_bloods)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT DO UPDATE SET games = games + excluded.games, cs10 = cs10 + excluded.cs10, cs15 = cs15 + excluded.cs15,
         gold10 = gold10 + excluded.gold10, gold15 = gold15 + excluded.gold15, first_bloods = first_bloods + excluded.first_bloods`,
   );
-  return [...sums.values()].map((l) => statement.bind(l.patch, l.position, l.champion, l.opponent, l.games, l.cs10, l.cs15, l.gold10, l.gold15, l.firstBloods));
+  return [...sums.values()].map((l) => statement.bind(l.group, l.patch, l.position, l.champion, l.opponent, l.games, l.cs10, l.cs15, l.gold10, l.gold15, l.firstBloods));
 }
 
 /** Minutes the benchmark keeps; the app interpolates between them. */
 export const BENCH_MINUTES = [3, 5, 8, 10, 12, 15];
 
-type BenchSum = { patch: string; position: string; champion: number; minute: number; games: number; cs: number; level: number; kdaGames: number; kills: number; deaths: number; assists: number; teamKills: number };
+type BenchSum = { group: string; patch: string; position: string; champion: number; minute: number; games: number; cs: number; level: number; kdaGames: number; kills: number; deaths: number; assists: number; teamKills: number };
 
 /** CS and level at the sample minutes, for ranked games whose timeline covered all 15. */
 export function addBench(sums: Map<string, BenchSum>, row: Raw) {
@@ -94,8 +99,8 @@ export function addBench(sums: Map<string, BenchSum>, row: Raw) {
   const kda = decodeKda(row.kda_minutes);
   if (cs.length < 15 || level.length < 15) return;
   for (const minute of BENCH_MINUTES) {
-    const key = [row.patch, row.team_position, row.champion_id, minute].join("\t");
-    const sum = sums.get(key) ?? { patch: row.patch, position: row.team_position, champion: row.champion_id, minute, games: 0, cs: 0, level: 0, kdaGames: 0, kills: 0, deaths: 0, assists: 0, teamKills: 0 };
+    const key = [groupOf(row), row.patch, row.team_position, row.champion_id, minute].join("\t");
+    const sum = sums.get(key) ?? { group: groupOf(row), patch: row.patch, position: row.team_position, champion: row.champion_id, minute, games: 0, cs: 0, level: 0, kdaGames: 0, kills: 0, deaths: 0, assists: 0, teamKills: 0 };
     sum.games++;
     sum.cs += cs[minute - 1];
     sum.level += level[minute - 1];
@@ -114,16 +119,16 @@ export function addBench(sums: Map<string, BenchSum>, row: Raw) {
 
 function benchUpserts(db: D1Database, sums: Map<string, BenchSum>) {
   const statement = db.prepare(
-    `INSERT INTO bench_sums (patch, team_position, champion_id, minute, games, cs, level, kda_games, kills, deaths, assists, team_kills)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO bench_sums_g (rank_group, patch, team_position, champion_id, minute, games, cs, level, kda_games, kills, deaths, assists, team_kills)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT DO UPDATE SET games = games + excluded.games, cs = cs + excluded.cs, level = level + excluded.level,
         kda_games = kda_games + excluded.kda_games, kills = kills + excluded.kills, deaths = deaths + excluded.deaths,
         assists = assists + excluded.assists, team_kills = team_kills + excluded.team_kills`,
   );
-  return [...sums.values()].map((b) => statement.bind(b.patch, b.position, b.champion, b.minute, b.games, b.cs, b.level, b.kdaGames, b.kills, b.deaths, b.assists, b.teamKills));
+  return [...sums.values()].map((b) => statement.bind(b.group, b.patch, b.position, b.champion, b.minute, b.games, b.cs, b.level, b.kdaGames, b.kills, b.deaths, b.assists, b.teamKills));
 }
 
-type ItemTime = { patch: string; position: string; champion: number; item: number; games: number; seconds: number };
+type ItemTime = { group: string; patch: string; position: string; champion: number; item: number; games: number; seconds: number };
 
 /** The first time each finished item was bought, as seconds into the game. */
 function addItemTimes(sums: Map<string, ItemTime>, row: Raw, finished: Set<number>) {
@@ -134,8 +139,8 @@ function addItemTimes(sums: Map<string, ItemTime>, row: Raw, finished: Set<numbe
   bought.forEach((item, at) => {
     if (!finished.has(item) || seen.has(item) || times[at] === undefined) return;
     seen.add(item);
-    const key = [row.patch, row.team_position, row.champion_id, item].join("\t");
-    const sum = sums.get(key) ?? { patch: row.patch, position: row.team_position, champion: row.champion_id, item, games: 0, seconds: 0 };
+    const key = [groupOf(row), row.patch, row.team_position, row.champion_id, item].join("\t");
+    const sum = sums.get(key) ?? { group: groupOf(row), patch: row.patch, position: row.team_position, champion: row.champion_id, item, games: 0, seconds: 0 };
     sum.games++;
     sum.seconds += times[at];
     sums.set(key, sum);
@@ -144,18 +149,19 @@ function addItemTimes(sums: Map<string, ItemTime>, row: Raw, finished: Set<numbe
 
 function itemTimeUpserts(db: D1Database, sums: Map<string, ItemTime>) {
   const statement = db.prepare(
-    `INSERT INTO item_time_sums (patch, team_position, champion_id, item_id, games, seconds) VALUES (?, ?, ?, ?, ?, ?)
+    `INSERT INTO item_time_sums_g (rank_group, patch, team_position, champion_id, item_id, games, seconds) VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT DO UPDATE SET games = games + excluded.games, seconds = seconds + excluded.seconds`,
   );
-  return [...sums.values()].map((s) => statement.bind(s.patch, s.position, s.champion, s.item, s.games, s.seconds));
+  return [...sums.values()].map((s) => statement.bind(s.group, s.patch, s.position, s.champion, s.item, s.games, s.seconds));
 }
 
 class Tally {
   counts = new Map<string, Count>();
 
-  add(row: { patch: string; queue_id: number; team_position: string; champion_id: number }, kind: string, value: string, win: number) {
-    const key = [row.patch, row.queue_id, row.team_position, row.champion_id, kind, value].join("\t");
+  add(row: { rank_group: string | null; patch: string; queue_id: number; team_position: string; champion_id: number }, kind: string, value: string, win: number) {
+    const key = [groupOf(row), row.patch, row.queue_id, row.team_position, row.champion_id, kind, value].join("\t");
     const count = this.counts.get(key) ?? {
+      group: groupOf(row),
       patch: row.patch,
       queue: row.queue_id,
       position: row.team_position,
@@ -185,7 +191,7 @@ export const inPool = (matchId: string) => /^(TR1|EUW1)_/.test(matchId);
 const POOL = "pool";
 const POOL_BAN = "pool-ban";
 const POOL_GAMES = "pool-games";
-const matchRow = (patch: string, queue: number) => ({ patch, queue_id: queue, team_position: "", champion_id: 0 });
+const matchRow = (m: { patch: string; queue_id: number; rank_group: string | null }) => ({ rank_group: m.rank_group, patch: m.patch, queue_id: m.queue_id, team_position: "", champion_id: 0 });
 
 /** What a row adds to its champion's build, as [kind, value] pairs. */
 function buildChoices(row: Raw, finished: Set<number>): [string, string][] {
@@ -214,11 +220,11 @@ const setWatermark = (db: D1Database, key: string, value: number) =>
 
 function upserts(db: D1Database, tally: Tally) {
   const statement = db.prepare(
-    `INSERT INTO stat_counts (patch, queue_id, team_position, champion_id, kind, value, games, wins)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO stat_counts_g (rank_group, patch, queue_id, team_position, champion_id, kind, value, games, wins)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT DO UPDATE SET games = games + excluded.games, wins = wins + excluded.wins`,
   );
-  return [...tally.counts.values()].map((c) => statement.bind(c.patch, c.queue, c.position, c.champion, c.kind, c.value, c.games, c.wins));
+  return [...tally.counts.values()].map((c) => statement.bind(c.group, c.patch, c.queue, c.position, c.champion, c.kind, c.value, c.games, c.wins));
 }
 
 /**
@@ -235,7 +241,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const { results } = await db
       .prepare(
         `SELECT rowid, match_id, patch, queue_id, team_position, champion_id, win, runes, spells, items, start_items,
-            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes
+            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group
           FROM participant_stats WHERE rowid > ? ORDER BY rowid LIMIT ?`,
       )
       .bind(from, CHUNK)
@@ -318,13 +324,13 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
   }
 }
 
-type MatchRow = { rowid: number; match_id: string; patch: string; queue_id: number; game_start: number; bans: string | null };
+type MatchRow = { rank_group: string | null; rowid: number; match_id: string; patch: string; queue_id: number; game_start: number; bans: string | null };
 
 function tallyPoolMatches(tally: Tally, matches: MatchRow[]) {
   for (const m of matches) {
     if (!inPool(m.match_id)) continue;
-    tally.add(matchRow(m.patch, m.queue_id), POOL_GAMES, "", 0);
-    for (const id of new Set(ids(m.bans ?? ""))) tally.add({ ...matchRow(m.patch, m.queue_id), champion_id: id }, POOL_BAN, "", 0);
+    tally.add(matchRow(m), POOL_GAMES, "", 0);
+    for (const id of new Set(ids(m.bans ?? ""))) tally.add({ ...matchRow(m), champion_id: id }, POOL_BAN, "", 0);
   }
 }
 
@@ -338,12 +344,12 @@ async function backfillPool(db: D1Database) {
   const [participants, matches] = await Promise.all([watermark(db, "rolled_participants"), watermark(db, "rolled_matches")]);
   const tally = new Tally();
   const { results: rows } = await db
-    .prepare("SELECT match_id, patch, queue_id, team_position, champion_id, win FROM participant_stats WHERE rowid <= ?")
+    .prepare("SELECT match_id, patch, queue_id, team_position, champion_id, win, rank_group FROM participant_stats WHERE rowid <= ?")
     .bind(participants)
-    .all<{ match_id: string; patch: string; queue_id: number; team_position: string; champion_id: number; win: number }>();
+    .all<{ match_id: string; patch: string; queue_id: number; team_position: string; champion_id: number; win: number; rank_group: string | null }>();
   for (const row of rows) if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
   const { results: games } = await db
-    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans FROM crawled_matches WHERE rowid <= ?")
+    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans, rank_group FROM crawled_matches WHERE rowid <= ?")
     .bind(matches)
     .all<MatchRow>();
   tallyPoolMatches(tally, games);
@@ -355,7 +361,7 @@ async function backfillPool(db: D1Database) {
 async function rollupMatches(db: D1Database) {
   const from = await watermark(db, "rolled_matches");
   const { results } = await db
-    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans FROM crawled_matches WHERE rowid > ? ORDER BY rowid")
+    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans, rank_group FROM crawled_matches WHERE rowid > ? ORDER BY rowid")
     .bind(from)
     .all<MatchRow>();
   if (results.length === 0) return;
@@ -368,7 +374,7 @@ async function rollupMatches(db: D1Database) {
     g.games++;
     g.last = Math.max(g.last, m.game_start);
     games.set(key, g);
-    for (const id of new Set(ids(m.bans ?? ""))) tally.add({ patch: m.patch, queue_id: m.queue_id, team_position: "", champion_id: id }, "ban", "", 0);
+    for (const id of new Set(ids(m.bans ?? ""))) tally.add({ ...matchRow(m), champion_id: id }, "ban", "", 0);
   }
   tallyPoolMatches(tally, results);
   const insertGames = db.prepare(
@@ -404,10 +410,10 @@ export async function pruneRaw(db: D1Database, now = Date.now()) {
   if (results.length < 2) return;
   const keep = results.map((r) => r.patch);
   await db.batch([
-    db.prepare("DELETE FROM stat_counts WHERE patch NOT IN (?, ?)").bind(...keep),
+    db.prepare("DELETE FROM stat_counts_g WHERE patch NOT IN (?, ?)").bind(...keep),
     db.prepare("DELETE FROM stat_matches WHERE patch NOT IN (?, ?)").bind(...keep),
-    db.prepare("DELETE FROM lane_sums WHERE patch NOT IN (?, ?)").bind(...keep),
-    db.prepare("DELETE FROM item_time_sums WHERE patch NOT IN (?, ?)").bind(...keep),
-    db.prepare("DELETE FROM bench_sums WHERE patch NOT IN (?, ?)").bind(...keep),
+    db.prepare("DELETE FROM lane_sums_g WHERE patch NOT IN (?, ?)").bind(...keep),
+    db.prepare("DELETE FROM item_time_sums_g WHERE patch NOT IN (?, ?)").bind(...keep),
+    db.prepare("DELETE FROM bench_sums_g WHERE patch NOT IN (?, ?)").bind(...keep),
   ]);
 }

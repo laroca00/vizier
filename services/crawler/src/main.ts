@@ -4,6 +4,7 @@
 import { readFileSync } from "node:fs";
 import { coverage } from "../../api/src/coverage.ts";
 import { Crawler, type CrawlOptions } from "../../api/src/crawler.ts";
+import { GroupBudget } from "../../api/src/groupBudget.ts";
 import { ProCrawler, syncChallengers } from "../../api/src/pros.ts";
 import { RiotClient, RiotError } from "../../api/src/riot/client.ts";
 import { RateLimiter } from "../../api/src/riot/rateLimiter.ts";
@@ -34,8 +35,8 @@ const DAY = 24 * HOUR;
 // roughly one run per two minutes per region on a development key.
 const RUN_SIZE = { playersPerRun: 4, matchesPerRun: 40, extraMatchesPerRun: 4, timelinesPerRun: 20 };
 const REGIONS: CrawlOptions[] = [
-  { region: "europe", platforms: ["tr1", "euw1"], leagues: "emerald+", ...RUN_SIZE },
-  { region: "asia", platforms: ["kr"], leagues: "challenger", ...RUN_SIZE },
+  { region: "europe", platforms: ["tr1", "euw1"], leagues: "all", ...RUN_SIZE },
+  { region: "asia", platforms: ["kr"], leagues: "all", ...RUN_SIZE },
 ];
 
 const env = process.env;
@@ -65,10 +66,10 @@ function riotClient(): RiotClient {
   return riot.client;
 }
 
-async function crawl(options: CrawlOptions) {
+async function crawl(options: CrawlOptions, budget: GroupBudget) {
   for (;;) {
     try {
-      const { seeded, matches } = await new Crawler(db, riotClient(), Date.now, options).run();
+      const { seeded, matches } = await new Crawler(db, riotClient(), Date.now, options, budget).run();
       if (seeded > 0) log(`${options.region}: seeded ${seeded} players`);
       log(`${options.region}: saved ${matches} games`);
       if (matches === 0) await sleep(IDLE_WAIT);
@@ -108,7 +109,10 @@ function every(ms: number, name: string, task: () => Promise<string>) {
 }
 
 if (!remote) log("CLOUDFLARE_* is not set; stats are computed but not published");
-for (const options of REGIONS) void crawl(options);
+const budgets = new Map(REGIONS.map((options) => [options.region, new GroupBudget()]));
+for (const options of REGIONS) void crawl(options, budgets.get(options.region)!);
+// Where each host spent its calls this hour, by tier group.
+every(HOUR, "budget", async () => [...budgets].map(([region, budget]) => `${region}: ${budget.takeLine()}`).join(" | "));
 void crawlPros();
 // Pros change accounts and the ladders move, so both lists are re-read daily.
 every(DAY, "pro accounts", async () => {

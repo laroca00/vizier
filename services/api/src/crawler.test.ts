@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { emptyCatalog } from "./archetypes.ts";
 import { aggregateBuild, parseRuneKey } from "./builds.ts";
-import { Crawler, pruneOldPatches, runeKey } from "./crawler.ts";
+import { Crawler, GROUP_TIERS, SEED_QUOTA, SEED_SIZE, pruneOldPatches, runeKey } from "./crawler.ts";
 import type { RiotClient } from "./riot/client.ts";
 import type { Match, Participant } from "./riot/types.ts";
 import { rollup } from "./rollup.ts";
@@ -238,6 +238,119 @@ describe("Emerald+ seeding", () => {
       { tier: "MASTER", n: 1200 },
     ]);
     expect(sqlite.prepare("SELECT puuid FROM crawl_players WHERE puuid IN ('old', 'k')").all()).toEqual([{ puuid: "k" }]);
+  });
+});
+
+describe("all-rank seeding", () => {
+  const options = { region: "asia", platforms: ["kr"], leagues: "all", playersPerRun: 0, matchesPerRun: 5, extraMatchesPerRun: 0, timelinesPerRun: 0 } as const;
+  const pageOf = (path: string) => Number(new URLSearchParams(path.split("?")[1]).get("page"));
+  // A ladder where every division has `pages` full pages.
+  function ladder(pages: number, fail: (tier: string) => boolean = () => false) {
+    const asked: string[] = [];
+    const riot = {
+      get: async (_routing: string, _method: string, path: string) => {
+        if (!path.includes("/league/")) return null;
+        asked.push(path);
+        if (path.includes("leagues/by-queue")) return { entries: Array.from({ length: 900 }, (_, i) => ({ puuid: `${path.split("/")[4]}-${i}` })) };
+        const [, tier, division] = path.match(/SOLO_5x5\/(\w+)\/(\w+)\?/)!;
+        if (fail(tier)) return null;
+        const page = pageOf(path);
+        if (page > pages) return [];
+        return Array.from({ length: 205 }, (_, i) => ({ puuid: `${tier}-${division}-${page}-${i}` }));
+      },
+    } as unknown as RiotClient;
+    return { riot, asked };
+  }
+  const crawler = (db: D1Database, riot: RiotClient) => new Crawler(db, riot, () => DAY, { ...options, platforms: [...options.platforms] });
+
+  it("meets every group's quota and spreads seeds over random pages", async () => {
+    const { db, sqlite } = fakeD1();
+    const { riot, asked } = ladder(8);
+    await crawler(db, riot).run();
+    const rows = sqlite.prepare("SELECT tier, COUNT(*) AS n FROM crawl_players GROUP BY tier").all() as { tier: string; n: number }[];
+    const byGroup = (group: keyof typeof GROUP_TIERS) => rows.filter((r) => GROUP_TIERS[group].includes(r.tier)).reduce((sum, r) => sum + r.n, 0);
+    for (const group of Object.keys(SEED_QUOTA) as (keyof typeof SEED_QUOTA)[]) {
+      const quota = Math.round(SEED_SIZE * SEED_QUOTA[group]);
+      // Rounded up per division, never short.
+      expect(byGroup(group)).toBeGreaterThanOrEqual(quota);
+      expect(byGroup(group)).toBeLessThan(quota + 8);
+    }
+    const pages = new Set(asked.filter((p) => p.includes("/GOLD/")).map(pageOf));
+    expect([...pages].every((n) => n >= 1 && n <= 30)).toBe(true);
+  });
+
+  it("learns an upper bound for a division's last page from empty pages and stays inside it", async () => {
+    const { db, sqlite } = fakeD1();
+    await crawler(db, ladder(2).riot).run();
+    const bounds = new Map((sqlite.prepare("SELECT key, value FROM crawl_state WHERE key LIKE 'last_page:%'").all() as { key: string; value: string }[]).map((r) => [r.key, Number(r.value)]));
+    expect(bounds.size).toBeGreaterThan(0);
+    for (const bound of bounds.values()) expect(bound).toBeLessThan(30);
+    // A later seed never asks past what it learned.
+    sqlite.prepare("DELETE FROM crawl_state WHERE key = 'seeded_at:asia'").run();
+    const again = ladder(2);
+    await crawler(db, again.riot).run();
+    for (const path of again.asked.filter((p) => p.includes("/entries/"))) {
+      const [, tier, division] = path.match(/SOLO_5x5\/(\w+)\/(\w+)\?/)!;
+      expect(pageOf(path)).toBeLessThanOrEqual(bounds.get(`last_page:kr:${tier}:${division}`) ?? 30);
+    }
+  });
+
+  it("keeps a tier's old players when its pages fail", async () => {
+    const { db, sqlite } = fakeD1();
+    sqlite.prepare("INSERT INTO crawl_players (puuid, tier, region) VALUES ('old-gold', 'GOLD', 'asia'), ('old-silver', 'SILVER', 'asia')").run();
+    await crawler(db, ladder(3, (tier) => tier === "GOLD").riot).run();
+    const players = sqlite.prepare("SELECT puuid FROM crawl_players WHERE tier IN ('GOLD', 'SILVER') AND puuid LIKE 'old-%'").all();
+    expect(players).toEqual([{ puuid: "old-gold" }]);
+    expect((sqlite.prepare("SELECT COUNT(*) AS n FROM crawl_players WHERE tier = 'SILVER'").get() as { n: number }).n).toBeGreaterThan(100);
+  });
+
+  it("leaves the pool alone when nothing comes back", async () => {
+    const { db, sqlite } = fakeD1();
+    sqlite.prepare("INSERT INTO crawl_players (puuid, tier, region) VALUES ('old', 'GOLD', 'asia')").run();
+    await crawler(db, ladder(3, () => true).riot).run();
+    expect(sqlite.prepare("SELECT puuid FROM crawl_players WHERE puuid = 'old'").all()).toHaveLength(1);
+  });
+});
+
+describe("rank of a game", () => {
+  const options = { region: "asia", platforms: ["kr"], leagues: "all", playersPerRun: 3, matchesPerRun: 10, extraMatchesPerRun: 0, timelinesPerRun: 0 } as const;
+
+  it("stores the tier group of the seed that listed the game, first seed winning", async () => {
+    const { db, sqlite } = fakeD1();
+    // 'a' (Silver) is crawled first and lists KR_1 and KR_2; 'b' (Challenger) lists KR_2 and KR_3.
+    sqlite.prepare("INSERT INTO crawl_players (puuid, tier, region, last_crawled_at) VALUES ('a', 'SILVER', 'asia', 1), ('b', 'CHALLENGER', 'asia', 2), ('c', 'WOOD', 'asia', 3)").run();
+    sqlite.prepare("INSERT INTO crawl_state (key, value) VALUES ('seeded_at:asia', ?)").run(String(5 * DAY));
+    const riot = {
+      get: async (_routing: string, _method: string, path: string) => {
+        if (path.includes("/ids?")) return path.includes("/a/") ? ["KR_1", "KR_2"] : path.includes("/b/") ? ["KR_2", "KR_3"] : ["KR_4"];
+        const id = path.split("/").pop()!;
+        return match(id, [participant(103, true, { puuid: `x${id}` }), participant(64, false, { puuid: `y${id}`, teamPosition: "JUNGLE" })]);
+      },
+    } as unknown as RiotClient;
+    const crawler = new Crawler(db, riot, () => 5 * DAY, { ...options, platforms: ["kr"], region: "asia" });
+    await crawler.run();
+    expect(sqlite.prepare("SELECT match_id, rank_group FROM crawled_matches ORDER BY match_id").all()).toEqual([
+      { match_id: "KR_1", rank_group: "silver" },
+      { match_id: "KR_2", rank_group: "silver" },
+      { match_id: "KR_3", rank_group: "master_plus" },
+      // An unknown tier is stored without a group rather than guessed.
+      { match_id: "KR_4", rank_group: null },
+    ]);
+    expect(sqlite.prepare("SELECT DISTINCT match_id, rank_group FROM participant_stats ORDER BY match_id").all()).toEqual([
+      { match_id: "KR_1", rank_group: "silver" },
+      { match_id: "KR_2", rank_group: "silver" },
+      { match_id: "KR_3", rank_group: "master_plus" },
+      { match_id: "KR_4", rank_group: null },
+    ]);
+  });
+
+  it("never counts a stored game again or changes its group", async () => {
+    const { db, sqlite } = fakeD1();
+    const crawler = new Crawler(db, {} as RiotClient, () => 5 * DAY, { ...options, platforms: ["kr"] });
+    expect(await crawler.save(match("KR_9", [participant(103, true)]), null, "gold")).toBe(true);
+    await crawler.save(match("KR_9", [participant(103, true)]), null, "diamond");
+    expect(sqlite.prepare("SELECT rank_group FROM crawled_matches WHERE match_id = 'KR_9'").all()).toEqual([{ rank_group: "gold" }]);
+    expect(sqlite.prepare("SELECT rank_group FROM participant_stats WHERE match_id = 'KR_9'").all()).toEqual([{ rank_group: "gold" }]);
   });
 });
 

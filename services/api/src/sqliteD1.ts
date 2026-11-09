@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { localSchema } from "./localSchema.ts";
 
 const MIGRATIONS = join(import.meta.dirname, "../migrations");
 
@@ -12,6 +13,7 @@ export function sqliteD1(path = ":memory:") {
   const sqlite = new DatabaseSync(path);
   if (path !== ":memory:") sqlite.exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;");
   migrate(sqlite);
+  localSchema(sqlite);
 
   const statement = (sql: string, params: unknown[] = []) => ({
     bind: (...values: unknown[]) => statement(sql, values),
