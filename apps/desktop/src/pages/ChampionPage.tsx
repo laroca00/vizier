@@ -23,6 +23,7 @@ import "../augments/augments.css";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { SplashLayers, useSkinSplash, useSplashUrl } from "../ui/Splash";
 import { useAsync } from "../useAsync";
+import { ChampionSummaryCard } from "./ChampionSummaryCard";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { ComboSection } from "../combos/ComboSection";
 import { Tabs } from "../ui/Tabs";
@@ -265,6 +266,8 @@ function Overview({ overview, championId, championName, champions, version, queu
           </div>
         )}
       </dl>
+
+      {ranked && position && version && <ChampionSummaryCard championId={championId} position={position} version={version} champions={champions} />}
 
       <div className="champion__body">
         <section className="enter" aria-label="Build">

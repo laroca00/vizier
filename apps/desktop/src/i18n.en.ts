@@ -551,6 +551,10 @@ export const EN: Record<string, string> = {
   "Toplam minyon ve kamp sayın, aynı şampiyonu oynayan Emerald+ oyuncuların o dakikadaki medyanıyla. İlk 15 dakika.":
     "Your minions and camps against Emerald+ players on the same champion at the same minute. First 15 minutes.",
   "Eşya altını farkı": "Item gold difference",
+  "Kısa özet": "At a glance",
+  "Yetenek önceliği": "Skill priority",
+  "En zor rakip": "Hardest opponent",
+  "En rahat rakip": "Easiest opponent",
   "Yasakla": "Ban",
   "{champion} yasakla": "Ban {champion}",
   "{champion} yasaklanamadı. İstemciden elle yasakla.": "Couldn't ban {champion}. Ban it in the client.",
