@@ -90,6 +90,7 @@
 
 .combo__notes dd {
   margin: 0;
+  font-size: var(--text-body);
 }
 
 .combos__list {

@@ -29,7 +29,7 @@ describe("thisPatchRows", () => {
 
 describe("home follows the client", () => {
   it("puts the patch and meta cards first while the client is closed", () => {
-    expect(homeOrderFor(DEFAULT_HOME, false)).toEqual(["thisPatch", "metaPicks", "metaMovers", "lists", "resume", "favourites", "quickLinks", "pros"]);
+    expect(homeOrderFor(DEFAULT_HOME, false)).toEqual(["thisPatch", "metaPicks", "metaMovers", "lists", "resume", "favourites", "quickLinks", "dailyCombo", "pros"]);
     expect(homeOrderFor(DEFAULT_HOME, true)).toEqual(DEFAULT_HOME.order);
   });
   it("leaves a layout the player arranged alone", () => {
@@ -40,13 +40,13 @@ describe("home follows the client", () => {
 
 describe("home layout", () => {
   it("fills in missing cards and drops unknown ones", () => {
-    expect(normalizeHome({ order: ["pros", "nope" as never, "pros"], hidden: ["lists"] })).toEqual({ order: ["pros", "lists", "resume", "favourites", "thisPatch", "metaPicks", "metaMovers", "quickLinks"], hidden: ["lists"] });
+    expect(normalizeHome({ order: ["pros", "nope" as never, "pros"], hidden: ["lists"] })).toEqual({ order: ["pros", "lists", "resume", "favourites", "thisPatch", "metaPicks", "metaMovers", "quickLinks", "dailyCombo"], hidden: ["lists"] });
     expect(normalizeHome(undefined)).toEqual(DEFAULT_HOME);
   });
 
   it("adds the newer cards to a layout saved before them", () => {
     const old = normalizeHome({ order: ["metaPicks", "lists", "thisPatch", "metaMovers", "pros"], hidden: [] });
-    expect(old.order).toEqual(["metaPicks", "lists", "thisPatch", "metaMovers", "pros", "resume", "favourites", "quickLinks"]);
+    expect(old.order).toEqual(["metaPicks", "lists", "thisPatch", "metaMovers", "pros", "resume", "favourites", "quickLinks", "dailyCombo"]);
   });
 
   it("moves and hides cards", () => {

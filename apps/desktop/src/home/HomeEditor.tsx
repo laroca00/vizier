@@ -10,6 +10,7 @@ export const CARD_NAMES: Record<HomeCard, string> = {
   resume: "Kaldığın yerden devam et",
   favourites: "Favorilerin",
   quickLinks: "Hızlı bağlantılar",
+  dailyCombo: "Günün kombosu",
   pros: "Pro build'ler",
 };
 
