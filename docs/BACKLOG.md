@@ -324,14 +324,10 @@ Builds on: `personal` (pool, favourites, followed pros, notes), the library, jou
 
 Builds on: the search palette (champions, pros, matchups, items, keystones, saved builds) and the customisable Home (14.3).
 
-- [ ] 30.1 Palette result types: abilities, draft templates, composition templates, combos, quiz categories, notes, archetypes, academy pages, the lab.
-<!-- claimed: auto/30-search-home 2026-11-09T14:35:00Z -->
-- [ ] 30.2 Intent searches: "anti tank build", "güçlü engage", "protect the carry", "Ahri combo" map to lab directions, archetypes, templates and combos (rules, tested; Turkish and English words).
-<!-- claimed: auto/30-search-home 2026-11-09T14:35:00Z -->
-- [ ] 30.3 Recent searches, category tabs, suggestions on an empty query, full keyboard navigation.
-<!-- claimed: auto/30-search-home 2026-11-09T14:35:00Z -->
-- [ ] 30.4 Home 2.0 cards: continue where you left off (recent champions, matchups, builds, drafts), favourites, saved templates, patch and meta changes, new pro builds, quick links to the lab, simulator and academy; all hideable and reorderable with the existing editor. No decorative charts.
-<!-- claimed: auto/30-search-home 2026-11-09T14:35:00Z -->
+- [x] 30.1 Palette result types: abilities, draft templates, composition templates, combos, quiz categories, notes, archetypes, academy pages, the lab. (be22d56; palette finds abilities (one championFull fetch once 3+ letters are typed), team templates, combos, quiz categories, notes, archetypes, academy pages and lab directions)
+- [x] 30.2 Intent searches: "anti tank build", "güçlü engage", "protect the carry", "Ahri combo" map to lab directions, archetypes, templates and combos (rules, tested; Turkish and English words). (be22d56; intent rules in search/intents.ts (tr/en phrases to lab directions, archetypes, templates; '<champion> combo'), tested)
+- [x] 30.3 Recent searches, category tabs, suggestions on an empty query, full keyboard navigation. (be22d56; recent searches, category tabs for non-empty categories, suggestions on an empty query, Home/End/PageUp/PageDown and Ctrl or Alt + arrows for tabs)
+- [x] 30.4 Home 2.0 cards: continue where you left off (recent champions, matchups, builds, drafts), favourites, saved templates, patch and meta changes, new pro builds, quick links to the lab, simulator and academy; all hideable and reorderable with the existing editor. No decorative charts. (be22d56; new Home cards: pick up where you left off (recent matchups, builds, drafts), favourites, quick links; existing patch, meta and pro cards cover the rest; all hideable and reorderable in the editor)
 
 ## 31. Overlay 2.0 polish (after epic 19)
 
