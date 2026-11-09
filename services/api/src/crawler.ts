@@ -1,3 +1,4 @@
+import { GROUP_TIERS, GroupBudget, SEED_QUOTA, SEED_SIZE } from "./groupBudget.ts";
 import { TIER_GROUPS, bracketOfTier, type TierGroup } from "@vizier/shared/brackets";
 import type { Platform, Region, RiotClient } from "./riot/client.ts";
 import { buildPaths, csByMinute, encodeKda, goldAtMinute, kdaByMinute, levelByMinute, type BuildPath, type KdaPoint, type Timeline } from "./timeline.ts";
@@ -70,28 +71,7 @@ function divisionPages(tier: string, pages: number): [string, string][] {
   );
 }
 
-// Seeds per platform and the share each tier group gets of them. The share is
-// of players followed, not of games: the crawl spends games by the same table.
-export const SEED_SIZE = 4800;
-export const SEED_QUOTA: Record<TierGroup, number> = {
-  iron_bronze: 0.1,
-  silver: 0.14,
-  gold: 0.16,
-  platinum: 0.16,
-  emerald: 0.16,
-  diamond: 0.14,
-  master_plus: 0.14,
-};
-/** Riot tiers behind each group, lowest first; the apex group is read from the league lists. */
-export const GROUP_TIERS: Record<TierGroup, string[]> = {
-  iron_bronze: ["IRON", "BRONZE"],
-  silver: ["SILVER"],
-  gold: ["GOLD"],
-  platinum: ["PLATINUM"],
-  emerald: ["EMERALD"],
-  diamond: ["DIAMOND"],
-  master_plus: ["MASTER", "GRANDMASTER", "CHALLENGER"],
-};
+export { GROUP_TIERS, SEED_QUOTA, SEED_SIZE };
 const PAGE_SIZE = 205;
 // Until a division's last page is known, pages are drawn from the first this many.
 const PAGE_PROBE = 30;
@@ -160,8 +140,10 @@ export class Crawler {
   private riot: RiotClient;
   private now: () => number;
   private options: CrawlOptions;
+  readonly budget: GroupBudget;
 
-  constructor(db: D1Database, riot: RiotClient, now: () => number = Date.now, options: CrawlOptions = EUROPE) {
+  constructor(db: D1Database, riot: RiotClient, now: () => number = Date.now, options: CrawlOptions = EUROPE, budget: GroupBudget = new GroupBudget(now)) {
+    this.budget = budget;
     this.db = db;
     this.riot = riot;
     this.now = now;
@@ -175,18 +157,24 @@ export class Crawler {
     let timelines = 0;
     const { region } = this.options;
     for (const { id, group } of matchIds) {
+      this.budget.call(group);
       const match = await this.riot.get<Match>(region, "/lol/match/v5/matches", `/lol/match/v5/matches/${id}`);
       if (!match) continue;
       let timeline: Timeline | null = null;
-      if (timelines < this.options.timelinesPerRun && match.info.queueId === RANKED_SOLO) {
+      if (timelines < this.options.timelinesPerRun && match.info.queueId === RANKED_SOLO && this.budget.wantsTimeline(group)) {
         timelines++;
+        this.budget.call(group);
+        this.budget.timeline(group);
         timeline = await this.riot.get<Timeline>(
           region,
           "/lol/match/v5/matches/timeline",
           `/lol/match/v5/matches/${id}/timeline`,
         );
       }
-      if (await this.save(match, timeline, group)) matches++;
+      if (await this.save(match, timeline, group)) {
+        matches++;
+        this.budget.game(group);
+      }
     }
     return { seeded, matches };
   }
@@ -242,6 +230,43 @@ export class Crawler {
       .bind(stateKey, String(this.now()))
       .run();
     return players.length;
+  }
+
+  /**
+   * The players to crawl next. Each slot goes to the group furthest behind its
+   * hourly target; within a group the longest-waiting player comes first.
+   */
+  private async duePlayers(region: string, count: number): Promise<{ puuid: string; tier: string }[]> {
+    if (count <= 0) return [];
+    const has = new Set<TierGroup>();
+    for (const group of TIER_GROUPS) {
+      const tiers = GROUP_TIERS[group];
+      const row = await this.db
+        .prepare(`SELECT 1 AS found FROM crawl_players WHERE region = ? AND tier IN (${tiers.map(() => "?").join(",")}) LIMIT 1`)
+        .bind(region, ...tiers)
+        .first();
+      if (row) has.add(group);
+    }
+    const slots = new Map<TierGroup, number>();
+    for (const group of this.budget.plan(count, has)) slots.set(group, (slots.get(group) ?? 0) + 1);
+    const due: { puuid: string; tier: string }[] = [];
+    for (const [group, n] of slots) {
+      const tiers = GROUP_TIERS[group];
+      const { results } = await this.db
+        .prepare(`SELECT puuid, tier FROM crawl_players WHERE region = ? AND tier IN (${tiers.map(() => "?").join(",")}) ORDER BY last_crawled_at LIMIT ?`)
+        .bind(region, ...tiers, n)
+        .all<{ puuid: string; tier: string }>();
+      due.push(...results);
+    }
+    if (due.length < count) {
+      // Tiers outside any group (or a group with fewer players than slots): longest-waiting players fill up.
+      const { results } = await this.db
+        .prepare("SELECT puuid, tier FROM crawl_players WHERE region = ? ORDER BY last_crawled_at LIMIT ?")
+        .bind(region, count)
+        .all<{ puuid: string; tier: string }>();
+      for (const row of results) if (due.length < count && !due.some((d) => d.puuid === row.puuid)) due.push(row);
+    }
+    return due;
   }
 
   /**
@@ -315,18 +340,17 @@ export class Crawler {
 
   private async collectMatchIds(): Promise<{ id: string; group: TierGroup | null }[]> {
     const { region, playersPerRun, matchesPerRun, extraMatchesPerRun } = this.options;
-    const { results: due } = await this.db
-      .prepare("SELECT puuid, tier FROM crawl_players WHERE region = ? ORDER BY last_crawled_at LIMIT ?")
-      .bind(region, playersPerRun)
-      .all<{ puuid: string; tier: string }>();
+    const due = await this.duePlayers(region, playersPerRun);
 
     const since = (lookback: number) => Math.floor((this.now() - lookback) / 1000);
-    const ids = (puuid: string, queue: number, count: number) =>
-      this.riot.get<string[]>(
+    const ids = (puuid: string, queue: number, count: number, group: TierGroup | null = null) => {
+      this.budget.call(group);
+      return this.riot.get<string[]>(
         region,
         "/lol/match/v5/matches/by-puuid/ids",
         `/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=${queue}&startTime=${since(queue === RANKED_SOLO ? LOOKBACK : EXTRA_LOOKBACK)}&start=0&count=${count}`,
       );
+    };
     // A game takes the group of the first seed that lists it.
     const candidates = new Map<string, TierGroup | null>();
     const extras = new Map<string, TierGroup | null>();
@@ -335,11 +359,12 @@ export class Crawler {
     };
     for (const [i, { puuid, tier }] of due.entries()) {
       const group = bracketOfTier(tier);
-      for (const id of (await ids(puuid, RANKED_SOLO, 20)) ?? []) add(candidates, id, group);
+      this.budget.seed(group);
+      for (const id of (await ids(puuid, RANKED_SOLO, 20, group)) ?? []) add(candidates, id, group);
       if (extraMatchesPerRun > 0) {
         // Each player looks at a different mode, and the modes shift every run, so every mode is checked often.
         const queue = EXTRA_QUEUES[(Math.floor(this.now() / 120_000) + i) % EXTRA_QUEUES.length];
-        for (const id of (await ids(puuid, queue, 10)) ?? []) add(extras, id, group);
+        for (const id of (await ids(puuid, queue, 10, group)) ?? []) add(extras, id, group);
       }
       await this.db
         .prepare("UPDATE crawl_players SET last_crawled_at = ? WHERE puuid = ?")
