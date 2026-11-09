@@ -11,6 +11,7 @@ import { useToast } from "../ui/Toast";
 import { DIRECTIONS, directionColumn, type DirectionId } from "../lab/directions";
 import { STAT_PRICES } from "../data/itemGold";
 import { runningTotals, shownStats, statValue } from "../lab/totals";
+import { purposeOf } from "../lab/purpose";
 import { LabTotals } from "../lab/LabTotals";
 import { customColumn, customFrom, labColumns, proColumn, savedFor, type LabColumn } from "../lab/columns";
 import { itemIconUrl, spellIconUrl } from "../data/ddragon";
@@ -196,6 +197,7 @@ function LabCard({ column, data, patches, updatedAt, actions }: { column: LabCol
   const gold = buildGold(column.build, price);
   const all = [...column.build.startItems, ...column.build.coreItems, ...column.build.items];
   const fullItems = [...column.build.coreItems, ...column.build.items];
+  const purpose = purposeOf(fullItems, data.details);
   const boots = all.find((id) => data.items.get(id)?.boots);
   const primary = data.styles.get(column.build.runes.primaryStyle);
   const secondary = data.styles.get(column.build.runes.subStyle);
@@ -238,6 +240,12 @@ function LabCard({ column, data, patches, updatedAt, actions }: { column: LabCol
           <p className="lab__label">{t("Sonra")}</p>
           <ul className="lab__items">{column.build.items.map(icon)}</ul>
         </>
+      )}
+      {purpose && (
+        <p className="lab__purpose">
+          <strong>{t("Bu build ne için")}:</strong> {[t(purpose.damage), ...purpose.extras.map((e) => t(e))].join(", ")}; {t(purpose.survival)}.{" "}
+          <DataBadge editorial source={t("Eşya değerlerinden elle yazılmış kurallarla okunur; istatistik değil.")} />
+        </p>
       )}
       <dl className="lab__figures">
         <div>
