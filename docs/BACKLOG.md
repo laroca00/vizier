@@ -272,6 +272,7 @@ Builds on: the matchup page (4.1–4.6: lane stats, stats duel, ability compare,
 - [x] 24.4 Combo data model and the first 40 champions (most played in the crawler): name, difficulty, ability sequence, purpose, timing notes, common mistakes, category (basic, trading, all-in, burst, escape, flash, teamfight, animation), patch checked. Stored in the repo as JSON with a schema test; all labelled editorial. (85cbcf1; data/combos.json: 45 combos for 40 champions, Turkish and English, tested schema; written from game knowledge against 16.21, editorial and unreviewed by the owner)
 - [x] 24.5 Combos section on the champion page and a Combo Library page with search and category filters; the sequence is drawn with ability icons and arrows (original drawing, no video or copied art). (85cbcf1; combos on the champion page and a Combo Library page with search and category filters; sequences drawn with Data Dragon ability icons and arrows)
 - [ ] 24.6 Combos for the remaining champions, plus a patch check that flags combos whose abilities changed in the patch tracker's diff.
+<!-- claimed: auto/29-workspace 2026-11-09T14:27:00Z -->
 
 ## 25. Champion intelligence (A1–A4)
 
@@ -320,9 +321,13 @@ Builds on: build docs (two newest patches kept), the library store and editors, 
 Builds on: `personal` (pool, favourites, followed pros, notes), the library, journal, local data export.
 
 - [ ] 29.1 Champion workspace tab on the champion page: my builds, my runes, matchup notes, favourite combos, saved pro builds, preferred role, tags, reminders, links. Reads the existing stores; no new profile.
+<!-- claimed: auto/29-workspace 2026-11-09T14:27:00Z -->
 - [ ] 29.2 Favourites for every content type (builds, matchups, items, runes, pro builds, draft templates, composition templates, combos) with collections, tags, recently opened and search inside favourites; stored in `personal`.
+<!-- claimed: auto/29-workspace 2026-11-09T14:27:00Z -->
 - [ ] 29.3 Data workspace in Settings: export and import builds, draft templates and notes separately or all at once, JSON with a version field; CSV for builds and notes. Import shows a preview with what is new, changed or skipped; validates schema, unknown champion and item ids, duplicates; never overwrites silently.
+<!-- claimed: auto/29-workspace 2026-11-09T14:27:00Z -->
 - [ ] 29.4 Local backups: automatic weekly backup of all local data to the app data folder (last 5 kept) and restore from the list.
+<!-- claimed: auto/29-workspace 2026-11-09T14:27:00Z -->
 
 ## 30. Search 2.0 and Home 2.0 (F2, F3)
 
