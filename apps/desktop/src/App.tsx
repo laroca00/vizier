@@ -30,6 +30,8 @@ import { UpdateNotice } from "./UpdateNotice";
 import { useOnline } from "./useOnline";
 import { champions } from "./data/ddragon";
 import { Sidebar, type NavGroup, type NavItem } from "./Sidebar";
+import { ShortcutsHelp } from "./ShortcutsHelp";
+import { isTyping } from "./shortcuts";
 import { IconButton } from "./ui/Button";
 import { NavIcon } from "./ui/NavIcon";
 import { ErrorBoundary, PageCrashed, Skeleton } from "./ui/States";
@@ -158,6 +160,7 @@ function App() {
   const { route, navigate, replace } = nav;
   const [navigated, setNavigated] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [showKeys, setShowKeys] = useState(false);
   const [splash, setSplash] = useState<string | null>(null);
   const draftActive = useRef(draft !== null);
   const shortcutsRef = useRef<Page[]>([]);
@@ -264,6 +267,10 @@ function App() {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setSearching(true);
+      }
+      if (event.key === "?" && !event.ctrlKey && !event.altKey && !event.metaKey && !isTyping(event.target)) {
+        event.preventDefault();
+        setShowKeys((open) => !open);
       }
       const digit = Number(event.key);
       if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && digit >= 1 && digit <= 9) {
@@ -495,6 +502,7 @@ function App() {
         </main>
       </SplashProvider>
       <SharePaste onAdded={() => go({ page: "builds" })} />
+      <ShortcutsHelp open={showKeys} onClose={() => setShowKeys(false)} pages={shortcutPages.map((item) => t(item.label))} />
       <SearchPalette
         open={searching}
         onClose={() => setSearching(false)}
