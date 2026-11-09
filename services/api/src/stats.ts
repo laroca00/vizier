@@ -5,7 +5,7 @@
 // every crawled game.
 
 import { DEFAULT_BRACKET, type Bracket } from "@vizier/shared/brackets";
-import { scope } from "./localSchema.ts";
+import { scope, type Where } from "./localSchema.ts";
 
 // Shrinks small samples towards 50% so a 3-0 champion doesn't top the list.
 export const sampleLimits = {
@@ -104,7 +104,7 @@ function assignTiers(entries: Unranked[]): TierEntry[] {
 }
 
 /** Pool matches in ranked and how often each champion was banned in them. */
-async function poolBans(db: D1Database, patches: string[], bracket: Bracket): Promise<{ matches: number; bans: Map<number, number> }> {
+async function poolBans(db: D1Database, patches: string[], bracket: Where): Promise<{ matches: number; bans: Map<number, number> }> {
   // One query per kind: an IN over two kinds makes SQLite skip stat_counts_by_kind and scan every count.
   const byKind = (kind: string) =>
     db
@@ -126,7 +126,7 @@ export async function tierList(
   db: D1Database,
   position: string,
   queue = RANKED,
-  bracket: Bracket = DEFAULT_BRACKET,
+  bracket: Where = DEFAULT_BRACKET,
 ): Promise<{ patches: string[]; games: number; champions: TierEntry[]; rule: TierRule }> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return { patches, games: 0, champions: [], rule: tierRule() };
@@ -220,7 +220,7 @@ export async function championOverview(
   championId: number,
   position: string | null,
   queue = 420,
-  bracket: Bracket = DEFAULT_BRACKET,
+  bracket: Where = DEFAULT_BRACKET,
 ): Promise<ChampionOverview | null> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return null;
@@ -618,4 +618,31 @@ export async function itemTimes(db: D1Database, championId: number, position: st
     .bind(...patches, championId, position, MIN_ITEM_TIME_GAMES)
     .all<{ item_id: number; games: number; seconds: number }>();
   return Object.fromEntries(results.map((r) => [r.item_id, { games: r.games, minute: Math.round((r.seconds / r.games / 60) * 10) / 10 }]));
+}
+
+export type RankCurve = {
+  patches: string[];
+  /** The order of every entry's points. */
+  brackets: Bracket[];
+  /** Per champion and role: games, win rate and pick rate in each bracket, null where the bracket has none. */
+  entries: { championId: number; position: string; points: ([games: number, winRate: number, pickRate: number] | null)[] }[];
+};
+
+/** Every ranked champion and role side by side across the six brackets, from the same pool the tier list reads. */
+export async function rankCurve(db: D1Database, brackets: readonly Bracket[], positions: readonly string[]): Promise<RankCurve> {
+  const byKey = new Map<string, RankCurve["entries"][number]>();
+  let patches: string[] = [];
+  for (const [index, bracket] of brackets.entries()) {
+    for (const position of positions) {
+      const list = await tierList(db, position, RANKED, bracket);
+      if (patches.length === 0) patches = list.patches;
+      for (const c of list.champions) {
+        const key = `${c.championId}:${position}`;
+        const entry = byKey.get(key) ?? { championId: c.championId, position, points: brackets.map(() => null) };
+        entry.points[index] = [c.games, c.winRate, c.pickRate];
+        byKey.set(key, entry);
+      }
+    }
+  }
+  return { patches, brackets: [...brackets], entries: [...byKey.values()].sort((a, b) => a.championId - b.championId || a.position.localeCompare(b.position)) };
 }

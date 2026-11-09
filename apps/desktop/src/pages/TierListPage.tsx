@@ -12,7 +12,9 @@ import { usePersonal } from "../personal";
 import { Scatter } from "../charts";
 import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
+import { RankPicker } from "../ui/RankPicker";
 import { Tabs } from "../ui/Tabs";
+import { useBracket } from "../rank";
 import { SearchInput, Toggle } from "../ui/Fields";
 import { changeText, trendOf } from "./trend";
 import { DEFAULT_TIER_VIEW, isThin, THIN_GAMES, viewTiers, type TierColumn, type TierSort, type TierView } from "./tierSort";
@@ -59,7 +61,8 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
   const setQueue = (next: number) => change({ queue: next });
   const setPosition = (next: string) => change({ position: next });
   const setHideThin = (next: boolean) => change({ hideThin: next });
-  const [state, retry] = useAsync(`${queue}:${position}`, () => load(queue, position));
+  const bracket = useBracket();
+  const [state, retry] = useAsync(`${queue}:${position}:${bracket}`, () => load(queue, position));
   const ranked = queue === RANKED;
   const personal = usePersonal();
   const poolIds = new Set(personal.pool.filter((p) => !ranked || !p.position || p.position === position).map((p) => p.championId));
@@ -92,6 +95,7 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
         toolbar={
           <>
             <Tabs label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
+            {ranked && <RankPicker />}
             {state.status === "done" && state.value.list.champions.length > 0 && (
               <DataBadge {...pooled(state.value.list.champions)} patches={state.value.list.patches} updatedAt={state.value.list.updatedAt} source={t("Vizier crawler, dereceli maçlar")} />
             )}

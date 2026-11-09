@@ -1,3 +1,5 @@
+import { RankPicker } from "../ui/RankPicker";
+import { useBracket } from "../rank";
 import { BuildEvolution } from "../patches/BuildEvolutionView";
 import { ChampionHistory } from "../patches/ChampionHistory";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
@@ -63,7 +65,8 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
   const [queue, setQueue] = useState(initialQueue);
   const [view, setView] = useState<"info" | "workspace">("info");
   const [data] = useAsync("static", loadStatic);
-  const [state, retry] = useAsync(`${queue}:${championId}:${position}`, () => getChampion(championId, position, queue));
+  const bracket = useBracket();
+  const [state, retry] = useAsync(`${queue}:${championId}:${position}:${bracket}`, () => getChampion(championId, position, queue));
   const queueLabel = t(QUEUES.find((q) => q.id === queue)?.label ?? "");
   const champion = data.status === "done" ? data.value.champions.get(championId) : undefined;
   const version = data.status === "done" ? data.value.version : null;
@@ -97,6 +100,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
             </p>
           )}
           <Tabs className="champion__queues" size="small" label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
+          {queue === RANKED && <RankPicker />}
         </div>
         <button
           type="button"
@@ -348,7 +352,7 @@ function OpponentSelect({
 }) {
   const t = useT();
   const lang = useLang();
-  const [state] = useAsync(`${championId}:${position}`, () => getCounters(championId, position));
+  const [state] = useAsync(`${championId}:${position}:${useBracket()}`, () => getCounters(championId, position));
   if (state.status !== "done" || state.value.matchups.length === 0) return null;
   const options = state.value.matchups
     .map((m) => champions.get(m.championId))
@@ -375,7 +379,7 @@ type CounterProps = {
 
 function CounterLists({ championId, position, champions, version, onOpenChampion }: CounterProps) {
   const t = useT();
-  const [state, retry] = useAsync(`${championId}:${position}`, () => getCounters(championId, position));
+  const [state, retry] = useAsync(`${championId}:${position}:${useBracket()}`, () => getCounters(championId, position));
   return (
     <section className="enter" aria-label={t("Eşleşmeler")}>
       {state.status === "error" ? (
@@ -455,7 +459,7 @@ const SIMILAR_MIN_GAMES = 100;
 function SimilarList({ championId, position, champions, version, onOpenChampion }: CounterProps) {
   const percent = percentIn(useLang());
   const t = useT();
-  const [state] = useAsync(`tiers:${position}`, () => getTierList(position));
+  const [state] = useAsync(`tiers:${position}:${useBracket()}`, () => getTierList(position));
   const self = champions.get(championId);
   if (state.status !== "done" || !self) return null;
   const played = new Map(state.value.champions.filter((e) => e.games >= SIMILAR_MIN_GAMES).map((e) => [e.championId, e]));
@@ -495,7 +499,7 @@ function AllyList({
   const lang = useLang();
   const percent = percentIn(lang);
   const t = useT();
-  const [state] = useAsync(`allies:${championId}:${position}`, () => getSynergies(championId, position));
+  const [state] = useAsync(`allies:${championId}:${position}:${useBracket()}`, () => getSynergies(championId, position));
   if (state.status !== "done") return null;
   const groups = groupAllies(state.value.allies, position);
   if (groups.length === 0) return null;

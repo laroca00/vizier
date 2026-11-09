@@ -63,6 +63,23 @@ export function bracketsContaining(group: TierGroup): Bracket[] {
   return BRACKETS.filter((b) => MEMBERS[b].includes(group));
 }
 
+/** The published bracket nearest to a player's own tier group: Silver reads Gold and below, Platinum reads Platinum+, and so on. */
+export const CLOSEST_BRACKET: Record<TierGroup, Bracket> = {
+  iron_bronze: "gold_minus",
+  silver: "gold_minus",
+  gold: "gold_minus",
+  platinum: "platinum_plus",
+  emerald: "emerald_plus",
+  diamond: "diamond_plus",
+  master_plus: "master_plus",
+};
+
+/** A Riot tier name to the bracket that best describes games at that rank; null for unranked or unknown. */
+export function bracketForTier(tier: string | null | undefined): Bracket | null {
+  const group = bracketOfTier(tier);
+  return group ? CLOSEST_BRACKET[group] : null;
+}
+
 export const BRACKET_LABELS: Record<Bracket, { tr: string; en: string }> = {
   all: { tr: "Tüm ligler", en: "All ranks" },
   gold_minus: { tr: "Altın ve altı", en: "Gold and below" },
@@ -85,4 +102,17 @@ export const GROUP_LABELS: Record<TierGroup, { tr: string; en: string }> = {
 /** SQL list of a bracket's groups, for `IN (...)`; values come from the constants above only. */
 export function groupsSql(bracket: Bracket): string {
   return MEMBERS[bracket].map((g) => `'${g}'`).join(",");
+}
+
+/** Regions a request can ask for; missing means the pool of all three. */
+export const REGIONS = ["tr", "euw", "kr"] as const;
+export type Region = (typeof REGIONS)[number];
+/** The prefix of a match id, where the game was played. */
+export const REGION_PLATFORM: Record<Region, string> = { tr: "TR1", euw: "EUW1", kr: "KR" };
+export const REGION_LABELS: Record<Region, string> = { tr: "TR", euw: "EUW", kr: "KR" };
+/** Region views exist for these brackets only; the rest would multiply the docs for little gain. */
+export const REGION_BRACKETS: readonly Bracket[] = ["emerald_plus", "all"];
+
+export function isRegion(value: unknown): value is Region {
+  return typeof value === "string" && (REGIONS as readonly string[]).includes(value);
 }

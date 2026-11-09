@@ -368,6 +368,6 @@ describe("stat docs", () => {
     const index = (await (await app.request("/v1/builds/index")).json()) as { builds: { championId: number; position: string; games: number }[] };
     expect(index.builds).toContainEqual(expect.objectContaining({ championId: 103, position: "MIDDLE", games: 20 }));
     // No ARAM games were crawled, so nothing was published for it.
-    expect(await (await app.request("/v1/tierlist/ALL?queue=450")).json()).toEqual({ patches: [], games: 0, champions: [] });
+    expect(await (await app.request("/v1/tierlist/ALL?queue=450")).json()).toEqual({ patches: [], games: 0, champions: [], rank: "emerald_plus" });
   });
 });

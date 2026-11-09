@@ -1,5 +1,6 @@
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
+import { BRACKETS, DEFAULT_BRACKET, REGION_BRACKETS, isRegion, parseBracket, type Bracket, type Region } from "@vizier/shared/brackets";
 import { HTTPException } from "hono/http-exception";
 import type { Catalog } from "./archetypes.ts";
 import { POSITIONS, type Build } from "./builds.ts";
@@ -31,6 +32,27 @@ export type AppOptions = {
   /** Data Dragon items, to name pro builds' styles; without it they have none. */
   catalog?: () => Promise<Catalog>;
 };
+
+/**
+ * The rank bracket asked for. Missing means Emerald+, unknown is a 400. Only
+ * ranked solo is split by rank; other queues answer with their one set of docs.
+ */
+function rankOf(c: Context, queue = 420): Bracket {
+  const rank = parseBracket(c.req.query("rank"));
+  if (!rank) badRequest("Unsupported rank");
+  return queue === 420 ? rank : DEFAULT_BRACKET;
+}
+
+/** `?region=`: missing means all three pooled, unknown is a 400. */
+function regionOf(c: Context): Region | null {
+  const region = c.req.query("region");
+  if (region === undefined) return null;
+  if (!isRegion(region)) badRequest("Unsupported region");
+  return region;
+}
+
+/** The doc with the bracket it belongs to, so the app can show which one it got. */
+const withRank = <T extends object>(doc: T, rank: Bracket) => ({ ...doc, rank });
 
 /** Ranked solo unless `?queue=` names another stored queue. */
 function queueOf(value: string | undefined): number {
@@ -92,17 +114,18 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
     const vs = vsParam === undefined ? null : Number(vsParam);
     if (vs !== null && (!Number.isInteger(vs) || vs <= 0)) badRequest("Invalid opponent champion id");
     const queue = queueOf(c.req.query("queue"));
+    const rank = rankOf(c, queue);
     if (!statsDb) return c.json({ error: "Build stats are not available" }, 503);
 
     const role = queue === 420 ? position : null;
     // A matchup without enough games gets the champion's overall build, as aggregateBuild does.
-    const matchups = vs && role && queue === 420 ? await readDoc<Record<number, Build>>(statsDb, docKey.matchupBuilds(championId, role)) : null;
-    const overall = await readDoc<Build>(statsDb, docKey.build(queue, championId, role));
+    const matchups = vs && role && queue === 420 ? await readDoc<Record<number, Build>>(statsDb, docKey.matchupBuilds(championId, role, rank)) : null;
+    const overall = await readDoc<Build>(statsDb, docKey.build(queue, championId, role, rank));
     const matchup = matchups?.[vs!];
-    if (!overall && !matchup) return c.json({ error: "No games for this champion yet" }, 404);
+    if (!overall && !matchup) return c.json({ error: "No games for this champion yet", rank }, 404);
     // Matchups are too thin to split by build style, so they borrow the champion's.
-    if (!matchup) return c.json(overall);
-    return c.json({ ...matchup, variants: overall?.variants ?? [], situational: overall?.situational ?? [] });
+    if (!matchup) return c.json(withRank(overall!, rank));
+    return c.json(withRank({ ...matchup, variants: overall?.variants ?? [], situational: overall?.situational ?? [] }, rank));
   });
 
   // Queues without roles (ARAM, Arena, URF) use ALL.
@@ -110,9 +133,15 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
     const queue = queueOf(c.req.query("queue"));
     const position = c.req.param("position").toUpperCase();
     if (queue === 420 ? !POSITIONS.has(position) : position !== "ALL") badRequest("Unsupported position");
+    const rank = rankOf(c, queue);
+    const region = queue === 420 ? regionOf(c) : null;
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
-    const list = await readDoc(statsDb, docKey.tierList(queue, position));
-    return c.json(list ?? { patches: [], games: 0, champions: [] });
+    if (region) {
+      const list = REGION_BRACKETS.includes(rank) ? await readDoc<object>(statsDb, docKey.tierRegion(position, region, rank)) : null;
+      return c.json({ ...withRank(list ?? { patches: [], games: 0, champions: [] }, rank), region });
+    }
+    const list = await readDoc<object>(statsDb, docKey.tierList(queue, position, rank));
+    return c.json(withRank(list ?? { patches: [], games: 0, champions: [] }, rank));
   });
 
   const championRequest = (c: Context) => {
@@ -126,20 +155,32 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
   app.get("/v1/champions/:championId", async (c) => {
     const { championId, position } = championRequest(c);
     const queue = queueOf(c.req.query("queue"));
+    const rank = rankOf(c, queue);
+    const region = queue === 420 ? regionOf(c) : null;
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    if (region) {
+      const roles = REGION_BRACKETS.includes(rank)
+        ? await readDoc<Record<string, Partial<Record<Region, object>>>>(statsDb, docKey.championRegions(championId, rank))
+        : null;
+      // Same fallback as below: a role without games in this region gets the champion's most played.
+      const found = (position && roles?.[position]?.[region]) || roles?.ANY?.[region];
+      if (!found) return c.json({ error: "No games for this champion yet", rank, region }, 404);
+      return c.json({ ...withRank(found, rank), region });
+    }
     // A role the champion has no games in gets its most played role, as championOverview does.
     const overview =
-      (await readDoc(statsDb, docKey.champion(queue, championId, queue === 420 ? position : null))) ??
-      (position ? await readDoc(statsDb, docKey.champion(queue, championId, null)) : null);
-    if (!overview) return c.json({ error: "No games for this champion yet" }, 404);
-    return c.json(overview);
+      (await readDoc<object>(statsDb, docKey.champion(queue, championId, queue === 420 ? position : null, rank))) ??
+      (position ? await readDoc<object>(statsDb, docKey.champion(queue, championId, null, rank)) : null);
+    if (!overview) return c.json({ error: "No games for this champion yet", rank }, 404);
+    return c.json(withRank(overview, rank));
   });
 
   app.get("/v1/champions/:championId/counters", async (c) => {
     const { championId, position } = championRequest(c);
     if (!position) badRequest("position is required");
+    const rank = rankOf(c);
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
-    return c.json((await readDoc(statsDb, docKey.counters(championId, position))) ?? { patches: [], games: 0, matchups: [] });
+    return c.json(withRank((await readDoc<object>(statsDb, docKey.counters(championId, position, rank))) ?? { patches: [], games: 0, matchups: [] }, rank));
   });
 
   app.get("/v1/champions/:championId/lane", async (c) => {
@@ -147,9 +188,10 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
     if (!position) badRequest("position is required");
     const vs = Number(c.req.query("vs"));
     if (!Number.isInteger(vs) || vs <= 0) badRequest("Invalid opponent champion id");
+    const rank = rankOf(c);
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
-    const lanes = await readDoc<Record<number, unknown>>(statsDb, docKey.lane(championId, position));
-    return c.json(lanes?.[vs] ?? { games: 0 });
+    const lanes = await readDoc<Record<number, object>>(statsDb, docKey.lane(championId, position, rank));
+    return c.json(withRank(lanes?.[vs] ?? { games: 0 }, rank));
   });
 
   app.get("/v1/champions/:championId/item-times", async (c) => {
@@ -162,15 +204,17 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
   app.get("/v1/champions/:championId/bench", async (c) => {
     const { championId, position } = championRequest(c);
     if (!position) badRequest("position is required");
+    const rank = rankOf(c);
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
-    return c.json((await readDoc(statsDb, docKey.bench(420, championId, position))) ?? { minutes: [] });
+    return c.json(withRank((await readDoc<object>(statsDb, docKey.bench(420, championId, position, rank))) ?? { minutes: [] }, rank));
   });
 
   app.get("/v1/champions/:championId/synergies", async (c) => {
     const { championId, position } = championRequest(c);
     if (!position) badRequest("position is required");
+    const rank = rankOf(c);
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
-    return c.json((await readDoc(statsDb, docKey.synergies(championId, position))) ?? { patches: [], games: 0, allies: [] });
+    return c.json(withRank((await readDoc<object>(statsDb, docKey.synergies(championId, position, rank))) ?? { patches: [], games: 0, allies: [] }, rank));
   });
 
   app.get("/v1/arena/duos/:championId", async (c) => {
@@ -252,6 +296,11 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
   app.get("/v1/pros/teams", async (c) => {
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json({ teams: await cached("pro-teams", 60 * MINUTE, () => proTeams(statsDb)) });
+  });
+
+  app.get("/v1/meta/rank-curve", async (c) => {
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json((await readDoc(statsDb, docKey.rankCurve(420))) ?? { patches: [], brackets: BRACKETS, entries: [] });
   });
 
   app.get("/v1/meta/coverage", async (c) => {

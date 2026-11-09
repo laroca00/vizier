@@ -5,6 +5,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useChampSelectMock } from "./dev/champSelectMock";
 import { champSelectFixture } from "./dev/fixtures";
 import { useChampSelect, useLcuStatus, useLobby } from "./lcu";
+import { useMyRank } from "./myRank";
 import { lobbyRoles } from "./clientFlow";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
@@ -153,6 +154,7 @@ async function bringToFront() {
 
 function App() {
   const lcu = useLcuStatus();
+  useMyRank(lcu);
   const lobby = useLobby();
   const settings = useSettings();
   const online = useOnline();

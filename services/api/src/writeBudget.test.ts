@@ -1,9 +1,9 @@
-import { BRACKETS, type Bracket } from "@vizier/shared/brackets";
+import { BRACKETS, REGIONS, REGION_BRACKETS, type Bracket } from "@vizier/shared/brackets";
 import { beforeAll, describe, expect, it } from "vitest";
 import { emptyCatalog } from "./archetypes.ts";
 import { DAILY_WRITE_LIMIT, OTHER_QUEUES_PER_DAY, PUBLISHES_PER_DAY, VOLATILITY, WRITES_PER_DOC } from "./publishPlan.ts";
 import { rollup } from "./rollup.ts";
-import { splitRank, statDocs } from "./statDocs.ts";
+import { regionDocs, splitRank, statDocs } from "./statDocs.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
 // The live game's size, to scale the fixture's doc counts up to a real patch.
@@ -57,6 +57,19 @@ async function shape(db: D1Database, bracket: Bracket) {
   return kinds;
 }
 
+/** The region docs of a bracket by kind. The fixture plays on one platform, so tier lists are scaled to all regions. */
+async function regionShape(db: D1Database, bracket: Bracket) {
+  const kinds: Kinds = new Map();
+  for await (const [key] of regionDocs(db, bracket)) {
+    const kind = key.split(":")[0];
+    const entry = kinds.get(kind) ?? { fixed: 0, champion: 0, pair: 0 };
+    if (kind === "tierregion") entry.fixed += REGIONS.length;
+    else entry.champion++;
+    kinds.set(kind, entry);
+  }
+  return kinds;
+}
+
 /** Docs per bracket and kind at the live game's size: the fixture's per-champion and per-role counts, scaled. */
 function scaled(kinds: Kinds, unit: { champions: number; pairs: number }) {
   return [...kinds].map(([kind, n]) => ({
@@ -67,11 +80,14 @@ function scaled(kinds: Kinds, unit: { champions: number; pairs: number }) {
 
 describe("D1 write budget", () => {
   let shapes: Map<Bracket, Kinds>;
+  let regions: Map<Bracket, Kinds>;
   let unit: { champions: number; pairs: number };
   beforeAll(async () => {
     const db = await fixture(24);
     shapes = new Map();
+    regions = new Map();
     for (const bracket of BRACKETS) shapes.set(bracket, await shape(db, bracket));
+    for (const bracket of REGION_BRACKETS) regions.set(bracket, await regionShape(db, bracket));
     // The fixture's own size, read from what Emerald+ publishes.
     const base = shapes.get("emerald_plus")!.get("champion")!;
     unit = { champions: base.champion, pairs: base.pair };
@@ -89,6 +105,17 @@ describe("D1 write budget", () => {
         rows.push({ bracket, kind, docs, perDay, writes });
       }
     }
+    // Region docs go out once a day for each region bracket.
+    for (const bracket of REGION_BRACKETS) {
+      for (const { kind, docs } of scaled(regions.get(bracket)!, unit)) {
+        const writes = docs * WRITES_PER_DOC;
+        total += writes;
+        rows.push({ bracket: `${bracket} (regions)`, kind, docs, perDay: 1, writes });
+      }
+    }
+    // One rank curve doc a day.
+    total += WRITES_PER_DOC;
+    rows.push({ bracket: "(all)", kind: "rankcurve", docs: 1, perDay: 1, writes: WRITES_PER_DOC });
     const other = OTHER_QUEUE_DOCS * WRITES_PER_DOC * OTHER_QUEUES_PER_DAY;
     total += other;
     rows.push({ bracket: "(other queues)", kind: "all", docs: OTHER_QUEUE_DOCS, perDay: OTHER_QUEUES_PER_DAY, writes: other });
@@ -103,6 +130,7 @@ describe("D1 write budget", () => {
     for (const bracket of BRACKETS) for (const { docs } of scaled(shapes.get(bracket)!, unit)) perPublish += docs;
     // Six slots a day: the reason brackets other than Emerald+ go out in rotation.
     perPublish += OTHER_QUEUE_DOCS;
+    for (const bracket of REGION_BRACKETS) for (const { docs } of scaled(regions.get(bracket)!, unit)) perPublish += docs;
     expect(perPublish * WRITES_PER_DOC * 6).toBeGreaterThan(DAILY_WRITE_LIMIT);
   });
 });

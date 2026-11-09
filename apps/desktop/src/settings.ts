@@ -4,6 +4,8 @@ import { withAutoImportOn } from "./autoImportDefault";
 import type { AutopilotMode } from "./autopilot";
 import type { LanguageSetting } from "./i18n";
 import { DEFAULT_REF, type RefSection } from "./overlay/reference";
+import { DEFAULT_BRACKET } from "@vizier/shared/brackets";
+import { sanitizeRank, setRankChoice, type RankChoice } from "./rankChoice";
 import type { OverlayTheme, WidgetStyles } from "./overlay/appearance";
 
 export type Settings = {
@@ -81,6 +83,8 @@ export type Settings = {
   navFolded: string[];
   /** The first-run welcome was closed. */
   welcomeSeen: boolean;
+  /** Which rank bracket the crawler stats show; "mine" follows the player's own rank. */
+  rank: RankChoice;
 };
 
 const DEFAULTS: Settings = {
@@ -127,6 +131,7 @@ const DEFAULTS: Settings = {
   homeLayout: DEFAULT_HOME,
   navFolded: [],
   welcomeSeen: false,
+  rank: DEFAULT_BRACKET,
 };
 
 const KEY = "vizier.settings";
@@ -145,24 +150,31 @@ function read(): Settings {
       }
       localStorage.setItem(AUTO_IMPORT_KEY, "1");
     }
-    return { ...DEFAULTS, ...stored };
+    return { ...DEFAULTS, ...stored, rank: sanitizeRank(stored.rank) };
   } catch {
     return DEFAULTS;
   }
 }
 
 let current = read();
+setRankChoice(current.rank);
 
 // The overlay is a second window on the same origin; this keeps it in step
 // with changes made on the settings page.
 window.addEventListener("storage", (event) => {
   if (event.key !== KEY) return;
   current = read();
+  setRankChoice(current.rank);
   for (const listener of listeners) listener();
 });
 
+export function getSettings(): Settings {
+  return current;
+}
+
 export function updateSettings(patch: Partial<Settings>) {
   current = { ...current, ...patch };
+  setRankChoice(current.rank);
   try {
     localStorage.setItem(KEY, JSON.stringify(current));
   } catch {
