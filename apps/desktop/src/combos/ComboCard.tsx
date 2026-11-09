@@ -36,7 +36,7 @@ function Sequence({ champion, version, sequence }: { champion: Champion; version
   );
 }
 
-export function ComboCard({ champion, version, combo, patch }: { champion: Champion; version: string; combo: Combo; patch: string }) {
+export function ComboCard({ champion, version, combo, patch, changedIn = null }: { champion: Champion; version: string; combo: Combo; patch: string; changedIn?: string | null }) {
   const t = useT();
   const lang = useLang();
   return (
@@ -50,6 +50,7 @@ export function ComboCard({ champion, version, combo, patch }: { champion: Champ
         </span>
         <DataBadge editorial source={t("Yama {patch} için elle yazıldı; sonraki yamalarda yetenekler değişmiş olabilir.", { patch })} />
       </header>
+      {changedIn && <p className="build__note">{t("Yama {patch} bu kombodaki bir yeteneği değiştirdi; zamanlamayı kontrol et.", { patch: changedIn })}</p>}
       <Sequence champion={champion} version={version} sequence={combo.sequence} />
       <dl className="combo__notes">
         <div>

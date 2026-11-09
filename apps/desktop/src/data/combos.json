@@ -1407,6 +1407,767 @@
      }
     }
    ]
+  },
+  {
+   "championId": "Annie",
+   "combos": [
+    {
+     "id": "stun-burst",
+     "category": "burst",
+     "difficulty": 1,
+     "sequence": [
+      "E",
+      "W",
+      "Q",
+      "R"
+     ],
+     "name": {
+      "tr": "Kalkan ve patlama",
+      "en": "Shield and burst"
+     },
+     "purpose": {
+      "tr": "Dört yeteneği tek hedefe vererek hızlıca bitirmek.",
+      "en": "Finish a target fast with all four abilities."
+     },
+     "timing": {
+      "tr": "Pasif sersemletme hazırken başla; R'yi son anda kullan.",
+      "en": "Start when your passive stun is ready; use the ultimate last."
+     },
+     "mistake": {
+      "tr": "Sersemletme hazır değilken girmek.",
+      "en": "Going in while the stun is not ready."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Veigar",
+   "combos": [
+    {
+     "id": "cage-burst",
+     "category": "burst",
+     "difficulty": 2,
+     "sequence": [
+      "E",
+      "W",
+      "Q",
+      "R"
+     ],
+     "name": {
+      "tr": "Kafes ve patlama",
+      "en": "Cage and burst"
+     },
+     "purpose": {
+      "tr": "Hedefi kafese kapatıp büyülerle bitirmek.",
+      "en": "Trap the target in the cage and finish with spells."
+     },
+     "timing": {
+      "tr": "Kafes dolarken W'yu at; R'yi canı az olana kullan.",
+      "en": "Place W while the cage closes; ultimate a target that is low."
+     },
+     "mistake": {
+      "tr": "E'yi hedefin tam üstüne atıp kolayca çıkılmasına izin vermek.",
+      "en": "Dropping the cage right on the target so it just walks out."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Xerath",
+   "combos": [
+    {
+     "id": "poke-lock",
+     "category": "trading",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "W",
+      "E"
+     ],
+     "name": {
+      "tr": "Dürt ve kilitle",
+      "en": "Poke and lock"
+     },
+     "purpose": {
+      "tr": "Uzaktan dürtüp E ile yaklaşanı durdurmak.",
+      "en": "Poke from range and stop anyone who closes in with E."
+     },
+     "timing": {
+      "tr": "W ile alanı daralt, Q'yu tam dolunca bırak.",
+      "en": "Shape the area with W and release Q at full charge."
+     },
+     "mistake": {
+      "tr": "E'yi kendini korumak için değil, boşuna atmak.",
+      "en": "Wasting E instead of keeping it for self-defence."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Ziggs",
+   "combos": [
+    {
+     "id": "bomb-chain",
+     "category": "trading",
+     "difficulty": 1,
+     "sequence": [
+      "W",
+      "Q",
+      "E"
+     ],
+     "name": {
+      "tr": "Bomba zinciri",
+      "en": "Bomb chain"
+     },
+     "purpose": {
+      "tr": "Kule veya rakibi yıkmak için bombaları art arda atmak.",
+      "en": "Chain bombs to break a tower or push an enemy off."
+     },
+     "timing": {
+      "tr": "W ile geriye it, E ile yolu kapat, Q'yu bırak.",
+      "en": "Push back with W, block the path with E, then drop Q."
+     },
+     "mistake": {
+      "tr": "W'yu kendini kaçırmadan kullanmak.",
+      "en": "Using W without a plan to escape."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Malzahar",
+   "combos": [
+    {
+     "id": "suppress-dot",
+     "category": "all-in",
+     "difficulty": 2,
+     "sequence": [
+      "R",
+      "E",
+      "Q",
+      "W"
+     ],
+     "name": {
+      "tr": "Bastır ve yak",
+      "en": "Suppress and burn"
+     },
+     "purpose": {
+      "tr": "R ile hedefi tutarken hasar bırakmak.",
+      "en": "Hold a target with the ultimate while damage ticks."
+     },
+     "timing": {
+      "tr": "R'ye girmeden E'yi at; R sürerken Q ve W'yu kullan.",
+      "en": "Apply E before the ultimate; use Q and W while it lasts."
+     },
+     "mistake": {
+      "tr": "R sırasında rakip takımın seni vurmasına izin vermek.",
+      "en": "Letting the enemy team hit you during the ultimate."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Fizz",
+   "combos": [
+    {
+     "id": "dive-trade",
+     "category": "all-in",
+     "difficulty": 2,
+     "sequence": [
+      "W",
+      "AA",
+      "Q",
+      "E"
+     ],
+     "name": {
+      "tr": "Dal ve çık",
+      "en": "Dive and leave"
+     },
+     "purpose": {
+      "tr": "Hızlı vurup E ile korunarak çıkmak.",
+      "en": "Hit fast and leave safely behind E."
+     },
+     "timing": {
+      "tr": "W ile vuruşları güçlendir, Q ile gir, E ile kaçış yolunu sağlamlaştır.",
+      "en": "Power your hits with W, enter with Q, keep E for the way out."
+     },
+     "mistake": {
+      "tr": "E'yi girerken harcayıp çıkışsız kalmak.",
+      "en": "Spending E on the way in and having no exit."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Diana",
+   "combos": [
+    {
+     "id": "pull-burst",
+     "category": "burst",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "E",
+      "W",
+      "R"
+     ],
+     "name": {
+      "tr": "Çek ve patlat",
+      "en": "Pull and burst"
+     },
+     "purpose": {
+      "tr": "Hilali hedefe işaretleyip çekerek patlatmak.",
+      "en": "Mark with the crescent, pull in and burst."
+     },
+     "timing": {
+      "tr": "Q işaret koyunca R ile atla; E çekmeyi bitirir.",
+      "en": "Jump with the ultimate once Q has marked; E finishes the pull."
+     },
+     "mistake": {
+      "tr": "R'yi işaretsiz hedefe harcamak.",
+      "en": "Using the ultimate on a target that is not marked."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Talon",
+   "combos": [
+    {
+     "id": "blade-burst",
+     "category": "burst",
+     "difficulty": 2,
+     "sequence": [
+      "W",
+      "Q",
+      "AA",
+      "R"
+     ],
+     "name": {
+      "tr": "Bıçak ve sessizlik",
+      "en": "Blades and silence"
+     },
+     "purpose": {
+      "tr": "Hedefi bıçaklarla işaretleyip hızlıca öldürmek.",
+      "en": "Mark with blades and finish quickly."
+     },
+     "timing": {
+      "tr": "W'yu at, Q ile içeri gir, pasif için vuruşları art arda yap.",
+      "en": "Throw W, enter with Q, land hits in a row for the passive."
+     },
+     "mistake": {
+      "tr": "Duvar üstünden gelmeden önce R'yi harcamak.",
+      "en": "Using the ultimate before you get over the wall."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Rengar",
+   "combos": [
+    {
+     "id": "bush-leap",
+     "category": "all-in",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "W",
+      "E",
+      "AA"
+     ],
+     "name": {
+      "tr": "Çalıdan atlayış",
+      "en": "Bush leap"
+     },
+     "purpose": {
+      "tr": "Çalıdan çıkıp hedefe tam güçle girmek.",
+      "en": "Leave the bush and enter a target at full power."
+     },
+     "timing": {
+      "tr": "Atlayışla gir, hemen E ile tut, W ile sağ kal.",
+      "en": "Leap in, root with E at once, use W to stay alive."
+     },
+     "mistake": {
+      "tr": "Ferocity doluyken önceden atlayıp etkisiz kalmak.",
+      "en": "Leaping in early and wasting a full ferocity bar."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Warwick",
+   "combos": [
+    {
+     "id": "chase-hold",
+     "category": "all-in",
+     "difficulty": 1,
+     "sequence": [
+      "Q",
+      "R",
+      "W",
+      "AA"
+     ],
+     "name": {
+      "tr": "Kovala ve tut",
+      "en": "Chase and hold"
+     },
+     "purpose": {
+      "tr": "Kaçan hedefi yakalayıp yerinde tutmak.",
+      "en": "Catch a runner and hold it in place."
+     },
+     "timing": {
+      "tr": "Kanayan hedefe W ile koş, Q ve R'yi art arda kullan.",
+      "en": "Run at a bleeding target with W, then Q and R together."
+     },
+     "mistake": {
+      "tr": "R'yi kalabalığa doğru atıp dövüşün ortasında kalmak.",
+      "en": "Ultimating into a crowd and ending up in the middle of the fight."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Amumu",
+   "combos": [
+    {
+     "id": "bandage-engage",
+     "category": "teamfight",
+     "difficulty": 1,
+     "sequence": [
+      "Q",
+      "R",
+      "E",
+      "W"
+     ],
+     "name": {
+      "tr": "Ağ ve R",
+      "en": "Bandage and ultimate"
+     },
+     "purpose": {
+      "tr": "Takım dövüşünü sargıyla başlatıp R'yi herkese değdirmek.",
+      "en": "Start a fight with the bandage and catch many with the ultimate."
+     },
+     "timing": {
+      "tr": "Q ile ilk hedefi yakala, takıma yakın R'yi bırak.",
+      "en": "Catch the first target with Q, then ultimate when allies are close."
+     },
+     "mistake": {
+      "tr": "R'yi tek kişiye harcamak.",
+      "en": "Ultimating a single target."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Zac",
+   "combos": [
+    {
+     "id": "leap-engage",
+     "category": "teamfight",
+     "difficulty": 2,
+     "sequence": [
+      "E",
+      "Q",
+      "W",
+      "R"
+     ],
+     "name": {
+      "tr": "Zıpla ve fırlat",
+      "en": "Leap and launch"
+     },
+     "purpose": {
+      "tr": "Uzak mesafeden atlayıp rakipleri dağıtmak.",
+      "en": "Jump in from range and scatter the enemy."
+     },
+     "timing": {
+      "tr": "E'yi tam dolu bırak, Q ile birini tut, R ile uzaklaştır.",
+      "en": "Charge E fully, grab one with Q and push everyone away with R."
+     },
+     "mistake": {
+      "tr": "E'yi dolmadan bırakıp hedefi ıskalamak.",
+      "en": "Releasing E before it is charged and missing."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Jayce",
+   "combos": [
+    {
+     "id": "gate-cannon",
+     "category": "trading",
+     "difficulty": 3,
+     "sequence": [
+      "E",
+      "Q"
+     ],
+     "name": {
+      "tr": "Kapı ve top",
+      "en": "Gate and cannon"
+     },
+     "purpose": {
+      "tr": "Topun Q'sunu hızlandırıp uzaktan vurmak.",
+      "en": "Speed up the cannon Q and hit from far away."
+     },
+     "timing": {
+      "tr": "Q'yu hızlandırma kapısına doğru at.",
+      "en": "Throw Q through the acceleration gate."
+     },
+     "mistake": {
+      "tr": "Kapıyı kuleye doğru koymak; hedefin arkasında kalır.",
+      "en": "Placing the gate towards the tower so it ends up behind the target."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Gnar",
+   "combos": [
+    {
+     "id": "rage-stun",
+     "category": "teamfight",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "W",
+      "R"
+     ],
+     "name": {
+      "tr": "Öfke ve sersemletme",
+      "en": "Rage and stun"
+     },
+     "purpose": {
+      "tr": "Dev halde duvara çarptırarak sersemletmek.",
+      "en": "Knock enemies into a wall as the big form."
+     },
+     "timing": {
+      "tr": "Duvarın yanında R'yi at; dönüşümü öfke dolunca bekle.",
+      "en": "Ultimate beside a wall; wait for the transform when rage is full."
+     },
+     "mistake": {
+      "tr": "R'yi açık alana atıp çarpmayı kaçırmak.",
+      "en": "Ultimating in open space and missing the wall hit."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Riven",
+   "combos": [
+    {
+     "id": "fast-cancel",
+     "category": "burst",
+     "difficulty": 3,
+     "sequence": [
+      "Q",
+      "W",
+      "AA",
+      "Q2"
+     ],
+     "name": {
+      "tr": "Hızlı iptal",
+      "en": "Fast cancel"
+     },
+     "purpose": {
+      "tr": "Q'ları vuruşlarla birleştirip hasarı ve konumu gizlemek.",
+      "en": "Weave Qs with attacks to hide timing and spacing."
+     },
+     "timing": {
+      "tr": "W sersemletmesinden hemen sonra Q'ya devam et.",
+      "en": "Continue with Q straight after the W stun."
+     },
+     "mistake": {
+      "tr": "Üç Q'yu da peş peşe harcayıp geri çekilememek.",
+      "en": "Using all three Qs in a row with no way back."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Vayne",
+   "combos": [
+    {
+     "id": "tumble-hits",
+     "category": "trading",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "AA",
+      "AA"
+     ],
+     "name": {
+      "tr": "Yuvarlan ve vur",
+      "en": "Tumble and hit"
+     },
+     "purpose": {
+      "tr": "Her üçüncü vuruşu tamamlayarak ekstra hasar vermek.",
+      "en": "Complete the third hit for the extra damage."
+     },
+     "timing": {
+      "tr": "Q ile yaklaşırken ilk vuruşu at; üçüncü vuruş sonrası geri çekil.",
+      "en": "Hit as you tumble in; step back after the third hit."
+     },
+     "mistake": {
+      "tr": "Q'yu savunmak yerine yaklaşmak için harcamak.",
+      "en": "Using Q to move forward instead of keeping it as a defence."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Ashe",
+   "combos": [
+    {
+     "id": "slow-arrow",
+     "category": "trading",
+     "difficulty": 1,
+     "sequence": [
+      "W",
+      "AA",
+      "Q",
+      "R"
+     ],
+     "name": {
+      "tr": "Yavaşlat ve vur",
+      "en": "Slow and shoot"
+     },
+     "purpose": {
+      "tr": "Rakibi yavaşlatıp ok yağdırmak.",
+      "en": "Slow the enemy and keep shooting."
+     },
+     "timing": {
+      "tr": "W'yu at, Q ile vuruşları hızlandır; R'yi yakalamak için sakla.",
+      "en": "Throw W, speed up attacks with Q, keep the ultimate to catch."
+     },
+     "mistake": {
+      "tr": "R'yi sürekli kaçmak için değil, rastgele atmak.",
+      "en": "Firing the ultimate randomly and not to start a pick."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "MissFortune",
+   "combos": [
+    {
+     "id": "bullet-time",
+     "category": "teamfight",
+     "difficulty": 2,
+     "sequence": [
+      "E",
+      "Q",
+      "R"
+     ],
+     "name": {
+      "tr": "Mermi yağmuru",
+      "en": "Bullet storm"
+     },
+     "purpose": {
+      "tr": "Yavaşlatılmış grubu R ile taramak.",
+      "en": "Sweep a slowed group with the ultimate."
+     },
+     "timing": {
+      "tr": "E ile yavaşlat, ekip tuzağa girince R'yi aç.",
+      "en": "Slow with E, open the ultimate when they are caught."
+     },
+     "mistake": {
+      "tr": "R sırasında yerinden oynayıp iptal etmek.",
+      "en": "Moving during the ultimate and cancelling it."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Ekko",
+   "combos": [
+    {
+     "id": "rewind-dive",
+     "category": "all-in",
+     "difficulty": 3,
+     "sequence": [
+      "Q",
+      "E",
+      "AA",
+      "R"
+     ],
+     "name": {
+      "tr": "Geri sar",
+      "en": "Rewind"
+     },
+     "purpose": {
+      "tr": "R'yi hem hasar hem kaçış için kullanmak.",
+      "en": "Use the ultimate for both damage and escape."
+     },
+     "timing": {
+      "tr": "Q ile işaretle, E ile gir; canın azalırken R'yi bas.",
+      "en": "Mark with Q, dive with E, ultimate as your health runs low."
+     },
+     "mistake": {
+      "tr": "R'nin gideceği yeri düşünmeden basmak.",
+      "en": "Pressing the ultimate without checking where it takes you."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Kassadin",
+   "combos": [
+    {
+     "id": "portal-burst",
+     "category": "burst",
+     "difficulty": 2,
+     "sequence": [
+      "R",
+      "W",
+      "Q",
+      "E"
+     ],
+     "name": {
+      "tr": "Portal ve patlama",
+      "en": "Portal and burst"
+     },
+     "purpose": {
+      "tr": "Yaklaşıp tüm büyüleri art arda kullanmak.",
+      "en": "Close in and cast everything in order."
+     },
+     "timing": {
+      "tr": "R ile gir, W'yu ekle, Q ve E ile bitir.",
+      "en": "Enter with R, add W, finish with Q and E."
+     },
+     "mistake": {
+      "tr": "Mana yetmeden tekrar R'yi kullanmak.",
+      "en": "Spamming the ultimate without enough mana."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Pantheon",
+   "combos": [
+    {
+     "id": "stun-finish",
+     "category": "all-in",
+     "difficulty": 1,
+     "sequence": [
+      "W",
+      "AA",
+      "Q",
+      "E"
+     ],
+     "name": {
+      "tr": "Sersemlet ve bitir",
+      "en": "Stun and finish"
+     },
+     "purpose": {
+      "tr": "W ile içeri atlayıp vuruşlarla bitirmek.",
+      "en": "Jump in with W and finish with attacks."
+     },
+     "timing": {
+      "tr": "Pasif vuruşunu W'dan hemen sonra yap.",
+      "en": "Land the passive hit right after W."
+     },
+     "mistake": {
+      "tr": "W'yu kalabalığa atlamak için harcamak.",
+      "en": "Spending W to jump into a crowd."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Volibear",
+   "combos": [
+    {
+     "id": "thunder-dive",
+     "category": "all-in",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "W",
+      "E",
+      "R"
+     ],
+     "name": {
+      "tr": "Yıldırım dalışı",
+      "en": "Thunder dive"
+     },
+     "purpose": {
+      "tr": "Q ile hızlan, W ve E ile yakında kal.",
+      "en": "Speed in with Q and stay close with W and E."
+     },
+     "timing": {
+      "tr": "Q sersemletmesinden sonra W'yu ekle; R ile kuleyi devre dışı bırak.",
+      "en": "Add W after the Q stun; use the ultimate to disable a tower."
+     },
+     "mistake": {
+      "tr": "E'yi uzak mesafeye atıp isabet etmemek.",
+      "en": "Throwing E from too far and missing."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Samira",
+   "combos": [
+    {
+     "id": "style-burst",
+     "category": "burst",
+     "difficulty": 3,
+     "sequence": [
+      "E",
+      "Q",
+      "AA",
+      "R"
+     ],
+     "name": {
+      "tr": "Stil zinciri",
+      "en": "Style chain"
+     },
+     "purpose": {
+      "tr": "Farklı yeteneklerle stil basamağını hızla doldurmak.",
+      "en": "Fill the style meter with varied abilities."
+     },
+     "timing": {
+      "tr": "E ile gir, Q ve AA'yı karıştır, S'ye ulaşınca R'yi aç.",
+      "en": "Dash in with E, mix Q and attacks, ultimate once you reach S."
+     },
+     "mistake": {
+      "tr": "Aynı hareketi tekrar edip stili düşürmek.",
+      "en": "Repeating the same move and losing style."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Sona",
+   "combos": [
+    {
+     "id": "chord-heal",
+     "category": "teamfight",
+     "difficulty": 1,
+     "sequence": [
+      "W",
+      "Q",
+      "E",
+      "R"
+     ],
+     "name": {
+      "tr": "Akor ve iyileştirme",
+      "en": "Chord and heal"
+     },
+     "purpose": {
+      "tr": "Takıma kalkan ve hız verip R ile kontrol etmek.",
+      "en": "Shield and speed the team, control with the ultimate."
+     },
+     "timing": {
+      "tr": "W'yu savaşa girmeden at; R'yi bölgeye değdiren yere koy.",
+      "en": "Use W before the fight; place R where the enemy must step."
+     },
+     "mistake": {
+      "tr": "R'yi tek hedefe harcamak.",
+      "en": "Ultimating a single target."
+     }
+    }
+   ]
   }
  ]
 }

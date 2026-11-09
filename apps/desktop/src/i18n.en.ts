@@ -223,6 +223,7 @@ export const EN: Record<string, string> = {
   "Takım dövüşü": "Team fight",
   "Animasyon iptali": "Animation cancel",
   "Kombolar": "Combos",
+  "Yama {patch} bu kombodaki bir yeteneği değiştirdi; zamanlamayı kontrol et.": "Patch {patch} changed an ability this combo uses; check the timing.",
   "Kombo kütüphanesi": "Combo library",
   "Yetenek sıraları, ne zaman kullanılacağı ve sık yapılan hatalar. Hepsini Vizier elle yazdı.": "Ability sequences, when to use them and common mistakes. All written by hand by Vizier.",
   "Şampiyon ya da kombo ara": "Search champion or combo",
