@@ -6,6 +6,9 @@ import { buildGold } from "../library/gold";
 import { loadLibraryData, type LibraryData } from "../library/data";
 import { useLibrary } from "../library/store";
 import { DIRECTIONS, directionColumn, type DirectionId } from "../lab/directions";
+import { STAT_PRICES } from "../data/itemGold";
+import { runningTotals, shownStats, statValue } from "../lab/totals";
+import { LabTotals } from "../lab/LabTotals";
 import { labColumns, savedFor, type LabColumn } from "../lab/columns";
 import { itemIconUrl, spellIconUrl } from "../data/ddragon";
 import { POSITIONS } from "../labels";
@@ -108,6 +111,7 @@ function LabColumns({ data, championId, position }: { data: LibraryData; champio
           <LabCard key={column.id} column={column} data={data} patches={build.value?.patches} updatedAt={build.value?.updatedAt} />
         ))}
       </div>
+      <LabTotals columns={columns} data={data} />
     </>
   );
 }
@@ -118,6 +122,7 @@ function LabCard({ column, data, patches, updatedAt }: { column: LabColumn; data
   const price = (id: number) => data.items.get(id)?.gold ?? 0;
   const gold = buildGold(column.build, price);
   const all = [...column.build.startItems, ...column.build.coreItems, ...column.build.items];
+  const fullItems = [...column.build.coreItems, ...column.build.items];
   const boots = all.find((id) => data.items.get(id)?.boots);
   const primary = data.styles.get(column.build.runes.primaryStyle);
   const secondary = data.styles.get(column.build.runes.subStyle);
@@ -184,6 +189,22 @@ function LabCard({ column, data, patches, updatedAt }: { column: LabColumn; data
           return spell ? <img key={id} src={spellIconUrl(data.version, spell.id)} alt={spell.name} title={spell.name} width={28} height={28} loading="lazy" /> : null;
         })}
       </div>
+      <details className="lab__steps">
+        <summary>{t("Eşya eşya toplam")}</summary>
+        <ol>
+          {runningTotals(fullItems, data.details).map((total, i) => (
+            <li key={i}>
+              <strong>{data.items.get(fullItems[i])?.name}</strong>
+              {shownStats([total]).map((key) => (
+                <span key={key}>
+                  {t(STAT_PRICES[key].label)} {statValue(key, total[key] ?? 0)}
+                  {STAT_PRICES[key].percent ? "%" : ""}
+                </span>
+              ))}
+            </li>
+          ))}
+        </ol>
+      </details>
       <details className="lab__runes">
         <summary>{t("Rünler")}</summary>
         <RunePageView primary={primary} secondary={secondary} perks={column.build.runes.perks} total={column.sample?.games ?? 0} />

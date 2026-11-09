@@ -79,3 +79,73 @@
   gap: var(--space-3);
   margin-top: var(--space-3);
 }
+
+.lab__totals {
+  margin-top: var(--space-4);
+}
+
+.lab__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.lab__table th,
+.lab__table td {
+  padding: 6px var(--space-2);
+  text-align: left;
+  font-weight: var(--weight-regular);
+}
+
+.lab__table thead th {
+  font-size: var(--text-meta);
+  color: var(--glaze-muted);
+}
+
+.lab__bar {
+  display: block;
+  height: 6px;
+  margin-bottom: 2px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--glaze-muted) 20%, transparent);
+}
+
+.lab__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--turquoise);
+}
+
+.lab__bar > [data-column="1"] {
+  background: var(--gilt);
+}
+
+.lab__bar > [data-column="2"] {
+  background: var(--data-win);
+}
+
+.lab__bar > [data-column="3"] {
+  background: var(--data-loss);
+}
+
+.lab__value {
+  font-size: var(--text-meta);
+}
+
+.lab__steps ol {
+  margin: var(--space-2) 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: var(--text-meta);
+}
+
+.lab__steps li span {
+  margin-left: 8px;
+  color: var(--glaze-muted);
+}
+
+.lab__steps summary {
+  cursor: pointer;
+  color: var(--glaze-muted);
+}
