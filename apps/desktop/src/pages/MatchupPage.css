@@ -53,6 +53,11 @@
   margin-top: var(--space-4);
 }
 
+/* The star sits at its own width instead of stretching across the grid. */
+.matchup-page__body > .star {
+  justify-self: start;
+}
+
 .duel {
   width: 100%;
   border-collapse: collapse;
