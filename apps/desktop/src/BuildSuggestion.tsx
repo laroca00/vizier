@@ -9,7 +9,10 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getBuild, getItemTimes, type Build, type ItemTimes, type BuildStyle, type Foe, type Picks } from "./api";
 import { ProMatchups } from "./draft/ProMatchups";
 import { fromPicks } from "./library/convert";
-import { createBuild } from "./library/store";
+import { createBuild, type SavedBuild } from "./library/store";
+import { cardContent } from "./library/buildCard";
+import { copyBuildCard } from "./library/buildCardCanvas";
+import { loadLibraryData } from "./library/data";
 import { positionLabel } from "./labels";
 import { BuildCompare } from "./BuildCompare";
 import { readChosenStyle, saveChosenStyle, STYLE_NAMES } from "./buildStyles";
@@ -132,6 +135,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   const [runeImport, setRuneImport] = useState<ImportState>({ status: "idle" });
   const [spellImport, setSpellImport] = useState<ImportState>({ status: "idle" });
   const [itemImport, setItemImport] = useState<ImportState>({ status: "idle" });
+  const [drawing, setDrawing] = useState(false);
   const [chosenTab, setChosenTab] = useState<Tab | null>(null);
   // Results that land after the champion changed belong to the old pick.
   const currentChampion = useRef(championId);
@@ -341,6 +345,31 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           }}
         >
           {t("Buildlerime kaydet")}
+        </Button>
+        <Button
+          size="small"
+          variant="ghost"
+          busy={drawing}
+          onClick={() => {
+            setDrawing(true);
+            const name = [championName, variant ? t(STYLE_NAMES[variant.style]) : null].filter(Boolean).join(" ");
+            const draft = fromPicks({ name, championId, position: position ? position.toUpperCase() : null }, picks, (id) => !!state.value.items.get(id)?.complete);
+            const saved: SavedBuild = { ...draft, id: "", notes: "", collections: [], favourite: false, source: "stats", createdAt: 0, updatedAt: 0 };
+            loadLibraryData()
+              .then((data) => {
+                const content = cardContent(saved, data, t, (p) => positionLabel(p, lang));
+                // The picture carries the sample, as every number Vizier shows does.
+                content.subtitle = [content.subtitle, t("{games} maç, kazanma oranı {rate}", { games: shown.games, rate: percent(shown.winRate) })].join(", ");
+                return copyBuildCard(content);
+              })
+              .then(
+                (how) => toast("success", how === "copied" ? t("Build görseli panoya kopyalandı.") : t("Build görseli indirildi.")),
+                () => toast("error", t("Görsel oluşturulamadı.")),
+              )
+              .finally(() => setDrawing(false));
+          }}
+        >
+          {t("Görsel olarak kopyala")}
         </Button>
       </div>
 
