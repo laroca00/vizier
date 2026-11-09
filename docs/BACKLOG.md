@@ -334,11 +334,11 @@ Builds on: the search palette (champions, pros, matchups, items, keystones, save
 ## 31. Overlay 2.0 polish (after epic 19)
 
 - [ ] 31.1 Overlay themes, transparency and scale per widget; settings preview uses the fixtures.
-<!-- claimed: auto/31-overlay-polish 2026-11-09T14:42:00Z -->
+<!-- claimed: auto/31-overlay-themes 2026-11-09T17:55:00Z -->
 - [ ] 31.2 Quick reference panels the player builds: pick any of build, runes, skill order, combo, matchup note, item info, and show them on a hotkey.
-<!-- claimed: auto/31-overlay-polish 2026-11-09T14:42:00Z -->
+<!-- claimed: auto/31-overlay-themes 2026-11-09T17:55:00Z -->
 - [ ] 31.3 Safe fallbacks: every widget shows a quiet empty state when Live Client data is missing or late, and the overlay never blocks the game when the API is down. Performance check: one render per second at most, measured in the fixture preview.
-<!-- claimed: auto/31-overlay-polish 2026-11-09T14:42:00Z -->
+<!-- claimed: auto/31-overlay-themes 2026-11-09T17:55:00Z -->
 
 ## 16. Only when a feature needs it
 
