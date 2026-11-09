@@ -190,7 +190,7 @@ export function AugmentsPage({ onOpenChampion }: { onOpenChampion?: (championId:
                     </th>
                     <td>{meta ? t(RARITY[meta.rarity] ?? "") : ""}</td>
                     <td>{formatPercent(a.pickRate, lang, 1)}</td>
-                    <td title={sampleTitle(t, lang, { ...a, patches: stats.value?.patches })}>
+                    <td title={sampleTitle(t, lang, { ...a, patches: stats.value?.patches, updatedAt: stats.value?.updatedAt })}>
                       {formatPercent(a.winRate, lang, 1)}
                       {delta && (
                         <span className="augments__delta" data-sign={signOf(a.delta)}>

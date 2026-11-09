@@ -73,9 +73,18 @@ export function indexEntry(championId: number, position: string, build: Build): 
   };
 }
 
+/**
+ * Reads one doc. Object docs also carry `updatedAt` (ms): when the crawler last
+ * published a changed body, so older apps simply ignore the extra field.
+ */
 export async function readDoc<T>(db: D1Database, key: string): Promise<T | null> {
-  const row = await db.prepare("SELECT body FROM stat_docs WHERE key = ?").bind(key).first<{ body: string }>();
-  return row ? (JSON.parse(row.body) as T) : null;
+  const row = await db.prepare("SELECT body, updated_at FROM stat_docs WHERE key = ?").bind(key).first<{ body: string; updated_at: number | null }>();
+  if (!row) return null;
+  const doc = JSON.parse(row.body) as T;
+  if (doc && typeof doc === "object" && !Array.isArray(doc) && row.updated_at && row.updated_at > 0) {
+    return { ...doc, updatedAt: row.updated_at };
+  }
+  return doc;
 }
 
 /** Every answer the API serves from stats, as [key, value]; null values are not published. */

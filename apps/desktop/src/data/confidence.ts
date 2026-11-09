@@ -33,6 +33,8 @@ export type Sample = {
   patches?: string[];
   /** The newest game patch, from Data Dragon. When it isn't in `patches` the data is outdated. */
   currentPatch?: string | null;
+  /** When the server last published the numbers (ms), for the tooltip. */
+  updatedAt?: number;
 };
 
 export function confidenceOf({ games, winRate, patches, currentPatch }: Sample): Confidence {

@@ -1,4 +1,5 @@
 import { CONFIDENCE_LABEL, confidenceOf, wilson, type Sample } from "../data/confidence";
+import { ageText } from "../data/freshness";
 import { latestVersion } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
 import { useAsync } from "../useAsync";
@@ -29,6 +30,7 @@ export function DataBadge(props: Props) {
     props.source,
     props.patches && props.patches.length > 0 ? t("Yama {patch}", { patch: props.patches.join(", ") }) : null,
     t("{games} maç", { games: props.games }),
+    ageText(t, props.updatedAt),
     props.games > 0 ? t("%95 aralık: {low} – {high}", { low: formatPercent(low, lang, 1), high: formatPercent(high, lang, 1) }) : null,
   ].filter(Boolean);
   return (

@@ -37,6 +37,8 @@ export type Variant = Picks & { style: BuildStyle; games: number; winRate: numbe
 
 export type Build = Picks & {
   patches: string[];
+  /** When the crawler last published this doc (ms); absent on older servers. */
+  updatedAt?: number;
   games: number;
   winRate: number;
   /** The opponent the numbers are for, or null when they cover every matchup. */
@@ -77,7 +79,7 @@ export type AugmentStat = {
   /** Win rate minus the champion's own rate with any augment; older servers leave it out. */
   delta?: number;
 };
-export type AugmentStats = { patches: string[]; games: number; augments: AugmentStat[] };
+export type AugmentStats = { patches: string[]; updatedAt?: number; games: number; augments: AugmentStat[] };
 
 /** Null while the server has augment stats switched off. */
 export async function getAugments(queue: number, championId: number | null): Promise<AugmentStats | null> {
@@ -113,7 +115,7 @@ export type BuildIndexEntry = {
   items: number[];
 };
 
-export type BuildIndex = { patches: string[]; builds: BuildIndexEntry[] };
+export type BuildIndex = { patches: string[]; updatedAt?: number; builds: BuildIndexEntry[] };
 
 /** Every ranked champion and role in one small document; empty until the crawler publishes it. */
 export function getBuildIndex() {
@@ -135,7 +137,7 @@ export type TierEntry = {
 };
 /** The numbers behind a tier; absent on servers that predate it. */
 export type TierRule = { priorGames: number; presenceWeight: number; listGames: number; tierGames: number; cuts: { tier: string; score: number }[] };
-export type TierList = { patches: string[]; games: number; champions: TierEntry[]; rule?: TierRule };
+export type TierList = { patches: string[]; updatedAt?: number; games: number; champions: TierEntry[]; rule?: TierRule };
 
 /** Queues without roles take position ALL. */
 export function getTierList(position: string, queue = 420) {
@@ -144,6 +146,7 @@ export function getTierList(position: string, queue = 420) {
 
 export type ChampionOverview = {
   patches: string[];
+  updatedAt?: number;
   positions: { position: string; games: number; share: number }[];
   position: string | null;
   games: number;
@@ -169,20 +172,20 @@ export async function getChampion(championId: number, position: string | null, q
   }
 }
 
-export type Synergies = { patches: string[]; games: number; allies: { championId: number; position: string; games: number; winRate: number }[] };
+export type Synergies = { patches: string[]; updatedAt?: number; games: number; allies: { championId: number; position: string; games: number; winRate: number }[] };
 
 export function getSynergies(championId: number, position: string) {
   return get<Synergies>(`/v1/champions/${championId}/synergies?position=${position}`);
 }
 
-export type ArenaDuos = { patches: string[]; games: number; partners: { championId: number; games: number; winRate: number }[] };
+export type ArenaDuos = { patches: string[]; updatedAt?: number; games: number; partners: { championId: number; games: number; winRate: number }[] };
 
 /** Champions that placed top four most often next to this one in Arena. */
 export function getArenaDuos(championId: number) {
   return get<ArenaDuos>(`/v1/arena/duos/${championId}`);
 }
 
-export type ArenaItems = { patches: string[]; games: number; items: { id: number; games: number; pickRate: number; winRate: number }[] };
+export type ArenaItems = { patches: string[]; updatedAt?: number; games: number; items: { id: number; games: number; pickRate: number; winRate: number }[] };
 
 /** Null while the server has Arena item stats switched off. */
 export async function getArenaItems(championId: number): Promise<ArenaItems | null> {
@@ -215,7 +218,7 @@ export function getItemTimes(championId: number, position: string) {
   return get<ItemTimes>(`/v1/champions/${championId}/item-times?position=${position}`);
 }
 
-export type Counters = { patches: string[]; games: number; matchups: { championId: number; games: number; winRate: number }[] };
+export type Counters = { patches: string[]; updatedAt?: number; games: number; matchups: { championId: number; games: number; winRate: number }[] };
 
 export function getCounters(championId: number, position: string) {
   return get<Counters>(`/v1/champions/${championId}/counters?position=${position}`);
@@ -315,7 +318,7 @@ export async function getProTeams() {
   return (await get<{ teams: { team: string; group: ProGroup; players: string[] }[] }>("/v1/pros/teams")).teams;
 }
 
-export type BanSuggestions = { patches: string[]; champions: { championId: number; games: number; winRate: number }[] };
+export type BanSuggestions = { patches: string[]; updatedAt?: number; champions: { championId: number; games: number; winRate: number }[] };
 
 export function getBans() {
   return get<BanSuggestions>("/v1/bans");

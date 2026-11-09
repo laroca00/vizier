@@ -20,7 +20,7 @@ export function ArenaItems({ championId }: { championId: number }) {
     <section className="champion-augments enter" aria-label={t("Arena eşyaları")}>
       <h2 className="draft__heading">{t("Arena eşyaları")}</h2>
       <p className="section-badge">
-        <DataBadge {...pooled(shown)} patches={stats.value.patches} source={t("Vizier crawler, Arena maçları")} />
+        <DataBadge {...pooled(shown)} patches={stats.value.patches} updatedAt={stats.value.updatedAt} source={t("Vizier crawler, Arena maçları")} />
       </p>
       <ul className="champion-augments__list">
         {shown.map((item) => (
