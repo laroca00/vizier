@@ -2,12 +2,14 @@
 
 The work after `IMPLEMENTATION_ROADMAP.md` (phases 0–11 are done). This list is about features a player sees: new tools and real improvements to the existing pages. Code health work only happens when a feature needs it.
 
-Product scope: prepare, explore, customize. No post-game analysis, coaching or personal performance tracking (aggregate stats from the crawler are fine). The in-game overlay's design belongs to the owner; don't redesign it.
+Product scope: prepare, explore, customize. No post-game analysis or coaching (aggregate stats from the crawler are fine). Owner's decision on 2026-11-09: the in-game overlay is rebuilt to match Blitz's overlay feature set (epic 19), including the in-game benchmark overlay; the look stays Vizier's own (no Blitz assets, names or copy). Overlays that need game memory or cooldown data stay out (see 19).
 
 ## How to work through this file
 
 - Epics are in priority order. Inside an epic, slices are in order.
-- **Who takes which epic (owner's split, 2026-11-08):** 12.6, 13.6 and epic 14 are built in the owner's local sessions; the cloud routine takes epics 15 and 16 only and skips the others, so the two never build the same slice. Epic 0 is done.
+- **Who takes which epic (owner's decision, 2026-11-09):** the cloud routine builds every open epic from 17 on, in order. Local sessions only fix bugs and ship releases.
+- **Runs can overlap.** Before starting a job, read `origin/main`'s BACKLOG: a slice with `<!-- claimed: <branch> <UTC time> -->` under it that is less than 3 hours old belongs to another run; take the next free job. Claim your job by adding that line under each of its slices, committing it on main as `docs: claim <ids>` and pushing before writing code. Remove the claim lines when you tick the slices.
+- **Rust in the cloud:** first try `sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev librsvg2-dev libayatana-appindicator3-dev`, then `cargo test --lib` in `apps/desktop/src-tauri`. If the install fails, still write the Rust part with unit tests that don't need Tauri, keep it small and close to the existing code, and add "cargo check <slice ids>" to the Owner deploy queue.
 - **One run is one job: the next 4–5 unchecked slices of the highest epic that isn't blocked**, built together as one feature on one branch (`auto/<epic>-<topic>`), one commit per slice. If the epic has fewer slices left, take the rest of it plus the start of the next epic. Don't stop after a single slice; a run should be long, finishing the whole job, and then start the next job if time is left.
 - Merge the branch into main when the whole job is done and green. If time runs out mid-job, merge the slices that are finished and green, and leave a `<!-- in progress: ... -->` line under the next slice saying where you stopped.
 - Mark each slice `[x]` with the merge commit hash when it lands, e.g. `- [x] 3.2 ... (a1b2c3d)`. (949d3b2; the rollup pairs Arena players by subteam, docs `duos:1700:<champion>`, route `/v1/arena/duos/:championId`)
@@ -181,6 +183,52 @@ Worlds and pro builds are a top priority for the EUW audience.
 - [x] 15.2 Ability icon mode with rotation and greyscale difficulty steps. (a3e1739; the icon starts turned and grey, straightens and gains colour with wrong guesses)
 - [x] 15.3 Stats page: streaks, guess distribution, history per mode. (a3e1739; Statistics tab: per-mode played, streak, best streak, guess distribution and the last 14 days; daily games only)
 - [x] 15.4 Item game timed mode with a local best score. (a3e1739; Timed tab in the item mode: 60 seconds, skip allowed, best score kept locally)
+
+## 17. The app works by itself
+
+Owner feedback 2026-11-09: the app feels useless because everything waits for the player to open a page. Make the useful things happen on their own.
+
+- [ ] 17.1 Auto-import on by default: runes, spells and item set import when the champion is locked, for new installs and once for existing installs (settings migration that flips the three switches on and remembers it ran). The import uses the build the player picked on the build page, else the recommended one, and the queue's build docs (ARAM, Mayhem, Arena).
+- [ ] 17.2 Import toast in the main window and a small one on the client side of the screen: "Ahri: rünler, büyüler ve eşya seti aktarıldı" with a link to change the build; errors say what failed (no free rune page, client closed) instead of failing silently.
+- [ ] 17.3 Follow the client: when champ select starts, bring the main window up and open the champ select page (setting "Şampiyon seçiminde öne gel", on). When the game starts, send the main window to the tray (setting, on). When the game ends, restore it if it was up before.
+- [ ] 17.4 Start with League: Vizier already autostarts with Windows; make it start hidden in the tray and show itself when the League client opens (setting). Tray menu: open, champ select, overlay on/off, quit.
+- [ ] 17.5 Item set check: after an import, read the item sets back from the client and confirm ours is there for the right champion; show the result in the toast. Tests for the merge (Rust) and the toast text.
+
+## 18. Auto pick, ban and lock
+
+- [ ] 18.1 Rust LCU actions behind typed commands: hover a champion, lock it, ban (`PATCH /lol-champ-select/v1/session/actions/{id}` with `championId` and `completed`), accept the ready check (`POST /lol-matchmaking/v1/ready-check/accept`), swap from the ARAM bench (`POST /lol-champ-select/v1/session/bench/swap/{championId}`). Read `/lol-champ-select/v1/pickable-champion-ids` and `bannable-champion-ids`. Unit tests with the recorded session fixtures for finding the player's current action.
+- [ ] 18.2 Pick plan per role: up to three picks and two bans per role in priority order, edited on the pool page (drag to reorder) and saved in `personal`. Skips champions that are banned, taken by anyone or not owned.
+- [ ] 18.3 Auto hover and lock: when the player's pick turn starts, hover the first available plan pick; lock it right away or N seconds before the timer ends (setting: off / hover only / hover and lock, and the seconds). Auto ban the same way. A clear banner in champ select says what Vizier will do and a button cancels it for this game.
+- [ ] 18.4 Lock from Vizier: "Seç" and "Kilitle" buttons on pick suggestions, pool cards and the hover advice; disabled outside the player's turn with the reason in the tooltip.
+- [ ] 18.5 Auto accept ready check (setting, off by default; uses 18.1) and one-click bench swap on the ARAM bench helper.
+
+## 19. Overlay rebuild: Blitz's overlay feature set
+
+The owner's call: the same overlay features Blitz ships, built fresh in Vizier's style. Data only from the Live Client Data API, LCU, Vizier's API and Data Dragon. Not possible without game memory or cooldown data, so not built: automatic jungle camp timers, ally ultimate timers, ARAM health relic timers, trinket reminder, live jungle split times. Their compliant stand-ins stay (manual camp timers, first spawn reminders).
+
+- [ ] 19.1 Overlay architecture: one file per widget under `src/overlay/widgets/`, a registry (id, name, modes it runs in, default spot, settings key), layouts saved per mode (Rift, ARAM, Arena, Mayhem) and per screen size, snap to an 8 px grid, a scale setting. The current six boxes move into the registry unchanged. `?fixture=<mode>` previews each mode in dev; Vitest covers the registry and layout logic.
+- [ ] 19.2 Overlay settings page rebuilt: every widget with a preview picture of it, its toggle, the modes it shows in, and rebindable hotkeys (saved in settings, sent to Rust). "Kutuları yerleştir" opens edit mode from the page.
+- [ ] 19.3 Loading screen scouting: when the loading screen starts, a panel with all ten players: rank, LP, season win rate and games, games and win rate on the champion this season, champion mastery, and neutral tags (main, first time on the champion, autofilled, on a win or loss streak), plus each team's AP / AD / true damage split (from `data/traits.ts`). It hides when the game starts or on the hotkey. Data: a new Worker route `/v1/scout` that calls the Riot API with a `RIOT_KEY` Worker secret (never in the app or the repo), caches each player in KV for 15 minutes and stays inside the free plan; the route returns 503 when the secret isn't set and the panel then shows only the damage split. Add "set the RIOT_KEY Worker secret" to the Owner deploy queue.
+- [ ] 19.4 Benchmark overlay: own CS per minute, kill participation, KDA and level against the Emerald+ average for the champion and role at the current minute, with a small CS-difference sparkline. Needs a crawler rollup of per-minute CS and level by champion and role from timelines (new doc `bench:<queue>:<champion>:<role>`, backward compatible, written only when changed).
+- [ ] 19.5 Skill order overlay: the skill to level now (exists) next to the ability bar, plus the full 18-level order strip on a hotkey.
+- [ ] 19.6 Item value difference: per lane pair on the Tab scoreboard (exists) and the team totals, restyled for 19.1.
+- [ ] 19.7 Minimap timers: dragon, Baron, Herald and inhibitor respawns (exist) drawn next to their spots on the minimap, and the manual camp timers drawn on the camps. Minimap side and size come from a setting matching the game's minimap options.
+- [ ] 19.8 Augment overlay for Arena and Mayhem: the champion's augments with tier, win rate and games while the augment pick is open (the Live Client API doesn't say which three are offered, so the panel lists the best per rarity and has a search box the player types into).
+- [ ] 19.9 In-game build panel on a hotkey: the imported build's items in order with what's owned ticked, runes and the skill order, and the next item with gold left (exists, moves here).
+- [ ] 19.10 Overlay visual tests: screenshot each mode's fixture in edit and play states with Playwright against `pnpm dev`, kept as reference images.
+
+## 20. Data you can trust
+
+- [ ] 20.1 Crawler throughput report on the VM log and a `/v1/meta/coverage` route: games per patch, per queue and per region, and timeline share, so thin data is visible. Tune the crawl split if timelines lag.
+- [ ] 20.2 Thin data fallbacks: where a matchup has too few games, fill from the champion's general build and the closest matchups (same class and damage type), labelled as such, instead of an empty "yeterli veri yok" line. Sections with nothing to show collapse.
+- [ ] 20.3 Data Dragon JSON cached per version in IndexedDB (A6) so pages open instantly after the first run.
+- [ ] 20.4 Offline and error audit: every page has a clear offline state and retry; the API being down never shows a blank page.
+
+## 21. Lobby and queue (picks up 10.1 and 10.2)
+
+- [ ] 21.1 Build 10.1 (gameflow phases and lobby roles in the frontend state, Rust tests with recorded events) using the Rust setup above.
+- [ ] 21.2 Build 10.2 (queue view with the pool for the chosen roles and autofill picks).
+- [ ] 21.3 Home follows the client: client closed → patch and meta card first; lobby → the pool for the chosen roles; in queue → the queue view.
 
 ## 16. Only when a feature needs it
 
