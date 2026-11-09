@@ -1,3 +1,5 @@
+import { StrengthsPanel } from "./draft/StrengthsPanel";
+import { strengthsOf } from "./data/strengths";
 import { hasRankData, rankRows } from "./data/abilityRanks";
 import { abilityIconUrl, championDetail, type Ability, type Champion } from "./data/ddragon";
 import { traitsOf, PHASE_TEXT } from "./data/traits";
@@ -85,14 +87,20 @@ export function StrengthsWeaknesses({ champion }: { champion: Champion }) {
   const tips = state.status === "done" ? state.value : null;
   return (
     <div className="champion__guide">
-      <h2 className="draft__heading">{t("Güçlü yanları")}</h2>
-      <ul className="comp__traits">
-        {strengths.map((s) => (
-          <li key={s} data-strong>
-            {s}
-          </li>
-        ))}
-      </ul>
+      {strengthsOf(champion.id) ? (
+        <StrengthsPanel championId={champion.id} />
+      ) : (
+        <>
+          <h2 className="draft__heading">{t("Güçlü yanları")}</h2>
+          <ul className="comp__traits">
+            {strengths.map((s) => (
+              <li key={s} data-strong>
+                {s}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       {tips && tips.allyTips.length > 0 && (
         <>
           <h2 className="draft__heading">{t("Oynarken")}</h2>
