@@ -13,6 +13,7 @@ import { changedHotkeys } from "./overlay/hotkeys";
 import { clientOpened, gameEdge, isTrayAction } from "./followClient";
 import { OpenProProvider } from "./proLink";
 import { OpenChampionProvider } from "./championLink";
+import { OpenSourcesProvider } from "./sourcesLink";
 import { OpenMatchupProvider } from "./matchupLink";
 import { useAutoAcceptReady, useReadyCheckAlert } from "./readyCheck";
 import { enteredQueueFlow, planPreload, runPreload } from "./preload";
@@ -318,6 +319,7 @@ function App() {
     <ToastProvider>
     <OpenMatchupProvider value={openMatchup}>
     <OpenChampionProvider value={openChampion}>
+    <OpenSourcesProvider value={() => go({ page: "about" })}>
     <OpenProProvider value={(player) => go({ page: "pro", player })}>
     <div className="shell" data-navigated={navigated || undefined} data-collapsed={settings.sidebarCollapsed || undefined}>
       <Sidebar
@@ -434,6 +436,7 @@ function App() {
       />
     </div>
     </OpenProProvider>
+    </OpenSourcesProvider>
     </OpenChampionProvider>
     </OpenMatchupProvider>
     </ToastProvider>

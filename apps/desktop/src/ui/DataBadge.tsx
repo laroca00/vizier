@@ -1,7 +1,8 @@
-import { CONFIDENCE_LABEL, confidenceOf, wilson, type Sample } from "../data/confidence";
+import { CONFIDENCE_LABEL, type Confidence, confidenceOf, wilson, type Sample } from "../data/confidence";
 import { ageText } from "../data/freshness";
 import { latestVersion } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
+import { useOpenSources } from "../sourcesLink";
 import { useAsync } from "../useAsync";
 
 type Props =
@@ -15,14 +16,21 @@ type Props =
 export function DataBadge(props: Props) {
   const t = useT();
   const lang = useLang();
+  const openSources = useOpenSources();
   const [version] = useAsync("ddragon-version", latestVersion);
-  if (props.editorial) {
-    const title = props.source ?? t("Maç verisinden değil; Vizier'in elle tuttuğu bir tablo.");
-    return (
-      <span className="data-badge" data-confidence="editorial" title={title}>
-        {t(CONFIDENCE_LABEL.editorial)}
+  const badge = (level: Confidence, title: string) =>
+    openSources ? (
+      <button type="button" className="data-badge" data-confidence={level} title={`${title}\n${t("Veriler nereden geliyor?")}`} onClick={openSources}>
+        {t(CONFIDENCE_LABEL[level])}
+      </button>
+    ) : (
+      <span className="data-badge" data-confidence={level} title={title}>
+        {t(CONFIDENCE_LABEL[level])}
       </span>
     );
+  if (props.editorial) {
+    const title = props.source ?? t("Maç verisinden değil; Vizier'in elle tuttuğu bir tablo.");
+    return badge("editorial", [title].join("\n"));
   }
   const level = confidenceOf({ ...props, currentPatch: props.currentPatch ?? (version.status === "done" ? version.value : null) });
   const { low, high } = wilson(props.winRate, props.games);
@@ -33,9 +41,5 @@ export function DataBadge(props: Props) {
     ageText(t, props.updatedAt),
     props.games > 0 ? t("%95 aralık: {low} – {high}", { low: formatPercent(low, lang, 1), high: formatPercent(high, lang, 1) }) : null,
   ].filter(Boolean);
-  return (
-    <span className="data-badge" data-confidence={level} title={lines.join("\n")}>
-      {t(CONFIDENCE_LABEL[level])}
-    </span>
-  );
+  return badge(level, lines.join("\n"));
 }
