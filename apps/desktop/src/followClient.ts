@@ -10,3 +10,12 @@ export function gameEdge(previous: string | null, next: string | null): GameEdge
   if (was && !is) return "end";
   return null;
 }
+
+/** The League client coming up, from not running or still connecting. */
+export function clientOpened(previous: string, next: string): boolean {
+  return next === "connected" && previous !== "connected";
+}
+
+export type TrayAction = "champ_select" | "overlay";
+
+export const isTrayAction = (value: unknown): value is TrayAction => value === "champ_select" || value === "overlay";

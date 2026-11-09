@@ -10,6 +10,8 @@ export type Settings = {
   showOnChampSelect: boolean;
   /** The main window goes to the tray when a game starts and comes back when it ends. */
   hideOnGame: boolean;
+  /** A Vizier that started hidden in the tray shows itself when the League client opens. */
+  showOnClientOpen: boolean;
   /** A tone and a taskbar flash when a match is found; off unless the player asks. */
   readyCheckAlert: boolean;
   overlay: boolean;
@@ -39,6 +41,7 @@ const DEFAULTS: Settings = {
   autoImportItems: true,
   showOnChampSelect: true,
   hideOnGame: true,
+  showOnClientOpen: true,
   readyCheckAlert: false,
   overlay: true,
   overlaySkills: true,

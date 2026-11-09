@@ -8,7 +8,7 @@ import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { noteRecent, usePersonal } from "./personal";
 import { pageRoute, useNavigation, type Page, type Route } from "./router";
-import { gameEdge } from "./followClient";
+import { clientOpened, gameEdge, isTrayAction } from "./followClient";
 import { OpenProProvider } from "./proLink";
 import { OpenChampionProvider } from "./championLink";
 import { OpenMatchupProvider } from "./matchupLink";
@@ -18,6 +18,7 @@ import { SearchPalette } from "./SearchPalette";
 import { SharePaste } from "./library/SharePaste";
 import { setClientLocale, useT } from "./i18n";
 import { updateSettings, useSettings } from "./settings";
+import { listen } from "@tauri-apps/api/event";
 import { FlatGlass } from "./ui/LiquidGlass";
 import { SplashLayers, SplashProvider } from "./ui/Splash";
 import { UpdateNotice } from "./UpdateNotice";
@@ -192,6 +193,29 @@ function App() {
       invoke("show_from_tray").catch(() => {});
     }
   }, [phase, settings.hideOnGame]);
+
+  const clientBefore = useRef(lcu.state);
+  useEffect(() => {
+    const opened = clientOpened(clientBefore.current, lcu.state);
+    clientBefore.current = lcu.state;
+    if (!opened || !isTauri() || !settings.showOnClientOpen) return;
+    // Only a window sitting in the tray needs bringing up; one in front is left alone.
+    invoke<boolean>("main_window_up")
+      .then((up) => (up ? undefined : invoke("show_from_tray")))
+      .catch(() => {});
+  }, [lcu.state, settings.showOnClientOpen]);
+
+  const overlayOnRef = useRef(settings.overlay);
+  overlayOnRef.current = settings.overlay;
+  useEffect(() => {
+    if (!isTauri()) return;
+    const unlisten = listen<string>("tray-action", (event) => {
+      if (!isTrayAction(event.payload)) return;
+      if (event.payload === "overlay") updateSettings({ overlay: !overlayOnRef.current });
+      else goRef.current({ page: "draft" });
+    });
+    return () => void unlisten.then((stop) => stop());
+  }, []);
 
   useEffect(() => {
     if (isTauri()) invoke("set_overlay_enabled", { enabled: settings.overlay }).catch(() => {});

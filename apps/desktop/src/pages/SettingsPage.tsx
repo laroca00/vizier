@@ -27,6 +27,7 @@ const CLIENT_TOGGLES: { key: ToggleKey; label: string; hint: string }[] = [
   { key: "readyCheckAlert", label: "Maç bulununca haber ver", hint: "Kısa bir ses çalar ve görev çubuğundaki simge yanıp söner." },
   { key: "showOnChampSelect", label: "Şampiyon seçiminde Vizier'i öne getir", hint: "Tepsideyken bile seçim başlayınca pencere açılır." },
   { key: "hideOnGame", label: "Oyun başlayınca tepsiye in", hint: "Oyun bitince, açıksa, pencere geri gelir." },
+  { key: "showOnClientOpen", label: "League açılınca Vizier'i göster", hint: "Windows ile gizli başlayan Vizier, istemci açılınca pencereyi getirir." },
 ];
 
 function useAutostart() {

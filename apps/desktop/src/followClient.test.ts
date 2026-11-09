@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gameEdge } from "./followClient";
+import { clientOpened, isTrayAction, gameEdge } from "./followClient";
 
 describe("gameEdge", () => {
   it("finds the start and the end of a game", () => {
@@ -11,5 +11,21 @@ describe("gameEdge", () => {
   });
   it("treats a client that closed mid-game as an end", () => {
     expect(gameEdge("InProgress", null)).toBe("end");
+  });
+});
+
+describe("clientOpened", () => {
+  it("fires once on the step to connected", () => {
+    expect(clientOpened("disconnected", "connected")).toBe(true);
+    expect(clientOpened("connecting", "connected")).toBe(true);
+    expect(clientOpened("connected", "connected")).toBe(false);
+    expect(clientOpened("connected", "disconnected")).toBe(false);
+  });
+});
+
+describe("isTrayAction", () => {
+  it("accepts only the two menu actions", () => {
+    expect(isTrayAction("overlay")).toBe(true);
+    expect(isTrayAction("show")).toBe(false);
   });
 });

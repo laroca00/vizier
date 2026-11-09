@@ -5,7 +5,7 @@ use lcu::champ_select::ChampSelect;
 use lcu::writes::{ItemBlock, RuneImport, RunePage};
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{Manager, WindowEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 use lcu::{ChampSelectState, LcuApi, LcuState, LcuStatus};
 use live::{LiveGame, OverlayState};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
@@ -174,6 +174,8 @@ pub fn set_timer_shortcuts(app: &tauri::AppHandle, on: bool) {
 }
 
 /// Passed by the autostart entry so a login start stays in the tray.
+const TRAY_ACTION_EVENT: &str = "tray-action";
+
 const MINIMIZED_ARG: &str = "--minimized";
 
 fn show_main_window(app: &tauri::AppHandle) {
@@ -207,8 +209,10 @@ fn show_from_tray(app: tauri::AppHandle) {
 
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     let show = MenuItem::with_id(app, "show", "Vizier\u{2019}i aç", true, None::<&str>)?;
+    let draft = MenuItem::with_id(app, "champ_select", "Şampiyon seçimi", true, None::<&str>)?;
+    let overlay = MenuItem::with_id(app, "overlay", "Overlay aç/kapat", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Çıkış", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show, &quit])?;
+    let menu = Menu::with_items(app, &[&show, &draft, &overlay, &quit])?;
     TrayIconBuilder::new()
         .icon(app.default_window_icon().cloned().expect("bundle has an icon"))
         .tooltip("Vizier")
@@ -216,6 +220,13 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => show_main_window(app),
+            // The settings and the page live in the webview, so it does the work.
+            "champ_select" | "overlay" => {
+                if event.id.as_ref() == "champ_select" {
+                    show_main_window(app);
+                }
+                let _ = app.emit(TRAY_ACTION_EVENT, event.id.as_ref());
+            }
             "quit" => app.exit(0),
             _ => {}
         })
