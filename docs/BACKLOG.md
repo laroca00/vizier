@@ -468,6 +468,7 @@ Ideas the owner asked for on top of the data work: overlay, design and new tools
 - [x] 42.10 Draft picture from the simulator: both teams, each side's plan, bans; shared drawing helpers in ui/cardCanvas.ts. (4389bb3)
 - [x] 42.11 Home "Günün kombosu": one combo a day from the pool (any champion when the pool has none), hideable. (6c35d89)
 - [x] 42.12 Overlay timers card counts down to 14:00, when turret plates fall, on Summoner's Rift. (d3d6928)
+- [x] 42.13 Commands in the Ctrl+K palette: overlay, automatic import and automatic accept on or off, shortcut list, welcome. (f86c172)
 
 ## 16. Only when a feature needs it
 
