@@ -1,3 +1,5 @@
+import { cachedJson, indexedDbStore } from "./jsonCache";
+
 const BASE = "https://ddragon.leagueoflegends.com";
 
 export type Champion = {
@@ -19,21 +21,37 @@ export type Champion = {
   baseStats?: { hp: number; armor: number; mr: number; ad: number; speed: number };
 };
 
+const files = indexedDbStore();
+
+/** A Data Dragon data file of this version, kept in IndexedDB after the first fetch. */
+function ddFile(v: string, path: string): Promise<{ json(): Promise<unknown> }> {
+  return cachedJson(files, v, path, () => fetch(`${BASE}/cdn/${v}/data/${path}`).then((r) => r.text())).then((value) => ({ json: async () => value }));
+}
+
 let version: Promise<string> | undefined;
 let championsByKey: Promise<Map<number, Champion>> | undefined;
 
 /** The newest patch on Data Dragon; fetched once per session. */
 export function latestVersion(): Promise<string> {
+  // Offline, the last version seen keeps cached pages working.
   version ??= fetch(`${BASE}/api/versions.json`)
     .then((response) => response.json() as Promise<string[]>)
-    .then((versions) => versions[0]);
+    .then((versions) => {
+      void files?.set("meta/version", versions[0]).catch(() => {});
+      return versions[0];
+    })
+    .catch(async (error) => {
+      const last = await files?.get("meta/version").catch(() => undefined);
+      if (last) return last;
+      throw error;
+    });
   return version;
 }
 
 /** Champions keyed by the numeric id the LCU and match-v5 use. */
 export function champions(): Promise<Map<number, Champion>> {
   championsByKey ??= latestVersion()
-    .then((v) => fetch(`${BASE}/cdn/${v}/data/tr_TR/champion.json`))
+    .then((v) => ddFile(v, `tr_TR/champion.json`))
     .then(
       (response) =>
         response.json() as Promise<{
@@ -79,7 +97,7 @@ let spellsByKey: Promise<Map<number, SummonerSpell>> | undefined;
 
 export function summonerSpells(): Promise<Map<number, SummonerSpell>> {
   spellsByKey ??= latestVersion()
-    .then((v) => fetch(`${BASE}/cdn/${v}/data/tr_TR/summoner.json`))
+    .then((v) => ddFile(v, `tr_TR/summoner.json`))
     .then((response) => response.json() as Promise<{ data: Record<string, { id: string; key: string; name: string }> }>)
     .then(({ data }) => new Map(Object.values(data).map((s) => [Number(s.key), { id: s.id, key: Number(s.key), name: s.name }])));
   return spellsByKey;
@@ -96,7 +114,7 @@ let runeStyles: Promise<Map<number, RuneStyle>> | undefined;
 
 export function runes(): Promise<Map<number, RuneStyle>> {
   runeStyles ??= latestVersion()
-    .then((v) => fetch(`${BASE}/cdn/${v}/data/tr_TR/runesReforged.json`))
+    .then((v) => ddFile(v, `tr_TR/runesReforged.json`))
     .then((response) => response.json() as Promise<{ id: number; name: string; icon: string; slots: { runes: Rune[] }[] }[]>)
     .then((styles) => new Map(styles.map((s) => [s.id, { id: s.id, name: s.name, icon: s.icon, slots: s.slots.map((slot) => slot.runes) }])));
   return runeStyles;
@@ -115,7 +133,7 @@ type RawItem = { name: string; into?: string[]; from?: string[]; tags?: string[]
 
 export function items(): Promise<Map<number, Item>> {
   itemsById ??= latestVersion()
-    .then((v) => fetch(`${BASE}/cdn/${v}/data/tr_TR/item.json`))
+    .then((v) => ddFile(v, `tr_TR/item.json`))
     .then((response) => response.json() as Promise<{ data: Record<string, RawItem> }>)
     .then(
       ({ data }) =>
@@ -164,7 +182,7 @@ export function skins(championId: string): Promise<Skin[]> {
   let list = skinsById.get(championId);
   if (!list) {
     list = latestVersion()
-      .then((v) => fetch(`${BASE}/cdn/${v}/data/tr_TR/champion/${championId}.json`))
+      .then((v) => ddFile(v, `tr_TR/champion/${championId}.json`))
       .then((response) => response.json() as Promise<{ data: Record<string, { skins: (Skin & { parentSkin?: number })[] }> }>)
       .then(({ data }) => data[championId].skins.filter((skin) => skin.parentSkin === undefined));
     skinsById.set(championId, list);
@@ -216,7 +234,7 @@ export function championDetail(championId: string, lang: "tr" | "en"): Promise<C
   let detail = detailsByKey.get(key);
   if (!detail) {
     detail = latestVersion()
-      .then((v) => fetch(`${BASE}/cdn/${v}/data/${lang === "tr" ? "tr_TR" : "en_GB"}/champion/${championId}.json`))
+      .then((v) => ddFile(v, `${lang === "tr" ? "tr_TR" : "en_GB"}/champion/${championId}.json`))
       .then(
         (response) =>
           response.json() as Promise<{
@@ -293,7 +311,7 @@ let itemDetailsById: Promise<Map<number, ItemDetail>> | undefined;
 /** Summoner's Rift items with stats and recipes; the item list above keeps only what other pages need. */
 export function itemDetails(): Promise<Map<number, ItemDetail>> {
   itemDetailsById ??= latestVersion()
-    .then((v) => fetch(`${BASE}/cdn/${v}/data/tr_TR/item.json`))
+    .then((v) => ddFile(v, `tr_TR/item.json`))
     .then((response) => response.json() as Promise<{ data: Record<string, RawItemDetail> }>)
     .then(
       ({ data }) =>
