@@ -4,8 +4,13 @@
 // pool (kinds "pool", "pool-ban", "pool-games"); builds and matchups use
 // every crawled game.
 
+<<<<<<< HEAD
 import { DEFAULT_BRACKET, type Bracket } from "@vizier/shared/brackets";
 import { scope, type Where } from "./localSchema.ts";
+=======
+import { BRACKETS, DEFAULT_BRACKET, groupsOf, regionKind, type Bracket, type Region, type TierGroup } from "@vizier/shared/brackets";
+import { scope } from "./localSchema.ts";
+>>>>>>> auto/33-rank-api
 
 // Shrinks small samples towards 50% so a 3-0 champion doesn't top the list.
 export const sampleLimits = {
@@ -104,7 +109,11 @@ function assignTiers(entries: Unranked[]): TierEntry[] {
 }
 
 /** Pool matches in ranked and how often each champion was banned in them. */
+<<<<<<< HEAD
 async function poolBans(db: D1Database, patches: string[], bracket: Where): Promise<{ matches: number; bans: Map<number, number> }> {
+=======
+async function poolBans(db: D1Database, patches: string[], bracket: Bracket, region?: Region): Promise<{ matches: number; bans: Map<number, number> }> {
+>>>>>>> auto/33-rank-api
   // One query per kind: an IN over two kinds makes SQLite skip stat_counts_by_kind and scan every count.
   const byKind = (kind: string) =>
     db
@@ -114,7 +123,7 @@ async function poolBans(db: D1Database, patches: string[], bracket: Where): Prom
       )
       .bind(kind, ...patches)
       .all<{ champion_id: number; games: number }>();
-  const [{ results: matches }, { results: bans }] = await Promise.all([byKind("pool-games"), byKind("pool-ban")]);
+  const [{ results: matches }, { results: bans }] = await Promise.all([byKind(regionKind("pool-games", region)), byKind(regionKind("pool-ban", region))]);
   return { matches: matches[0]?.games ?? 0, bans: new Map(bans.map((r) => [r.champion_id, r.games])) };
 }
 
@@ -126,16 +135,21 @@ export async function tierList(
   db: D1Database,
   position: string,
   queue = RANKED,
+<<<<<<< HEAD
   bracket: Where = DEFAULT_BRACKET,
+=======
+  bracket: Bracket = DEFAULT_BRACKET,
+  region?: Region,
+>>>>>>> auto/33-rank-api
 ): Promise<{ patches: string[]; games: number; champions: TierEntry[]; rule: TierRule }> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return { patches, games: 0, champions: [], rule: tierRule() };
   const { results: byPatch } = await db
     .prepare(
       `SELECT champion_id, patch, games, wins FROM ${scope("stat_counts", bracket)}
-        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ? AND kind = 'pool'`,
+        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ? AND kind = ?`,
     )
-    .bind(...patches, position, queue)
+    .bind(...patches, position, queue, regionKind("pool", region))
     .all<{ champion_id: number; patch: string; games: number; wins: number }>();
   const byChampion = new Map<number, { games: number; wins: number; patches: Map<string, { games: number; wins: number }> }>();
   for (const r of byPatch) {
@@ -152,15 +166,15 @@ export async function tierList(
 
   // A ban counts against every role the champion plays, so each role gets its share.
   const ranked = queue === RANKED;
-  const bans = ranked ? await poolBans(db, patches, bracket) : null;
+  const bans = ranked ? await poolBans(db, patches, bracket, region) : null;
   const allRoles = new Map<number, number>();
   if (ranked) {
     const { results } = await db
       .prepare(
         `SELECT champion_id, SUM(games) AS games FROM ${scope("stat_counts", bracket)}
-          WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ${RANKED} AND kind = 'pool' GROUP BY champion_id`,
+          WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ${RANKED} AND kind = ? GROUP BY champion_id`,
       )
-      .bind(...patches)
+      .bind(...patches, regionKind("pool", region))
       .all<{ champion_id: number; games: number }>();
     for (const r of results) allRoles.set(r.champion_id, r.games);
   }
@@ -620,6 +634,7 @@ export async function itemTimes(db: D1Database, championId: number, position: st
   return Object.fromEntries(results.map((r) => [r.item_id, { games: r.games, minute: Math.round((r.seconds / r.games / 60) * 10) / 10 }]));
 }
 
+<<<<<<< HEAD
 export type RankCurve = {
   patches: string[];
   /** The order of every entry's points. */
@@ -645,4 +660,59 @@ export async function rankCurve(db: D1Database, brackets: readonly Bracket[], po
     }
   }
   return { patches, brackets: [...brackets], entries: [...byKey.values()].sort((a, b) => a.championId - b.championId || a.position.localeCompare(b.position)) };
+=======
+export type RankCurveRow = {
+  championId: number;
+  position: string;
+  /** Per bracket with games: [games, win rate, pick rate]. Brackets without games are left out. */
+  b: Partial<Record<Bracket, [number, number, number]>>;
+};
+
+/**
+ * Every ranked champion and role in every bracket side by side, for the elo
+ * views. Same pool as the tier list (TR and EUW); thin cells are kept with
+ * their game counts and the app decides how to show them.
+ */
+export async function rankCurve(db: D1Database, queue = RANKED): Promise<{ patches: string[]; brackets: Bracket[]; champions: RankCurveRow[] }> {
+  const patches = await latestPatches(db);
+  if (patches.length === 0) return { patches, brackets: [...BRACKETS], champions: [] };
+  const { results } = await db
+    .prepare(
+      `SELECT rank_group, team_position, champion_id, SUM(games) AS games, SUM(wins) AS wins FROM stat_counts_g
+        WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ? AND kind = 'pool' GROUP BY rank_group, team_position, champion_id`,
+    )
+    .bind(...patches, queue)
+    .all<{ rank_group: TierGroup; team_position: string; champion_id: number; games: number; wins: number }>();
+  const { results: matchRows } = await db
+    .prepare(`SELECT rank_group, SUM(games) AS games FROM stat_counts_g WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ? AND kind = 'pool-games' GROUP BY rank_group`)
+    .bind(...patches, queue)
+    .all<{ rank_group: TierGroup; games: number }>();
+  const matchesOf = new Map(matchRows.map((r) => [r.rank_group, r.games]));
+
+  const rows = new Map<string, RankCurveRow>();
+  for (const r of results) {
+    if (!r.team_position) continue;
+    const key = `${r.champion_id}:${r.team_position}`;
+    const row = rows.get(key) ?? { championId: r.champion_id, position: r.team_position, b: {} };
+    rows.set(key, row);
+    for (const bracket of BRACKETS) {
+      if (!groupsOf(bracket).includes(r.rank_group)) continue;
+      const cell = row.b[bracket] ?? [0, 0, 0];
+      cell[0] += r.games;
+      cell[1] += r.wins;
+      row.b[bracket] = cell;
+    }
+  }
+  const bracketMatches = (bracket: Bracket) => groupsOf(bracket).reduce((sum, g) => sum + (matchesOf.get(g) ?? 0), 0);
+  for (const row of rows.values()) {
+    for (const bracket of BRACKETS) {
+      const cell = row.b[bracket];
+      if (!cell) continue;
+      const matches = bracketMatches(bracket);
+      row.b[bracket] = [cell[0], round3(cell[1] / cell[0]), matches > 0 ? round3(cell[0] / matches) : 0];
+    }
+  }
+  const champions = [...rows.values()].sort((a, b) => a.championId - b.championId || a.position.localeCompare(b.position));
+  return { patches, brackets: [...BRACKETS], champions };
+>>>>>>> auto/33-rank-api
 }

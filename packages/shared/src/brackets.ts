@@ -104,6 +104,7 @@ export function groupsSql(bracket: Bracket): string {
   return MEMBERS[bracket].map((g) => `'${g}'`).join(",");
 }
 
+<<<<<<< HEAD
 /** Regions a request can ask for; missing means the pool of all three. */
 export const REGIONS = ["tr", "euw", "kr"] as const;
 export type Region = (typeof REGIONS)[number];
@@ -112,7 +113,27 @@ export const REGION_PLATFORM: Record<Region, string> = { tr: "TR1", euw: "EUW1",
 export const REGION_LABELS: Record<Region, string> = { tr: "TR", euw: "EUW", kr: "KR" };
 /** Region views exist for these brackets only; the rest would multiply the docs for little gain. */
 export const REGION_BRACKETS: readonly Bracket[] = ["emerald_plus", "all"];
+=======
+/** Where a game was played; tier lists and champion pages can be cut by it. */
+export const REGIONS = ["tr", "euw", "kr"] as const;
+export type Region = (typeof REGIONS)[number];
+>>>>>>> auto/33-rank-api
 
 export function isRegion(value: unknown): value is Region {
   return typeof value === "string" && (REGIONS as readonly string[]).includes(value);
 }
+<<<<<<< HEAD
+=======
+
+/** A match id starts with its platform (TR1_..., EUW1_..., KR_...). */
+export function regionOfMatch(matchId: string): Region | null {
+  const platform = matchId.split("_")[0];
+  return platform === "TR1" ? "tr" : platform === "EUW1" ? "euw" : platform === "KR" ? "kr" : null;
+}
+
+/** Brackets that have per-region docs; every other bracket pools the regions. */
+export const REGION_BRACKETS: readonly Bracket[] = ["emerald_plus", "all"];
+
+/** The roll-up kind that counts `kind` for one region only; without a region the kind itself. */
+export const regionKind = (kind: string, region?: Region) => (region ? `${kind}@${region}` : kind);
+>>>>>>> auto/33-rank-api

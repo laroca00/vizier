@@ -11,6 +11,7 @@ import { useAsync } from "../useAsync";
 import { usePersonal } from "../personal";
 import { Scatter } from "../charts";
 import { PageHeader } from "../ui/Page";
+import { useBracket } from "../rank/useRank";
 import { ErrorState, Skeleton } from "../ui/States";
 import { RankPicker } from "../ui/RankPicker";
 import { Tabs } from "../ui/Tabs";
@@ -83,6 +84,7 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
   return (
     <LiquidGlass className="panel tiers" radius={28} strength={2.5} scroll>
       <PageHeader
+        rank
         title={t("Tier listesi")}
         subtitle={
           state.status === "done" && state.value.list.patches.length > 0
