@@ -3,7 +3,7 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { updateSettings, useSettings } from "../settings";
 import { useT } from "../i18n";
 import { Button } from "../ui/Button";
-import { Toggle } from "../ui/Fields";
+import { Select, Toggle } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
 import { HOTKEY_ACTIONS, changedHotkeys, clashing, comboFromEvent, effectiveHotkeys } from "../overlay/hotkeys";
@@ -105,6 +105,40 @@ export function OverlayPage() {
             </li>
           ))}
         </ul>
+        <div className="settings__actions" aria-label={t("Minimap")}>
+          <Select
+            label={t("Minimap köşesi")}
+            value={settings.overlayMinimapSide as "left" | "right"}
+            options={[
+              { value: "right", label: t("Sağ alt") },
+              { value: "left", label: t("Sol alt") },
+            ]}
+            onChange={(overlayMinimapSide) => updateSettings({ overlayMinimapSide })}
+          />
+          <label className="settings__number">
+            <span className="toggle__label">{t("Minimap boyutu")}</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={settings.overlayMinimapSize}
+              disabled={off || !settings.overlayMinimap}
+              aria-label={t("Minimap boyutu")}
+              onChange={(event) => updateSettings({ overlayMinimapSize: Number(event.target.value) })}
+            />
+          </label>
+          <Select
+            label={t("Kamp süreleri hangi ormanda")}
+            value={settings.overlayCampSide}
+            options={[
+              { value: "enemy", label: t("Rakip orman") },
+              { value: "own", label: t("Kendi ormanım") },
+            ]}
+            onChange={(overlayCampSide) => updateSettings({ overlayCampSide })}
+          />
+        </div>
+        <p className="settings__note">{t("Minimap boyutunu oyundaki minimap ölçeğine uydur. Yerler Vizier'in kabaca okuduğu harita noktalarıdır; birkaç piksel kayabilir.")}</p>
         <Toggle label={t("Zamanlayıcı sesi")} hint={t("Bir süre dolmadan 30 saniye önce ve dolunca kısa bir ses çalar.")} checked={settings.timerSound} disabled={off} onChange={(timerSound) => updateSettings({ timerSound })} />
         <label className="settings__number">
           <span className="toggle__label">{t("Özel zamanlayıcının süresi, saniye")}</span>

@@ -49,8 +49,15 @@ function beep(context: AudioContext, high: boolean) {
   osc.stop(context.currentTime + 0.4);
 }
 
+export type ManualTimers = {
+  manual: { id: string; label: string; at: number }[];
+  firsts: TimerRow[];
+  stopwatch: number | null;
+  running: boolean;
+};
+
 /** Manual timers, the stopwatch and first spawns, fed by the shortcut events. */
-export function useManualTimers(game: LiveGame | null, time: number) {
+export function useManualTimers(game: LiveGame | null, time: number): ManualTimers {
   const settings = useSettings();
   const [manual, setManual] = useState<Manual[]>([]);
   const [watch, setWatch] = useState<{ from: number | null; total: number }>({ from: null, total: 0 });
@@ -126,17 +133,17 @@ export function useAlerts(rows: TimerRow[], time: number) {
 export function TimerCard({
   objectives,
   objectiveLabel,
-  game,
+  manualTimers,
   time,
 }: {
   objectives: Timer[];
   objectiveLabel: (timer: Timer) => string;
-  game: LiveGame | null;
+  manualTimers: ManualTimers;
   time: number;
 }) {
   const t = useT();
   const settings = useSettings();
-  const { manual, firsts, stopwatch, running } = useManualTimers(game, time);
+  const { manual, firsts, stopwatch, running } = manualTimers;
   const rows: TimerRow[] = [
     ...objectives.map((o) => ({ id: o.id, label: objectiveLabel(o), at: o.at, ours: o.ours })),
     ...(settings.overlayTimers ? [...firsts.map((f) => ({ ...f, label: t(f.label) })), ...manual.map((m) => ({ ...m, label: t(m.label) }))] : []),

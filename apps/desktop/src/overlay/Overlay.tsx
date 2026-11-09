@@ -5,7 +5,7 @@ import { getAugments, getBench, getBuild, type Build, type Picks } from "../api"
 import { augmentInfo } from "../augments/data";
 import { augmentQueue, augmentsByRarity } from "../augments/tiers";
 import { readChosenStyle } from "../buildStyles";
-import { champions, items, latestVersion, type Item } from "../data/ddragon";
+import { champions, items, latestVersion, runes as runeStyles, type Item } from "../data/ddragon";
 import { overlayFixture, scoutingFixture } from "../dev/fixtures";
 import { ScoutPanel } from "./ScoutPanel";
 import type { LcuStatus } from "../lcu";
@@ -30,6 +30,9 @@ import { hasContent } from "./widgets/active";
 import type { WidgetContext } from "./widgets/context";
 import { WIDGET_VIEWS } from "./widgets";
 import { sampleGame } from "./sample";
+import { minimapBox } from "./minimap";
+import { panelItems, panelRunes } from "./buildPanel";
+import { useManualTimers } from "./Timers";
 import "./overlay.css";
 
 /** Subscribes to a value the Rust side reports through an event, and a getter command for its current value. */
@@ -112,6 +115,7 @@ export function Overlay() {
   const game = liveGame ?? (editing ? sampleGame() : null);
   const settings = useSettings();
   const time = useGameClock(game);
+  const manualTimers = useManualTimers(game, time);
   const [data] = useAsync(game ? "static" : null, loadStatic);
   const me = game ? findMe(game) : undefined;
   const championId = me && data.status === "done" ? (data.value.championIds.get(championKey(me)) ?? null) : null;
@@ -133,6 +137,23 @@ export function Overlay() {
   useEffect(() => {
     if (csDiff !== undefined) setCsHistory((h) => pushHistory(h, time, csDiff));
   }, [time, csDiff]);
+
+  // The augment card shows by default; the player can hide it for rounds where it only gets in the way.
+  const [augmentsShown, setAugmentsShown] = useState(true);
+  useEffect(() => {
+    if (!isTauri()) return;
+    const off = listen<string>("overlay-timer", ({ payload }) => payload === "augments" && setAugmentsShown((shown) => !shown));
+    return () => void off.then((stop) => stop());
+  }, []);
+
+  // The build panel opens and closes on its hotkey.
+  const [buildOpen, setBuildOpen] = useState(false);
+  useEffect(() => {
+    if (!isTauri()) return;
+    const off = listen<string>("overlay-timer", ({ payload }) => payload === "build" && setBuildOpen((open) => !open));
+    return () => void off.then((stop) => stop());
+  }, []);
+  const [runeData] = useAsync(settings.overlayBuild && (buildOpen || editing) ? "runes" : null, runeStyles);
 
   // The skill order opens and closes on its hotkey, which arrives like a timer key.
   const [orderOpen, setOrderOpen] = useState(false);
@@ -173,22 +194,34 @@ export function Overlay() {
     skill,
     skillOrder: { keys: picks?.skills ? skillSequence(picks.skills) : [], ranked: game.skills.reduce((sum, n) => sum + n, 0), shown: orderOpen || editing },
     objectives: timers,
+    manualTimers,
+    minimap: { box: minimapBox(size, settings.overlayMinimapSide, settings.overlayMinimapSize), campSide: settings.overlayCampSide },
     itemGold,
     nextItem: next,
     bench: benchNow ? { read: benchNow, history: csHistory.map((p) => p.diff) } : null,
     rows,
+    buildPanel: {
+      shown: buildOpen || editing,
+      items: picks ? panelItems(picks.coreItems?.ids ?? [], picks.items.map((i) => i.id), me.items.map((i) => i.itemId), (id) => itemInfo?.get(id)?.complete === true) : [],
+      runes: panelRunes(picks?.runes[0], runeData.status === "done" ? runeData.value : null),
+    },
+    rowsTotal: rows.length > 0 ? (itemDifference(game, gold)?.team ?? null) : null,
     rowGap: layout.rowGap ?? ROW_GAP,
     augments:
       augments.status === "done" && augments.value && names
         ? augmentsByRarity(augments.value.augments, (id) => names.get(id)?.rarity, AUGMENTS_PER_RARITY)
         : [],
+    augmentPatches: augments.status === "done" && augments.value ? augments.value.patches : [],
+    augmentsShown,
     augmentNames: names,
   };
 
   const move = (id: WidgetId, spot: Spot, done: boolean) => (done ? save : preview)({ ...layout, [id]: spot });
 
   // Widgets that have nothing to show take no box.
-  const boxes = widgetsFor(mode).filter((def) => def.settings.some((key) => settings[key]) && hasContent[def.id](ctx, settings));
+  const shown = widgetsFor(mode).filter((def) => def.settings.some((key) => settings[key]) && hasContent[def.id](ctx, settings));
+  const boxes = shown.filter((def) => !def.fixed);
+  const pinned = shown.filter((def) => def.fixed);
 
   return (
     <div className="overlay-root" data-editing={editing || undefined} aria-hidden={!editing} style={{ "--overlay-scale": settings.overlayScale } as CSSProperties}>
@@ -218,6 +251,12 @@ export function Overlay() {
             {createElement(WIDGET_VIEWS[def.id], ctx)}
           </Draggable>
         ))}
+
+      {pinned.map((def) => (
+        <div key={def.id} className="overlay__pins">
+          {createElement(WIDGET_VIEWS[def.id], ctx)}
+        </div>
+      ))}
 
       {editing && <EditBar onReset={reset} />}
     </div>

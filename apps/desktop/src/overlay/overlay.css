@@ -211,6 +211,37 @@ html:has(.overlay) body {
   color: #f08a7c;
 }
 
+.overlay__scoreboard-wrap {
+  display: grid;
+  gap: 10px;
+}
+
+/* The team total sits under the last row, in the same chip style as the rows. */
+.overlay__scoreboard-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 58px;
+  min-width: max-content;
+  height: 22px;
+  margin: 0;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-radius: 7px;
+  font-size: 12px;
+  background: rgb(8 18 54 / 0.85);
+  box-shadow: inset 0 0 0 1px rgb(214 180 106 / 0.45);
+}
+
+.overlay__scoreboard-total[data-ahead="true"] .overlay__value {
+  color: #5fd3c8;
+}
+
+.overlay__scoreboard-total[data-ahead="false"] .overlay__value {
+  color: #f08a7c;
+}
+
 .overlay__next {
   grid-template-columns: 34px minmax(0, 1fr);
   align-items: center;
@@ -308,6 +339,24 @@ html:has(.overlay) body {
   text-overflow: ellipsis;
 }
 
+.overlay__augment-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overlay__augment-rate {
+  flex: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze-muted);
+}
+
+.overlay__augment-rate[data-weak] {
+  opacity: 0.5;
+}
+
 .overlay__augment-tier {
   flex: none;
   display: inline-grid;
@@ -367,4 +416,84 @@ html:has(.overlay) body {
   font-size: 9px;
   font-weight: 400;
   color: var(--glaze-faint);
+}
+
+/* Pins are placed in screen pixels over the minimap; the layer itself takes no space. */
+.overlay__pins {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.overlay__pin {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  padding: 1px 5px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze);
+  background: rgb(8 18 54 / 0.85);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18);
+}
+
+.overlay__pin[data-soon] {
+  color: var(--gilt);
+  box-shadow: inset 0 0 0 1px rgb(214 180 106 / 0.7);
+}
+
+/* Build panel: opened on its hotkey, so it can afford to be bigger than the other cards. */
+.overlay__build {
+  gap: 8px;
+  width: 260px;
+}
+
+.overlay__build-items,
+.overlay__build-runes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overlay__build-items li {
+  position: relative;
+  line-height: 0;
+  opacity: 0.8;
+}
+
+.overlay__build-items img,
+.overlay__build-items .widget-preview__icon {
+  border-radius: 6px;
+}
+
+/* Owned items are lit and carry a tick. */
+.overlay__build-items li[data-owned] {
+  opacity: 1;
+  box-shadow: 0 0 0 1px var(--gilt);
+  border-radius: 6px;
+}
+
+.overlay__build-items li[data-owned]::after {
+  content: "✓";
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--gilt);
+}
+
+.overlay__build-items li:not([data-owned]) img {
+  filter: grayscale(0.7);
 }

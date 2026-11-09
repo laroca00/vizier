@@ -20,3 +20,12 @@
   padding: 0;
   list-style: none;
 }
+
+.widget-preview__minimap {
+  position: relative;
+  height: 96px;
+}
+
+.widget-preview__pin {
+  position: absolute;
+}

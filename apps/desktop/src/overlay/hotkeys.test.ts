@@ -35,3 +35,13 @@ describe("hotkey choices", () => {
     expect(changedHotkeys({ toggle: "Ctrl+Shift+O", edit: "Ctrl+Alt+E" })).toEqual({ edit: "Ctrl+Alt+E" });
   });
 });
+
+describe("defaults", () => {
+  it("never share a combination and match the Rust list", async () => {
+    expect(clashing({}).size).toBe(0);
+    const { readFileSync } = await import("node:fs");
+    const rust = readFileSync(new URL("../../src-tauri/src/lib.rs", import.meta.url), "utf8");
+    const { HOTKEY_ACTIONS } = await import("./hotkeys");
+    for (const action of HOTKEY_ACTIONS) expect(rust).toContain(`("${action.id}", "${action.combo}")`);
+  });
+});

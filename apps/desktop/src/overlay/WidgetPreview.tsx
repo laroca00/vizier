@@ -25,6 +25,21 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           </p>
         </section>
       )}
+      {id === "build" && (
+        <section className="overlay__card overlay__build">
+          <ol className="overlay__build-items">
+            {[1, 2, 3, 4].map((n) => (
+              <li key={n} data-owned={n < 3 || undefined}>
+                <span className="widget-preview__icon" />
+              </li>
+            ))}
+          </ol>
+          <p className="overlay__row">
+            <span>Rabadon</span>
+            <span className="overlay__value">{t("{gold} altın kaldı", { gold: 640 })}</span>
+          </p>
+        </section>
+      )}
       {id === "next" && (
         <section className="overlay__card overlay__next">
           <span className="widget-preview__icon" />
@@ -45,6 +60,16 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
             <span>{t("Baron")}</span>
             <span className="overlay__value">5:57</span>
           </p>
+        </section>
+      )}
+      {id === "minimap" && (
+        <section className="overlay__card widget-preview__minimap">
+          <span className="overlay__pin widget-preview__pin" style={{ left: "68%", top: "66%" }}>
+            2:37
+          </span>
+          <span className="overlay__pin widget-preview__pin" data-soon style={{ left: "30%", top: "30%" }}>
+            0:24
+          </span>
         </section>
       )}
       {id === "items" && (
@@ -100,6 +125,12 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           <li data-ahead="false">−1.4k</li>
           <li data-ahead="true">+0.2k</li>
         </ol>
+      )}
+      {id === "scoreboard" && (
+        <p className="overlay__scoreboard-total" data-ahead="true">
+          <span>{t("Takım")}</span>
+          <span className="overlay__value">+0.5k</span>
+        </p>
       )}
     </div>
   );
