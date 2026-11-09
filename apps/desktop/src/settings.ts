@@ -73,6 +73,8 @@ export type Settings = {
   language: LanguageSetting;
   /** Which Home cards show, in order. */
   homeLayout: HomeLayout;
+  /** Menu groups the player folded, by heading. */
+  navFolded: string[];
 };
 
 const DEFAULTS: Settings = {
@@ -115,6 +117,7 @@ const DEFAULTS: Settings = {
   sidebarCollapsed: false,
   language: "auto",
   homeLayout: DEFAULT_HOME,
+  navFolded: [],
 };
 
 const KEY = "vizier.settings";
