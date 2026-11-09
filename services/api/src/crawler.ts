@@ -1,4 +1,4 @@
-import { TIER_GROUPS, type TierGroup } from "@vizier/shared/brackets";
+import { TIER_GROUPS, bracketOfTier, type TierGroup } from "@vizier/shared/brackets";
 import type { Platform, Region, RiotClient } from "./riot/client.ts";
 import { buildPaths, csByMinute, encodeKda, goldAtMinute, kdaByMinute, levelByMinute, type BuildPath, type KdaPoint, type Timeline } from "./timeline.ts";
 import { patchOf, type LeagueEntryWithPuuid, type LeagueList, type Match, type Participant } from "./riot/types.ts";
@@ -174,7 +174,7 @@ export class Crawler {
     let matches = 0;
     let timelines = 0;
     const { region } = this.options;
-    for (const id of matchIds) {
+    for (const { id, group } of matchIds) {
       const match = await this.riot.get<Match>(region, "/lol/match/v5/matches", `/lol/match/v5/matches/${id}`);
       if (!match) continue;
       let timeline: Timeline | null = null;
@@ -186,7 +186,7 @@ export class Crawler {
           `/lol/match/v5/matches/${id}/timeline`,
         );
       }
-      if (await this.save(match, timeline)) matches++;
+      if (await this.save(match, timeline, group)) matches++;
     }
     return { seeded, matches };
   }
@@ -313,12 +313,12 @@ export class Crawler {
     return [];
   }
 
-  private async collectMatchIds(): Promise<string[]> {
+  private async collectMatchIds(): Promise<{ id: string; group: TierGroup | null }[]> {
     const { region, playersPerRun, matchesPerRun, extraMatchesPerRun } = this.options;
     const { results: due } = await this.db
-      .prepare("SELECT puuid FROM crawl_players WHERE region = ? ORDER BY last_crawled_at LIMIT ?")
+      .prepare("SELECT puuid, tier FROM crawl_players WHERE region = ? ORDER BY last_crawled_at LIMIT ?")
       .bind(region, playersPerRun)
-      .all<{ puuid: string }>();
+      .all<{ puuid: string; tier: string }>();
 
     const since = (lookback: number) => Math.floor((this.now() - lookback) / 1000);
     const ids = (puuid: string, queue: number, count: number) =>
@@ -327,14 +327,19 @@ export class Crawler {
         "/lol/match/v5/matches/by-puuid/ids",
         `/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=${queue}&startTime=${since(queue === RANKED_SOLO ? LOOKBACK : EXTRA_LOOKBACK)}&start=0&count=${count}`,
       );
-    const candidates = new Set<string>();
-    const extras = new Set<string>();
-    for (const [i, { puuid }] of due.entries()) {
-      for (const id of (await ids(puuid, RANKED_SOLO, 20)) ?? []) candidates.add(id);
+    // A game takes the group of the first seed that lists it.
+    const candidates = new Map<string, TierGroup | null>();
+    const extras = new Map<string, TierGroup | null>();
+    const add = (into: Map<string, TierGroup | null>, id: string, group: TierGroup | null) => {
+      if (!into.has(id)) into.set(id, group);
+    };
+    for (const [i, { puuid, tier }] of due.entries()) {
+      const group = bracketOfTier(tier);
+      for (const id of (await ids(puuid, RANKED_SOLO, 20)) ?? []) add(candidates, id, group);
       if (extraMatchesPerRun > 0) {
         // Each player looks at a different mode, and the modes shift every run, so every mode is checked often.
         const queue = EXTRA_QUEUES[(Math.floor(this.now() / 120_000) + i) % EXTRA_QUEUES.length];
-        for (const id of (await ids(puuid, queue, 10)) ?? []) extras.add(id);
+        for (const id of (await ids(puuid, queue, 10)) ?? []) add(extras, id, group);
       }
       await this.db
         .prepare("UPDATE crawl_players SET last_crawled_at = ? WHERE puuid = ?")
@@ -351,11 +356,11 @@ export class Crawler {
         const slot = Math.floor(this.now() / 120_000) + i;
         const own = queue_id === ARENA ? ARENA_LIVE : queue_id === MAYHEM ? MAYHEM_QUEUES[(slot >> 1) % MAYHEM_QUEUES.length] : queue_id;
         const queue = slot % 2 === 0 ? own : MODE_QUEUES[(slot >> 1) % MODE_QUEUES.length];
-        for (const id of (await ids(puuid, queue, 10)) ?? []) extras.add(id);
+        for (const id of (await ids(puuid, queue, 10)) ?? []) add(extras, id, null);
         await this.db.prepare("UPDATE mode_players SET last_crawled_at = ? WHERE puuid = ?").bind(this.now(), puuid).run();
       }
     }
-    const list = [...candidates, ...extras];
+    const list = [...new Set([...candidates.keys(), ...extras.keys()])];
     if (list.length === 0) return [];
 
     const { results: known } = await this.db
@@ -363,13 +368,14 @@ export class Crawler {
       .bind(...list)
       .all<{ match_id: string }>();
     const seen = new Set(known.map((k) => k.match_id));
-    const fresh = (set: Set<string>, limit: number) => [...set].filter((id) => !seen.has(id)).slice(0, limit);
-    for (const id of candidates) extras.delete(id);
+    const fresh = (map: Map<string, TierGroup | null>, limit: number) =>
+      [...map].filter(([id]) => !seen.has(id)).slice(0, limit).map(([id, group]) => ({ id, group }));
+    for (const id of candidates.keys()) extras.delete(id);
     return [...fresh(candidates, matchesPerRun), ...fresh(extras, extraMatchesPerRun)];
   }
 
   /** Returns false for games that carry no build signal. */
-  async save(match: Match, timeline: Timeline | null = null): Promise<boolean> {
+  async save(match: Match, timeline: Timeline | null = null, group: TierGroup | null = null): Promise<boolean> {
     const queue = gameQueue(match);
     const info = queue === match.info.queueId ? match.info : { ...match.info, queueId: queue };
     const matchId = match.metadata.matchId;
@@ -378,8 +384,8 @@ export class Crawler {
     const bans = ranked ? (info.teams ?? []).flatMap((t) => t.bans ?? []).map((b) => b.championId).filter((id) => id > 0) : [];
     // Recorded either way so a skipped game isn't fetched again.
     const record = this.db
-      .prepare("INSERT OR IGNORE INTO crawled_matches (match_id, patch, game_start, queue_id, bans) VALUES (?, ?, ?, ?, ?)")
-      .bind(matchId, patch, info.gameStartTimestamp, info.queueId, ranked ? bans.join(",") : null);
+      .prepare("INSERT OR IGNORE INTO crawled_matches (match_id, patch, game_start, queue_id, bans, rank_group) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(matchId, patch, info.gameStartTimestamp, info.queueId, ranked ? bans.join(",") : null, group);
     if (!STORED_QUEUES.has(info.queueId) || info.gameDuration < MIN_DURATION_SECONDS) {
       await record.run();
       return false;
@@ -390,8 +396,8 @@ export class Crawler {
         (match_id, patch, champion_id, team_position, win, runes, spells, items,
          opponent_champion_id, duration, deaths, cs10, cs_pm, gold_pm, vision_pm,
          kill_participation, damage_share, start_items, skill_order, purchase_order, cs_minutes,
-         queue_id, team_id, augments, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         queue_id, team_id, augments, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const paths = timeline ? buildPaths(timeline) : new Map<number, BuildPath>();
     const pace = timeline ? csByMinute(timeline) : new Map<number, number[]>();
@@ -454,6 +460,7 @@ export class Crawler {
           path ? path.purchaseTimes.join(",") : null,
           levelMinutes?.length ? levelMinutes.join(",") : null,
           kdaMinutes?.length ? encodeKda(kdaMinutes) : null,
+          group,
         ),
       ];
     });
