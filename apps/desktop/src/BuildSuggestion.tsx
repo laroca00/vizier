@@ -32,6 +32,8 @@ import { useAsync } from "./useAsync";
 import { Button } from "./ui/Button";
 import { ErrorState } from "./ui/States";
 import { useToast } from "./ui/Toast";
+import { useOpenChampion } from "./championLink";
+import { importSummary, reasonOf, type ImportKind, type ImportOutcome } from "./importReport";
 import "./BuildSuggestion.css";
 
 const FLASH = 4;
@@ -124,6 +126,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   const percent = percentIn(lang);
   const t = useT();
   const toast = useToast();
+  const openChampion = useOpenChampion();
   const [state, retry] = useAsync(`${queue}:${championId}:${position}:${vs}`, () => load(championId, position, vs, queue));
   const [runeImport, setRuneImport] = useState<ImportState>({ status: "idle" });
   const [spellImport, setSpellImport] = useState<ImportState>({ status: "idle" });
@@ -140,7 +143,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   }, [championId, position, vs]);
   const settings = useSettings();
   const autoImported = useRef<number | null>(null);
-  const actions = useRef<{ runes?: () => void; spells?: () => void; items?: () => void }>({});
+  const actions = useRef<{ runes?: () => Promise<ImportOutcome>; spells?: () => Promise<ImportOutcome>; items?: () => Promise<ImportOutcome> }>({});
   // The page being imported, so picking a page to overwrite keeps an alternative's runes.
   const pendingPage = useRef<number>(0);
 
@@ -148,9 +151,20 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   useEffect(() => {
     if (!locked || !ready || !isTauri() || autoImported.current === championId) return;
     autoImported.current = championId;
-    if (settings.autoImportRunes) actions.current.runes?.();
-    if (settings.autoImportSpells) actions.current.spells?.();
-    if (settings.autoImportItems) actions.current.items?.();
+    const wanted: [ImportKind, (() => Promise<ImportOutcome>) | undefined][] = [
+      ["runes", settings.autoImportRunes ? actions.current.runes : undefined],
+      ["spells", settings.autoImportSpells ? actions.current.spells : undefined],
+      ["items", settings.autoImportItems ? actions.current.items : undefined],
+    ];
+    const run = wanted.flatMap(([kind, fn]) => (fn ? [[kind, fn] as const] : []));
+    if (run.length === 0) return;
+    const forChampion = championId;
+    void Promise.all(run.map(([, fn]) => fn())).then((outcomes) => {
+      const summary = importSummary(t, championName, Object.fromEntries(run.map(([kind], i) => [kind, outcomes[i]])));
+      toast(summary.kind, summary.message, { label: t("Build'i değiştir"), onClick: () => openChampion(forChampion, position, queue) });
+    });
+    // The import functions read the latest props through `actions`; only a new lock should rerun this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locked, ready, championId, settings.autoImportRunes, settings.autoImportSpells, settings.autoImportItems]);
 
   if (state.status === "error") {
@@ -201,13 +215,13 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
 
   const stale = (forChampion: number) => currentChampion.current !== forChampion;
 
-  function report(set: (next: ImportState) => void, forChampion: number, result: { status: "done" | "error"; message: string }) {
+  function report(set: (next: ImportState) => void, forChampion: number, result: { status: "done" | "error"; message: string }, quiet: boolean) {
     if (stale(forChampion)) return;
     set(result);
-    toast(result.status === "done" ? "success" : "error", result.message);
+    if (!quiet) toast(result.status === "done" ? "success" : "error", result.message);
   }
 
-  async function importRunes(replacePageId?: number, index = pendingPage.current) {
+  async function importRunes(replacePageId?: number, index = pendingPage.current, quiet = false): Promise<ImportOutcome> {
     pendingPage.current = index;
     const chosen = picks.runes[index] ?? page;
     const forChampion = championId;
@@ -226,32 +240,38 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
         },
       );
       if (result.status === "imported") {
-        report(setRuneImport, forChampion, { status: "done", message: t("{champion} rünleri aktarıldı", { champion: championName }) });
-      } else if (!stale(forChampion)) {
-        setRuneImport({ status: "choose", pages: result.pages });
-        toast("info", t("Boş rün sayfası yok. Hangi sayfanın yerine yazılacağını build kartında seç."));
+        report(setRuneImport, forChampion, { status: "done", message: t("{champion} rünleri aktarıldı", { champion: championName }) }, quiet);
+        return { ok: true };
       }
-    } catch {
-      report(setRuneImport, forChampion, { status: "error", message: t("Rünler aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene.") });
+      if (!stale(forChampion)) {
+        setRuneImport({ status: "choose", pages: result.pages });
+        if (!quiet) toast("info", t("Boş rün sayfası yok. Hangi sayfanın yerine yazılacağını build kartında seç."));
+      }
+      return { ok: false, reason: "noSlot" };
+    } catch (error) {
+      report(setRuneImport, forChampion, { status: "error", message: t("Rünler aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene.") }, quiet);
+      return { ok: false, reason: reasonOf(error) };
     }
   }
 
-  async function importSpells() {
+  async function importSpells(quiet = false): Promise<ImportOutcome> {
     const forChampion = championId;
     setSpellImport({ status: "working" });
     try {
       await invoke("import_spells", { spells: orderSpells(spells.ids, currentSpells) });
-      report(setSpellImport, forChampion, { status: "done", message: t("{champion} büyüleri aktarıldı", { champion: championName }) });
-    } catch {
-      report(setSpellImport, forChampion, { status: "error", message: t("Büyüler aktarılamadı. Oyun başlamadan tekrar dene.") });
+      report(setSpellImport, forChampion, { status: "done", message: t("{champion} büyüleri aktarıldı", { champion: championName }) }, quiet);
+      return { ok: true };
+    } catch (error) {
+      report(setSpellImport, forChampion, { status: "error", message: t("Büyüler aktarılamadı. Oyun başlamadan tekrar dene.") }, quiet);
+      return { ok: false, reason: reasonOf(error) };
     }
   }
 
-  async function importItems() {
+  async function importItems(quiet = false): Promise<ImportOutcome> {
     const forChampion = championId;
     setItemImport({ status: "working" });
     try {
-      await invoke("import_item_set", {
+      const confirmed = await invoke<boolean>("import_item_set", {
         championId,
         title: setName,
         blocks: [
@@ -261,13 +281,15 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           ...situational.map((s) => ({ title: t(FOE_LABELS[s.vs]), items: s.items.map((i) => i.id) })),
         ],
       });
-      report(setItemImport, forChampion, { status: "done", message: t("{champion} eşya seti aktarıldı", { champion: championName }) });
-    } catch {
-      report(setItemImport, forChampion, { status: "error", message: t("Eşya seti aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene.") });
+      report(setItemImport, forChampion, { status: "done", message: t("{champion} eşya seti aktarıldı", { champion: championName }) }, quiet);
+      return { ok: true, unconfirmed: !confirmed };
+    } catch (error) {
+      report(setItemImport, forChampion, { status: "error", message: t("Eşya seti aktarılamadı. İstemci bağlantısını kontrol edip tekrar dene.") }, quiet);
+      return { ok: false, reason: reasonOf(error) };
     }
   }
 
-  actions.current = { runes: () => importRunes(undefined, 0), spells: spells ? importSpells : undefined, items: shownItems.length ? importItems : undefined };
+  actions.current = { runes: () => importRunes(undefined, 0, true), spells: spells ? () => importSpells(true) : undefined, items: shownItems.length ? () => importItems(true) : undefined };
   const preview = inDraft && !locked;
   const canImport = isTauri() && !preview;
 
@@ -386,7 +408,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
             })}
             <span className="build__stat">{t("{rate} kazanma", { rate: percent(spells.winRate) })}</span>
           </div>
-          {inDraft && <ImportControls label={t("Büyüleri aktar")} state={spellImport} disabled={!canImport} onImport={importSpells} />}
+          {inDraft && <ImportControls label={t("Büyüleri aktar")} state={spellImport} disabled={!canImport} onImport={() => importSpells()} />}
         </section>
       )}
 
@@ -411,7 +433,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
               );
             })}
           </div>
-          <ImportControls label={t("Eşya setini aktar")} state={itemImport} disabled={!canImport} onImport={importItems} />
+          <ImportControls label={t("Eşya setini aktar")} state={itemImport} disabled={!canImport} onImport={() => importItems()} />
         </section>
       )}
 

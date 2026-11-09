@@ -8,7 +8,9 @@ import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { noteRecent, usePersonal } from "./personal";
 import { pageRoute, useNavigation, type Page, type Route } from "./router";
+import { clientOpened, gameEdge, isTrayAction } from "./followClient";
 import { OpenProProvider } from "./proLink";
+import { OpenChampionProvider } from "./championLink";
 import { OpenMatchupProvider } from "./matchupLink";
 import { useReadyCheckAlert } from "./readyCheck";
 import { enteredQueueFlow, planPreload, runPreload } from "./preload";
@@ -16,6 +18,7 @@ import { SearchPalette } from "./SearchPalette";
 import { SharePaste } from "./library/SharePaste";
 import { setClientLocale, useT } from "./i18n";
 import { updateSettings, useSettings } from "./settings";
+import { listen } from "@tauri-apps/api/event";
 import { FlatGlass } from "./ui/LiquidGlass";
 import { SplashLayers, SplashProvider } from "./ui/Splash";
 import { UpdateNotice } from "./UpdateNotice";
@@ -171,6 +174,49 @@ function App() {
     draftActive.current = active;
   }, [draft, settings.showOnChampSelect, navigate, replace, route.page]);
 
+  // Remembers whether the window was up when the game began, so it only returns if it was.
+  const phaseBefore = useRef<string | null>(phase);
+  const wasUp = useRef(false);
+  useEffect(() => {
+    const edge = gameEdge(phaseBefore.current, phase);
+    phaseBefore.current = phase;
+    if (!edge || !isTauri()) return;
+    if (edge === "start" && settings.hideOnGame) {
+      invoke<boolean>("main_window_up")
+        .then((up) => {
+          wasUp.current = up;
+          if (up) return invoke("hide_to_tray");
+        })
+        .catch(() => {});
+    } else if (edge === "end" && wasUp.current) {
+      wasUp.current = false;
+      invoke("show_from_tray").catch(() => {});
+    }
+  }, [phase, settings.hideOnGame]);
+
+  const clientBefore = useRef(lcu.state);
+  useEffect(() => {
+    const opened = clientOpened(clientBefore.current, lcu.state);
+    clientBefore.current = lcu.state;
+    if (!opened || !isTauri() || !settings.showOnClientOpen) return;
+    // Only a window sitting in the tray needs bringing up; one in front is left alone.
+    invoke<boolean>("main_window_up")
+      .then((up) => (up ? undefined : invoke("show_from_tray")))
+      .catch(() => {});
+  }, [lcu.state, settings.showOnClientOpen]);
+
+  const overlayOnRef = useRef(settings.overlay);
+  overlayOnRef.current = settings.overlay;
+  useEffect(() => {
+    if (!isTauri()) return;
+    const unlisten = listen<string>("tray-action", (event) => {
+      if (!isTrayAction(event.payload)) return;
+      if (event.payload === "overlay") updateSettings({ overlay: !overlayOnRef.current });
+      else goRef.current({ page: "draft" });
+    });
+    return () => void unlisten.then((stop) => stop());
+  }, []);
+
   useEffect(() => {
     if (isTauri()) invoke("set_overlay_enabled", { enabled: settings.overlay }).catch(() => {});
   }, [settings.overlay]);
@@ -253,6 +299,7 @@ function App() {
     <FlatGlass.Provider value={true}>
     <ToastProvider>
     <OpenMatchupProvider value={openMatchup}>
+    <OpenChampionProvider value={openChampion}>
     <OpenProProvider value={(player) => go({ page: "pro", player })}>
     <div className="shell" data-navigated={navigated || undefined} data-collapsed={settings.sidebarCollapsed || undefined}>
       <Sidebar
@@ -364,6 +411,7 @@ function App() {
       />
     </div>
     </OpenProProvider>
+    </OpenChampionProvider>
     </OpenMatchupProvider>
     </ToastProvider>
     </FlatGlass.Provider>
