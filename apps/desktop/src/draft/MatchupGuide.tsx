@@ -1,6 +1,7 @@
 import { getBuild, getCounters } from "../api";
 import { abilityIconUrl, championDetail, championIconUrl, itemIconUrl, items, type Champion } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
+import { DataBadge } from "../ui/DataBadge";
 import { useAsync } from "../useAsync";
 import { difficultyOf, matchupItems, type Difficulty } from "./logic";
 
@@ -54,6 +55,12 @@ export function MatchupGuide({ championId, position, opponent, version }: Props)
               : counters.status === "done"
                 ? t("Bu eşleşme için yeterli maç yok.")
                 : t("Yükleniyor")}
+            {matchup && counters.status === "done" && (
+              <>
+                {" "}
+                <DataBadge games={matchup.games} winRate={matchup.winRate} patches={counters.value.patches} source={t("Vizier crawler, dereceli maçlar")} />
+              </>
+            )}
           </p>
         </div>
       </div>

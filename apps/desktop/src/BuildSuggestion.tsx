@@ -1,4 +1,5 @@
 import { BootsSpells } from "./BootsSpells";
+import { DataBadge } from "./ui/DataBadge";
 import { BuildPath } from "./BuildPathPanel";
 import { RunePageView } from "./RunePageView";
 import { formatPercent, useLang, useT, type Lang } from "./i18n";
@@ -323,7 +324,8 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           games: shown.games,
           rate: percent(shown.winRate),
         })}
-        {vs && !versus ? `. ${t("{opponent} eşleşmesi için yeterli maç yok; genel build gösteriliyor", { opponent: opponentName })}` : ""}
+        {vs && !versus ? `. ${t("{opponent} eşleşmesi için yeterli maç yok; genel build gösteriliyor", { opponent: opponentName })}` : ""}{" "}
+        <DataBadge games={shown.games} winRate={shown.winRate} patches={build.patches} source={t("Vizier crawler, dereceli maçlar")} />
       </p>
 
       <div className="build__save">
