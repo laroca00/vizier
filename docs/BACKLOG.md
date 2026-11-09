@@ -248,21 +248,16 @@ The rule and badge exist (b4b6e62, on the build summary and the matchup guide).
 
 - [x] 22.1 Replace the scattered sample cut-offs (`MIN_GAMES` in MatchupGuide, banPlanner, MetaPicks, comparison, ChampionPage, proMeta, winRateShift, `BAR_MIN_GAMES`) with `confidenceOf`: hide or grey values that are `insufficient`, badge the rest. Keep each page's behaviour where a cut-off exists for a non-statistical reason, and say why in a comment. (52b9d16; one `hasEnoughGames` rule (95% interval within 10 points) replaces the matchup, meta pick, shift and ban planner cut-offs; kept with a reason: pick-rate row floor, bar width, similar champions, tier pick floor)
 - [x] 22.2 Difficulty labels only when the data supports them: "Rahat / Zor eşleşme" shows only when the 95% interval lies fully above or below 50%; otherwise "Dengeli ya da belirsiz" with the badge. Same for counters lists, pick suggestions and the ban planner reasons. Tests with fixed counts. (52b9d16; hard/easy only when the interval clears 50%, otherwise "Dengeli ya da belirsiz"; same for counter lists, pick suggestion reasons and ban reasons)
-- [ ] 22.3 Badges on the tier list, champion page header, counters, synergies, runes, boots and spells tables, augments, Arena items and pro meta. Tier list rows get the badge in the tooltip instead of a chip to keep rows compact.
-<!-- claimed: auto/22-confidence-lab 2026-11-09T13:27:16Z -->
-- [ ] 22.4 Data freshness: the Worker already knows when each doc was published; add `updatedAt` to responses (backward compatible) and show "güncellendi 3 saat önce" in the badge tooltip. Outdated (older patch) data is labelled on every page.
-<!-- claimed: auto/22-confidence-lab 2026-11-09T13:27:16Z -->
-- [ ] 22.5 "Veriler nereden geliyor" page under About: sources, regions and ranks, patches kept, the confidence rule in plain words, what is editorial. Linked from every badge tooltip.
-<!-- claimed: auto/22-confidence-lab 2026-11-09T13:27:16Z -->
+- [x] 22.3 Badges on the tier list, champion page header, counters, synergies, runes, boots and spells tables, augments, Arena items and pro meta. Tier list rows get the badge in the tooltip instead of a chip to keep rows compact. (cad7db6; badges on champion page header, counters, allies, tier list (header badge, rate tooltip per row), augments, Arena items, boots, spells and pro meta; list badges use the pooled sample of the rows shown)
+- [x] 22.4 Data freshness: the Worker already knows when each doc was published; add `updatedAt` to responses (backward compatible) and show "güncellendi 3 saat önce" in the badge tooltip. Outdated (older patch) data is labelled on every page. (cad7db6; stat docs carry `updatedAt` (last changed publish), badge and row tooltips say "x saat önce güncellendi"; outdated data gets the "Eski veri" badge. Worker deploy needed to serve updatedAt (queued))
+- [x] 22.5 "Veriler nereden geliyor" page under About: sources, regions and ranks, patches kept, the confidence rule in plain words, what is editorial. Linked from every badge tooltip. (cad7db6; "Veriler nereden geliyor" section on About (sources, regions, patches, confidence rule, editorial); every badge is a link to it)
 
 ## 23. Itemization Lab (B1, highest priority of the brief)
 
 Builds on: build docs and variants (`Build.variants`, `situational`), the item explorer and gold values (`data/itemGold.ts`, `library/gold.ts`), build comparison (`buildSideBySide.ts`, 9.1), the build editor (9.4) and the library store.
 
-- [ ] 23.1 Lab page (`{ page: "lab", championId, position }`, menu, palette, `?view=lab`): pick champion and role, then up to three build columns side by side. Each column: items in order with cost, total gold, runes, boots, spells, patch, games and badge. Columns start as popular / highest win rate / the player's saved build.
-<!-- claimed: auto/22-confidence-lab 2026-11-09T13:27:16Z -->
-- [ ] 23.2 Build directions: standard, burst, anti-tank, sustain, defensive, hybrid, poke, utility. A direction is a rule over item stats and tags (tested), applied to the champion's item pool from the build index; directions with real data (situational vs AP / AD / tank) use it and say so; the rest are labelled editorial.
-<!-- claimed: auto/22-confidence-lab 2026-11-09T13:27:16Z -->
+- [x] 23.1 Lab page (`{ page: "lab", championId, position }`, menu, palette, `?view=lab`): pick champion and role, then up to three build columns side by side. Each column: items in order with cost, total gold, runes, boots, spells, patch, games and badge. Columns start as popular / highest win rate / the player's saved build. (cad7db6; lab page `?view=lab`, menu, palette: popular, best win rate (enough games) and saved build columns with items, cost, spike gold, boots, spells, runes)
+- [x] 23.2 Build directions: standard, burst, anti-tank, sustain, defensive, hybrid, poke, utility. A direction is a rule over item stats and tags (tested), applied to the champion's item pool from the build index; directions with real data (situational vs AP / AD / tank) use it and say so; the rest are labelled editorial. (cad7db6; 8 directions as tested tag/stat rules over the champion's build items; anti-tank uses the vs-tank item data, the rest are labelled editorial)
 - [ ] 23.3 Stat totals per column: AD, AP, HP, armor, MR, haste, attack speed, crit, penetration, lifesteal/omnivamp, from Data Dragon item stats summed at full build and after each item. A row chart compares the columns. No damage or DPS numbers.
 - [ ] 23.4 Custom column: edit items with the existing build editor inside the lab, compare against popular, pro and saved builds, save to the library in one click.
 - [ ] 23.5 "Bu build ne için" line per column from its stat profile ("magic pen and burst: kills squishy targets; little survival"), from tested rules.
@@ -354,6 +349,8 @@ Code health tasks. Do one only when a feature above depends on it.
 ---
 
 ## Owner deploy queue
+
+- Deploy the Worker so stat docs carry `updatedAt` (22.4); the app works without it.
 
 Steps that need the owner's credentials or approval. Add to this list; don't run them.
 
