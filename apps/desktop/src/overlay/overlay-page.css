@@ -1,0 +1,39 @@
+.overlay-widgets {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overlay-widgets__item {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+  padding: var(--space-3);
+  border-radius: var(--radius-item);
+  background: var(--hover);
+}
+
+.overlay-widgets__name {
+  margin: 0;
+  font-size: var(--text-body);
+}
+
+.overlay-widgets__modes {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--glaze-faint);
+}
+
+.shortcuts__key {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.shortcuts [data-clash] .shortcuts__clash {
+  color: var(--bole);
+}
