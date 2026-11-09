@@ -15,12 +15,18 @@ import "../patches/patches.css";
 const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
 const VERDICT_NAMES: Record<Verdict, string> = { buff: "Güçlendirme", nerf: "Zayıflatma", mixed: "Karışık" };
 
-async function load() {
+/** Every role's tier list, shared with the queue view; cached under one key so both read the same fetch. */
+export async function loadRoleLists() {
   const [lists, byKey, version] = await Promise.all([Promise.all(ROLES.map((p) => getTierList(p).catch(() => null))), champions(), latestVersion()]);
   const entries: Record<string, TierEntry[]> = {};
-  ROLES.forEach((role, i) => (entries[role] = lists[i]?.champions ?? []));
-  return { entries, byKey, version };
+  const patches: Record<string, string[]> = {};
+  ROLES.forEach((role, i) => {
+    entries[role] = lists[i]?.champions ?? [];
+    patches[role] = lists[i]?.patches ?? [];
+  });
+  return { entries, patches, byKey, version };
 }
+export const ROLE_LISTS_KEY = "pool-moves-full";
 
 /** The pool at a glance this patch: tier, win rate and its move, and what the patch changed. */
 export function ThisPatchCard({ onOpenChampion, onNavigate }: { onOpenChampion: (championId: number, position: string | null) => void; onNavigate: (route: Route) => void }) {
@@ -28,7 +34,7 @@ export function ThisPatchCard({ onOpenChampion, onNavigate }: { onOpenChampion: 
   const lang = useLang();
   const { pool } = usePersonal();
   // Shares its cache key with the pool panel, so both read one set of tier lists.
-  const [state] = useAsync(pool.length ? "pool-moves-full" : null, load);
+  const [state] = useAsync(pool.length ? ROLE_LISTS_KEY : null, loadRoleLists);
   const [versions] = useAsync("patch-versions", patchVersions);
   if (pool.length === 0 || state.status !== "done") return null;
   const [to, from] = versions.status === "done" ? versions.value : [];
