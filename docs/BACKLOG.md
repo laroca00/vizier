@@ -458,6 +458,7 @@ Ideas the owner asked for on top of the data work: overlay, design and new tools
 - [x] 42.5 Build picture: "Görsel olarak kopyala" on a saved build draws a 1200x630 card (splash, runes, spells, items, skill order) to the clipboard for chats. (4f8ccfa)
 - [x] 42.6 The same picture for the recommended build on the champion page and in champ select, with its games and win rate. (49fb4af)
 - [x] 42.7 Keyboard shortcuts list on "?": app keys and overlay keys with the player's bindings. (f3db503)
+- [x] 42.8 Overlay "Oyun başı planı": for two minutes, the lane opponent, our record against them (confidence rule), the ability to respect and the matchup note; new cards start in the upper middle. (f0b6e0e)
 
 ## 16. Only when a feature needs it
 
