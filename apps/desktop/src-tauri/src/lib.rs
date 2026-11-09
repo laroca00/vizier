@@ -6,7 +6,8 @@ use lcu::writes::{ItemBlock, RuneImport, RunePage};
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager, WindowEvent};
-use lcu::{ChampSelectState, LcuApi, LcuState, LcuStatus};
+use lcu::lobby::Lobby;
+use lcu::{LobbyState, ChampSelectState, LcuApi, LcuState, LcuStatus};
 use live::{LiveGame, OverlayState};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
@@ -17,6 +18,11 @@ fn lcu_status(state: tauri::State<'_, LcuState>) -> LcuStatus {
 
 #[tauri::command]
 fn champ_select(state: tauri::State<'_, ChampSelectState>) -> Option<ChampSelect> {
+    state.current()
+}
+
+#[tauri::command]
+fn lobby(state: tauri::State<'_, LobbyState>) -> Option<Lobby> {
     state.current()
 }
 
@@ -337,6 +343,7 @@ pub fn run() {
         ))
         .manage(LcuState::default())
         .manage(ChampSelectState::default())
+        .manage(LobbyState::default())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
@@ -359,6 +366,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             lcu_status,
             champ_select,
+            lobby,
             import_runes,
             import_spells,
             import_item_set,

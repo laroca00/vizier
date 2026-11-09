@@ -1,5 +1,6 @@
 pub mod actions;
 pub mod champ_select;
+pub mod lobby;
 pub mod roster;
 mod client;
 pub mod writes;
@@ -16,12 +17,14 @@ use tauri::{AppHandle, Emitter, Manager};
 use tokio_tungstenite::tungstenite::Message;
 
 use champ_select::ChampSelect;
+use lobby::Lobby;
 pub use client::{LcuClient, tls_config};
 use client::Error;
 use credentials::{Credentials, Finder};
 
 pub const STATUS_EVENT: &str = "lcu-status";
 pub const CHAMP_SELECT_EVENT: &str = "lcu-champ-select";
+pub const LOBBY_EVENT: &str = "lcu-lobby";
 const POLL_INTERVAL: Duration = Duration::from_secs(2);
 
 const PHASE_PATH: &str = "/lol-gameflow/v1/gameflow-phase";
@@ -109,6 +112,24 @@ impl ChampSelectState {
     }
 }
 
+#[derive(Default)]
+pub struct LobbyState(Mutex<Option<Lobby>>);
+
+impl LobbyState {
+    pub fn current(&self) -> Option<Lobby> {
+        self.0.lock().unwrap().clone()
+    }
+}
+
+fn publish_lobby(app: &AppHandle, value: Option<Lobby>) {
+    let state = app.state::<LobbyState>();
+    let mut current = state.0.lock().unwrap();
+    if *current != value {
+        *current = value.clone();
+        let _ = app.emit(LOBBY_EVENT, value);
+    }
+}
+
 fn publish_champ_select(app: &AppHandle, value: Option<ChampSelect>) {
     let state = app.state::<ChampSelectState>();
     let mut current = state.0.lock().unwrap();
@@ -147,6 +168,7 @@ pub fn spawn(app: AppHandle) {
                         eprintln!("lcu: session ended: {error}");
                     }
                     publish_champ_select(&app, None);
+                    publish_lobby(&app, None);
                     *app.state::<LcuApi>().0.lock().unwrap() = None;
                     publish(&app, LcuStatus::Connecting);
                 }
@@ -161,7 +183,7 @@ pub fn spawn(app: AppHandle) {
 async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credentials) -> Result<(), Error> {
     let api = Arc::new(LcuClient::new(&tls, credentials)?);
     let mut events = client::connect_events(tls, credentials).await?;
-    for path in [PHASE_PATH, SUMMONER_PATH, champ_select::SESSION_PATH] {
+    for path in [PHASE_PATH, SUMMONER_PATH, champ_select::SESSION_PATH, lobby::LOBBY_PATH] {
         let topic = format!("OnJsonApiEvent{}", path.replace('/', "_"));
         events.send(Message::text(serde_json::json!([5, topic]).to_string())).await?;
     }
@@ -181,6 +203,9 @@ async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credenti
     // 404 outside champ select. Vizier may also start in the middle of one.
     let session: Option<Value> = api.get(champ_select::SESSION_PATH).await.ok();
     publish_champ_select(app, session.and_then(champ_select::parse));
+    // 404 outside a lobby, like champ select.
+    let current_lobby: Option<Value> = api.get(lobby::LOBBY_PATH).await.ok();
+    publish_lobby(app, current_lobby.and_then(lobby::parse));
 
     while let Some(message) = events.next().await {
         let Message::Text(text) = message? else { continue };
@@ -197,6 +222,10 @@ async fn session(app: &AppHandle, tls: Arc<ClientConfig>, credentials: &Credenti
             // A Delete event carries no data, which parses to None.
             champ_select::SESSION_PATH => {
                 publish_champ_select(app, champ_select::parse(event.data));
+                continue;
+            }
+            lobby::LOBBY_PATH => {
+                publish_lobby(app, lobby::parse(event.data));
                 continue;
             }
             _ => continue,

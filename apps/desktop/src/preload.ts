@@ -9,8 +9,8 @@ const QUEUE_PHASES = ["Lobby", "Matchmaking", "ReadyCheck"];
 
 export type PreloadPlan = { roles: string[]; builds: { championId: number; position: string | null }[] };
 
-/** Roles with tier lists to fetch (the pool's, or all five without a pool) and the pool's builds. */
-export function planPreload(pool: PoolPick[]): PreloadPlan {
+/** Roles with tier lists to fetch (the lobby's picks, else the pool's, else all five) and the pool's builds for them. */
+export function planPreload(pool: PoolPick[], lobbyRoles: string[] = []): PreloadPlan {
   const poolRoles = [...new Set(pool.map((p) => p.position).filter((r): r is string => !!r && ROLES.includes(r)))];
   const seen = new Set<string>();
   const builds = pool
@@ -21,7 +21,9 @@ export function planPreload(pool: PoolPick[]): PreloadPlan {
     .sort((a, b) => Number(b.rank === "main") - Number(a.rank === "main"))
     .slice(0, MAX_BUILDS)
     .map((p) => ({ championId: p.championId, position: p.position }));
-  return { roles: poolRoles.length ? poolRoles : ROLES, builds };
+  // The roles asked for in the lobby are the ones champ select will need.
+  const asked = lobbyRoles.filter((r) => ROLES.includes(r));
+  return { roles: asked.length ? asked : poolRoles.length ? poolRoles : ROLES, builds: asked.length ? builds.filter((b) => !b.position || asked.includes(b.position)) : builds };
 }
 
 /** True on the step from outside the queue flow into it. */
