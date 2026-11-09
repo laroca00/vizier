@@ -81,6 +81,34 @@ async fn import_item_set(
     lcu::writes::import_item_set(&client, champion_id, &title, &blocks).await
 }
 
+/// Hovers or locks a champion in the player's open pick or ban; `kind` is "pick" or "ban".
+#[tauri::command]
+async fn champ_select_act(api: tauri::State<'_, LcuApi>, kind: String, champion_id: i64, lock: bool) -> Result<(), String> {
+    let kind = lcu::actions::Kind::parse(&kind)?;
+    let client = api.get().ok_or(NOT_CONNECTED)?;
+    lcu::actions::act(&client, kind, champion_id, lock).await
+}
+
+#[tauri::command]
+async fn accept_ready_check(api: tauri::State<'_, LcuApi>) -> Result<(), String> {
+    let client = api.get().ok_or(NOT_CONNECTED)?;
+    lcu::actions::accept_ready_check(&client).await
+}
+
+#[tauri::command]
+async fn bench_swap(api: tauri::State<'_, LcuApi>, champion_id: i64) -> Result<(), String> {
+    let client = api.get().ok_or(NOT_CONNECTED)?;
+    lcu::actions::swap_from_bench(&client, champion_id).await
+}
+
+/// Champion ids the player can pick or ban right now (owned, not taken or banned).
+#[tauri::command]
+async fn available_champions(api: tauri::State<'_, LcuApi>, kind: String) -> Result<Vec<i64>, String> {
+    let kind = lcu::actions::Kind::parse(&kind)?;
+    let client = api.get().ok_or(NOT_CONNECTED)?;
+    lcu::actions::available(&client, kind).await
+}
+
 /// Ctrl+Shift+O hides and shows the overlay during a game.
 fn overlay_shortcut() -> Shortcut {
     Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyO)
@@ -283,6 +311,10 @@ pub fn run() {
             overlay_editing,
             set_overlay_editing,
             set_background,
+            champ_select_act,
+            accept_ready_check,
+            bench_swap,
+            available_champions,
             main_window_up,
             hide_to_tray,
             show_from_tray
