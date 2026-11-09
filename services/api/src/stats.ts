@@ -551,7 +551,19 @@ export async function laneStats(db: D1Database, championId: number, position: st
 // Timelines are fetched for few games, so each minute carries its game count.
 const MIN_BENCH_GAMES = 20;
 
-export type BenchMinute = { minute: number; games: number; cs: number; level: number };
+/** The KDA fields appear only for minutes with enough games that carried them. */
+export type BenchMinute = {
+  minute: number;
+  games: number;
+  cs: number;
+  level: number;
+  kdaGames?: number;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+  /** Share of the team's kills the player took part in, 0 to 1. */
+  killParticipation?: number;
+};
 
 /** Average CS and level at the sample minutes for ranked games of this champion and role. */
 export async function benchStats(db: D1Database, championId: number, position: string): Promise<{ minutes: BenchMinute[] }> {
@@ -559,14 +571,28 @@ export async function benchStats(db: D1Database, championId: number, position: s
   if (patches.length === 0) return { minutes: [] };
   const { results } = await db
     .prepare(
-      `SELECT minute, SUM(games) AS games, SUM(cs) AS cs, SUM(level) AS level FROM bench_sums
+      `SELECT minute, SUM(games) AS games, SUM(cs) AS cs, SUM(level) AS level,
+          SUM(kda_games) AS kda_games, SUM(kills) AS kills, SUM(deaths) AS deaths, SUM(assists) AS assists, SUM(team_kills) AS team_kills FROM bench_sums
         WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ?
         GROUP BY minute HAVING SUM(games) >= ? ORDER BY minute`,
     )
     .bind(...patches, championId, position, MIN_BENCH_GAMES)
-    .all<{ minute: number; games: number; cs: number; level: number }>();
+    .all<{ minute: number; games: number; cs: number; level: number; kda_games: number; kills: number; deaths: number; assists: number; team_kills: number }>();
   const avg = (sum: number, games: number) => Math.round((sum / games) * 10) / 10;
-  return { minutes: results.map((r) => ({ minute: r.minute, games: r.games, cs: avg(r.cs, r.games), level: avg(r.level, r.games) })) };
+  return {
+    minutes: results.map((r) => {
+      const minute: BenchMinute = { minute: r.minute, games: r.games, cs: avg(r.cs, r.games), level: avg(r.level, r.games) };
+      if (r.kda_games >= MIN_BENCH_GAMES && r.team_kills > 0) {
+        minute.kdaGames = r.kda_games;
+        minute.kills = avg(r.kills, r.kda_games);
+        minute.deaths = avg(r.deaths, r.kda_games);
+        minute.assists = avg(r.assists, r.kda_games);
+        // Kills and assists over the team's kills, summed over all games so a quiet game doesn't swing it.
+        minute.killParticipation = Math.round(((r.kills + r.assists) / r.team_kills) * 1000) / 1000;
+      }
+      return minute;
+    }),
+  };
 }
 
 // Timelines are fetched for few games, so each item time comes with its game count.

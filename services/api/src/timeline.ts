@@ -128,6 +128,51 @@ export function levelByMinute(timeline: Timeline): Map<number, number[]> {
   return result;
 }
 
+/** Cumulative kills, deaths, assists and the team's kills at the end of one minute. */
+export type KdaPoint = { kills: number; deaths: number; assists: number; teamKills: number };
+
+/**
+ * Per participant id: kills, deaths, assists and own team kills at the end of
+ * minutes 1 to 15. `teamOf` says which side a participant is on; executions
+ * (no killer) count for nobody.
+ */
+export function kdaByMinute(timeline: Timeline, teamOf: (participantId: number) => number): Map<number, KdaPoint[]> {
+  const ids = new Set<number>();
+  for (const frame of timeline.info.frames) for (const id of Object.keys(frame.participantFrames)) ids.add(Number(id));
+  const result = new Map<number, KdaPoint[]>([...ids].map((id) => [id, []]));
+  const events = timeline.info.frames.flatMap((f) => f.events).filter((e) => e.type === "CHAMPION_KILL");
+  for (let minute = 1; minute <= PACE_MINUTES; minute++) {
+    const upTo = events.filter((e) => e.timestamp <= minute * 60_000);
+    const teamKills = new Map<number, number>();
+    for (const e of upTo) if (e.killerId) teamKills.set(teamOf(e.killerId), (teamKills.get(teamOf(e.killerId)) ?? 0) + 1);
+    for (const [id, list] of result) {
+      list.push({
+        kills: upTo.filter((e) => e.killerId === id).length,
+        deaths: upTo.filter((e) => e.victimId === id).length,
+        assists: upTo.filter((e) => e.assistingParticipantIds?.includes(id)).length,
+        teamKills: teamKills.get(teamOf(id)) ?? 0,
+      });
+    }
+  }
+  // A game that ended early has fewer frames; its series stays short so it is skipped.
+  const covered = Math.min(PACE_MINUTES, timeline.info.frames.length - 1);
+  for (const [id, list] of result) result.set(id, list.slice(0, Math.max(0, covered)));
+  return result;
+}
+
+export const encodeKda = (points: KdaPoint[]) => points.map((p) => `${p.kills}.${p.deaths}.${p.assists}.${p.teamKills}`).join(",");
+
+export function decodeKda(text: string | null): KdaPoint[] {
+  return (text ?? "")
+    .split(",")
+    .filter(Boolean)
+    .map((part) => {
+      const [kills, deaths, assists, teamKills] = part.split(".").map(Number);
+      return { kills, deaths, assists, teamKills };
+    })
+    .filter((p) => [p.kills, p.deaths, p.assists, p.teamKills].every(Number.isFinite));
+}
+
 /** Per participant id: total gold at the start of the given minute, or none when the game was shorter. */
 export function goldAtMinute(timeline: Timeline, minute: number): Map<number, number> {
   const frame = timeline.info.frames[minute];
