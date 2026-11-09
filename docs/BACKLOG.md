@@ -235,6 +235,109 @@ The owner's call: the same overlay features Blitz ships, built fresh in Vizier's
 - [ ] 21.2 Build 10.2 (queue view with the pool for the chosen roles and autofill picks).
 - [ ] 21.3 Home follows the client: client closed → patch and meta card first; lobby → the pool for the chosen roles; in queue → the queue view.
 
+---
+
+# Prepare. Explore. Master. Customize. (owner's product brief, 2026-11-09)
+
+Epics 22–31 come from the owner's product brief. Rules that apply to all of them:
+
+- Extend what exists; never build a second version of a page, store, search or draft engine. Each slice names what it builds on.
+- Never fabricate numbers. Every win rate, pick rate or sample shown goes through `DataBadge` (`src/ui/DataBadge.tsx`, rule in `src/data/confidence.ts`). Hand-kept tables (traits, archetypes, difficulty, combos, scenarios) are labelled with `<DataBadge editorial />` and never shown as statistics.
+- Not in scope: post-game analysis, AI coaching, player profiles or performance dashboards, growth tracking, tilt detection.
+- Editorial content (combo text, academy text, scenarios) is written fresh in plain language, Turkish first with English entries. Nothing is copied from guides, wikis or other sites.
+
+## 22. Data confidence everywhere (F1)
+
+The rule and badge exist (b4b6e62, on the build summary and the matchup guide).
+
+- [ ] 22.1 Replace the scattered sample cut-offs (`MIN_GAMES` in MatchupGuide, banPlanner, MetaPicks, comparison, ChampionPage, proMeta, winRateShift, `BAR_MIN_GAMES`) with `confidenceOf`: hide or grey values that are `insufficient`, badge the rest. Keep each page's behaviour where a cut-off exists for a non-statistical reason, and say why in a comment.
+- [ ] 22.2 Difficulty labels only when the data supports them: "Rahat / Zor eşleşme" shows only when the 95% interval lies fully above or below 50%; otherwise "Dengeli ya da belirsiz" with the badge. Same for counters lists, pick suggestions and the ban planner reasons. Tests with fixed counts.
+- [ ] 22.3 Badges on the tier list, champion page header, counters, synergies, runes, boots and spells tables, augments, Arena items and pro meta. Tier list rows get the badge in the tooltip instead of a chip to keep rows compact.
+- [ ] 22.4 Data freshness: the Worker already knows when each doc was published; add `updatedAt` to responses (backward compatible) and show "güncellendi 3 saat önce" in the badge tooltip. Outdated (older patch) data is labelled on every page.
+- [ ] 22.5 "Veriler nereden geliyor" page under About: sources, regions and ranks, patches kept, the confidence rule in plain words, what is editorial. Linked from every badge tooltip.
+
+## 23. Itemization Lab (B1, highest priority of the brief)
+
+Builds on: build docs and variants (`Build.variants`, `situational`), the item explorer and gold values (`data/itemGold.ts`, `library/gold.ts`), build comparison (`buildSideBySide.ts`, 9.1), the build editor (9.4) and the library store.
+
+- [ ] 23.1 Lab page (`{ page: "lab", championId, position }`, menu, palette, `?view=lab`): pick champion and role, then up to three build columns side by side. Each column: items in order with cost, total gold, runes, boots, spells, patch, games and badge. Columns start as popular / highest win rate / the player's saved build.
+- [ ] 23.2 Build directions: standard, burst, anti-tank, sustain, defensive, hybrid, poke, utility. A direction is a rule over item stats and tags (tested), applied to the champion's item pool from the build index; directions with real data (situational vs AP / AD / tank) use it and say so; the rest are labelled editorial.
+- [ ] 23.3 Stat totals per column: AD, AP, HP, armor, MR, haste, attack speed, crit, penetration, lifesteal/omnivamp, from Data Dragon item stats summed at full build and after each item. A row chart compares the columns. No damage or DPS numbers.
+- [ ] 23.4 Custom column: edit items with the existing build editor inside the lab, compare against popular, pro and saved builds, save to the library in one click.
+- [ ] 23.5 "Bu build ne için" line per column from its stat profile ("magic pen and burst: kills squishy targets; little survival"), from tested rules.
+
+## 24. Matchup Academy and Combo Library (C1, C3)
+
+Builds on: the matchup page (4.1–4.6: lane stats, stats duel, ability compare, power spikes, build vs), threats (`draft/threats.ts`), the journal notes and templates (8.x).
+
+- [ ] 24.1 Academy layout for the matchup page: sections for strengths, weaknesses, abilities to track (cooldowns from Data Dragon), early / mid / late (from the phase curves), level and item breakpoints (power spikes), item interactions (item advice rules), lane stats. Each section marks its source: Data Dragon, crawler or editorial.
+- [ ] 24.2 Champion strengths and weaknesses table (hand-kept, every champion, tested for coverage), written plainly; used by the academy and the champion page.
+- [ ] 24.3 Personal academy notes: reminders and favourite plans per matchup on top of the journal note (same store, new optional fields), shown in champ select.
+- [ ] 24.4 Combo data model and the first 40 champions (most played in the crawler): name, difficulty, ability sequence, purpose, timing notes, common mistakes, category (basic, trading, all-in, burst, escape, flash, teamfight, animation), patch checked. Stored in the repo as JSON with a schema test; all labelled editorial.
+- [ ] 24.5 Combos section on the champion page and a Combo Library page with search and category filters; the sequence is drawn with ability icons and arrows (original drawing, no video or copied art).
+- [ ] 24.6 Combos for the remaining champions, plus a patch check that flags combos whose abilities changed in the patch tracker's diff.
+
+## 25. Champion intelligence (A1–A4)
+
+Builds on: synergies doc and the champion page synergies tab (5.7, 1.11), counters, pool coverage (7.1), `data/traits.ts` (classes, damage, dimensions, curves), win conditions (1.6).
+
+- [ ] 25.1 Archetype table: the 18 archetypes of the brief, many per champion, hand-kept and tested for coverage; each archetype has a short description, strengths, weaknesses and its usual team role.
+- [ ] 25.2 Archetype Explorer page: browse and combine archetypes ("disengage + protect the carry"), filter by role, search; links into synergies and the champion page.
+- [ ] 25.3 Synergy Explorer page from the Champions section: champion and role in, partners out, with crawler data (games, win rate, badge) and the reason from category rules (engage + follow-up CC, wombo, protect the carry, dive, poke, scaling, lane pressure, disengage) built on archetypes and dimensions. Pairs without data show the reason only, marked editorial. Sort by data or by category.
+- [ ] 25.4 Counterpick Matrix page: up to five pool champions × the role's 20 most common opponents, heatmap cells favourable / neutral / unfavourable / insufficient using `confidenceOf` (not raw win rate), with games in each cell, patch filter, and the best blind pick. Reuses pool coverage logic; the pool coverage panel links to it. Colour-blind safe and readable as a table.
+- [ ] 25.5 Difficulty breakdown on the champion page: mechanics, combos, positioning, skillshots, decisions, macro, consistency as qualitative levels (hand-kept, editorial badge), next to Data Dragon's official difficulty number (labelled official).
+
+## 26. Team preparation (D1–D3)
+
+Builds on: the draft simulator (12.x, VZD1 codes, undo, Clash planner), composition analysis (`analyzeComp`, `compDimensions`, `teamDamage`, `teamCurve`, win conditions).
+
+- [ ] 26.1 Composition templates (wombo, protect the ADC, front-to-back, dive, poke, pick, split push, heavy engage, disengage, scaling, early pressure): objective, archetypes needed, roles, strengths, weaknesses, game phase, counter-comps; browse page with fitting champions from 25.1.
+- [ ] 26.2 Draft templates in the simulator: name, side, five picks, bans, notes, tags; save, duplicate, edit, delete, open in the simulator; codes reuse VZD1; stored under `vizier.drafts` (already exported).
+- [ ] 26.3 Team Synergy Planner in the simulator and champ select: archetypes per pick, engage, disengage, frontline, CC, damage split, scaling, synergy pairs, and plain gap lines ("güvenilir engage az"). No overall score.
+- [ ] 26.4 Composition match: which template a team is closest to and what it still lacks, with the champions that would fill it from the player's pool first.
+
+## 27. Draft Challenge and Quiz 2.0 (C2, C4)
+
+Builds on: the quiz page and store (riddle modes, item game, timed mode, statistics), the simulator's analysis.
+
+- [ ] 27.1 Draft Challenge data model: scenario (both teams with unknown slots, role, question, choices or free champion pick, accepted answers with trade-offs, difficulty, category), stored as JSON with a schema test; the first 30 scenarios written by hand.
+- [ ] 27.2 Draft Challenge page: play a scenario, answer, then the explanation with the alternatives that also work and why; session progress and replay; no win chances.
+- [ ] 27.3 Generated scenarios from the composition rules (a team missing engage, all AP, heavy dive against it), with answers checked by the same rules, so the pool grows without hand writing.
+- [ ] 27.4 Quiz 2.0 categories in the existing quiz: abilities, item effects, runes, matchups (from crawler data with badge), compositions, synergies, roles, mechanics. Difficulty, timed and untimed, explanations after each answer, review and replay missed questions. Results stay in the session plus the existing local stats; no ranking.
+
+## 28. Build history and checks (B2–B4)
+
+Builds on: build docs (two newest patches kept), the library store and editors, pro builds (11.x), the patch tracker diffs.
+
+- [ ] 28.1 Build snapshots: the crawler keeps a compact per-patch summary of each champion/role build doc (items, runes, boots, skill order with games) when a patch closes, in a new table (backward compatible, small, written once per patch). Route `/v1/builds/history`.
+- [ ] 28.2 Build Evolution view on the champion page: pick two patches, see items, runes, boots and skill order rising and falling with games; patches without a snapshot say so.
+- [ ] 28.3 Build Compatibility Checker in the library: removed or changed items and runes (against current Data Dragon), duplicate or incompatible items (one boots, one mythic-style uniques where they still exist), rune page rules, role mismatch, item order; suggestions shown, nothing changed without the player's OK.
+- [ ] 28.4 Pro Build Timeline: each pro game's build as a timeline (items in buy order, runes, spells, skill order, opponent, patch, date), compare two pro builds, filter by player, team and patch, save to the library, open the champion. Only fields the pro data has.
+
+## 29. Personal workspace (E1–E3)
+
+Builds on: `personal` (pool, favourites, followed pros, notes), the library, journal, local data export.
+
+- [ ] 29.1 Champion workspace tab on the champion page: my builds, my runes, matchup notes, favourite combos, saved pro builds, preferred role, tags, reminders, links. Reads the existing stores; no new profile.
+- [ ] 29.2 Favourites for every content type (builds, matchups, items, runes, pro builds, draft templates, composition templates, combos) with collections, tags, recently opened and search inside favourites; stored in `personal`.
+- [ ] 29.3 Data workspace in Settings: export and import builds, draft templates and notes separately or all at once, JSON with a version field; CSV for builds and notes. Import shows a preview with what is new, changed or skipped; validates schema, unknown champion and item ids, duplicates; never overwrites silently.
+- [ ] 29.4 Local backups: automatic weekly backup of all local data to the app data folder (last 5 kept) and restore from the list.
+
+## 30. Search 2.0 and Home 2.0 (F2, F3)
+
+Builds on: the search palette (champions, pros, matchups, items, keystones, saved builds) and the customisable Home (14.3).
+
+- [ ] 30.1 Palette result types: abilities, draft templates, composition templates, combos, quiz categories, notes, archetypes, academy pages, the lab.
+- [ ] 30.2 Intent searches: "anti tank build", "güçlü engage", "protect the carry", "Ahri combo" map to lab directions, archetypes, templates and combos (rules, tested; Turkish and English words).
+- [ ] 30.3 Recent searches, category tabs, suggestions on an empty query, full keyboard navigation.
+- [ ] 30.4 Home 2.0 cards: continue where you left off (recent champions, matchups, builds, drafts), favourites, saved templates, patch and meta changes, new pro builds, quick links to the lab, simulator and academy; all hideable and reorderable with the existing editor. No decorative charts.
+
+## 31. Overlay 2.0 polish (after epic 19)
+
+- [ ] 31.1 Overlay themes, transparency and scale per widget; settings preview uses the fixtures.
+- [ ] 31.2 Quick reference panels the player builds: pick any of build, runes, skill order, combo, matchup note, item info, and show them on a hotkey.
+- [ ] 31.3 Safe fallbacks: every widget shows a quiet empty state when Live Client data is missing or late, and the overlay never blocks the game when the API is down. Performance check: one render per second at most, measured in the fixture preview.
+
 ## 16. Only when a feature needs it
 
 Code health tasks. Do one only when a feature above depends on it.
