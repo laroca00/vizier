@@ -505,8 +505,8 @@ function App() {
         </main>
       </SplashProvider>
       <SharePaste onAdded={() => go({ page: "builds" })} />
-      {/* Dev screenshots open pages directly; the welcome would cover them. */}
-      {!devRoute() && <Welcome onOpenOverlay={() => go({ page: "overlay" })} />}
+      {/* Never over a live champ select; dev screenshots open pages directly and skip it too. */}
+      {!draft && !devRoute() && <Welcome onOpenOverlay={() => go({ page: "overlay" })} />}
       <ShortcutsHelp open={showKeys} onClose={() => setShowKeys(false)} pages={shortcutPages.map((item) => t(item.label))} />
       <SearchPalette
         open={searching}
