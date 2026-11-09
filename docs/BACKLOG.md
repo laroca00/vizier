@@ -212,16 +212,11 @@ The owner's call: the same overlay features Blitz ships, built fresh in Vizier's
 - [x] 19.4 Benchmark overlay: own CS per minute, kill participation, KDA and level against the Emerald+ average for the champion and role at the current minute, with a small CS-difference sparkline. Needs a crawler rollup of per-minute CS and level by champion and role from timelines (new doc `bench:<queue>:<champion>:<role>`, backward compatible, written only when changed). (24d8519; CS and level against the Emerald+ average at minutes 3 to 15 with game counts, from new bench_sums and doc bench:420:champion:role; kill participation and KDA benchmarks are 19.4b)
 - [x] 19.5 Skill order overlay: the skill to level now (exists) next to the ability bar, plus the full 18-level order strip on a hotkey. (24d8519; strip of all 18 levels on Ctrl+Shift+K (rebindable), skill hint placed above the ability bar)
 - [ ] 19.4b Benchmark of kill participation and KDA at the current minute: needs per-minute kill, death and assist sums from timeline events in the crawler rollup.
-- [ ] 19.6 Item value difference: per lane pair on the Tab scoreboard (exists) and the team totals, restyled for 19.1.
-<!-- claimed: auto/19-overlay-b 2026-11-09 13:01Z -->
-- [ ] 19.7 Minimap timers: dragon, Baron, Herald and inhibitor respawns (exist) drawn next to their spots on the minimap, and the manual camp timers drawn on the camps. Minimap side and size come from a setting matching the game's minimap options.
-<!-- claimed: auto/19-overlay-b 2026-11-09 13:01Z -->
-- [ ] 19.8 Augment overlay for Arena and Mayhem: the champion's augments with tier, win rate and games while the augment pick is open (the Live Client API doesn't say which three are offered, so the panel lists the best per rarity and has a search box the player types into).
-<!-- claimed: auto/19-overlay-b 2026-11-09 13:01Z -->
-- [ ] 19.9 In-game build panel on a hotkey: the imported build's items in order with what's owned ticked, runes and the skill order, and the next item with gold left (exists, moves here).
-<!-- claimed: auto/19-overlay-b 2026-11-09 13:01Z -->
-- [ ] 19.10 Overlay visual tests: screenshot each mode's fixture in edit and play states with Playwright against `pnpm dev`, kept as reference images.
-<!-- claimed: auto/19-overlay-b 2026-11-09 13:01Z -->
+- [x] 19.6 Item value difference: per lane pair on the Tab scoreboard (exists) and the team totals, restyled for 19.1. (baae798; team total chip under the Tab scoreboard rows)
+- [x] 19.7 Minimap timers: dragon, Baron, Herald and inhibitor respawns (exist) drawn next to their spots on the minimap, and the manual camp timers drawn on the camps. Minimap side and size come from a setting matching the game's minimap options. (baae798; minimap pins for dragon, Baron, inhibitors and manual camps; corner, size and jungle side in settings; Herald has no respawn timer in the Live Client events so only its first spawn stays in the card; spots are rough editorial readings)
+- [x] 19.8 Augment overlay for Arena and Mayhem: the champion's augments with tier, win rate and games while the augment pick is open (the Live Client API doesn't say which three are offered, so the panel lists the best per rarity and has a search box the player types into). (baae798; win rate and games per augment (greyed when thin), hide hotkey Ctrl+Shift+A; the overlay is click-through so a typed search box is not possible without taking focus from the game, the full list per rarity stays on the Augments page)
+- [x] 19.9 In-game build panel on a hotkey: the imported build's items in order with what's owned ticked, runes and the skill order, and the next item with gold left (exists, moves here). (baae798; panel on Ctrl+Shift+I with owned items ticked, runes, skill order and next item with gold left)
+- [x] 19.10 Overlay visual tests: screenshot each mode's fixture in edit and play states with Playwright against `pnpm dev`, kept as reference images. (baae798; `pnpm --filter @vizier/desktop shots:overlay` writes e2e/overlay/*.png, `-- --check` compares; shots run without Data Dragon so item-based boxes are not in them)
 
 ## 20. Data you can trust
 
@@ -361,6 +356,7 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 - Release a desktop version to ship epic 18 (auto pick, ban and lock, ready check accept; Rust changed). Auto pick and ban are off by default and set in Settings.
 - Epic 19 (so far): apply D1 migration 0015 (bench sums) remotely before the next crawler run; deploy the Worker; set the Worker secret `RIOT_KEY` (`wrangler secret put RIOT_KEY`) to turn on loading screen scouting (the route answers 503 and the panel shows only the damage split until then); pull and restart the crawler so timelines fill `bench:420` docs; release a desktop version (Rust changed: hotkeys, roster, tray).
 - Release a desktop version (`pnpm release`) after bumping the patch version.
+- Release a desktop version to ship the overlay changes of 19.6–19.10 (two new hotkeys, Ctrl+Shift+A and Ctrl+Shift+I, so Rust changed; `cargo test --lib` passed).
 - Deploy the Worker (`pnpm --filter @vizier/api deploy`).
 - Coverage (20.1): after the Worker deploy and a crawler restart, `/v1/meta/coverage` fills on the next publish and the crawler logs an hourly coverage line. Ranked timelines cover about a quarter of games (2 of ~8 per run); raise `timelinesPerRun` only if the log shows it lagging.
 - Apply pending D1 migrations remotely.
