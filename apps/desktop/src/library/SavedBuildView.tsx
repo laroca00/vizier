@@ -12,6 +12,8 @@ import { BuildDiffView } from "./BuildDiffView";
 import { useBuildExport } from "./useBuildExport";
 import { buildGold } from "./gold";
 import { shareCode } from "./share";
+import { cardContent } from "./buildCard";
+import { copyBuildCard } from "./buildCardCanvas";
 import { skillOrderLabel, type LibraryData } from "./data";
 import { shardName } from "./RuneEditor";
 import { deleteBuild, duplicateBuild, toggleFavourite, type SavedBuild } from "./store";
@@ -29,6 +31,7 @@ export function SavedBuildView({ build, data, others = [], onEdit, onSelect }: P
   const t = useT();
   const toast = useToast();
   const [confirming, setConfirming] = useState(false);
+  const [drawing, setDrawing] = useState(false);
   const { busy, pages, exportToClient, cancel } = useBuildExport(build);
   const champion = data.champions.get(build.championId);
   const primary = data.styles.get(build.runes.primaryStyle);
@@ -80,6 +83,20 @@ export function SavedBuildView({ build, data, others = [], onEdit, onSelect }: P
           }
         >
           {t("Paylaşım kodu")}
+        </Button>
+        <Button
+          busy={drawing}
+          onClick={() => {
+            setDrawing(true);
+            copyBuildCard(cardContent(build, data, t, positionLabel))
+              .then(
+                (how) => toast("success", how === "copied" ? t("Build görseli panoya kopyalandı.") : t("Build görseli indirildi.")),
+                () => toast("error", t("Görsel oluşturulamadı.")),
+              )
+              .finally(() => setDrawing(false));
+          }}
+        >
+          {t("Görsel olarak kopyala")}
         </Button>
         <Button onClick={() => onSelect(duplicateBuild(build.id, (name) => t("{name} kopyası", { name }))?.id ?? null)}>{t("Kopyala")}</Button>
         <Button variant="ghost" onClick={() => setConfirming(true)}>

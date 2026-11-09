@@ -547,6 +547,10 @@ export const EN: Record<string, string> = {
   "Toplam minyon ve kamp sayın, aynı şampiyonu oynayan Emerald+ oyuncuların o dakikadaki medyanıyla. İlk 15 dakika.":
     "Your minions and camps against Emerald+ players on the same champion at the same minute. First 15 minutes.",
   "Eşya altını farkı": "Item gold difference",
+  "Build görseli panoya kopyalandı.": "Build picture copied to the clipboard.",
+  "Build görseli indirildi.": "Build picture downloaded.",
+  "Görsel oluşturulamadı.": "Could not draw the picture.",
+  "Görsel olarak kopyala": "Copy as picture",
   "Hazırlan": "Prepare",
   "Araçlar": "Tools",
   "Oyna": "Play",
