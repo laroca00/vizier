@@ -4,6 +4,7 @@ import { getProPatches, getProTeams, type ProGroup } from "../api";
 import { champions, roleIconUrl } from "../data/ddragon";
 import { POSITIONS } from "../labels";
 import { ProBuildList } from "../ProBuildList";
+import { ProTimelineList } from "../pros/ProTimeline";
 import { Select } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
@@ -33,7 +34,7 @@ type Props = { onOpenChampion: (championId: number, position: string | null) => 
 
 export function ProsPage({ onOpenChampion }: Props) {
   const t = useT();
-  const [view, setView] = useState<"games" | "meta">("games");
+  const [view, setView] = useState<"games" | "timeline" | "meta">("games");
   const [position, setPosition] = useState<string>(ALL);
   const [group, setGroup] = useState<ProGroup>("worlds");
   const [team, setTeam] = useState<string>(ALL);
@@ -49,6 +50,19 @@ export function ProsPage({ onOpenChampion }: Props) {
   const players = [...new Set((team === ALL ? groupTeams : groupTeams.filter((e) => e.team === team)).flatMap((e) => e.players))].sort((a, b) => a.localeCompare(b));
   const championOptions = championList.status === "done" ? [...championList.value.values()].sort((a, b) => a.name.localeCompare(b.name, "tr")) : [];
   const all = { value: ALL, label: t("Hepsi") };
+
+  const listFilter = {
+    // A followed player may belong to another group; their games show either way.
+    group: player === ALL ? group : undefined,
+    position: pick(position),
+    team: pick(team),
+    player: pick(player),
+    championId: champion === ALL ? undefined : Number(champion),
+    platform: pick(region),
+    patch: pick(patch),
+    limit: view === "timeline" ? 20 : 40,
+  };
+  const emptyText = t("Bu filtrelerle pro maçı yok. Bir filtreyi kaldır ya da başka bir grup seç.");
 
   return (
     <LiquidGlass className="panel tiers" radius={28} strength={2.5} scroll>
@@ -74,6 +88,7 @@ export function ProsPage({ onOpenChampion }: Props) {
         size="small"
         items={[
           { id: "games" as const, label: t("Maçlar") },
+          { id: "timeline" as const, label: t("Zaman çizelgesi") },
           { id: "meta" as const, label: t("Pro meta") },
         ]}
         value={view}
@@ -91,7 +106,7 @@ export function ProsPage({ onOpenChampion }: Props) {
         onChange={setPosition}
       />
 
-      {view === "games" && personal.followed.length > 0 && (
+      {view !== "meta" && personal.followed.length > 0 && (
         <div className="pros__followed" role="group" aria-label={t("Takip ettiklerin")}>
           <span className="build__stat">{t("Takip ettiklerin")}</span>
           {personal.followed.map((p) => (
@@ -135,20 +150,11 @@ export function ProsPage({ onOpenChampion }: Props) {
         )}
       </div>
 
-      <ProBuildList
-        filter={{
-          // A followed player may belong to another group; their games show either way.
-          group: player === ALL ? group : undefined,
-          position: pick(position),
-          team: pick(team),
-          player: pick(player),
-          championId: champion === ALL ? undefined : Number(champion),
-          platform: pick(region),
-          patch: pick(patch),
-          limit: 40,
-        }}
-        emptyText={t("Bu filtrelerle pro maçı yok. Bir filtreyi kaldır ya da başka bir grup seç.")}
-      />
+      {view === "timeline" ? (
+        <ProTimelineList filter={listFilter} emptyText={emptyText} onOpenChampion={onOpenChampion} />
+      ) : (
+        <ProBuildList filter={listFilter} emptyText={emptyText} />
+      )}
       </>
       )}
     </LiquidGlass>
