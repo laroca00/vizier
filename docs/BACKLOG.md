@@ -447,6 +447,15 @@ Builds on: champ select (epic 1), Matchup Academy (24), the lab (23).
 - [ ] 41.3 Jungle paths from 36.2 in champ select: the player's jungler and the enemy jungler's most common first path, with games.
 - [ ] 41.4 Item path tree (36.4) offered as an import choice in champ select ("en çok kazanan yol" or "en popüler").
 
+## 42. Night ideas (built in the owner's local session, 2026-11-10)
+
+Ideas the owner asked for on top of the data work: overlay, design and new tools. Built locally; the routines skip this epic.
+
+- [ ] 42.1 Overlay "Fırsat penceresi": dead enemies and allies with their respawn countdown (Live Client `isDead`, `respawnTimer`), and a plain line when the numbers open a window ("3 rakip ölü, 24 sn: Baron açık").
+<!-- claimed: local-night 2026-11-09T22:38Z -->
+- [ ] 42.2 Overlay "Güç eşikleri": short notices when an enemy reaches level 6, 11 or 16 or completes an item, the lane opponent first.
+<!-- claimed: local-night 2026-11-09T22:38Z -->
+
 ## 16. Only when a feature needs it
 
 Code health tasks. Do one only when a feature above depends on it.
