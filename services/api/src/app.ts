@@ -75,6 +75,14 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
     return c.json((await readDoc(statsDb, docKey.buildIndex())) ?? { patches: [], builds: [] });
   });
 
+  // Two path segments, so it never collides with the champion route below.
+  app.get("/v1/builds/history/:championId", async (c) => {
+    const { championId, position } = championRequest(c);
+    if (!position) badRequest("position is required");
+    if (!statsDb) return c.json({ error: "Build stats are not available" }, 503);
+    return c.json((await readDoc(statsDb, docKey.buildHistory(championId, position))) ?? { snapshots: [] });
+  });
+
   app.get("/v1/builds/:championId", async (c) => {
     const championId = Number(c.req.param("championId"));
     if (!Number.isInteger(championId) || championId <= 0) badRequest("Invalid champion id");

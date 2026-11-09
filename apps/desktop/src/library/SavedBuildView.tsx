@@ -7,6 +7,7 @@ import { positionLabel } from "../labels";
 import { Button } from "../ui/Button";
 import { ConfirmDialog } from "../ui/Modal";
 import { useToast } from "../ui/Toast";
+import { CompatPanel } from "./CompatPanel";
 import { BuildDiffView } from "./BuildDiffView";
 import { useBuildExport } from "./useBuildExport";
 import { buildGold } from "./gold";
@@ -62,6 +63,8 @@ export function SavedBuildView({ build, data, others = [], onEdit, onSelect }: P
           </svg>
         </button>
       </header>
+
+      <CompatPanel build={build} data={data} />
 
       <div className="saved__actions">
         <Button variant="primary" busy={busy} disabled={!isTauri()} onClick={() => exportToClient()}>

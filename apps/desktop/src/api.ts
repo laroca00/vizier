@@ -70,6 +70,30 @@ export async function getBuild(championId: number, position: string | null, vs: 
   }
 }
 
+/** A closed patch's build, kept small: the most played choices with their games. */
+export type BuildSnapshot = {
+  patch: string;
+  games: number;
+  winRate: number;
+  runes: Choice<{ primaryStyle: number; subStyle: number; perks: number[] }>[];
+  spells: Choice<{ ids: number[] }> | null;
+  startItems: Choice<{ ids: number[] }> | null;
+  coreItems: Choice<{ ids: number[] }> | null;
+  items: Choice<{ id: number }>[];
+  skills: Choice<{ maxOrder: number[]; firstLevels: number[] }> | null;
+};
+
+/** Newest patch first; empty until the crawler has seen a patch close, and on servers that predate it. */
+export async function getBuildHistory(championId: number, position: string): Promise<BuildSnapshot[]> {
+  try {
+    const history = await get<{ snapshots: BuildSnapshot[] }>(`/v1/builds/history/${championId}?position=${position.toUpperCase()}`);
+    return history.snapshots ?? [];
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 404 || error.status === 400)) return [];
+    throw error;
+  }
+}
+
 export type AugmentStat = {
   augmentId: number;
   games: number;

@@ -1,0 +1,139 @@
+.timeline__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline__game {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-item);
+}
+
+.timeline__game[data-result="win"] {
+  box-shadow: inset 3px 0 0 var(--data-series);
+}
+
+.timeline__game[data-result="loss"] {
+  box-shadow: inset 3px 0 0 var(--data-physical);
+}
+
+.timeline__game[data-selected] {
+  border-color: var(--glaze);
+}
+
+.timeline__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.timeline__head > div {
+  flex: 1 1 260px;
+}
+
+.timeline__head p {
+  margin: 0;
+}
+
+.timeline__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.timeline__head img,
+.timeline__track img,
+.timeline__icons img {
+  border-radius: var(--radius-item);
+}
+
+.timeline__track {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: var(--space-3) 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.timeline__track > li {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* A step to the next: a thin arrow between purchases so the row reads as time. */
+.timeline__track > li + li::before {
+  content: "›";
+  margin-right: 4px;
+  color: var(--glaze-faint);
+}
+
+.timeline__track > li:not([data-complete]) img {
+  opacity: 0.7;
+}
+
+.timeline__count {
+  font-size: var(--text-meta);
+  color: var(--glaze-muted);
+}
+
+.timeline__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.timeline__icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timeline__gap {
+  width: 8px;
+}
+
+.timeline__skills {
+  font-size: var(--text-small);
+}
+
+.timeline__compare {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-item);
+}
+
+.timeline__sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.timeline__same {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline__same li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  max-width: 420px;
+}
+
+.timeline__same li:not([data-same]) span:last-child {
+  color: var(--gilt);
+}

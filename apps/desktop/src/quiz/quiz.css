@@ -379,3 +379,56 @@
 .quiz__history li[data-solved] {
   background: color-mix(in srgb, var(--gilt) 45%, transparent);
 }
+
+.exam__fields,
+.exam__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.exam__prompt {
+  margin: 0;
+  font-size: var(--text-section);
+  font-weight: var(--weight-medium);
+}
+
+.exam__choices,
+.exam__review,
+.exam__tally {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exam__choice {
+  width: min(520px, 100%);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-item);
+  background: var(--hover);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.exam__choice:disabled {
+  cursor: default;
+}
+
+.exam__choice[data-state="right"] {
+  box-shadow: inset 3px 0 0 var(--data-series);
+}
+
+.exam__choice[data-state="wrong"] {
+  box-shadow: inset 3px 0 0 var(--data-physical);
+}
+
+.exam__explain {
+  display: grid;
+  gap: var(--space-2);
+}

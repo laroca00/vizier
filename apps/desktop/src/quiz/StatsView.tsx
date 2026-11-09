@@ -1,6 +1,7 @@
 import { useT } from "../i18n";
 import { dayKey, MODES, modeStats, type QuizMode } from "./logic";
-import { useQuizRecords } from "./store";
+import { EXAM_CATEGORIES, EXAM_CATEGORY_TEXT } from "./exam";
+import { readExamTally, useQuizRecords } from "./store";
 
 const LABELS: Record<QuizMode, string> = { classic: "Klasik", ability: "Yetenek", emoji: "Emoji", skin: "Kostüm", item: "Eşya", recipe: "Tarif" };
 const HISTORY = 14;
@@ -10,10 +11,32 @@ export function StatsView() {
   const t = useT();
   const records = useQuizRecords();
   const today = dayKey(new Date());
-  if (records.length === 0) return <p className="build__note">{t("Henüz günün bilmecesini oynamadın. Sonuçların burada görünür.")}</p>;
+  const exam = readExamTally();
+  const examRows = EXAM_CATEGORIES.filter((c) => exam[c]);
+  const examBlock =
+    examRows.length > 0 ? (
+      <section className="quiz__stats-mode" aria-label={t("Sınav")}>
+        <h3>{t("Sınav")}</h3>
+        <ul className="exam__tally">
+          {examRows.map((c) => (
+            <li key={c}>
+              {t(EXAM_CATEGORY_TEXT[c])}: {t("{correct} / {answered} doğru", { correct: exam[c].correct, answered: exam[c].answered })}
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : null;
+  if (records.length === 0)
+    return (
+      <>
+        <p className="build__note">{t("Henüz günün bilmecesini oynamadın. Sonuçların burada görünür.")}</p>
+        {examBlock}
+      </>
+    );
 
   return (
     <div className="quiz__stats">
+      {examBlock}
       {MODES.map((mode) => {
         const s = modeStats(records, mode, today);
         if (s.played === 0) return null;

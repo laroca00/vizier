@@ -69,3 +69,47 @@ export function saveTimedBest(score: number) {
     // Kept for this session only.
   }
 }
+
+// Exam answers per category, kept on this computer next to the daily results.
+const EXAM_KEY = "vizier.quiz.exam";
+export type ExamTally = Record<string, { answered: number; correct: number }>;
+
+export function parseExamTally(raw: string | null): ExamTally {
+  try {
+    const data = JSON.parse(raw ?? "{}");
+    const tally: ExamTally = {};
+    for (const [category, v] of Object.entries(data && typeof data === "object" ? data : {})) {
+      const { answered, correct } = (v ?? {}) as { answered?: unknown; correct?: unknown };
+      if (typeof answered === "number" && typeof correct === "number" && answered >= correct && correct >= 0) tally[category] = { answered, correct };
+    }
+    return tally;
+  } catch {
+    return {};
+  }
+}
+
+/** Adds a finished exam's answers to the per-category totals and returns the new totals. */
+export function addExamAnswers(tally: ExamTally, answers: { category: string; correct: boolean }[]): ExamTally {
+  const next: ExamTally = { ...tally };
+  for (const a of answers) {
+    const row = next[a.category] ?? { answered: 0, correct: 0 };
+    next[a.category] = { answered: row.answered + 1, correct: row.correct + (a.correct ? 1 : 0) };
+  }
+  return next;
+}
+
+export function readExamTally(): ExamTally {
+  try {
+    return parseExamTally(localStorage.getItem(EXAM_KEY));
+  } catch {
+    return {};
+  }
+}
+
+export function recordExam(answers: { category: string; correct: boolean }[]) {
+  try {
+    localStorage.setItem(EXAM_KEY, JSON.stringify(addExamAnswers(readExamTally(), answers)));
+  } catch {
+    // Kept for this session only.
+  }
+}

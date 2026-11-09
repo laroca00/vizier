@@ -8,6 +8,7 @@ import { ProCrawler, syncChallengers } from "../../api/src/pros.ts";
 import { RiotClient, RiotError } from "../../api/src/riot/client.ts";
 import { RateLimiter } from "../../api/src/riot/rateLimiter.ts";
 import { pruneRaw, rollup } from "../../api/src/rollup.ts";
+import { snapshotClosedPatch } from "../../api/src/snapshots.ts";
 import { sqliteD1 } from "../../api/src/sqliteD1.ts";
 import { D1Http } from "./d1Http.ts";
 import { publish } from "./publish.ts";
@@ -125,7 +126,12 @@ every(HOUR, "coverage", async () => {
   const regions = report.players.map((p) => `${p.region}/${p.source}:${p.players}`).join(" ");
   return `patch ${newest} games ${queues}; ranked timelines ${ranked?.share === null || !ranked ? "n/a" : `${Math.round(ranked.share * 100)}%`}; players ${regions}`;
 });
-every(ROLLUP_EVERY, "rollup", async () => `${await rollup(db)} rows`);
+every(ROLLUP_EVERY, "rollup", async () => {
+  const rows = await rollup(db);
+  // The closed patch's builds are kept once, while its counts still exist.
+  const snapshots = await snapshotClosedPatch(db);
+  return `${rows} rows${snapshots ? `, ${snapshots} build snapshots` : ""}`;
+});
 every(PRUNE_EVERY, "prune", async () => {
   await pruneRaw(db);
   return "done";
