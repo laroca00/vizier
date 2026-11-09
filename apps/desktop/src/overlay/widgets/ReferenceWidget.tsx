@@ -3,6 +3,7 @@ import { CATEGORY_TEXT, comboText } from "../../data/combos";
 import type { ReactNode } from "react";
 import type { RefSection } from "../reference";
 import type { WidgetContext } from "./context";
+import { EmptyCard } from "./WidgetBoundary";
 
 /** Blocks the player chose, in their order, in one card. */
 export function ReferenceWidget(ctx: WidgetContext) {
@@ -76,7 +77,7 @@ export function ReferenceWidget(ctx: WidgetContext) {
     },
   };
   const rendered = reference.sections.map((s) => [s, block[s]()] as const).filter(([, node]) => node !== null);
-  if (rendered.length === 0) return null;
+  if (rendered.length === 0) return <EmptyCard text={t("Seçtiğin bloklar için veri yok")} />;
   return (
     <section className="overlay__card overlay__ref" aria-label={t("Hızlı bakış")}>
       {rendered.map(([s, node]) => (

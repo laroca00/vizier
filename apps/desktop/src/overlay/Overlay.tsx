@@ -27,15 +27,17 @@ import { benchRead, expectedAt, pushHistory, BENCH_END_MINUTE } from "./bench";
 import { rootVars, widgetVars } from "./appearance";
 import { GRID, ROW_GAP, snapSpot, useLayout, type ScreenSize } from "./layout";
 import { modeOf, widgetsFor, type Spot, type WidgetId } from "./registry";
-import { hasContent } from "./widgets/active";
+import { emptyText, hasContent } from "./widgets/active";
 import type { WidgetContext } from "./widgets/context";
 import { WIDGET_VIEWS } from "./widgets";
+import { WidgetBoundary, EmptyCard } from "./widgets/WidgetBoundary";
 import { sampleGame } from "./sample";
 import { minimapBox } from "./minimap";
 import { panelItems, panelRunes } from "./buildPanel";
 import { combosOf } from "../data/combos";
 import { usePersonal } from "../personal";
 import { laneOpponent, panelCombos, referenceNote } from "./reference";
+import { CLOCK_TICK_MS } from "./tick";
 import { useManualTimers } from "./Timers";
 import "./overlay.css";
 
@@ -75,7 +77,7 @@ function useGameClock(game: LiveGame | null) {
     if (gameTime !== undefined) setAnchor({ gameTime, at: performance.now() });
   }, [gameTime]);
   useEffect(() => {
-    const timer = setInterval(() => setNow(performance.now()), 250);
+    const timer = setInterval(() => setNow(performance.now()), CLOCK_TICK_MS);
     return () => clearInterval(timer);
   }, []);
   return anchor.gameTime + Math.min(1.5, (now - anchor.at) / 1000);
@@ -105,6 +107,13 @@ function picksFor(build: Build | null, championId: number, position: string): Pi
 }
 
 export function Overlay() {
+  // Counted per commit (not per render call, which StrictMode doubles); read by scripts/overlay-perf.mjs.
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      const w = window as unknown as { __overlayRenders?: number };
+      w.__overlayRenders = (w.__overlayRenders ?? 0) + 1;
+    }
+  });
   useClientLocale();
   const t = useT();
   const liveGame = useBackendFlag<LiveGame | null>("live_game", "live-game", overlayFixture());
@@ -245,7 +254,8 @@ export function Overlay() {
   const move = (id: WidgetId, spot: Spot, done: boolean) => (done ? save : preview)({ ...layout, [id]: spot });
 
   // Widgets that have nothing to show take no box.
-  const shown = widgetsFor(mode).filter((def) => def.settings.some((key) => settings[key]) && hasContent[def.id](ctx, settings));
+  const shown = widgetsFor(mode).filter((def) => def.settings.some((key) => settings[key]) && (hasContent[def.id](ctx, settings) || emptyText(def.id, ctx) !== null));
+  const view = (id: WidgetId) => (hasContent[id](ctx, settings) ? createElement(WIDGET_VIEWS[id], ctx) : <EmptyCard text={t(emptyText(id, ctx) ?? "")} />);
   const boxes = shown.filter((def) => !def.fixed);
   const pinned = shown.filter((def) => def.fixed);
 
@@ -257,7 +267,7 @@ export function Overlay() {
           .filter((def) => !def.defaultSpot)
           .map((def) => (
             <Draggable key={def.id} id={def.id} name={t(def.name)} editing={editing} spot={layout[def.id] ?? null} onMove={move} vars={widgetVars(settings.overlayWidgetStyles[def.id])}>
-              {createElement(WIDGET_VIEWS[def.id], ctx)}
+              <WidgetBoundary>{view(def.id)}</WidgetBoundary>
             </Draggable>
           ))}
       </div>
@@ -275,13 +285,13 @@ export function Overlay() {
             vars={widgetVars(settings.overlayWidgetStyles[def.id])}
             onWheel={def.id === "scoreboard" ? (event) => save({ ...layout, rowGap: Math.min(0.12, Math.max(0.02, ctx.rowGap + (event.deltaY < 0 ? 0.001 : -0.001))) }) : undefined}
           >
-            {createElement(WIDGET_VIEWS[def.id], ctx)}
+            <WidgetBoundary>{view(def.id)}</WidgetBoundary>
           </Draggable>
         ))}
 
       {pinned.map((def) => (
         <div key={def.id} className="overlay__pins" style={widgetVars(settings.overlayWidgetStyles[def.id])}>
-          {createElement(WIDGET_VIEWS[def.id], ctx)}
+          <WidgetBoundary>{view(def.id)}</WidgetBoundary>
         </div>
       ))}
 

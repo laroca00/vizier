@@ -521,3 +521,7 @@ html:has(.overlay) body {
   gap: 1px;
   margin: 0;
 }
+
+.overlay__empty {
+  opacity: 0.75;
+}

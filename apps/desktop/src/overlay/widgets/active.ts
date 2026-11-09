@@ -16,3 +16,13 @@ export const hasContent: Record<WidgetId, (ctx: WidgetContext, settings: Setting
   minimap: (ctx) => ctx.objectives.length > 0 || ctx.manualTimers.manual.length > 0,
   scoreboard: (ctx) => ctx.rows.length > 0,
 };
+
+/**
+ * Panels the player opens with a hotkey say so quietly when they have nothing
+ * to show, instead of staying blank. Null when there is nothing to say.
+ */
+export function emptyText(id: WidgetId, ctx: WidgetContext): string | null {
+  if (id === "build" && ctx.buildPanel.shown && ctx.buildPanel.items.length === 0 && ctx.skillOrder.keys.length === 0) return "Bu rol için build verisi yok";
+  if (id === "skillOrder" && ctx.skillOrder.shown && ctx.skillOrder.keys.length === 0) return "Yetenek sırası verisi yok";
+  return null;
+}
