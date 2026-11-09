@@ -27,7 +27,7 @@ async function loadStatic() {
   return { version, champions: byKey };
 }
 
-function ChampionField({ label, value, list, version, onPick }: { label: string; value: Champion | undefined; list: Champion[]; version: string; onPick: (id: number) => void }) {
+export function ChampionField({ label, value, list, version, onPick }: { label: string; value: Champion | undefined; list: Champion[]; version: string; onPick: (id: number) => void }) {
   const listId = useId();
   return (
     <span className="matchup-page__side">

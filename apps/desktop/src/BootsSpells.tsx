@@ -2,6 +2,7 @@ import type { Picks } from "./api";
 import { comparisonRows } from "./comparison";
 import { itemIconUrl, spellIconUrl, type Item, type SummonerSpell } from "./data/ddragon";
 import { formatPercent, useLang, useT } from "./i18n";
+import { sampleTitle } from "./ui/sampleTitle";
 
 type Props = { picks: Pick<Picks, "spells" | "items">; total: number; items: Map<number, Item>; spells: Map<number, SummonerSpell>; version: string };
 
@@ -33,7 +34,7 @@ export function BootsSpells({ picks, total, items, spells, version }: Props) {
           <tr key={row.key}>
             <th scope="row">{row.cells}</th>
             <td>{formatPercent(row.pickRate, lang, 1)}</td>
-            <td>{formatPercent(row.winRate, lang, 1)}</td>
+            <td title={sampleTitle(t, lang, row)}>{formatPercent(row.winRate, lang, 1)}</td>
             <td>{row.games.toLocaleString(lang === "tr" ? "tr" : "en-GB")}</td>
           </tr>
         ))}

@@ -1,17 +1,19 @@
 import { getProMeta, type ProGroup } from "../api";
 import { championIconUrl, champions, latestVersion } from "../data/ddragon";
-import { useT } from "../i18n";
+import { useLang, useT } from "../i18n";
 import { metaRows, proRateIsSettled } from "../proMeta";
 import { loadErrorMessage } from "../loadError";
 import { ErrorState } from "../ui/States";
 import { useAsync } from "../useAsync";
 import { useOnline } from "../useOnline";
+import { sampleTitle } from "../ui/sampleTitle";
 
 type Props = { group: ProGroup; patch?: string; position: string | null; onOpenChampion: (championId: number, position: string | null) => void };
 
 /** Most picked champions in pro games with their win rate; every number carries its game count. */
 export function ProMeta({ group, patch, position, onOpenChampion }: Props) {
   const t = useT();
+  const lang = useLang();
   const [meta, retry] = useAsync(`pro-meta:${group}:${patch ?? ""}`, () => getProMeta(group, patch));
   const [data] = useAsync("pro-meta-static", async () => ({ version: await latestVersion(), champions: await champions() }));
 
@@ -34,7 +36,7 @@ export function ProMeta({ group, patch, position, onOpenChampion }: Props) {
                 {champion && <img src={championIconUrl(data.value.version, champion.id)} alt="" width={30} height={30} />}
                 <span className="pro-meta__name">{champion?.name ?? row.championId}</span>
                 <span className="build__stat">{t("%{share} seçilme, {games} maç", { share: Math.round(row.share * 100), games: row.games })}</span>
-                <span className="pro-meta__rate" data-low={low || undefined}>
+                <span className="pro-meta__rate" data-low={low || undefined} title={sampleTitle(t, lang, { games: row.games, winRate: row.wins / row.games }, t("Profesyonel maçlar"))}>
                   {t("%{rate} kazanma, {games} maç", { rate: Math.round((row.wins / row.games) * 100), games: row.games })}
                 </span>
               </button>

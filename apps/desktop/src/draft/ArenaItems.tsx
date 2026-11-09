@@ -1,6 +1,8 @@
 import { getArenaItems } from "../api";
 import { items as loadItems, itemIconUrl, latestVersion } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
+import { pooled } from "../data/confidence";
+import { DataBadge } from "../ui/DataBadge";
 import { useAsync } from "../useAsync";
 import { finishedArenaItems } from "./arena";
 
@@ -17,6 +19,9 @@ export function ArenaItems({ championId }: { championId: number }) {
   return (
     <section className="champion-augments enter" aria-label={t("Arena eşyaları")}>
       <h2 className="draft__heading">{t("Arena eşyaları")}</h2>
+      <p className="section-badge">
+        <DataBadge {...pooled(shown)} patches={stats.value.patches} updatedAt={stats.value.updatedAt} source={t("Vizier crawler, Arena maçları")} />
+      </p>
       <ul className="champion-augments__list">
         {shown.map((item) => (
           <li key={item.id}>

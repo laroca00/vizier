@@ -33,6 +33,8 @@ export type Sample = {
   patches?: string[];
   /** The newest game patch, from Data Dragon. When it isn't in `patches` the data is outdated. */
   currentPatch?: string | null;
+  /** When the server last published the numbers (ms), for the tooltip. */
+  updatedAt?: number;
 };
 
 export function confidenceOf({ games, winRate, patches, currentPatch }: Sample): Confidence {
@@ -54,4 +56,11 @@ export const CONFIDENCE_LABEL: Record<Confidence, string> = {
 /** The one cut-off for showing a win rate as a fact: its interval must be narrow enough to mean something. */
 export function hasEnoughGames(games: number, winRate: number): boolean {
   return confidenceOf({ games, winRate }) !== "insufficient";
+}
+
+/** Wins and games of several rows added up, so a list can carry one badge for the sample it shows. */
+export function pooled(rows: { games: number; winRate: number }[]): { games: number; winRate: number } {
+  const games = rows.reduce((sum, r) => sum + r.games, 0);
+  const wins = rows.reduce((sum, r) => sum + r.games * r.winRate, 0);
+  return { games, winRate: games > 0 ? wins / games : 0 };
 }

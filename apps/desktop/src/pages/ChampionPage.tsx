@@ -23,6 +23,9 @@ import { SplashLayers, useSkinSplash, useSplashUrl } from "../ui/Splash";
 import { useAsync } from "../useAsync";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
+import { DataBadge } from "../ui/DataBadge";
+import { sampleTitle } from "../ui/sampleTitle";
+import { pooled } from "../data/confidence";
 import { SegmentBar } from "../charts";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { Select } from "../ui/Fields";
@@ -81,6 +84,8 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
                 scope: queue === RANKED ? t(POSITIONS[state.value.position ?? ""] ?? "").toLocaleLowerCase(lang) : queueLabel,
                 games: state.value.games,
               })}
+              {" "}
+              <DataBadge games={state.value.games} winRate={state.value.winRate} patches={state.value.patches} updatedAt={state.value.updatedAt} source={t("Vizier crawler, dereceli maçlar")} />
             </p>
           )}
           <Tabs className="champion__queues" size="small" label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
@@ -364,7 +369,8 @@ function CounterLists({ championId, position, champions, version, onOpenChampion
 }
 
 function Matchups({ counters, champions, version, onOpenChampion, championId, position }: { counters: Counters } & CounterProps) {
-  const percent = percentIn(useLang());
+  const lang = useLang();
+  const percent = percentIn(lang);
   const t = useT();
   const personal = usePersonal();
   const all = counters.matchups;
@@ -380,6 +386,9 @@ function Matchups({ counters, champions, version, onOpenChampion, championId, po
   return groups.map((group) => (
     <div key={group.title} className="matchups">
       <h2 className="draft__heading">{t(group.title)}</h2>
+      <p className="section-badge">
+        <DataBadge {...pooled(group.list)} patches={counters.patches} updatedAt={counters.updatedAt} source={t("Vizier crawler, dereceli maçlar")} />
+      </p>
       <ul className="matchups__list">
         {group.list.map((m, i) => {
           const opponent = champions.get(m.championId);
@@ -399,7 +408,9 @@ function Matchups({ counters, champions, version, onOpenChampion, championId, po
                 <span style={{ "--size": `${Math.abs(lean) * 50}%`, "--i": i } as React.CSSProperties} data-side={lean < 0 ? "loss" : "win"} />
               </span>
               <span className="matchups__rate">{percent(m.winRate)}</span>
-              <span className="matchups__games">{t("{games} maç", { games: m.games })}</span>
+              <span className="matchups__games" title={sampleTitle(t, lang, { ...m, patches: counters.patches, updatedAt: counters.updatedAt })}>
+                {t("{games} maç", { games: m.games })}
+              </span>
               <MatchupLink championId={championId} opponentId={m.championId} position={position} />
             </li>
           );
@@ -457,7 +468,8 @@ function AllyList({
   version,
   onOpenChampion,
 }: Omit<CounterProps, "onOpenChampion"> & { onOpenChampion: (championId: number, position: string) => void }) {
-  const percent = percentIn(useLang());
+  const lang = useLang();
+  const percent = percentIn(lang);
   const t = useT();
   const [state] = useAsync(`allies:${championId}:${position}`, () => getSynergies(championId, position));
   if (state.status !== "done") return null;
@@ -466,6 +478,9 @@ function AllyList({
   return (
     <section className="matchups" aria-label={t("Takım arkadaşları")}>
       <h2 className="draft__heading">{t("En iyi anlaştığı takım arkadaşları")}</h2>
+      <p className="section-badge">
+        <DataBadge {...pooled(groups.flatMap((g) => g.allies))} patches={state.value.patches} updatedAt={state.value.updatedAt} source={t("Vizier crawler, dereceli maçlar")} />
+      </p>
       {groups.map((group) => (
         <div key={group.position}>
           <p className="build__stat">
@@ -482,7 +497,9 @@ function AllyList({
                     <span className="matchups__name">{ally?.name ?? a.championId}</span>
                   </button>
                   <span className="matchups__rate">{percent(a.winRate)}</span>
-                  <span className="matchups__games">{t("{games} maç", { games: a.games })}</span>
+                  <span className="matchups__games" title={sampleTitle(t, lang, { ...a, patches: state.value.patches, updatedAt: state.value.updatedAt })}>
+                    {t("{games} maç", { games: a.games })}
+                  </span>
                 </li>
               );
             })}

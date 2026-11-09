@@ -82,3 +82,19 @@
   color: var(--glaze-muted);
   background: rgb(3 8 30 / 0.35);
 }
+
+.about__facts {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.about__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 12px;
+  padding: 0;
+  list-style: none;
+}

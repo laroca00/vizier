@@ -731,6 +731,12 @@ button.champion-card:hover {
   background: color-mix(in srgb, var(--badge) 14%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--badge) 35%, transparent);
   cursor: help;
+  border: 0;
+  font-family: inherit;
+}
+
+button.data-badge {
+  cursor: pointer;
 }
 
 .data-badge::before {
@@ -756,4 +762,8 @@ button.champion-card:hover {
 
 .data-badge[data-confidence="editorial"] {
   --badge: var(--turquoise);
+}
+
+.section-badge {
+  margin: -2px 0 8px;
 }
