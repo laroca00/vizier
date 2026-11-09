@@ -116,6 +116,23 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
     setChosenOpponent(opponent && !opponent.guessed && opponent.championId === id ? null : id);
   }
 
+  const banFirst = draft?.turn?.kind === "ban" && draft.turn.mine;
+  const banSection =
+    draft && ready ? (
+      <>
+        <h2 className="draft__heading">{t("Yasak önerisi")}</h2>
+        <BanPlanner
+          subject={banSubject}
+          role={role}
+          allies={banAllies}
+          unavailable={new Set([...draft.bans, ...enemyPicks, ...allyIds])}
+          champions={ready.champions}
+          version={ready.version}
+          turn={draft.turn ?? null}
+        />
+      </>
+    ) : null;
+
   return (
     <LiquidGlass className="panel draft" radius={28} strength={2.5} scroll>
       <header className="draft__header enter">
@@ -167,6 +184,8 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                   version={ready.version}
                 />
               )}
+              {/* On the player's own ban turn the ban plan is what they need first. */}
+              {draft.phase !== "FINALIZATION" && banFirst && banSection}
               {role && ready && myChampion > 0 && vs && (
                 <MatchupLink championId={myChampion} opponentId={vs} position={role} label={t("Eşleşme sayfasında incele")} />
               )}
@@ -195,19 +214,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                   />
                 </>
               )}
-              {draft.phase !== "FINALIZATION" && ready && (
-                <>
-                  <h2 className="draft__heading">{t("Yasak önerisi")}</h2>
-                  <BanPlanner
-                    subject={banSubject}
-                    role={role}
-                    allies={banAllies}
-                    unavailable={new Set([...draft.bans, ...enemyPicks, ...allyIds])}
-                    champions={ready.champions}
-                    version={ready.version}
-                  />
-                </>
-              )}
+              {draft.phase !== "FINALIZATION" && !banFirst && banSection}
               {ready && enemyPicks.length > 0 && <ThreatsPanel enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c): c is Champion => c !== undefined)} />}
               {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} aram={hasBench(draft)} />}
               {ready && me && <PoolStrip position={me.position} data={ready} opponentId={vs} turn={draft.turn ?? null} gone={unavailable} />}

@@ -3,6 +3,8 @@ import { championIconUrl, type Champion } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
 import { useAsync } from "../useAsync";
 import { planBans, type BanReason } from "./banPlanner";
+import { BanButtons } from "./BanButtons";
+import type { DraftTurn } from "../lcu";
 
 type Props = {
   /** The champion hovered, locked or the pool main for the role. */
@@ -12,10 +14,12 @@ type Props = {
   unavailable: Set<number>;
   champions: Map<number, Champion>;
   version: string;
+  /** The current turn; ban buttons appear on the player's own ban turn. */
+  turn?: DraftTurn | null;
 };
 
 /** Ban suggestions with the reason for each: meta, our hard matchups, strong into our team. */
-export function BanPlanner({ subject, role, allies, unavailable, champions, version }: Props) {
+export function BanPlanner({ subject, role, allies, unavailable, champions, version, turn }: Props) {
   const t = useT();
   const lang = useLang();
   const allyKey = allies.map((a) => `${a.championId}:${a.position}`).join(",");
@@ -58,6 +62,7 @@ export function BanPlanner({ subject, role, allies, unavailable, champions, vers
                   <li key={reason.kind}>{reasonText(reason)}</li>
                 ))}
               </ul>
+              <BanButtons championId={champion.key} championName={champion.name} turn={turn} />
             </div>
           </li>
         );
