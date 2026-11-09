@@ -8,8 +8,6 @@ import { fakeD1 } from "./test/fakeD1.ts";
 
 // The live game's size, to scale the fixture's doc counts up to a real patch.
 const REAL = { champions: 170, pairs: 340 };
-// Docs that don't grow with champions: one tier list per role and queue, bans, coverage, augments.
-const FIXED_DOCS = 40;
 // Docs of the four queues without a ladder: champion and build per champion, a tier list each, augments, Arena duos and items.
 const OTHER_QUEUE_DOCS = 4 * (2 * REAL.champions + 1) + 2 * (REAL.champions + 2) + 2 * REAL.champions;
 const GROUPS = ["iron_bronze", "silver", "gold", "platinum", "emerald", "diamond", "master_plus"];

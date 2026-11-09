@@ -1,3 +1,4 @@
+import { BRACKETS, groupsOf, type Bracket, type TierGroup } from "@vizier/shared/brackets";
 import { latestPatches } from "./stats.ts";
 
 export type Coverage = {
@@ -9,6 +10,13 @@ export type Coverage = {
   timeline: { patch: string; queue: number; players: number; withTimeline: number; share: number | null }[];
   /** Players the crawler follows, by region and where they were found. */
   players: { region: string; source: "ladder" | "mode"; players: number }[];
+  /**
+   * Games per rank bracket, platform and queue. Absent in docs from before the
+   * all-rank crawl; games of earlier patches count as Emerald.
+   */
+  brackets?: { patch: string; queue: number; bracket: Bracket; platform: string; games: number }[];
+  /** Share of player rows with timeline data per rank bracket; ranked solo only. */
+  timelineBrackets?: { patch: string; queue: number; bracket: Bracket; players: number; withTimeline: number; share: number | null }[];
 };
 
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
@@ -34,12 +42,38 @@ export async function coverage(db: D1Database): Promise<Coverage> {
   const mode = await db.prepare("SELECT region, COUNT(*) AS players FROM mode_players GROUP BY region").all<{ region: string; players: number }>().catch(() => ({ results: [] }));
 
   const keep = new Set(patches);
+  const grouped = await db
+    .prepare("SELECT patch, queue_id AS queue, rank_group AS grp, kind, value, SUM(games) AS games FROM stat_counts_g WHERE kind IN ('matches', 'games', 'skill') GROUP BY patch, queue_id, rank_group, kind, value")
+    .all<{ patch: string; queue: number; grp: TierGroup; kind: string; value: string; games: number }>()
+    .catch(() => ({ results: [] }));
+  const bracketGames = new Map<string, { patch: string; queue: number; bracket: Bracket; platform: string; games: number }>();
+  const bracketTimeline = new Map<string, { patch: string; queue: number; bracket: Bracket; players: number; withTimeline: number }>();
+  for (const r of grouped.results) {
+    if (!keep.has(r.patch)) continue;
+    for (const bracket of BRACKETS) {
+      if (!groupsOf(bracket).includes(r.grp)) continue;
+      if (r.kind === "matches") {
+        const key = [r.patch, r.queue, bracket, r.value].join("\t");
+        const row = bracketGames.get(key) ?? { patch: r.patch, queue: r.queue, bracket, platform: r.value, games: 0 };
+        row.games += r.games;
+        bracketGames.set(key, row);
+      } else if (r.queue === 420) {
+        const key = [r.patch, r.queue, bracket].join("\t");
+        const row = bracketTimeline.get(key) ?? { patch: r.patch, queue: r.queue, bracket, players: 0, withTimeline: 0 };
+        if (r.kind === "games") row.players += r.games;
+        else row.withTimeline += r.games;
+        bracketTimeline.set(key, row);
+      }
+    }
+  }
   return {
     patches,
     games: games.results.filter((r) => keep.has(r.patch)),
     timeline: counts.results
       .filter((r) => keep.has(r.patch))
       .map((r) => ({ ...r, share: r.players > 0 ? round3(Math.min(1, r.withTimeline / r.players)) : null })),
+    brackets: [...bracketGames.values()].sort((a, b) => a.patch.localeCompare(b.patch) * -1 || a.queue - b.queue || a.bracket.localeCompare(b.bracket) || a.platform.localeCompare(b.platform)),
+    timelineBrackets: [...bracketTimeline.values()].map((r) => ({ ...r, share: r.players > 0 ? round3(Math.min(1, r.withTimeline / r.players)) : null })),
     players: [
       ...ladder.results.map((r) => ({ region: r.region, source: "ladder" as const, players: r.players })),
       ...mode.results.map((r) => ({ region: r.region, source: "mode" as const, players: r.players })),

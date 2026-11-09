@@ -377,6 +377,8 @@ async function rollupMatches(db: D1Database) {
     for (const id of new Set(ids(m.bans ?? ""))) tally.add({ ...matchRow(m), champion_id: id }, "ban", "", 0);
   }
   tallyPoolMatches(tally, results);
+  // Games per tier group and platform, for the coverage doc: the prefix of a match id is where it was played.
+  for (const m of results) tally.add(matchRow(m), "matches", m.match_id.split("_")[0], 0);
   const insertGames = db.prepare(
     `INSERT INTO stat_matches (patch, queue_id, games, last_start) VALUES (?, ?, ?, ?)
       ON CONFLICT DO UPDATE SET games = games + excluded.games, last_start = MAX(last_start, excluded.last_start)`,

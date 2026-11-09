@@ -1,0 +1,35 @@
+.coverage {
+  margin-top: 16px;
+}
+
+.coverage__table {
+  width: 100%;
+  max-width: 560px;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.coverage__table caption {
+  padding-bottom: 6px;
+  text-align: left;
+  color: var(--glaze-muted);
+}
+
+.coverage__table th,
+.coverage__table td {
+  padding: 4px 8px;
+  text-align: right;
+  font-weight: 350;
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.coverage__table th:first-child {
+  text-align: left;
+  font-weight: 450;
+}
+
+.coverage__table thead th {
+  color: var(--glaze-muted);
+  font-weight: 400;
+}
