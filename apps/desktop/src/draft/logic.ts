@@ -3,6 +3,7 @@ import type { Champion } from "../data/ddragon";
 import { analyzeComp, traitsOf } from "../data/traits";
 import type { ChampSelect, DraftMember } from "../lcu";
 import { ARAM, RANKED } from "../queues";
+import { hasEnoughGames, wilson } from "../data/confidence";
 
 export const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"] as const;
 
@@ -144,8 +145,8 @@ export type ScoreBreakdown = { meta: number; counter: number; needs: number };
 
 export type PickSuggestion = { championId: number; score: number; reasons: PickReason[]; breakdown: ScoreBreakdown; inPool: boolean };
 
+// Not a rate cut-off: a champion needs this many games to be a meta pick at all.
 const MIN_TIER_GAMES = 150;
-const MIN_MATCHUP_GAMES = 40;
 const NEED_POINTS = 2;
 const COUNTER_WEIGHT = 1.5;
 const SHOWN_SUGGESTIONS = 6;
@@ -170,7 +171,7 @@ type SuggestInput = {
  */
 export function suggestPicks({ tierList, opponentCounters, opponentId, allies, champions, unavailable, pool }: SuggestInput): PickSuggestion[] {
   const needs = teamNeeds(allies);
-  const against = new Map((opponentCounters?.matchups ?? []).filter((m) => m.games >= MIN_MATCHUP_GAMES).map((m) => [m.championId, m]));
+  const against = new Map((opponentCounters?.matchups ?? []).filter((m) => hasEnoughGames(m.games, m.winRate)).map((m) => [m.championId, m]));
   return tierList
     .filter((entry) => entry.games >= MIN_TIER_GAMES && !unavailable.has(entry.championId))
     .flatMap((entry) => {
@@ -182,7 +183,7 @@ export function suggestPicks({ tierList, opponentCounters, opponentId, allies, c
       if (matchup && opponentId) {
         const ours = 1 - matchup.winRate;
         breakdown.counter = (ours - 0.5) * 100 * COUNTER_WEIGHT;
-        if (ours >= 0.51) reasons.push({ kind: "counter", vs: opponentId, winRate: ours, games: matchup.games });
+        if (wilson(ours, matchup.games).low > 0.5) reasons.push({ kind: "counter", vs: opponentId, winRate: ours, games: matchup.games });
       }
       for (const need of needs) {
         if (fills(need, champion)) {
@@ -204,10 +205,15 @@ export function suggestPicks({ tierList, opponentCounters, opponentId, allies, c
 
 export type Difficulty = "hard" | "even" | "easy";
 
-/** How the matchup tends to go, from our champion's win rate against the opponent. */
-export function difficultyOf(winRate: number): Difficulty {
-  if (winRate < 0.48) return "hard";
-  if (winRate > 0.52) return "easy";
+/**
+ * How the matchup tends to go, from our champion's win rate against the
+ * opponent. "hard" and "easy" need the 95% interval to lie fully on one side
+ * of 50%; anything else is "even", which the app words as even or unclear.
+ */
+export function difficultyOf(winRate: number, games: number): Difficulty {
+  const { low, high } = wilson(winRate, games);
+  if (high < 0.5) return "hard";
+  if (low > 0.5) return "easy";
   return "even";
 }
 
@@ -237,16 +243,14 @@ export function duoPartnerRole(role: string | null | undefined): string | null {
   return (role && DUO_PARTNER[role.toUpperCase()]) || null;
 }
 
-const MIN_LINE_GAMES = 40;
-
 /** The champion's matchup against the opponent, or null while the sample is too thin. */
 export function matchupLine(
   counters: { matchups: { championId: number; games: number; winRate: number }[] },
   opponentId: number,
 ): { winRate: number; games: number; difficulty: Difficulty } | null {
   const m = counters.matchups.find((x) => x.championId === opponentId);
-  if (!m || m.games < MIN_LINE_GAMES) return null;
-  return { winRate: m.winRate, games: m.games, difficulty: difficultyOf(m.winRate) };
+  if (!m || !hasEnoughGames(m.games, m.winRate)) return null;
+  return { winRate: m.winRate, games: m.games, difficulty: difficultyOf(m.winRate, m.games) };
 }
 
 /** ARAM and Mayhem hand out a shared bench; other queues never have one. */

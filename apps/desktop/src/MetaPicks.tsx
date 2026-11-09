@@ -6,16 +6,15 @@ import { POSITIONS } from "./labels";
 import { useSplash } from "./ui/Splash";
 import { useAsync } from "./useAsync";
 import "./MetaPicks.css";
+import { hasEnoughGames } from "./data/confidence";
 
 const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
-// Below this a high win rate is mostly a few one-tricks, not the patch.
-const MIN_GAMES = 60;
 
 type Pick = { position: string; entry: TierEntry; champion: Champion };
 
 /** The most played champion among each role's best tier. */
 function strongest(list: TierEntry[]) {
-  const settled = list.filter((c) => c.games >= MIN_GAMES);
+  const settled = list.filter((c) => hasEnoughGames(c.games, c.winRate));
   const best = settled.find((c) => c.tier === "S") ? "S" : settled[0]?.tier;
   return settled.filter((c) => c.tier === best).sort((a, b) => b.pickRate - a.pickRate)[0];
 }

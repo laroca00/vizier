@@ -121,14 +121,14 @@ describe("suggestPicks", () => {
   it("ranks counters to the lane opponent and explains why", () => {
     const picks = suggestPicks({
       tierList: [entry(103, 0.5), entry(61, 0.5), entry(134, 0.5)],
-      opponentCounters: { patches: [], games: 0, matchups: [{ championId: 61, games: 200, winRate: 0.44 }] },
+      opponentCounters: { patches: [], games: 0, matchups: [{ championId: 61, games: 800, winRate: 0.44 }] },
       opponentId: 238,
       allies: [],
       champions: ALL,
       unavailable: new Set(),
     });
     expect(picks[0].championId).toBe(61);
-    expect(picks[0].reasons[0]).toMatchObject({ kind: "counter", vs: 238, games: 200 });
+    expect(picks[0].reasons[0]).toMatchObject({ kind: "counter", vs: 238, games: 800 });
     expect(picks[0].reasons[0].kind === "counter" && picks[0].reasons[0].winRate).toBeCloseTo(0.56);
   });
 
@@ -160,9 +160,17 @@ describe("suggestPicks", () => {
 
 describe("matchup helpers", () => {
   it("reads difficulty from the win rate", () => {
-    expect(difficultyOf(0.45)).toBe("hard");
-    expect(difficultyOf(0.5)).toBe("even");
-    expect(difficultyOf(0.55)).toBe("easy");
+    expect(difficultyOf(0.4, 600)).toBe("hard");
+    expect(difficultyOf(0.5, 600)).toBe("even");
+    expect(difficultyOf(0.6, 600)).toBe("easy");
+  });
+
+  it("calls a matchup hard or easy only when the interval clears 50%", () => {
+    // 45% over 120 games is -5 points, but the interval still holds 50%.
+    expect(difficultyOf(0.45, 120)).toBe("even");
+    expect(difficultyOf(0.45, 1000)).toBe("hard");
+    expect(difficultyOf(0.55, 100)).toBe("even");
+    expect(difficultyOf(0.55, 1000)).toBe("easy");
   });
 
   it("finds items bought more against this opponent", () => {
@@ -191,7 +199,7 @@ describe("suggestPicks pool and breakdown", () => {
   it("splits the score into its parts", () => {
     const picks = suggestPicks({
       tierList: [entry(61, 0.52)],
-      opponentCounters: { patches: [], games: 0, matchups: [{ championId: 61, games: 200, winRate: 0.44 }] },
+      opponentCounters: { patches: [], games: 0, matchups: [{ championId: 61, games: 800, winRate: 0.44 }] },
       opponentId: 238,
       allies: [JINX, LEESIN],
       champions: ALL,
@@ -223,12 +231,18 @@ describe("matchupLine", () => {
   const counters = { matchups: [{ championId: 1, games: 120, winRate: 0.45 }, { championId: 2, games: 10, winRate: 0.7 }] };
 
   it("reads the win rate, games and difficulty", () => {
-    expect(matchupLine(counters, 1)).toEqual({ winRate: 0.45, games: 120, difficulty: "hard" });
+    expect(matchupLine(counters, 1)).toEqual({ winRate: 0.45, games: 120, difficulty: "even" });
   });
 
   it("ignores thin and missing matchups", () => {
     expect(matchupLine(counters, 2)).toBeNull();
     expect(matchupLine(counters, 3)).toBeNull();
+  });
+
+  it("follows the confidence rule, not a fixed count", () => {
+    // 50 games at 55% had passed the old 40-game bar; its interval is still ±14 points.
+    expect(matchupLine({ matchups: [{ championId: 4, games: 50, winRate: 0.55 }] }, 4)).toBeNull();
+    expect(matchupLine({ matchups: [{ championId: 4, games: 500, winRate: 0.55 }] }, 4)).not.toBeNull();
   });
 });
 

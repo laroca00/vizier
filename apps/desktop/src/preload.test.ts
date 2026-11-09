@@ -21,6 +21,14 @@ describe("lobby preload", () => {
     expect(builds.filter((b) => b.championId === 1)).toHaveLength(0);
   });
 
+  it("prefers the roles asked for in the lobby", () => {
+    const pool = [pick(1, "MIDDLE"), pick(2, "TOP")];
+    const plan = planPreload(pool, ["TOP", "BOTTOM"]);
+    expect(plan.roles).toEqual(["TOP", "BOTTOM"]);
+    expect(plan.builds.map((b) => b.championId)).toEqual([2]);
+    expect(planPreload(pool, ["FILL"]).roles).toEqual(["MIDDLE", "TOP"]);
+  });
+
   it("starts when the queue flow begins, not between its steps", () => {
     expect(enteredQueueFlow(null, "Lobby")).toBe(true);
     expect(enteredQueueFlow("None", "Matchmaking")).toBe(true);

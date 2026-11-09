@@ -5,14 +5,14 @@ import { formatPercent, useLang, useT } from "../i18n";
 import { DataBadge } from "../ui/DataBadge";
 import { useAsync } from "../useAsync";
 import { difficultyOf, matchupItems, type Difficulty } from "./logic";
+import { hasEnoughGames } from "../data/confidence";
 
 export const DIFFICULTY_TEXT: Record<Difficulty, string> = {
   hard: "Zor eşleşme",
-  even: "Dengeli eşleşme",
+  even: "Dengeli ya da belirsiz",
   easy: "Rahat eşleşme",
 };
 
-const MIN_GAMES = 40;
 const SHOWN_TIPS = 2;
 
 type Props = {
@@ -40,8 +40,8 @@ export function MatchupGuide({ championId, position, opponent, version }: Props)
   });
 
   const matchup = counters.status === "done" ? counters.value.matchups.find((m) => m.championId === opponent.key) : undefined;
-  const known = matchup && matchup.games >= MIN_GAMES ? matchup : undefined;
-  const difficulty = known ? difficultyOf(known.winRate) : null;
+  const known = matchup && hasEnoughGames(matchup.games, matchup.winRate) ? matchup : undefined;
+  const difficulty = known ? difficultyOf(known.winRate, known.games) : null;
   const standIn =
     !known && counters.status === "done" && roster.status === "done" ? standInMatchup(counters.value.matchups, opponent, roster.value.values()) : null;
 

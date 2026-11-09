@@ -1,7 +1,7 @@
 import { getProMeta, type ProGroup } from "../api";
 import { championIconUrl, champions, latestVersion } from "../data/ddragon";
 import { useT } from "../i18n";
-import { META_MIN_GAMES, metaRows } from "../proMeta";
+import { metaRows, proRateIsSettled } from "../proMeta";
 import { loadErrorMessage } from "../loadError";
 import { ErrorState } from "../ui/States";
 import { useAsync } from "../useAsync";
@@ -23,11 +23,11 @@ export function ProMeta({ group, patch, position, onOpenChampion }: Props) {
 
   return (
     <>
-      <p className="build__note">{t("Seçilme oranı pro maçlarına göre; yasaklar kaydedilmiyor. {min} maçın altındaki kazanma oranları soluk.", { min: META_MIN_GAMES })}</p>
+      <p className="build__note">{t("Seçilme oranı pro maçlarına göre; yasaklar kaydedilmiyor. Maç sayısı az olan kazanma oranları soluk.")}</p>
       <ul className="pro-meta">
         {rows.map((row) => {
           const champion = data.value.champions.get(row.championId);
-          const low = row.games < META_MIN_GAMES;
+          const low = !proRateIsSettled(row.games, row.wins / row.games);
           return (
             <li key={row.championId}>
               <button type="button" className="pro-meta__row" onClick={() => onOpenChampion(row.championId, position)}>

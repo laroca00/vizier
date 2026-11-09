@@ -1,3 +1,4 @@
+import type { Lobby } from "../clientFlow";
 import type { ChampSelect, LcuStatus } from "../lcu";
 import { sampleGame } from "../overlay/sample";
 import type { LiveGame } from "../overlay/live";
@@ -78,4 +79,10 @@ export function lcuFixture(): LcuStatus | null {
     lastGameId: 1,
     region: { region: "TR", locale: "tr_TR" },
   };
+}
+
+/** Dev only: `?fixture=client` also puts the player in a ranked lobby asking for mid and bottom. */
+export function lobbyFixture(): Lobby | null {
+  if (!import.meta.env.DEV || new URLSearchParams(location.search).get("fixture") !== "client") return null;
+  return { queueId: 420, firstPosition: "MIDDLE", secondPosition: "BOTTOM" };
 }

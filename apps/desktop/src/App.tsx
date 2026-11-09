@@ -3,7 +3,8 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useChampSelectMock } from "./dev/champSelectMock";
 import { champSelectFixture } from "./dev/fixtures";
-import { useChampSelect, useLcuStatus } from "./lcu";
+import { useChampSelect, useLcuStatus, useLobby } from "./lcu";
+import { lobbyRoles } from "./clientFlow";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { noteRecent, usePersonal } from "./personal";
@@ -127,6 +128,7 @@ async function bringToFront() {
 
 function App() {
   const lcu = useLcuStatus();
+  const lobby = useLobby();
   const settings = useSettings();
   const online = useOnline();
   const t = useT();
@@ -152,11 +154,18 @@ function App() {
   const personal = usePersonal();
   const previousPhase = useRef<string | null>(null);
   useEffect(() => {
-    if (enteredQueueFlow(previousPhase.current, phase)) runPreload(planPreload(personal.pool));
+    if (enteredQueueFlow(previousPhase.current, phase)) runPreload(planPreload(personal.pool, lobbyRoles(lobby)));
     previousPhase.current = phase;
     // The pool is read when the lobby opens; later edits don't need to refetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
+
+  // The lobby can report its roles a moment after the phase changes, or change them while waiting.
+  const rolesKey = lobbyRoles(lobby).join(",");
+  useEffect(() => {
+    if (rolesKey && phase && ["Lobby", "Matchmaking", "ReadyCheck"].includes(phase)) runPreload(planPreload(personal.pool, rolesKey.split(",")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rolesKey]);
 
   // Nobody looks at Vizier while the game is in front, so WebView2 can hand
   // memory back to the game until the player switches over.
@@ -407,7 +416,7 @@ function App() {
                 onOpenChampion={openChampion}
               />
             ) : (
-              <Home lcu={lcu} draftActive={draft !== null} onOpenChampion={openChampion} onNavigate={go} onSearch={() => setSearching(true)} />
+              <Home lcu={lcu} lobby={lobby} draftActive={draft !== null} onOpenChampion={openChampion} onNavigate={go} onSearch={() => setSearching(true)} />
             )}
             </Suspense>
           </ErrorBoundary>

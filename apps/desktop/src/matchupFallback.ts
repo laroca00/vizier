@@ -1,4 +1,5 @@
 import type { Champion } from "./data/ddragon";
+import { hasEnoughGames } from "./data/confidence";
 import { similarChampions } from "./similar";
 
 type Row = { championId: number; games: number; winRate: number };
@@ -11,8 +12,8 @@ export type StandIn = {
 };
 
 const NEAREST = 12;
+// Not a rate cut-off: a part this small only adds noise and one-off picks to the pool.
 const MIN_PART_GAMES = 10;
-const MIN_POOLED_GAMES = 60;
 
 /**
  * When the exact matchup is thin, the champion's record against the closest
@@ -31,6 +32,6 @@ export function standInMatchup(matchups: Row[], opponent: Champion, champions: I
     games += row.games;
     wins += row.games * row.winRate;
   }
-  if (games < MIN_POOLED_GAMES) return null;
+  if (games === 0 || !hasEnoughGames(games, wins / games)) return null;
   return { from, games, winRate: wins / games };
 }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { lcuFixture } from "./dev/fixtures";
+import { lcuFixture, lobbyFixture } from "./dev/fixtures";
+import type { Lobby } from "./clientFlow";
 import { translate, type Lang } from "./i18n";
 
 export type Summoner = { gameName: string; tagLine: string; puuid: string; profileIconId?: number };
@@ -90,4 +91,9 @@ export function useLcuStatus(): LcuStatus {
 
 export function useChampSelect(): ChampSelect | null {
   return useBackendState<ChampSelect | null>("lcu-champ-select", "champ_select", null);
+}
+
+/** The lobby's queue and the player's own role picks; null outside a lobby. */
+export function useLobby(): Lobby | null {
+  return useBackendState<Lobby | null>("lcu-lobby", "lobby", lobbyFixture());
 }

@@ -29,3 +29,15 @@ export function moveCard(layout: HomeLayout, card: HomeCard, step: -1 | 1): Home
 export function toggleCard(layout: HomeLayout, card: HomeCard): HomeLayout {
   return { ...layout, hidden: layout.hidden.includes(card) ? layout.hidden.filter((c) => c !== card) : [...layout.hidden, card] };
 }
+
+const PATCH_CARDS: HomeCard[] = ["thisPatch", "metaPicks", "metaMovers"];
+
+/**
+ * With the client closed the patch and meta cards come first, since there is
+ * no queue to prepare for. A layout the player arranged is left alone.
+ */
+export function homeOrderFor(layout: HomeLayout, clientOpen: boolean): HomeCard[] {
+  const untouched = layout.order.every((card, i) => card === DEFAULT_HOME.order[i]);
+  if (clientOpen || !untouched) return layout.order;
+  return [...PATCH_CARDS, ...layout.order.filter((card) => !PATCH_CARDS.includes(card))];
+}

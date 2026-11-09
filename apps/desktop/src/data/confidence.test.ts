@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { confidenceOf, patchOf, wilson } from "./confidence";
+import { confidenceOf, hasEnoughGames, patchOf, wilson } from "./confidence";
 
 describe("wilson", () => {
   it("matches the textbook interval for 50% over 100 games", () => {
@@ -36,5 +36,14 @@ describe("confidenceOf", () => {
   it("reduces versions to the patch", () => {
     expect(patchOf("16.22.1")).toBe("16.22");
     expect(patchOf("16.22")).toBe("16.22");
+  });
+});
+
+describe("hasEnoughGames", () => {
+  it("needs a narrow interval, not a fixed game count", () => {
+    expect(hasEnoughGames(40, 0.5)).toBe(false);
+    expect(hasEnoughGames(400, 0.5)).toBe(true);
+    // The same rate is judged on its own interval at either end of the scale.
+    expect(hasEnoughGames(60, 0.95)).toBe(true);
   });
 });

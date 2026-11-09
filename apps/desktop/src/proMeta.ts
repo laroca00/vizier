@@ -2,8 +2,8 @@ import type { ProMetaEntry } from "./api";
 
 export type MetaRow = { championId: number; games: number; wins: number; /** Share of the scope's pro games, 0-1. */ share: number };
 
-/** Below this a win rate is mostly luck, so the page greys it out. */
-export const META_MIN_GAMES = 5;
+/** The page greys a pro win rate whose interval is too wide; see hasEnoughGames. */
+export { hasEnoughGames as proRateIsSettled } from "./data/confidence";
 
 /**
  * Champions of one role (or all roles merged) by pro games. Share is out of

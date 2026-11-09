@@ -1,4 +1,8 @@
 import type { BanSuggestions, Counters } from "../api";
+import { hasEnoughGames, wilson } from "../data/confidence";
+
+/** A matchup counts as a problem only when its whole 95% interval is under 50%. */
+const clearlyBelowEven = (winRate: number, games: number) => wilson(winRate, games).high < 0.5;
 
 export type BanReason =
   | { kind: "meta"; winRate: number; games: number }
@@ -7,11 +11,8 @@ export type BanReason =
 
 export type BanPick = { championId: number; reasons: BanReason[]; score: number };
 
-const MIN_GAMES = 40;
 const MIN_META_GAMES = 150;
 const SHOWN_BANS = 6;
-/** How far below an even matchup counts as a real problem, as win rate. */
-const HARD_BELOW = 0.48;
 
 type Input = {
   meta: BanSuggestions | null;
@@ -45,7 +46,7 @@ export function planBans({ meta, own, allies, unavailable }: Input): BanPick[] {
 
   if (own) {
     for (const m of own.counters.matchups) {
-      if (m.games < MIN_GAMES || m.winRate > HARD_BELOW) continue;
+      if (!hasEnoughGames(m.games, m.winRate) || !clearlyBelowEven(m.winRate, m.games)) continue;
       add(m.championId, { kind: "hard", vs: own.championId, winRate: m.winRate, games: m.games }, 1.5 + (0.5 - m.winRate) * 10);
     }
   }
@@ -54,7 +55,7 @@ export function planBans({ meta, own, allies, unavailable }: Input): BanPick[] {
   const byEnemy = new Map<number, { allies: number[]; wins: number; games: number }>();
   for (const ally of allies) {
     for (const m of ally.counters.matchups) {
-      if (m.games < MIN_GAMES || m.winRate > HARD_BELOW) continue;
+      if (!hasEnoughGames(m.games, m.winRate) || !clearlyBelowEven(m.winRate, m.games)) continue;
       const row = byEnemy.get(m.championId) ?? { allies: [], wins: 0, games: 0 };
       row.allies.push(ally.championId);
       row.wins += (1 - m.winRate) * m.games;
@@ -64,6 +65,8 @@ export function planBans({ meta, own, allies, unavailable }: Input): BanPick[] {
   }
   for (const [championId, row] of byEnemy) {
     const winRate = row.wins / row.games;
+    // Pooled over several allies, the same rule holds: the enemy has to beat them clearly.
+    if (winRate < 0.5 || wilson(winRate, row.games).low <= 0.5) continue;
     add(championId, { kind: "team", allies: row.allies, winRate, games: row.games }, row.allies.length + (winRate - 0.5) * 10);
   }
 
