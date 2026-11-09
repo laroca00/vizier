@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Build, Picks, Variant } from "../api";
 import type { SavedBuild } from "../library/store";
-import { labColumns, savedFor } from "./columns";
+import { customColumn, customFrom, labColumns, proColumn, savedFor } from "./columns";
 
 const picks = (core: number[]): Picks => ({
   runes: [{ primaryStyle: 8000, subStyle: 8100, perks: [8005], games: 10, winRate: 0.5 }],
@@ -44,5 +44,20 @@ describe("savedFor", () => {
   it("keeps the champion's builds for the role, favourites first then newest", () => {
     const list = [saved({ id: "a", updatedAt: 5 }), saved({ id: "b", updatedAt: 9 }), saved({ id: "c", favourite: true, updatedAt: 1 }), saved({ id: "d", championId: 2 }), saved({ id: "e", position: "TOP" })];
     expect(savedFor(list, 1, "MIDDLE").map((b) => b.id)).toEqual(["c", "b", "a"]);
+  });
+});
+
+describe("custom and pro columns", () => {
+  it("copies a column into an editable build that is not in the library yet", () => {
+    const [popular] = labColumns(build([variant("ap", [10, 11], 600, 0.5)]), null, 1, ctx);
+    const copy = customFrom(popular, "Özel", 5);
+    expect(copy).toMatchObject({ id: "lab-custom", name: "Özel", source: "custom", coreItems: popular.build.coreItems, favourite: false });
+    expect(customColumn(copy)).toMatchObject({ id: "custom", sample: null, basis: "own" });
+  });
+  it("turns a pro game into a column with who played it", () => {
+    const pro = { player: "Chovy", team: "GEN", patch: "16.21", runes: "8000:8100:8005::", spells: [4, 14], items: [], startItems: [1055], skillOrder: [1, 2, 3], purchases: [3000, 3100, 1055] } as never;
+    const column = proColumn(pro, 1, ctx);
+    expect(column).toMatchObject({ id: "pro", basis: "pro", note: "Chovy · GEN · 16.21", sample: null });
+    expect(column.build.coreItems).toEqual([3000, 3100, 1055]);
   });
 });

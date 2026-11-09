@@ -1,20 +1,22 @@
-import type { Build } from "../api";
+import type { Build, ProBuild } from "../api";
 import { winRateBar } from "../buildSideBySide";
-import { fromPicks } from "../library/convert";
+import { fromPicks, fromPro } from "../library/convert";
 import type { BuildDraft, SavedBuild } from "../library/store";
 
 // The columns of the Itemization Lab: the build most players use, the one that
 // wins most among those with enough games, and one of the player's own.
 
 export type LabColumn = {
-  id: "popular" | "winrate" | "saved" | "direction";
+  id: "popular" | "winrate" | "saved" | "pro" | "custom" | "direction";
   /** What the column is, in Turkish for t(). */
   label: string;
   build: BuildDraft;
   /** Null for the player's own build, which has no sample. */
   sample: { games: number; winRate: number } | null;
   /** What the column rests on: crawler games, the player's own saving, or a hand-kept rule. */
-  basis?: "data" | "own" | "editorial";
+  basis?: "data" | "own" | "editorial" | "pro";
+  /** Plain text under the heading, for columns that come from one game or one person. */
+  note?: string;
   /** Games behind a column that has no win rate of its own (items bought against a team type). */
   games?: number;
   /** Variant style when the numbers are for one way of building the champion. */
@@ -55,4 +57,28 @@ export function labColumns(build: Build | null, saved: SavedBuild | null, champi
     columns.push({ id: "saved", label: "Kayıtlı build'in", build: saved, sample: null, basis: "own", style: null });
   }
   return columns;
+}
+
+/** One pro game as a column; its numbers are a single game, so there is no sample to badge. */
+export function proColumn(pro: ProBuild, championId: number, ctx: Context): LabColumn {
+  return {
+    id: "pro",
+    label: "Pro build",
+    build: fromPro({ name: "", championId, position: ctx.position }, pro, ctx.finished),
+    sample: null,
+    basis: "pro",
+    note: `${pro.player} · ${pro.team} · ${pro.patch}`,
+    style: null,
+  };
+}
+
+export const CUSTOM_ID = "lab-custom";
+
+/** The player's editable copy of a column, kept in the page until they save it to the library. */
+export function customFrom(column: LabColumn, name: string, now = Date.now()): SavedBuild {
+  return { ...column.build, id: CUSTOM_ID, name, favourite: false, source: "custom", createdAt: now, updatedAt: now };
+}
+
+export function customColumn(build: SavedBuild): LabColumn {
+  return { id: "custom", label: "Özel sütun", build, sample: null, basis: "own", style: null };
 }

@@ -1,15 +1,18 @@
 import { useMemo, useState } from "react";
-import { getBuild, type Build } from "../api";
+import { getBuild, getProBuilds, type Build } from "../api";
 import { DataBadge } from "../ui/DataBadge";
 import { formatPercent, useLang, useT } from "../i18n";
 import { buildGold } from "../library/gold";
 import { loadLibraryData, type LibraryData } from "../library/data";
-import { useLibrary } from "../library/store";
+import { BuildEditor } from "../library/BuildEditor";
+import { createBuild, useLibrary, type SavedBuild } from "../library/store";
+import { Button } from "../ui/Button";
+import { useToast } from "../ui/Toast";
 import { DIRECTIONS, directionColumn, type DirectionId } from "../lab/directions";
 import { STAT_PRICES } from "../data/itemGold";
 import { runningTotals, shownStats, statValue } from "../lab/totals";
 import { LabTotals } from "../lab/LabTotals";
-import { labColumns, savedFor, type LabColumn } from "../lab/columns";
+import { customColumn, customFrom, labColumns, proColumn, savedFor, type LabColumn } from "../lab/columns";
 import { itemIconUrl, spellIconUrl } from "../data/ddragon";
 import { POSITIONS } from "../labels";
 import { loadErrorMessage } from "../loadError";
@@ -57,7 +60,7 @@ export function LabPage({ route, onChange }: Props) {
             />
           </div>
           {champion ? (
-            <LabColumns data={data.value} championId={champion.key} position={route.position} />
+            <LabColumns key={`${champion.key}:${route.position}`} data={data.value} championId={champion.key} position={route.position} />
           ) : (
             <EmptyState title={t("Bir şampiyon seç")}>{t("Seçtiğin şampiyonun en çok oynanan, en çok kazanan ve kayıtlı build'i burada yan yana görünür.")}</EmptyState>
           )}
@@ -75,6 +78,11 @@ function LabColumns({ data, championId, position }: { data: LibraryData; champio
   const mine = useMemo(() => savedFor(library.builds, championId, position), [library.builds, championId, position]);
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [direction, setDirection] = useState<DirectionId>("standard");
+  const [custom, setCustom] = useState<SavedBuild | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [proKey, setProKey] = useState("");
+  const [pros] = useAsync(`lab-pros:${championId}:${position}`, () => getProBuilds({ championId, position, limit: 10 }).catch(() => []));
+  const toast = useToast();
   const saved = mine.find((b) => b.id === pickedId) ?? mine[0] ?? null;
 
   if (build.status === "error") return <ErrorState message={t(loadErrorMessage(build.error, online))} onRetry={retry} />;
@@ -82,6 +90,10 @@ function LabColumns({ data, championId, position }: { data: LibraryData; champio
 
   const finished = (id: number) => !!data.items.get(id)?.complete;
   const columns = labColumns(build.value, saved, championId, { position, finished });
+  const proList = pros.status === "done" ? pros.value : [];
+  const pro = proList.find((p) => p.matchId === proKey);
+  if (pro) columns.push(proColumn(pro, championId, { position, finished }));
+  if (custom) columns.push(customColumn(custom));
   const extra = build.value ? directionColumn(direction, build.value, data.details, championId, position) : null;
   if (extra) columns.push(extra);
   if (columns.length === 0) return <EmptyState title={t("Bu rol için build yok")}>{t("Henüz yeterli maç ya da kayıtlı build yok. Başka bir rol dene.")}</EmptyState>;
@@ -98,6 +110,27 @@ function LabColumns({ data, championId, position }: { data: LibraryData; champio
         <p className="build__stat">{t(DIRECTIONS.find((d) => d.id === direction)?.blurb ?? "")}</p>
         {direction !== "standard" && !extra && <p className="build__note">{t("Bu yöne uyan yeterli eşya bu şampiyonun build'lerinde yok.")}</p>}
       </div>
+      <div className="lab__controls">
+        {proList.length > 0 && (
+          <Select
+            label={t("Pro build ekle")}
+            value={proKey}
+            options={[{ value: "", label: t("Yok") }, ...proList.map((p) => ({ value: p.matchId, label: `${p.player} (${p.patch})` }))]}
+            onChange={setProKey}
+          />
+        )}
+        {!custom && columns.length > 0 && (
+          <Button
+            size="small"
+            onClick={() => {
+              setCustom(customFrom(columns[0], t("Lab build'i")));
+              setEditing(true);
+            }}
+          >
+            {t("Özel sütun ekle")}
+          </Button>
+        )}
+      </div>
       {mine.length > 1 && (
         <Select
           label={t("Kayıtlı build")}
@@ -108,15 +141,55 @@ function LabColumns({ data, championId, position }: { data: LibraryData; champio
       )}
       <div className="lab__columns" style={{ "--columns": columns.length } as React.CSSProperties}>
         {columns.map((column) => (
-          <LabCard key={column.id} column={column} data={data} patches={build.value?.patches} updatedAt={build.value?.updatedAt} />
+          <LabCard
+            key={column.id}
+            column={column}
+            data={data}
+            patches={build.value?.patches}
+            updatedAt={build.value?.updatedAt}
+            actions={
+              column.id === "custom" && custom ? (
+                <div className="lab__actions">
+                  <Button size="small" onClick={() => setEditing(true)}>
+                    {t("Düzenle")}
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      const { id: _id, createdAt: _c, updatedAt: _u, ...draft } = custom;
+                      createBuild(draft);
+                      toast("success", t("Kütüphaneye kaydedildi."));
+                    }}
+                  >
+                    {t("Kütüphaneye kaydet")}
+                  </Button>
+                  <Button size="small" onClick={() => setCustom(null)}>
+                    {t("Kaldır")}
+                  </Button>
+                </div>
+              ) : undefined
+            }
+          />
         ))}
       </div>
       <LabTotals columns={columns} data={data} />
+      {editing && custom && (
+        <BuildEditor
+          build={custom}
+          data={data}
+          collections={library.collections}
+          onSave={(next) => {
+            setCustom(next);
+            setEditing(false);
+          }}
+          onClose={() => setEditing(false)}
+        />
+      )}
     </>
   );
 }
 
-function LabCard({ column, data, patches, updatedAt }: { column: LabColumn; data: LibraryData; patches: Build["patches"] | undefined; updatedAt: number | undefined }) {
+function LabCard({ column, data, patches, updatedAt, actions }: { column: LabColumn; data: LibraryData; patches: Build["patches"] | undefined; updatedAt: number | undefined; actions?: React.ReactNode }) {
   const t = useT();
   const lang = useLang();
   const price = (id: number) => data.items.get(id)?.gold ?? 0;
@@ -149,8 +222,9 @@ function LabCard({ column, data, patches, updatedAt }: { column: LabColumn; data
           {t("Şampiyonun build'lerindeki eşyalar bu yöne göre süzüldü.")} <DataBadge editorial source={t("Eşya etiketlerinden elle yazılmış bir kural; istatistik değil.")} />
         </p>
       ) : (
-        <p className="build__stat">{column.build.name}</p>
+        <p className="build__stat">{column.note ?? column.build.name}</p>
       )}
+      {actions}
       {column.build.startItems.length > 0 && (
         <>
           <p className="lab__label">{t("Başlangıç")}</p>

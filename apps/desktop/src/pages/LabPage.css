@@ -149,3 +149,9 @@
   cursor: pointer;
   color: var(--glaze-muted);
 }
+
+.lab__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
