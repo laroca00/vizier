@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import type { WidgetId } from "../registry";
+import { BuildWidget } from "./BuildWidget";
 import { AugmentsWidget } from "./AugmentsWidget";
 import type { WidgetContext } from "./context";
 import { BenchWidget } from "./BenchWidget";
@@ -12,6 +13,7 @@ import { SkillWidget } from "./SkillWidget";
 import { TimersWidget } from "./TimersWidget";
 
 export const WIDGET_VIEWS: Record<WidgetId, ComponentType<WidgetContext>> = {
+  build: BuildWidget,
   skill: SkillWidget,
   skillOrder: SkillOrderWidget,
   next: NextItemWidget,

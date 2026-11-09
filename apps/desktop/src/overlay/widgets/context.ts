@@ -2,6 +2,7 @@ import type { Params } from "../../i18n";
 import type { Item } from "../../data/ddragon";
 import type { Picks } from "../../api";
 import type { BenchRead } from "../bench";
+import type { PanelItem, PanelRunes } from "../buildPanel";
 import type { MinimapBox, CampSide } from "../minimap";
 import type { ManualTimers } from "../Timers";
 import type { LiveGame, LivePlayer, SkillKey, Timer } from "../live";
@@ -30,6 +31,8 @@ export type WidgetContext = {
   nextItem: number | null;
   rows: { ally: LivePlayer; diff: number | null }[];
   /** Item gold of the whole team against the enemy team, shown under the scoreboard rows. */
+  /** The build panel: shown only while its hotkey has it open. */
+  buildPanel: { shown: boolean; items: PanelItem[]; runes: PanelRunes | null };
   rowsTotal: number | null;
   rowGap: number;
   /** Your CS and level against the average, with the CS gap over time; null without data or after minute 15. */

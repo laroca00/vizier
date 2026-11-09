@@ -534,6 +534,8 @@ export const EN: Record<string, string> = {
   "Benzer rakip": "Similar opponent",
   "Aynı hasar tipi": "Same damage type",
   "Eşleşme rehberi": "Matchup guide",
+  "Build paneli": "Build panel",
+  "Kısayolla açılır: build'in eşyaları sırayla (aldıkların işaretli), rünler, yetenek sırası ve sıradaki eşya.": "Opens on a hotkey: the build's items in order (owned ones ticked), runes, skill order and the next item.",
   "Build panelini göster ya da gizle": "Show or hide the build panel",
   "Augment kartını göster ya da gizle": "Show or hide the augment card",
   "Harita süreleri": "Minimap timers",

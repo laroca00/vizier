@@ -3,7 +3,7 @@ import type { Settings } from "../settings";
 // What the overlay can show. This file holds only data; each widget's
 // drawing lives in widgets/ and is looked up by id.
 
-export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap";
+export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build";
 export type OverlayMode = "rift" | "aram" | "arena" | "mayhem";
 export type Spot = { x: number; y: number };
 
@@ -28,6 +28,7 @@ export const SCOREBOARD_SPOT: Spot = { x: 0.482, y: 0.318 };
 // Just above the ability bar on a 16:9 screen at the default HUD scale.
 export const SKILL_SPOT: Spot = { x: 0.372, y: 0.82 };
 export const SKILL_ORDER_SPOT: Spot = { x: 0.3, y: 0.74 };
+export const BUILD_SPOT: Spot = { x: 0.012, y: 0.3 };
 
 export const WIDGETS: readonly WidgetDef[] = [
   {
@@ -45,6 +46,14 @@ export const WIDGETS: readonly WidgetDef[] = [
     modes: MODES,
     settings: ["overlaySkills"],
     defaultSpot: SKILL_ORDER_SPOT,
+  },
+  {
+    id: "build",
+    name: "Build paneli",
+    hint: "Kısayolla açılır: build'in eşyaları sırayla (aldıkların işaretli), rünler, yetenek sırası ve sıradaki eşya.",
+    modes: ["rift", "aram"],
+    settings: ["overlayBuild"],
+    defaultSpot: BUILD_SPOT,
   },
   { id: "next", name: "Sıradaki eşya", hint: "Seçtiğin build türünde henüz almadığın ilk eşya ve ona kalan altın.", modes: MODES, settings: ["overlayNextItem"] },
   { id: "timers", name: "Süreler", hint: "Ejder, Baron ve inhibitör süreleri ile elle başlatılan zamanlayıcılar.", modes: MODES, settings: ["overlayObjectives", "overlayTimers"] },

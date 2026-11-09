@@ -442,3 +442,58 @@ html:has(.overlay) body {
   color: var(--gilt);
   box-shadow: inset 0 0 0 1px rgb(214 180 106 / 0.7);
 }
+
+/* Build panel: opened on its hotkey, so it can afford to be bigger than the other cards. */
+.overlay__build {
+  gap: 8px;
+  width: 260px;
+}
+
+.overlay__build-items,
+.overlay__build-runes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overlay__build-items li {
+  position: relative;
+  line-height: 0;
+  opacity: 0.8;
+}
+
+.overlay__build-items img,
+.overlay__build-items .widget-preview__icon {
+  border-radius: 6px;
+}
+
+/* Owned items are lit and carry a tick. */
+.overlay__build-items li[data-owned] {
+  opacity: 1;
+  box-shadow: 0 0 0 1px var(--gilt);
+  border-radius: 6px;
+}
+
+.overlay__build-items li[data-owned]::after {
+  content: "✓";
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--gilt);
+}
+
+.overlay__build-items li:not([data-owned]) img {
+  filter: grayscale(0.7);
+}

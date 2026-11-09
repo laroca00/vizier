@@ -5,7 +5,7 @@ import { getAugments, getBench, getBuild, type Build, type Picks } from "../api"
 import { augmentInfo } from "../augments/data";
 import { augmentQueue, augmentsByRarity } from "../augments/tiers";
 import { readChosenStyle } from "../buildStyles";
-import { champions, items, latestVersion, type Item } from "../data/ddragon";
+import { champions, items, latestVersion, runes as runeStyles, type Item } from "../data/ddragon";
 import { overlayFixture, scoutingFixture } from "../dev/fixtures";
 import { ScoutPanel } from "./ScoutPanel";
 import type { LcuStatus } from "../lcu";
@@ -31,6 +31,7 @@ import type { WidgetContext } from "./widgets/context";
 import { WIDGET_VIEWS } from "./widgets";
 import { sampleGame } from "./sample";
 import { minimapBox } from "./minimap";
+import { panelItems, panelRunes } from "./buildPanel";
 import { useManualTimers } from "./Timers";
 import "./overlay.css";
 
@@ -145,6 +146,15 @@ export function Overlay() {
     return () => void off.then((stop) => stop());
   }, []);
 
+  // The build panel opens and closes on its hotkey.
+  const [buildOpen, setBuildOpen] = useState(false);
+  useEffect(() => {
+    if (!isTauri()) return;
+    const off = listen<string>("overlay-timer", ({ payload }) => payload === "build" && setBuildOpen((open) => !open));
+    return () => void off.then((stop) => stop());
+  }, []);
+  const [runeData] = useAsync(settings.overlayBuild && (buildOpen || editing) ? "runes" : null, runeStyles);
+
   // The skill order opens and closes on its hotkey, which arrives like a timer key.
   const [orderOpen, setOrderOpen] = useState(false);
   useEffect(() => {
@@ -190,6 +200,11 @@ export function Overlay() {
     nextItem: next,
     bench: benchNow ? { read: benchNow, history: csHistory.map((p) => p.diff) } : null,
     rows,
+    buildPanel: {
+      shown: buildOpen || editing,
+      items: picks ? panelItems(picks.coreItems?.ids ?? [], picks.items.map((i) => i.id), me.items.map((i) => i.itemId), (id) => itemInfo?.get(id)?.complete === true) : [],
+      runes: panelRunes(picks?.runes[0], runeData.status === "done" ? runeData.value : null),
+    },
     rowsTotal: rows.length > 0 ? (itemDifference(game, gold)?.team ?? null) : null,
     rowGap: layout.rowGap ?? ROW_GAP,
     augments:

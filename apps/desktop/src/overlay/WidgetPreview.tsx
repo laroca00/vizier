@@ -25,6 +25,21 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           </p>
         </section>
       )}
+      {id === "build" && (
+        <section className="overlay__card overlay__build">
+          <ol className="overlay__build-items">
+            {[1, 2, 3, 4].map((n) => (
+              <li key={n} data-owned={n < 3 || undefined}>
+                <span className="widget-preview__icon" />
+              </li>
+            ))}
+          </ol>
+          <p className="overlay__row">
+            <span>Rabadon</span>
+            <span className="overlay__value">{t("{gold} altın kaldı", { gold: 640 })}</span>
+          </p>
+        </section>
+      )}
       {id === "next" && (
         <section className="overlay__card overlay__next">
           <span className="widget-preview__icon" />

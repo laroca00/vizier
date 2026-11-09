@@ -38,6 +38,8 @@ export type Settings = {
   overlayTimers: boolean;
   /** In Arena and ARAM Mayhem, the champion's best augments of each rarity. */
   overlayAugments: boolean;
+  /** The build panel that opens on its hotkey. */
+  overlayBuild: boolean;
   /** Objective and camp timers drawn on the minimap. */
   overlayMinimap: boolean;
   /** The corner the game's minimap sits in. */
@@ -81,6 +83,7 @@ const DEFAULTS: Settings = {
   overlayScoreboard: true,
   overlayTimers: true,
   overlayAugments: true,
+  overlayBuild: true,
   overlayMinimap: true,
   overlayMinimapSide: "right",
   overlayMinimapSize: 0.5,
