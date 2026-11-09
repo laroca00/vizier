@@ -609,3 +609,41 @@ html:has(.overlay) body {
   color: var(--ink);
   background: var(--gilt);
 }
+
+/* Dragon soul: one dot per drake in its element's colour, the soul point row in gilt. */
+.overlay__dragon-row {
+  align-items: center;
+}
+
+.overlay__dragon-row[data-point] > span:first-child {
+  color: var(--gilt);
+}
+
+.overlay__drakes {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.overlay__drake {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25);
+}
+
+.overlay__drake[data-element="Fire"] { background: #e2643f; }
+.overlay__drake[data-element="Water"] { background: #3d9fd8; }
+.overlay__drake[data-element="Earth"] { background: #a8865a; }
+.overlay__drake[data-element="Air"] { background: #d8e6ee; }
+.overlay__drake[data-element="Hextech"] { background: #3cc7d6; }
+.overlay__drake[data-element="Chemtech"] { background: #8fbf3a; }
+
+.overlay__dragon-line {
+  margin: 2px 0 0;
+  font-weight: 500;
+}
+
+.overlay__dragon-line[data-soon] {
+  color: var(--gilt);
+}

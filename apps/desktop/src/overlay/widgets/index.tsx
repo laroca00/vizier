@@ -14,6 +14,7 @@ import { SkillWidget } from "./SkillWidget";
 import { TimersWidget } from "./TimersWidget";
 import { WindowWidget } from "./WindowWidget";
 import { SpikesWidget } from "./SpikesWidget";
+import { DragonsWidget } from "./DragonsWidget";
 
 export const WIDGET_VIEWS: Record<WidgetId, ComponentType<WidgetContext>> = {
   build: BuildWidget,
@@ -29,4 +30,5 @@ export const WIDGET_VIEWS: Record<WidgetId, ComponentType<WidgetContext>> = {
   scoreboard: ScoreboardWidget,
   window: WindowWidget,
   spikes: SpikesWidget,
+  dragons: DragonsWidget,
 };

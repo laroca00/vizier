@@ -17,6 +17,7 @@ export const hasContent: Record<WidgetId, (ctx: WidgetContext, settings: Setting
   scoreboard: (ctx) => ctx.rows.length > 0,
   window: (ctx) => ctx.opportunity.fallen.some((f) => f.backAt > ctx.time),
   spikes: (ctx) => ctx.spikes.length > 0 && ctx.version !== null,
+  dragons: (ctx) => ctx.dragons !== null,
 };
 
 /**

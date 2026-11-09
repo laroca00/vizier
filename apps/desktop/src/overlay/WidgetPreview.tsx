@@ -174,6 +174,27 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           </p>
         </section>
       )}
+      {id === "dragons" && (
+        <section className="overlay__card overlay__dragons">
+          <p className="overlay__row overlay__dragon-row" data-point>
+            <span>{t("Biz")}</span>
+            <span className="overlay__drakes">
+              <span className="overlay__drake" data-element="Fire" />
+              <span className="overlay__drake" data-element="Earth" />
+              <span className="overlay__drake" data-element="Earth" />
+              <span className="overlay__value">3</span>
+            </span>
+          </p>
+          <p className="overlay__row overlay__dragon-row">
+            <span>{t("Rakip")}</span>
+            <span className="overlay__drakes">
+              <span className="overlay__drake" data-element="Water" />
+              <span className="overlay__value">1</span>
+            </span>
+          </p>
+          <p className="overlay__dragon-line" data-soon>{t("Ruh noktasındayız")}</p>
+        </section>
+      )}
       {id === "scoreboard" && (
         <ol className="overlay__scoreboard widget-preview__rows">
           <li data-ahead="true">+0.9k</li>

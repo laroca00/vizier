@@ -38,6 +38,8 @@ export type Settings = {
   overlayWindow: boolean;
   /** Notices when an enemy gets an ultimate rank or finishes an item. */
   overlaySpikes: boolean;
+  /** Dragons per team and the soul. */
+  overlayDragons: boolean;
   /** The player's own overlay hotkeys, by action id; anything missing keeps its default. */
   hotkeys: Record<string, string>;
   overlaySkills: boolean;
@@ -92,6 +94,7 @@ const DEFAULTS: Settings = {
   overlayBench: true,
   overlayWindow: true,
   overlaySpikes: true,
+  overlayDragons: true,
   hotkeys: {},
   overlaySkills: true,
   overlayObjectives: true,
