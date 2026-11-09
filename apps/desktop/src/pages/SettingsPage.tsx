@@ -1,3 +1,4 @@
+import { Backups } from "../workspace/Backups";
 import { DataWorkspace } from "../workspace/DataWorkspace";
 import { useEffect, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
@@ -124,6 +125,7 @@ export function SettingsPage() {
       </section>
 
       <DataWorkspace />
+      <Backups />
 
       <section className="settings__section enter" aria-labelledby="settings-data">
         <h2 id="settings-data" className="section-title">{t("Veriler")}</h2>
