@@ -1,6 +1,7 @@
 import type { Champion } from "./data/ddragon";
 import { adviceAgainst, type PhaseCurve, analyzeComp, curveRead, teamCurve, teamDamage, compDimensions, DIMENSION_NAMES, dimensionText, PHASE_TEXT, WEAKNESS_TEXT, type CompReport } from "./data/traits";
 import { aramPlan, ARCHETYPE_NAMES, ARCHETYPE_PLANS, winConditions } from "./draft/winConditions";
+import { TeamPlannerPanel } from "./draft/TeamPlannerPanel";
 import { formatPercent, useLang, useT } from "./i18n";
 
 const PIPS = [0, 1, 2];
@@ -123,6 +124,7 @@ export function CompAnalysis({ allies, enemies, champions, aram }: Props) {
     <section aria-label={t("Takım kompozisyonu")}>
       <h2 className="draft__heading">{t("Takımının kompozisyonu")}</h2>
       {ours.champions === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary team={ourTeam} report={ours} label={t("Takımın")} />}
+      <TeamPlannerPanel team={ourTeam} />
       {aram && aramPlan(ourTeam) && <p className="draft__empty">{t(aramPlan(ourTeam)!.line, { names: aramPlan(ourTeam)!.names.join(", ") })}</p>}
       {ours.champions >= 3 && winConditions(ourTeam, aram).length > 0 && (
         <>
