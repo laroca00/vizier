@@ -551,6 +551,9 @@ export const EN: Record<string, string> = {
   "Toplam minyon ve kamp sayın, aynı şampiyonu oynayan Emerald+ oyuncuların o dakikadaki medyanıyla. İlk 15 dakika.":
     "Your minions and camps against Emerald+ players on the same champion at the same minute. First 15 minutes.",
   "Eşya altını farkı": "Item gold difference",
+  "Yasakla": "Ban",
+  "{champion} yasakla": "Ban {champion}",
+  "{champion} yasaklanamadı. İstemciden elle yasakla.": "Couldn't ban {champion}. Ban it in the client.",
   "Rakip Flash takibi": "Enemy Flash tracker",
   "Bir rakip Flash kullanınca kısayoluna bas (Ctrl+Shift+F1 üst, F2 ormancı, F3 orta, F4 nişancı, F5 destek); geri gelene kadar sayar. Ionian botu hesaba katılır, rünler katılamaz.": "When an enemy uses Flash, press its hotkey (Ctrl+Shift+F1 top, F2 jungle, F3 mid, F4 bottom, F5 support); it counts until Flash is back. Ionian Boots count, runes can't be seen.",
   "Rakip Flash": "Enemy Flash",
