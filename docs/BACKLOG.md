@@ -269,8 +269,11 @@ Builds on: the matchup page (4.1–4.6: lane stats, stats duel, ability compare,
 - [x] 24.1 Academy layout for the matchup page: sections for strengths, weaknesses, abilities to track (cooldowns from Data Dragon), early / mid / late (from the phase curves), level and item breakpoints (power spikes), item interactions (item advice rules), lane stats. Each section marks its source: Data Dragon, crawler or editorial. (ec1a42c; academy sections each with a source tag (Data Dragon, crawler, editorial); new phase read and strengths sections, existing guide, abilities, spikes, item advice and lane stats moved in)
 - [x] 24.2 Champion strengths and weaknesses table (hand-kept, every champion, tested for coverage), written plainly; used by the academy and the champion page. (ec1a42c; data/strengths.ts, 16 strength and 10 weakness phrases, every champion in the quiz facts table covered (test); shown on the champion page and in the academy with the editorial badge)
 - [ ] 24.3 Personal academy notes: reminders and favourite plans per matchup on top of the journal note (same store, new optional fields), shown in champ select.
+<!-- claimed: auto/24-combos-archetypes 2026-11-09T13:46:15Z -->
 - [ ] 24.4 Combo data model and the first 40 champions (most played in the crawler): name, difficulty, ability sequence, purpose, timing notes, common mistakes, category (basic, trading, all-in, burst, escape, flash, teamfight, animation), patch checked. Stored in the repo as JSON with a schema test; all labelled editorial.
+<!-- claimed: auto/24-combos-archetypes 2026-11-09T13:46:15Z -->
 - [ ] 24.5 Combos section on the champion page and a Combo Library page with search and category filters; the sequence is drawn with ability icons and arrows (original drawing, no video or copied art).
+<!-- claimed: auto/24-combos-archetypes 2026-11-09T13:46:15Z -->
 - [ ] 24.6 Combos for the remaining champions, plus a patch check that flags combos whose abilities changed in the patch tracker's diff.
 
 ## 25. Champion intelligence (A1–A4)
@@ -278,7 +281,9 @@ Builds on: the matchup page (4.1–4.6: lane stats, stats duel, ability compare,
 Builds on: synergies doc and the champion page synergies tab (5.7, 1.11), counters, pool coverage (7.1), `data/traits.ts` (classes, damage, dimensions, curves), win conditions (1.6).
 
 - [ ] 25.1 Archetype table: the 18 archetypes of the brief, many per champion, hand-kept and tested for coverage; each archetype has a short description, strengths, weaknesses and its usual team role.
+<!-- claimed: auto/24-combos-archetypes 2026-11-09T13:46:15Z -->
 - [ ] 25.2 Archetype Explorer page: browse and combine archetypes ("disengage + protect the carry"), filter by role, search; links into synergies and the champion page.
+<!-- claimed: auto/24-combos-archetypes 2026-11-09T13:46:15Z -->
 - [ ] 25.3 Synergy Explorer page from the Champions section: champion and role in, partners out, with crawler data (games, win rate, badge) and the reason from category rules (engage + follow-up CC, wombo, protect the carry, dive, poke, scaling, lane pressure, disengage) built on archetypes and dimensions. Pairs without data show the reason only, marked editorial. Sort by data or by category.
 - [ ] 25.4 Counterpick Matrix page: up to five pool champions × the role's 20 most common opponents, heatmap cells favourable / neutral / unfavourable / insufficient using `confidenceOf` (not raw win rate), with games in each cell, patch filter, and the best blind pick. Reuses pool coverage logic; the pool coverage panel links to it. Colour-blind safe and readable as a table.
 - [ ] 25.5 Difficulty breakdown on the champion page: mechanics, combos, positioning, skillshots, decisions, macro, consistency as qualitative levels (hand-kept, editorial badge), next to Data Dragon's official difficulty number (labelled official).
