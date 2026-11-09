@@ -4277,6 +4277,1350 @@
      }
     }
    ]
+  },
+  {
+   "championId": "Akshan",
+   "combos": [
+    {
+     "id": "grapple-shot",
+     "category": "trading",
+     "difficulty": 2,
+     "sequence": [
+      "E",
+      "AA",
+      "Q",
+      "AA"
+     ],
+     "name": {
+      "tr": "Kanca ve vuruş",
+      "en": "Grapple and strike"
+     },
+     "purpose": {
+      "tr": "Duvara E ile uçup Q ile yıpratmak.",
+      "en": "Swing with E and poke with Q."
+     },
+     "timing": {
+      "tr": "Düşman minyona yaklaşınca E, inerken Q at.",
+      "en": "Swing when the enemy steps up, then Q on landing."
+     },
+     "mistake": {
+      "tr": "E'yi kaçış için saklamadan harcamak.",
+      "en": "Spending E with no escape left."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Ambessa",
+   "combos": [
+    {
+     "id": "dash-chain",
+     "category": "all-in",
+     "difficulty": 3,
+     "sequence": [
+      "Q1",
+      "Q2",
+      "E",
+      "W"
+     ],
+     "name": {
+      "tr": "Zincir atılış",
+      "en": "Dash chain"
+     },
+     "purpose": {
+      "tr": "Q ile içeri girip E ve W ile bitirmek.",
+      "en": "Dive in with Q, finish with E and W."
+     },
+     "timing": {
+      "tr": "İkinci Q'yu hedefin arkasına bırak.",
+      "en": "Land the second Q behind the target."
+     },
+     "mistake": {
+      "tr": "Q'ları tek hedefe boşa harcamak.",
+      "en": "Burning Q dashes on a lone minion."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Aphelios",
+   "combos": [
+    {
+     "id": "gun-swap",
+     "category": "trading",
+     "difficulty": 3,
+     "sequence": [
+      "Q",
+      "AA",
+      "W",
+      "Q"
+     ],
+     "name": {
+      "tr": "Silah geçişi",
+      "en": "Weapon swap"
+     },
+     "purpose": {
+      "tr": "Silah çiftine göre Q ile yıpratmak.",
+      "en": "Poke with the Q of the current weapon."
+     },
+     "timing": {
+      "tr": "Q'yu minyon arkasından at, W ile silahı değiştir.",
+      "en": "Cast Q past minions, swap with W as needed."
+     },
+     "mistake": {
+      "tr": "Mermiyi bitirmeden silah değiştirmek.",
+      "en": "Swapping weapons with ammo to spare."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "AurelionSol",
+   "combos": [
+    {
+     "id": "star-burst",
+     "category": "burst",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "W",
+      "E",
+      "R"
+     ],
+     "name": {
+      "tr": "Yıldız patlaması",
+      "en": "Star burst"
+     },
+     "purpose": {
+      "tr": "E ile kümelenmiş düşmanlara büyük R.",
+      "en": "Big R onto enemies bunched by E."
+     },
+     "timing": {
+      "tr": "E'yi önce, R'yi düşmanlar toplanınca at.",
+      "en": "E first, then R when they are grouped."
+     },
+     "mistake": {
+      "tr": "R'yi tek hedefe atmak.",
+      "en": "Using R on one lone target."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Aurora",
+   "combos": [
+    {
+     "id": "spirit-rush",
+     "category": "trading",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "AA",
+      "E",
+      "Q"
+     ],
+     "name": {
+      "tr": "Ruh akını",
+      "en": "Spirit rush"
+     },
+     "purpose": {
+      "tr": "Q'nun dönüşüyle iki kez vurmak.",
+      "en": "Hit twice with Q's return."
+     },
+     "timing": {
+      "tr": "Q'yu at, geri dönerken E ile içeri gir.",
+      "en": "Throw Q, then E in as it returns."
+     },
+     "mistake": {
+      "tr": "Q'yu dönüşünü beklemeden harcamak.",
+      "en": "Wasting Q before it comes back."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Bard",
+   "combos": [
+    {
+     "id": "chime-stun",
+     "category": "teamfight",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "AA",
+      "W",
+      "R"
+     ],
+     "name": {
+      "tr": "Çan şaşkınlığı",
+      "en": "Chime stun"
+     },
+     "purpose": {
+      "tr": "Q'yu duvara veya ikinci hedefe çarptırıp sersemletmek.",
+      "en": "Stun with Q against a wall or second target."
+     },
+     "timing": {
+      "tr": "Q'yu duvarın yakınında at, takım hazırken R.",
+      "en": "Aim Q near a wall; R when allies are ready."
+     },
+     "mistake": {
+      "tr": "Q'yu açık alana atmak.",
+      "en": "Throwing Q into open space."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Belveth",
+   "combos": [
+    {
+     "id": "void-lash",
+     "category": "trading",
+     "difficulty": 2,
+     "sequence": [
+      "E",
+      "AA",
+      "Q",
+      "W"
+     ],
+     "name": {
+      "tr": "Boşluk kamçısı",
+      "en": "Void lash"
+     },
+     "purpose": {
+      "tr": "E ile kuşanıp Q ile girmek.",
+      "en": "Channel E, then close with Q."
+     },
+     "timing": {
+      "tr": "E'yi hedef yakınken başlat, W ile bitir.",
+      "en": "Start E up close, finish with W."
+     },
+     "mistake": {
+      "tr": "E sırasında kontrolsüz hedefe girmek.",
+      "en": "Starting E with no target near."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Briar",
+   "combos": [
+    {
+     "id": "frenzy-dive",
+     "category": "all-in",
+     "difficulty": 3,
+     "sequence": [
+      "W",
+      "Q",
+      "AA",
+      "E"
+     ],
+     "name": {
+      "tr": "Çılgın atılış",
+      "en": "Frenzy dive"
+     },
+     "purpose": {
+      "tr": "W ile hızlanıp Q ile sıçramak.",
+      "en": "Speed up with W and leap with Q."
+     },
+     "timing": {
+      "tr": "W'yu atıp Q'yu hedefe yaklaşınca yapıştır.",
+      "en": "Cast W and attach Q when close."
+     },
+     "mistake": {
+      "tr": "W'yu savunmasız yerde açmak.",
+      "en": "Opening W with no way out."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Corki",
+   "combos": [
+    {
+     "id": "package-poke",
+     "category": "trading",
+     "difficulty": 1,
+     "sequence": [
+      "Q",
+      "AA",
+      "E",
+      "AA"
+     ],
+     "name": {
+      "tr": "Paket vuruşu",
+      "en": "Package poke"
+     },
+     "purpose": {
+      "tr": "Q ile uzaktan, E ile yakından yıpratmak.",
+      "en": "Poke with Q, then E up close."
+     },
+     "timing": {
+      "tr": "Q'yu minyon arasından at, E'yi düşman yaklaşınca aç.",
+      "en": "Q between minions, E when they close in."
+     },
+     "mistake": {
+      "tr": "Q'yu boşa spamlamak.",
+      "en": "Spamming Q into minions."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Fiddlesticks",
+   "combos": [
+    {
+     "id": "fear-drain",
+     "category": "all-in",
+     "difficulty": 2,
+     "sequence": [
+      "E",
+      "W",
+      "Q",
+      "R"
+     ],
+     "name": {
+      "tr": "Korku ve emme",
+      "en": "Fear and drain"
+     },
+     "purpose": {
+      "tr": "Korkutup W ile emmek, R ile bitirmek.",
+      "en": "Fear, drain with W, close with R."
+     },
+     "timing": {
+      "tr": "R'yi çalıdan çıkıp yapışmadan önce hazırla.",
+      "en": "Prepare R from brush before engaging."
+     },
+     "mistake": {
+      "tr": "W'yu kesilecek yerde açmak.",
+      "en": "Starting W where you get cut off."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Gangplank",
+   "combos": [
+    {
+     "id": "barrel-chain",
+     "category": "burst",
+     "difficulty": 3,
+     "sequence": [
+      "E",
+      "AA",
+      "Q",
+      "AA"
+     ],
+     "name": {
+      "tr": "Varil zinciri",
+      "en": "Barrel chain"
+     },
+     "purpose": {
+      "tr": "Varili vurup zincirleme patlatmak.",
+      "en": "Pop barrels in a chain."
+     },
+     "timing": {
+      "tr": "Varili düşmanın önüne koy, Q ile vur.",
+      "en": "Place barrels ahead and hit with Q."
+     },
+     "mistake": {
+      "tr": "Varilleri düşman görürken bırakmak.",
+      "en": "Dropping barrels in plain sight."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Heimerdinger",
+   "combos": [
+    {
+     "id": "turret-trap",
+     "category": "trading",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "E",
+      "W",
+      "AA"
+     ],
+     "name": {
+      "tr": "Taret tuzağı",
+      "en": "Turret trap"
+     },
+     "purpose": {
+      "tr": "Taret yanında E ve W ile hasar vermek.",
+      "en": "Use E and W next to your turrets."
+     },
+     "timing": {
+      "tr": "Taretleri öne koy, E'yi taretlerin arkasına at.",
+      "en": "Place turrets first, E behind them."
+     },
+     "mistake": {
+      "tr": "Taretleri savunmasız dizmek.",
+      "en": "Placing turrets undefended."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Hwei",
+   "combos": [
+    {
+     "id": "spell-weave",
+     "category": "burst",
+     "difficulty": 3,
+     "sequence": [
+      "Q1",
+      "E1",
+      "W1",
+      "R"
+     ],
+     "name": {
+      "tr": "Büyü örgüsü",
+      "en": "Spell weave"
+     },
+     "purpose": {
+      "tr": "Üç büyüyü sırayla birleştirmek.",
+      "en": "Chain three spells in order."
+     },
+     "timing": {
+      "tr": "Q'yu ucuza yak, E'yi kontrol için bırak.",
+      "en": "Open with Q, keep E for control."
+     },
+     "mistake": {
+      "tr": "Tüm büyüleri bir anda harcamak.",
+      "en": "Spending every spell at once."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Ivern",
+   "combos": [
+    {
+     "id": "bush-engage",
+     "category": "teamfight",
+     "difficulty": 1,
+     "sequence": [
+      "Q",
+      "AA",
+      "E",
+      "W"
+     ],
+     "name": {
+      "tr": "Çalı hamlesi",
+      "en": "Bush play"
+     },
+     "purpose": {
+      "tr": "Q ile kök salıp Daisy ile devam etmek.",
+      "en": "Root with Q and follow with Daisy."
+     },
+     "timing": {
+      "tr": "Q'yu atıp Daisy'yi hedefe yönlendir.",
+      "en": "Throw Q, send Daisy at the target."
+     },
+     "mistake": {
+      "tr": "Q'yu görüşsüz atmak.",
+      "en": "Casting Q with no vision."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Kalista",
+   "combos": [
+    {
+     "id": "hop-chain",
+     "category": "trading",
+     "difficulty": 2,
+     "sequence": [
+      "AA",
+      "AA",
+      "E",
+      "AA"
+     ],
+     "name": {
+      "tr": "Zıplama zinciri",
+      "en": "Hop chain"
+     },
+     "purpose": {
+      "tr": "Vuruşlar arası zıplayarak mızrak biriktirmek.",
+      "en": "Hop between attacks to stack spears."
+     },
+     "timing": {
+      "tr": "İki mızrak ekleyince E ile patlat.",
+      "en": "Pop E after stacking spears."
+     },
+     "mistake": {
+      "tr": "E'yi tek mızrakla basmak.",
+      "en": "Using E on one spear."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Karthus",
+   "combos": [
+    {
+     "id": "lay-waste",
+     "category": "burst",
+     "difficulty": 1,
+     "sequence": [
+      "Q",
+      "AA",
+      "W",
+      "R"
+     ],
+     "name": {
+      "tr": "Harabe",
+      "en": "Lay waste"
+     },
+     "purpose": {
+      "tr": "Q ve W ile yavaşlatıp R ile bitirmek.",
+      "en": "Slow with Q and W, finish with R."
+     },
+     "timing": {
+      "tr": "R'yi takım savaşı sonunda kullan.",
+      "en": "Use R at the end of fights."
+     },
+     "mistake": {
+      "tr": "Q'yu arkada kalan minyona harcamak.",
+      "en": "Spending Q on far minions."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Kayle",
+   "combos": [
+    {
+     "id": "wave-fire",
+     "category": "trading",
+     "difficulty": 1,
+     "sequence": [
+      "Q",
+      "AA",
+      "E",
+      "AA"
+     ],
+     "name": {
+      "tr": "Dalga alevi",
+      "en": "Wave fire"
+     },
+     "purpose": {
+      "tr": "Q ile yavaşlatıp E ile vurmak.",
+      "en": "Slow with Q, hit with E."
+     },
+     "timing": {
+      "tr": "Q'yu atıp aleve girince E'yi aç.",
+      "en": "Hit Q then open E up close."
+     },
+     "mistake": {
+      "tr": "E'yi savunma için saklamamak.",
+      "en": "Burning E before you need it."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Kayn",
+   "combos": [
+    {
+     "id": "slash-chain",
+     "category": "all-in",
+     "difficulty": 3,
+     "sequence": [
+      "Q",
+      "W",
+      "AA",
+      "E"
+     ],
+     "name": {
+      "tr": "Kesme zinciri",
+      "en": "Slash chain"
+     },
+     "purpose": {
+      "tr": "Q ve W ile yaklaşıp E ile duvarı geçmek.",
+      "en": "Close with Q and W, pass walls with E."
+     },
+     "timing": {
+      "tr": "W'yu hedef yaklaşınca at, R ile bitir.",
+      "en": "Cast W when close, finish with R."
+     },
+     "mistake": {
+      "tr": "R'yi uzun dönüşte kullanmak.",
+      "en": "Using R at a bad angle."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Kindred",
+   "combos": [
+    {
+     "id": "mark-hop",
+     "category": "trading",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "AA",
+      "W",
+      "E"
+     ],
+     "name": {
+      "tr": "İşaret atlayışı",
+      "en": "Mark hop"
+     },
+     "purpose": {
+      "tr": "Q ile atılıp E ile işaretlemek.",
+      "en": "Dash with Q and mark with E."
+     },
+     "timing": {
+      "tr": "E'yi vuruşa denk, W ile alanı tut.",
+      "en": "E on hit, hold the area with W."
+     },
+     "mistake": {
+      "tr": "Q'yu geri çekilmeden atmak.",
+      "en": "Dashing in without a way back."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Kled",
+   "combos": [
+    {
+     "id": "charge-in",
+     "category": "all-in",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "E",
+      "AA",
+      "W"
+     ],
+     "name": {
+      "tr": "Atılış",
+      "en": "Charge in"
+     },
+     "purpose": {
+      "tr": "Q ile çekip E ile yanına gitmek.",
+      "en": "Pull with Q, dash in with E."
+     },
+     "timing": {
+      "tr": "Q'yu isabet ettir, E'yi ikinci kez bas.",
+      "en": "Land Q and press E again."
+     },
+     "mistake": {
+      "tr": "Q'yu körlemesine atmak.",
+      "en": "Throwing Q blindly."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "KogMaw",
+   "combos": [
+    {
+     "id": "bio-arsenal",
+     "category": "trading",
+     "difficulty": 1,
+     "sequence": [
+      "Q",
+      "W",
+      "AA",
+      "E"
+     ],
+     "name": {
+      "tr": "Biyo cephanelik",
+      "en": "Bio arsenal"
+     },
+     "purpose": {
+      "tr": "W ile hızlanıp Q ve E ile yıpratmak.",
+      "en": "Speed up with W, poke with Q and E."
+     },
+     "timing": {
+      "tr": "W'yu açıp uzaktan vur.",
+      "en": "Open W and shoot from range."
+     },
+     "mistake": {
+      "tr": "W'yu menzil dışında açmak.",
+      "en": "Using W out of range."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "KSante",
+   "combos": [
+    {
+     "id": "dash-slam",
+     "category": "all-in",
+     "difficulty": 3,
+     "sequence": [
+      "Q",
+      "E",
+      "W",
+      "R"
+     ],
+     "name": {
+      "tr": "Atılış ve vuruş",
+      "en": "Dash and slam"
+     },
+     "purpose": {
+      "tr": "Q ile yaklaşıp W ile itmek.",
+      "en": "Close with Q, push with W."
+     },
+     "timing": {
+      "tr": "W'yu uzun kanallayıp R'yi sona sakla.",
+      "en": "Channel W long and hold R."
+     },
+     "mistake": {
+      "tr": "R'yi duvarsız harcamak.",
+      "en": "Using R without a wall."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "MasterYi",
+   "combos": [
+    {
+     "id": "alpha-strike",
+     "category": "all-in",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "AA",
+      "E",
+      "AA"
+     ],
+     "name": {
+      "tr": "Alfa vuruşu",
+      "en": "Alpha strike"
+     },
+     "purpose": {
+      "tr": "Q ile içeri girip E ile hasarı artırmak.",
+      "en": "Dive with Q and boost with E."
+     },
+     "timing": {
+      "tr": "Q'yu hedef sersemken at, R'yi önce aç.",
+      "en": "Q when the target is busy; open R early."
+     },
+     "mistake": {
+      "tr": "Q'yu kaçış için kullanmadan atmak.",
+      "en": "Burning Q with no escape."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Mel",
+   "combos": [
+    {
+     "id": "burst-shot",
+     "category": "burst",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "AA",
+      "E",
+      "W"
+     ],
+     "name": {
+      "tr": "Patlama atışı",
+      "en": "Burst shot"
+     },
+     "purpose": {
+      "tr": "E ile yapışıp Q ile vurmak.",
+      "en": "Catch with E and hit with Q."
+     },
+     "timing": {
+      "tr": "E'yi atıp Q'yu bitişte kullan.",
+      "en": "Cast E first, Q to finish."
+     },
+     "mistake": {
+      "tr": "W'yu erken harcamak.",
+      "en": "Spending W too early."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Milio",
+   "combos": [
+    {
+     "id": "fire-heal",
+     "category": "teamfight",
+     "difficulty": 1,
+     "sequence": [
+      "Q",
+      "E",
+      "W",
+      "R"
+     ],
+     "name": {
+      "tr": "Ateş ve şifa",
+      "en": "Fire and heal"
+     },
+     "purpose": {
+      "tr": "Q ile yıpratıp E ile takımı kalkanlamak.",
+      "en": "Poke with Q, shield with E."
+     },
+     "timing": {
+      "tr": "Q'yu duvardan sektir, R'yi savaşta aç.",
+      "en": "Bounce Q off a wall, use R mid-fight."
+     },
+     "mistake": {
+      "tr": "E'yi dolu canlı müttefike atmak.",
+      "en": "Shielding a full-health ally."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Naafiri",
+   "combos": [
+    {
+     "id": "hound-rush",
+     "category": "all-in",
+     "difficulty": 3,
+     "sequence": [
+      "Q",
+      "E",
+      "W",
+      "AA"
+     ],
+     "name": {
+      "tr": "Köpek akını",
+      "en": "Hound rush"
+     },
+     "purpose": {
+      "tr": "E ile girip W ile yaklaşmak.",
+      "en": "Dive with E and close with W."
+     },
+     "timing": {
+      "tr": "Q'yu hedefe atıp köpekleri yönlendir.",
+      "en": "Hit Q and direct the hounds."
+     },
+     "mistake": {
+      "tr": "E'yi tek hedefe boş harcamak.",
+      "en": "Burning E on one target."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Nilah",
+   "combos": [
+    {
+     "id": "dash-whip",
+     "category": "trading",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "AA",
+      "E",
+      "Q"
+     ],
+     "name": {
+      "tr": "Atılış kırbacı",
+      "en": "Dash whip"
+     },
+     "purpose": {
+      "tr": "E ile yaklaşıp Q ile vurmak.",
+      "en": "Close with E and strike with Q."
+     },
+     "timing": {
+      "tr": "Q'yu üçüncü vuruşta tamamla.",
+      "en": "Finish with the third Q."
+     },
+     "mistake": {
+      "tr": "E'yi minyonsuz boş bırakmak.",
+      "en": "Wasting E with no target."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Qiyana",
+   "combos": [
+    {
+     "id": "terrain-burst",
+     "category": "burst",
+     "difficulty": 3,
+     "sequence": [
+      "W",
+      "Q",
+      "E",
+      "R"
+     ],
+     "name": {
+      "tr": "Zemin patlaması",
+      "en": "Terrain burst"
+     },
+     "purpose": {
+      "tr": "Duvara R atıp çevreyi kullanmak.",
+      "en": "Use terrain by casting R at a wall."
+     },
+     "timing": {
+      "tr": "W ile elementi al, R'yi duvara denk bırak.",
+      "en": "Take an element with W, cast R toward a wall."
+     },
+     "mistake": {
+      "tr": "R'yi duvar yokken atmak.",
+      "en": "Casting R with no wall."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Quinn",
+   "combos": [
+    {
+     "id": "valor-dive",
+     "category": "trading",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "AA",
+      "E",
+      "R"
+     ],
+     "name": {
+      "tr": "Cesaret dalışı",
+      "en": "Valor dive"
+     },
+     "purpose": {
+      "tr": "Q ile kör edip E ile girmek.",
+      "en": "Blind with Q, engage with E."
+     },
+     "timing": {
+      "tr": "E ile yaklaş, R'yi hızlı kullan.",
+      "en": "Close with E, use R to roam."
+     },
+     "mistake": {
+      "tr": "Q'yu işaretsiz harcamak.",
+      "en": "Throwing Q without a mark."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "RekSai",
+   "combos": [
+    {
+     "id": "tunnel-burst",
+     "category": "all-in",
+     "difficulty": 2,
+     "sequence": [
+      "W",
+      "Q",
+      "E",
+      "AA"
+     ],
+     "name": {
+      "tr": "Tünel patlaması",
+      "en": "Tunnel burst"
+     },
+     "purpose": {
+      "tr": "W ile havaya kaldırıp tüneli kullanmak.",
+      "en": "Knock up with W and use the tunnel."
+     },
+     "timing": {
+      "tr": "E'yi yarı canda ye, W'yu kapa.",
+      "en": "E at low enemy health, close with W."
+     },
+     "mistake": {
+      "tr": "E'yi tam canda kullanmak.",
+      "en": "Using E on full health."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Rell",
+   "combos": [
+    {
+     "id": "dismount",
+     "category": "teamfight",
+     "difficulty": 3,
+     "sequence": [
+      "E",
+      "W",
+      "Q",
+      "R"
+     ],
+     "name": {
+      "tr": "At inişi",
+      "en": "Dismount"
+     },
+     "purpose": {
+      "tr": "W ile kalkıp E ile toplamak.",
+      "en": "Land with W and gather with E."
+     },
+     "timing": {
+      "tr": "W'yu hedefe at, R'yi toplanınca aç.",
+      "en": "W onto the target, R when grouped."
+     },
+     "mistake": {
+      "tr": "W'yu atlayış için erken bastırmak.",
+      "en": "Pressing W too early."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Renata",
+   "combos": [
+    {
+     "id": "glaive-lock",
+     "category": "teamfight",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "E",
+      "W",
+      "R"
+     ],
+     "name": {
+      "tr": "Zincir",
+      "en": "Glaive lock"
+     },
+     "purpose": {
+      "tr": "Q ile tutup E ile müttefiği korumak.",
+      "en": "Catch with Q and protect with E."
+     },
+     "timing": {
+      "tr": "Q'yu isabet ettir, R'yi toplanınca bas.",
+      "en": "Land Q, press R when they group."
+     },
+     "mistake": {
+      "tr": "W'yu müttefik ölmeden bırakmak.",
+      "en": "Dropping W too late."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Shyvana",
+   "combos": [
+    {
+     "id": "dragon-dash",
+     "category": "all-in",
+     "difficulty": 2,
+     "sequence": [
+      "W",
+      "E",
+      "Q",
+      "R"
+     ],
+     "name": {
+      "tr": "Ejder atılışı",
+      "en": "Dragon dash"
+     },
+     "purpose": {
+      "tr": "W ile hızlanıp R ile girmek.",
+      "en": "Speed up with W and dive with R."
+     },
+     "timing": {
+      "tr": "E'yi hedefin önünde at, Q'yu vuruşa ekle.",
+      "en": "E ahead of the target, Q on hit."
+     },
+     "mistake": {
+      "tr": "R'yi kaçış için kullanmadan basmak.",
+      "en": "Using R with no exit."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Singed",
+   "combos": [
+    {
+     "id": "poison-run",
+     "category": "trading",
+     "difficulty": 1,
+     "sequence": [
+      "Q",
+      "W",
+      "E",
+      "AA"
+     ],
+     "name": {
+      "tr": "Zehir koşusu",
+      "en": "Poison run"
+     },
+     "purpose": {
+      "tr": "Q ile zehir bırakıp W ile yavaşlatmak.",
+      "en": "Leave poison with Q, slow with W."
+     },
+     "timing": {
+      "tr": "W'yu atıp E ile savurmak.",
+      "en": "W first, then fling with E."
+     },
+     "mistake": {
+      "tr": "Q'yu kapatmadan menzile girmek.",
+      "en": "Walking in with Q closed."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Skarner",
+   "combos": [
+    {
+     "id": "crystal-hit",
+     "category": "all-in",
+     "difficulty": 2,
+     "sequence": [
+      "E",
+      "Q",
+      "W",
+      "R"
+     ],
+     "name": {
+      "tr": "Kristal vuruşu",
+      "en": "Crystal hit"
+     },
+     "purpose": {
+      "tr": "E ile çekip Q ile bitirmek.",
+      "en": "Pull with E and finish with Q."
+     },
+     "timing": {
+      "tr": "E'yi atıp hedef sabitken R'yi bas.",
+      "en": "E first, R while pinned."
+     },
+     "mistake": {
+      "tr": "E'yi arka hatta atmak.",
+      "en": "Casting E at the back line."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Smolder",
+   "combos": [
+    {
+     "id": "fire-poke",
+     "category": "trading",
+     "difficulty": 1,
+     "sequence": [
+      "Q",
+      "AA",
+      "W",
+      "Q"
+     ],
+     "name": {
+      "tr": "Ateş vuruşu",
+      "en": "Fire poke"
+     },
+     "purpose": {
+      "tr": "Q ile yıpratıp W ile destek vermek.",
+      "en": "Poke with Q, support with W."
+     },
+     "timing": {
+      "tr": "Q'yu minyona harca, W'yu yakın savaşa bırak.",
+      "en": "Q on minions, W for close fights."
+     },
+     "mistake": {
+      "tr": "Q'yu stack beklemeden spamlamak.",
+      "en": "Spamming Q without stacks."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "TahmKench",
+   "combos": [
+    {
+     "id": "slow-lick",
+     "category": "trading",
+     "difficulty": 1,
+     "sequence": [
+      "Q",
+      "AA",
+      "W",
+      "R"
+     ],
+     "name": {
+      "tr": "Dil vuruşu",
+      "en": "Tongue lick"
+     },
+     "purpose": {
+      "tr": "Q ile yavaşlatıp W ile yutmak.",
+      "en": "Slow with Q and swallow with W."
+     },
+     "timing": {
+      "tr": "Q'yu atıp yaklaşırken yut.",
+      "en": "Hit Q and swallow as you close."
+     },
+     "mistake": {
+      "tr": "W'yu yutacak hedef yokken basmak.",
+      "en": "Using W with nobody to swallow."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Taric",
+   "combos": [
+    {
+     "id": "gem-stun",
+     "category": "teamfight",
+     "difficulty": 2,
+     "sequence": [
+      "E",
+      "AA",
+      "W",
+      "R"
+     ],
+     "name": {
+      "tr": "Mücevher sersemletmesi",
+      "en": "Gem stun"
+     },
+     "purpose": {
+      "tr": "E ile gecikmeli sersemletmek.",
+      "en": "Delayed stun with E."
+     },
+     "timing": {
+      "tr": "E'yi hedefe değil, kaçacağı yöne bırak.",
+      "en": "Cast E where they will walk."
+     },
+     "mistake": {
+      "tr": "R'yi takım içinde geç basmak.",
+      "en": "Casting R too late."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Velkoz",
+   "combos": [
+    {
+     "id": "tri-beam",
+     "category": "burst",
+     "difficulty": 3,
+     "sequence": [
+      "W",
+      "E",
+      "Q",
+      "R"
+     ],
+     "name": {
+      "tr": "Üçlü ışın",
+      "en": "Triple beam"
+     },
+     "purpose": {
+      "tr": "W ve E ile alanı kapatıp Q ile bölmek.",
+      "en": "Cover space with W and E, split with Q."
+     },
+     "timing": {
+      "tr": "Q'yu iki parça olarak hedefe yönlendir.",
+      "en": "Steer the Q so its parts cross the target."
+     },
+     "mistake": {
+      "tr": "Q'yu körlemesine bölmek.",
+      "en": "Splitting Q without a target."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Xayah",
+   "combos": [
+    {
+     "id": "feather-snap",
+     "category": "trading",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "AA",
+      "E",
+      "R"
+     ],
+     "name": {
+      "tr": "Tüy çekişi",
+      "en": "Feather snap"
+     },
+     "purpose": {
+      "tr": "Q ile tüy bırakıp E ile geri çağırmak.",
+      "en": "Drop feathers with Q, recall with E."
+     },
+     "timing": {
+      "tr": "W ile hızlanıp tüyleri sona topla.",
+      "en": "Speed up with W, pull feathers at the end."
+     },
+     "mistake": {
+      "tr": "E'yi tek tüyle basmak.",
+      "en": "Pulling E with one feather."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Yunara",
+   "combos": [
+    {
+     "id": "power-chain",
+     "category": "trading",
+     "difficulty": 2,
+     "sequence": [
+      "Q",
+      "AA",
+      "W",
+      "E"
+     ],
+     "name": {
+      "tr": "Güç zinciri",
+      "en": "Power chain"
+     },
+     "purpose": {
+      "tr": "Q'nun etkisini açıp W ile vurmak.",
+      "en": "Open Q's power and strike with W."
+     },
+     "timing": {
+      "tr": "Q'yu hedefe yaklaşırken aç.",
+      "en": "Open Q as you approach."
+     },
+     "mistake": {
+      "tr": "Q'yu dolu menzil dışında açmak.",
+      "en": "Opening Q out of range."
+     }
+    }
+   ]
+  },
+  {
+   "championId": "Yuumi",
+   "combos": [
+    {
+     "id": "attach-heal",
+     "category": "teamfight",
+     "difficulty": 1,
+     "sequence": [
+      "Q",
+      "E",
+      "W",
+      "R"
+     ],
+     "name": {
+      "tr": "Yapış ve iyileştir",
+      "en": "Attach and heal"
+     },
+     "purpose": {
+      "tr": "W ile yapışıp E ile iyileştirmek.",
+      "en": "Attach with W and heal with E."
+     },
+     "timing": {
+      "tr": "Q'yu hedefli atıp R'yi toplananlara bas.",
+      "en": "Aim Q, use R on grouped enemies."
+     },
+     "mistake": {
+      "tr": "W'yu kapalı canda bırakmak.",
+      "en": "Detaching at the wrong time."
+     }
+    }
+   ]
   }
  ]
 }
