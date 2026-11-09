@@ -377,15 +377,20 @@ Builds on: the API client (`request<T>()`, per-route TTL cache, `useAsync`), the
 - [x] 34.1 Rank filter: one `RankPicker` (the six brackets plus "Benim rankım") on every page that shows crawler stats; the choice is saved in settings, shown as a chip in the page header and passed as `?rank=` through the API client. Default stays Emerald+. Tests for the settings migration and query building. (cf2c63f; RankPicker on tier list and champion page, rank setting, ?rank= in the API client)
 - [x] 34.2 "Benim rankım": read the player's solo queue tier from the LCU (typed Rust command over `/lol-ranked/v1/current-ranked-stats`, fixture test) and map it to the closest published bracket (Silver → gold_minus, Platinum → platinum_plus, Emerald → emerald_plus, ...). Unranked or client closed → Emerald+ with a note. (cf2c63f; my_rank LCU command (cargo test --lib green), tier to nearest bracket in @vizier/shared)
 - [ ] 34.3 Tier list, champion page (header, builds, runes, counters, synergies) and matchup page follow the filter; every badge tooltip names the bracket. A value too thin in the bracket is greyed with the reason.
+<!-- claimed: auto/34-rank-app 2026-11-09T23:36Z -->
 - [ ] 34.4 Champ select follows the player's bracket by default: pick suggestions, ban planner, hover advice, teammate picks and the imported build use it (setting "Şampiyon seçiminde kendi rankımın verisi", on). The import toast names the bracket the build came from.
+<!-- claimed: auto/34-rank-app 2026-11-09T23:36Z -->
 - [ ] 34.5 Overlay benchmark and loading screen scouting compare against the player's bracket instead of Emerald+ when it has enough games; the widget says which bracket it uses.
+<!-- claimed: auto/34-rank-app 2026-11-09T23:36Z -->
 - [ ] 34.6 Region filter (TR, EUW, KR, Hepsi) next to the rank filter on the tier list and champion page, from 33.4.
+<!-- claimed: auto/34-rank-app 2026-11-09T23:36Z -->
 
 ## 35. Elo views: what changes with rank
 
 Builds on: 33.5 rank curve docs, tier list, champion page, the `dataviz` rules, `DataBadge`.
 
 - [ ] 35.1 "Rank'a göre" panel on the champion page: win rate and pick rate per bracket as a small line chart with games under each point, and a plain line only when the change is outside the interval ("yüksek rankta daha iyi", "düşük rankta güçlü").
+<!-- claimed: auto/34-rank-app 2026-11-09T23:36Z -->
 - [ ] 35.2 Elo explorer page (`?view=elo`): champions whose win rate rises or falls most from gold_minus to master_plus, per role, with games and badges; role and minimum games filters. Menu, palette and route as usual.
 - [ ] 35.3 "Düşük elo dostu" and "Yüksek elo ödüllendirir" tags on tier list rows and in pool builder suggestions, only when the data supports them (interval rule from 22.2).
 - [ ] 35.4 Queue view and autofill picks (21.2) use the player's bracket and prefer champions that are strong in it.
