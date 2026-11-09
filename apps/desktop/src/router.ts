@@ -21,6 +21,7 @@ export type Route =
   | { page: "journal" }
   | { page: "lab"; championId: number | null; position: string }
   | { page: "matrix"; position: string }
+  | { page: "challenge" }
   | { page: "items"; itemId?: number }
   | { page: "runes"; runeId?: number }
   | { page: "overlay" }

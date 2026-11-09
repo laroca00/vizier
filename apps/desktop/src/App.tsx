@@ -46,6 +46,7 @@ const PatchesPage = lazy(() => import("./pages/PatchesPage").then((m) => ({ defa
 const MatchupPage = lazy(() => import("./pages/MatchupPage").then((m) => ({ default: m.MatchupPage })));
 const AugmentsPage = lazy(() => import("./pages/AugmentsPage").then((m) => ({ default: m.AugmentsPage })));
 const MatrixPage = lazy(() => import("./pages/MatrixPage").then((m) => ({ default: m.MatrixPage })));
+const ChallengePage = lazy(() => import("./pages/ChallengePage").then((m) => ({ default: m.ChallengePage })));
 const LabPage = lazy(() => import("./pages/LabPage").then((m) => ({ default: m.LabPage })));
 const JournalPage = lazy(() => import("./pages/JournalPage").then((m) => ({ default: m.JournalPage })));
 const ItemsPage = lazy(() => import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage })));
@@ -72,6 +73,7 @@ const LABELS: Record<Page, string> = {
   journal: "Günlük",
   lab: "Eşya laboratuvarı",
   matrix: "Karşı seçim matrisi",
+  challenge: "Draft meydan okuması",
   items: "Eşyalar",
   runes: "Rünler",
   champion: "Şampiyonlar",
@@ -303,6 +305,7 @@ function App() {
         { id: "journal", label: "Günlük", icon: "journal" },
         { id: "lab", label: "Eşya laboratuvarı", icon: "lab" },
         { id: "matrix", label: "Karşı seçim matrisi", icon: "matchup" },
+        { id: "challenge", label: "Draft meydan okuması", icon: "quiz" },
       ],
     },
   ];
@@ -407,6 +410,8 @@ function App() {
               <JournalPage onOpenChampion={(id) => openChampion(id)} onOpenMatchup={openMatchup} />
             ) : route.page === "lab" ? (
               <LabPage route={route} onChange={replace} />
+            ) : route.page === "challenge" ? (
+              <ChallengePage />
             ) : route.page === "matrix" ? (
               <MatrixPage route={route} onChange={replace} />
             ) : route.page === "quiz" ? (
