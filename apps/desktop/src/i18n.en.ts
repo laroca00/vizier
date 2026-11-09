@@ -1741,7 +1741,6 @@ export const EN: Record<string, string> = {
   "«{ability}» yeteneği hangi şampiyona ait?": "Which champion has the ability “{ability}”?",
   "Ana rün aynı: {a}": "Keystone unchanged: {a}",
   "Ana rün değişti: {a} → {b}": "Keystone changed: {a} → {b}",
-  "Aynı": "Same",
   "Aynı: {a}": "Same: {a}",
   "Bu yamalardan birinde rün verisi yok.": "One of these patches has no rune data.",
   "Bu yamalardan birinde yetenek sırası verisi yok.": "One of these patches has no skill order data.",
