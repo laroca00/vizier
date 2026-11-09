@@ -670,3 +670,13 @@
 .champion .segbar {
   max-width: 560px;
 }
+
+.top__offline {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--text-small);
+  color: var(--glaze);
+  background: color-mix(in srgb, var(--gilt) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gilt) 50%, transparent);
+  white-space: nowrap;
+}

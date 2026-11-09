@@ -2,16 +2,21 @@ import { getProMeta, type ProGroup } from "../api";
 import { championIconUrl, champions, latestVersion } from "../data/ddragon";
 import { useT } from "../i18n";
 import { META_MIN_GAMES, metaRows } from "../proMeta";
+import { loadErrorMessage } from "../loadError";
+import { ErrorState } from "../ui/States";
 import { useAsync } from "../useAsync";
+import { useOnline } from "../useOnline";
 
 type Props = { group: ProGroup; patch?: string; position: string | null; onOpenChampion: (championId: number, position: string | null) => void };
 
 /** Most picked champions in pro games with their win rate; every number carries its game count. */
 export function ProMeta({ group, patch, position, onOpenChampion }: Props) {
   const t = useT();
-  const [meta] = useAsync(`pro-meta:${group}:${patch ?? ""}`, () => getProMeta(group, patch));
+  const [meta, retry] = useAsync(`pro-meta:${group}:${patch ?? ""}`, () => getProMeta(group, patch));
   const [data] = useAsync("pro-meta-static", async () => ({ version: await latestVersion(), champions: await champions() }));
 
+  const online = useOnline();
+  if (meta.status === "error") return <ErrorState message={t(loadErrorMessage(meta.error, online))} onRetry={retry} />;
   if (meta.status !== "done" || data.status !== "done") return <p className="build__note">{t("Pro maçları yükleniyor")}</p>;
   const rows = metaRows(meta.value, position).slice(0, 25);
   if (rows.length === 0) return <p className="build__note">{t("Bu filtrelerle pro maçı yok. Bir filtreyi kaldır ya da başka bir grup seç.")}</p>;
