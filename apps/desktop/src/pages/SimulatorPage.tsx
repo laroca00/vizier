@@ -39,6 +39,8 @@ import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
 import { useToast } from "../ui/Toast";
 import { useAsync } from "../useAsync";
+import { draftCardContent } from "../simulator/draftCard";
+import { copyDraftCard } from "../simulator/draftCardCanvas";
 import { TeamPlannerPanel } from "../draft/TeamPlannerPanel";
 import { ThreatsPanel } from "../draft/ThreatsPanel";
 import { PickSuggestions } from "../draft/PickSuggestions";
@@ -93,6 +95,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
   const [roleFilter, setRoleFilter] = useState(SLOT_ROLE);
   const [name, setName] = useState("");
   const [currentId, setCurrentId] = useState<string | null>(null);
+  const [drawing, setDrawing] = useState(false);
   const [deleting, setDeleting] = useState<SavedDraft | null>(null);
   const [compare, setCompare] = useState<[string, string] | null>(null);
   const [compareWith, setCompareWith] = useState<string>("");
@@ -276,6 +279,26 @@ function Simulator({ data }: { data: ChampionRoles }) {
           }
         >
           {t("Kodu kopyala")}
+        </Button>
+        <Button
+          variant="ghost"
+          disabled={picked.size === 0}
+          busy={drawing}
+          onClick={() => {
+            setDrawing(true);
+            copyDraftCard(draftCardContent(draft, data.champions, data.version, name.trim() || t("Draft"), t), {
+              blue: t("Mavi takım"),
+              red: t("Kırmızı takım"),
+              bans: t("Yasaklar"),
+            })
+              .then(
+                (how) => toast("success", how === "copied" ? t("Draft görseli panoya kopyalandı.") : t("Draft görseli indirildi.")),
+                () => toast("error", t("Görsel oluşturulamadı.")),
+              )
+              .finally(() => setDrawing(false));
+          }}
+        >
+          {t("Görsel olarak kopyala")}
         </Button>
       </form>
 

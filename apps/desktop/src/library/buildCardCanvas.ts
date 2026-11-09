@@ -1,66 +1,12 @@
-import type { CardContent, Icon } from "./buildCard";
-
-// Open Graph size: Discord and most chats show it whole without cropping.
-export const CARD_WIDTH = 1200;
-export const CARD_HEIGHT = 630;
-
-const C = {
-  canvas: "#070f2c",
-  surface: "rgba(13, 26, 72, 0.82)",
-  glaze: "#eef2ec",
-  faint: "rgba(238, 242, 236, 0.6)",
-  line: "rgba(238, 242, 236, 0.14)",
-  gilt: "#d6b46a",
-  ink: "#0b1846",
-};
-const FONT = '"Geologica Variable", system-ui, sans-serif';
-
-function load(src: string): Promise<HTMLImageElement | null> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    // Data Dragon allows any origin; without this the canvas could not be exported.
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
-    img.src = src;
-  });
-}
-
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
-}
-
-async function drawIcon(ctx: CanvasRenderingContext2D, icon: Icon, x: number, y: number, size: number, radius: number) {
-  const img = await load(icon.src);
-  if (!img) return;
-  ctx.save();
-  roundRect(ctx, x, y, size, size, radius);
-  ctx.clip();
-  ctx.drawImage(img, x, y, size, size);
-  ctx.restore();
-}
-
-function text(ctx: CanvasRenderingContext2D, value: string, x: number, y: number, size: number, color: string, weight = 400) {
-  ctx.font = `${weight} ${size}px ${FONT}`;
-  ctx.fillStyle = color;
-  ctx.fillText(value, x, y);
-}
+import { CARD_COLORS as C, CARD_HEIGHT, CARD_WIDTH, deliverCard, drawIcon, drawMark, drawText as text, loadImage, newCard, roundRect, toPng } from "../ui/cardCanvas";
+import type { CardContent } from "./buildCard";
 
 /** Draws the build picture and returns it as a PNG. */
 export async function renderBuildCard(content: CardContent): Promise<Blob> {
-  await document.fonts?.ready;
-  const canvas = document.createElement("canvas");
-  canvas.width = CARD_WIDTH;
-  canvas.height = CARD_HEIGHT;
-  const ctx = canvas.getContext("2d")!;
-  ctx.textBaseline = "alphabetic";
-
-  ctx.fillStyle = C.canvas;
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+  const { canvas, ctx } = await newCard();
 
   // Splash art on the right, faded into the night blue where the text sits.
-  const splash = content.splash ? await load(content.splash) : null;
+  const splash = content.splash ? await loadImage(content.splash) : null;
   if (splash) {
     const h = CARD_HEIGHT;
     const w = (splash.width / splash.height) * h;
@@ -147,27 +93,8 @@ export async function renderBuildCard(content: CardContent): Promise<Blob> {
     }
   }
 
-  // The mark, so a shared picture says where it came from.
-  ctx.textAlign = "right";
-  text(ctx, "Vizier", CARD_WIDTH - 48, CARD_HEIGHT - 44, 26, C.gilt, 500);
-  ctx.textAlign = "start";
-
-  return new Promise((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("empty canvas"))), "image/png"));
+  drawMark(ctx);
+  return toPng(canvas);
 }
 
-/** Puts the picture on the clipboard; where that isn't allowed, saves it as a file instead. */
-export async function copyBuildCard(content: CardContent): Promise<"copied" | "saved"> {
-  const blob = renderBuildCard(content);
-  try {
-    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-    return "copied";
-  } catch {
-    const url = URL.createObjectURL(await blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${content.title.replace(/[^\p{L}\p{N} _-]+/gu, "").trim() || "build"}.png`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    return "saved";
-  }
-}
+export const copyBuildCard = (content: CardContent) => deliverCard(renderBuildCard(content), content.title);
