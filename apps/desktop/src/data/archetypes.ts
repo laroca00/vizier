@@ -1,218 +1,46 @@
-// What kind of player each champion is, in Vizier's own words. Hand-kept and
-// keyed by Data Dragon id: an archetype is a reading, not something measured
-// from games, so pages that show it mark it as editorial. A champion has one
-// to three archetypes, main one first.
+import raw from "./archetypes.json";
+
+// What kind of player each champion is, in Vizier's own words (archetypes.json).
+// Hand-kept and keyed by Data Dragon id: an archetype is a reading, not
+// something measured from games, so pages that show it mark it as editorial.
+// A champion has one to three archetypes, main one first.
 
 export type Localized = { tr: string; en: string };
 export type TeamRole = "front" | "damage" | "support" | "flex";
 
-export const ARCHETYPES = [
-  { id: "vanguard", role: "front", name: { tr: "Öncü", en: "Vanguard" }, description: { tr: "Dövüşü başlatan ve ilk hasarı yiyen dayanıklı oyuncu.", en: "Durable player who starts the fight and soaks the first damage." }, strength: { tr: "Kontrolle hedefi yakalar; takımın girişini açar.", en: "Catches targets with crowd control and opens the way in." }, weakness: { tr: "Menzilli rakipten kaçamaz; tek başına hasarı az.", en: "Cannot catch ranged enemies; little damage alone." } },
-  { id: "warden", role: "front", name: { tr: "Muhafız", en: "Warden" }, description: { tr: "Yanındakini koruyan, rakibi taşıyıcıdan uzak tutan dayanıklı oyuncu.", en: "Durable player who guards allies and keeps enemies off the carry." }, strength: { tr: "Taşıyıcıyı uzun süre ayakta tutar.", en: "Keeps the carry alive for a long time." }, weakness: { tr: "Kendi başına öldürme gücü az.", en: "Little killing power of its own." } },
-  { id: "juggernaut", role: "front", name: { tr: "Kalın savaşçı", en: "Juggernaut" }, description: { tr: "Yavaş ama çok dayanıklı, yakın dövüşte güçlü savaşçı.", en: "Slow but very durable fighter, strong up close." }, strength: { tr: "Uzun savaşta hasar ve dayanıklılığı birlikte taşır.", en: "Carries damage and durability together in long fights." }, weakness: { tr: "Yakalanması kolay; menzilli ya da hareketli rakibe zayıf.", en: "Easy to kite; weak against ranged or mobile enemies." } },
-  { id: "duelist", role: "front", name: { tr: "Düellocu", en: "Duelist" }, description: { tr: "Yan koridorda ya da bire bir dövüşte kazanmak için kurulmuş savaşçı.", en: "Fighter built to win side lanes and one-on-one fights." }, strength: { tr: "Tek hedefte yüksek hasar; yan koridor baskısı.", en: "High single-target damage; side lane pressure." }, weakness: { tr: "Takım savaşında etkisi sınırlı.", en: "Limited impact in big team fights." } },
-  { id: "skirmisher", role: "flex", name: { tr: "Atak savaşçı", en: "Skirmisher" }, description: { tr: "Girip çıkarak kısa kavgalar kazanan hareketli savaşçı.", en: "Mobile fighter who wins short skirmishes by going in and out." }, strength: { tr: "Kısa kavgalarda esnek; yer değiştirmesi kolay.", en: "Flexible in short fights; repositions easily." }, weakness: { tr: "Hata yapınca çabuk ölür; ağır kontrol yer.", en: "Dies fast on a mistake; weak to heavy crowd control." } },
-  { id: "diver", role: "flex", name: { tr: "Dalışçı", en: "Diver" }, description: { tr: "Arka hatta ulaşıp hedefi bölen savaşçı.", en: "Fighter who reaches the back line and splits the enemy." }, strength: { tr: "Taşıyıcıya ulaşır; takımı böler.", en: "Reaches the carry and breaks the team apart." }, weakness: { tr: "Takımdan kopunca yalnız kalır; kontrolle durdurulur.", en: "Gets stranded away from the team; stopped by crowd control." } },
-  { id: "assassin", role: "damage", name: { tr: "Suikastçı", en: "Assassin" }, description: { tr: "Tek bir kırılgan hedefi hızla öldüren hareketli oyuncu.", en: "Mobile player who quickly kills one fragile target." }, strength: { tr: "Kırılgan hedefi kısa sürede indirir.", en: "Takes down a fragile target fast." }, weakness: { tr: "Tek hedefte kalır; yakalanınca işe yaramaz.", en: "Locked to one target; useless when caught." } },
-  { id: "burstmage", role: "damage", name: { tr: "Patlama büyücüsü", en: "Burst mage" }, description: { tr: "Büyülerini üst üste vurarak kısa sürede çok hasar veren büyücü.", en: "Mage who stacks spells for a lot of damage in a short window." }, strength: { tr: "Kısa sürede yüksek hasar; kontrolü de var.", en: "High damage in a short window; often has crowd control." }, weakness: { tr: "Menzili kısa; kırılgan ve yeteneklerine bağlı.", en: "Short range; fragile and dependent on its spells." } },
-  { id: "artillery", role: "damage", name: { tr: "Topçu", en: "Artillery" }, description: { tr: "Uzaktan sürekli yıpratan büyücü ya da nişancı.", en: "Mage or marksman who wears the enemy down from range." }, strength: { tr: "Güvenli aralıktan hasar verir; kuşatmada iyi.", en: "Damages from a safe distance; good at sieging." }, weakness: { tr: "Dalışa yakalanınca savunmasız.", en: "Defenseless once dived on." } },
-  { id: "controlmage", role: "damage", name: { tr: "Alan büyücüsü", en: "Control mage" }, description: { tr: "Alanı kapatan ve kontrol veren büyücü.", en: "Mage who denies space and applies control." }, strength: { tr: "Rakibin hareket alanını daraltır.", en: "Narrows the enemy's room to move." }, weakness: { tr: "Hareketsiz; hızlı dalışa karşı zayıf.", en: "Immobile; weak against fast dives." } },
-  { id: "battlemage", role: "damage", name: { tr: "Savaş büyücüsü", en: "Battle mage" }, description: { tr: "Yakın ya da orta menzilde uzun süre hasar veren, dayanıklı büyücü.", en: "Sturdy mage who deals damage for a long time up close or mid range." }, strength: { tr: "Uzun dövüşte sürekli hasar; bir miktar dayanıklılık.", en: "Steady damage in long fights; some durability." }, weakness: { tr: "Kitlenmesi kolay; yakın menzile ihtiyaç duyar.", en: "Easy to kite; needs to be close." } },
-  { id: "hypercarry", role: "damage", name: { tr: "Geç oyun taşıyıcısı", en: "Hypercarry" }, description: { tr: "Eşya aldıkça çok güçlenen, dövüşü tek başına kazanabilen taşıyıcı.", en: "Carry who grows with items and can win fights alone." }, strength: { tr: "Geç oyunda en yüksek sürekli hasar.", en: "The highest steady damage late in the game." }, weakness: { tr: "Erken oyunda zayıf; koruma ister.", en: "Weak early; needs protection." } },
-  { id: "lanebully", role: "damage", name: { tr: "Koridor bastırıcı", en: "Lane bully" }, description: { tr: "Erken koridorda rakibi ezen menzilli oyuncu.", en: "Ranged player who dominates the early lane." }, strength: { tr: "Erken avantaj kurar; kule baskısı yapar.", en: "Builds an early lead; pressures towers." }, weakness: { tr: "Avantaj kaybolunca etkisi düşer.", en: "Loses impact once the lead is gone." } },
-  { id: "enchanter", role: "support", name: { tr: "Destek büyücü", en: "Enchanter" }, description: { tr: "Dostlarını iyileştiren, kalkanlayan ve güçlendiren destek.", en: "Support who heals, shields and empowers allies." }, strength: { tr: "Taşıyıcıyı güçlendirir; kavgaları uzatır.", en: "Boosts the carry and stretches out fights." }, weakness: { tr: "Kırılgan; kendi başına hasar vermez.", en: "Fragile; little damage of its own." } },
-  { id: "catcher", role: "support", name: { tr: "Avcı destek", en: "Catcher" }, description: { tr: "Uzaktan hedefi yakalayan kontrol desteği.", en: "Control support who catches targets from range." }, strength: { tr: "Tek bir isabetle dövüşü kazandırır.", en: "One hit can win the fight." }, weakness: { tr: "Isabet olmazsa katkısı düşer.", en: "Contributes little without a hit." } },
-  { id: "engagesup", role: "support", name: { tr: "Girişçi destek", en: "Engage support" }, description: { tr: "Öne atılıp dövüşü başlatan destek.", en: "Support who dives in to start the fight." }, strength: { tr: "Takım için güçlü bir giriş açar.", en: "Opens a strong engage for the team." }, weakness: { tr: "Girişi kaçırınca kırılgan kalır.", en: "Left exposed when the engage fails." } },
-  { id: "splitpusher", role: "flex", name: { tr: "Yan koridorcu", en: "Split pusher" }, description: { tr: "Takımdan ayrı yan koridoru iten oyuncu.", en: "Player who pushes a side lane apart from the team." }, strength: { tr: "Haritada baskı kurar; rakibi dağıtır.", en: "Creates map pressure; stretches the enemy." }, weakness: { tr: "Takım savaşına geç gelir.", en: "Arrives late to team fights." } },
-  { id: "tempo", role: "flex", name: { tr: "Tempo ormancısı", en: "Tempo jungler" }, description: { tr: "Erken oyunda baskı kurup koridorlara yardım eden ormancı.", en: "Jungler who pressures early and helps lanes." }, strength: { tr: "Erken kovalayıp koridorlara avantaj taşır.", en: "Ganks early and carries leads to lanes." }, weakness: { tr: "Geç oyunda etkisi düşebilir.", en: "May lose impact late." } },
-] as const satisfies readonly {
-  id: string;
+export type Archetype = {
+  id: ArchetypeId;
   role: TeamRole;
   name: Localized;
   description: Localized;
   strength: Localized;
   weakness: Localized;
-}[];
+};
 
-export type ArchetypeId = (typeof ARCHETYPES)[number]["id"];
-export type Archetype = (typeof ARCHETYPES)[number];
+export const ARCHETYPES = raw.archetypes as Archetype[];
+export type ArchetypeId =
+  | "vanguard"
+  | "warden"
+  | "juggernaut"
+  | "duelist"
+  | "skirmisher"
+  | "diver"
+  | "assassin"
+  | "burstmage"
+  | "artillery"
+  | "controlmage"
+  | "battlemage"
+  | "hypercarry"
+  | "lanebully"
+  | "enchanter"
+  | "catcher"
+  | "engagesup"
+  | "splitpusher"
+  | "tempo";
 
 export const ARCHETYPE_BY_ID = new Map<string, Archetype>(ARCHETYPES.map((a) => [a.id, a]));
 
-// "main second third"
-const TABLE: Record<string, string> = {
-  Aatrox: "juggernaut duelist",
-  Ahri: "burstmage skirmisher",
-  Akali: "assassin skirmisher",
-  Akshan: "lanebully assassin",
-  Alistar: "vanguard engagesup",
-  Ambessa: "diver duelist",
-  Amumu: "vanguard",
-  Anivia: "controlmage",
-  Annie: "burstmage",
-  Aphelios: "hypercarry",
-  Ashe: "hypercarry",
-  AurelionSol: "battlemage controlmage",
-  Aurora: "burstmage skirmisher",
-  Azir: "battlemage hypercarry",
-  Bard: "catcher enchanter",
-  Belveth: "skirmisher hypercarry",
-  Blitzcrank: "catcher engagesup",
-  Brand: "burstmage artillery",
-  Braum: "warden",
-  Briar: "diver skirmisher",
-  Caitlyn: "lanebully",
-  Camille: "diver duelist",
-  Cassiopeia: "battlemage controlmage",
-  Chogath: "juggernaut vanguard",
-  Corki: "artillery",
-  Darius: "juggernaut duelist",
-  Diana: "diver assassin",
-  Draven: "lanebully",
-  DrMundo: "juggernaut splitpusher",
-  Ekko: "assassin skirmisher",
-  Elise: "tempo assassin",
-  Evelynn: "assassin tempo",
-  Ezreal: "artillery lanebully",
-  Fiddlesticks: "controlmage tempo",
-  Fiora: "duelist splitpusher",
-  Fizz: "assassin",
-  Galio: "vanguard warden",
-  Gangplank: "splitpusher artillery",
-  Garen: "juggernaut splitpusher",
-  Gnar: "vanguard duelist",
-  Gragas: "vanguard tempo",
-  Graves: "tempo skirmisher",
-  Gwen: "duelist splitpusher",
-  Hecarim: "diver tempo",
-  Heimerdinger: "artillery controlmage",
-  Hwei: "artillery controlmage",
-  Illaoi: "juggernaut splitpusher",
-  Irelia: "skirmisher duelist",
-  Ivern: "enchanter tempo",
-  Janna: "enchanter",
-  JarvanIV: "diver tempo",
-  Jax: "duelist splitpusher",
-  Jayce: "lanebully artillery",
-  Jhin: "artillery",
-  Jinx: "hypercarry",
-  Kaisa: "hypercarry",
-  Kalista: "lanebully",
-  Karma: "enchanter artillery",
-  Karthus: "battlemage",
-  Kassadin: "assassin",
-  Katarina: "assassin skirmisher",
-  Kayle: "hypercarry",
-  Kayn: "assassin skirmisher",
-  Kennen: "battlemage",
-  Khazix: "assassin tempo",
-  Kindred: "hypercarry tempo",
-  Kled: "diver duelist",
-  KogMaw: "hypercarry",
-  KSante: "juggernaut vanguard",
-  Leblanc: "assassin burstmage",
-  LeeSin: "tempo skirmisher",
-  Leona: "engagesup vanguard",
-  Lillia: "battlemage tempo",
-  Lissandra: "controlmage burstmage",
-  Lucian: "lanebully",
-  Lulu: "enchanter",
-  Lux: "artillery burstmage",
-  Malphite: "vanguard",
-  Malzahar: "controlmage",
-  Maokai: "vanguard warden",
-  MasterYi: "hypercarry skirmisher",
-  Mel: "artillery controlmage",
-  Milio: "enchanter",
-  MissFortune: "lanebully",
-  MonkeyKing: "diver skirmisher",
-  Mordekaiser: "juggernaut battlemage",
-  Morgana: "controlmage catcher",
-  Naafiri: "assassin",
-  Nami: "enchanter",
-  Nasus: "juggernaut splitpusher",
-  Nautilus: "engagesup catcher",
-  Neeko: "burstmage catcher",
-  Nidalee: "artillery tempo",
-  Nilah: "hypercarry duelist",
-  Nocturne: "assassin diver",
-  Nunu: "vanguard tempo",
-  Olaf: "duelist tempo",
-  Orianna: "controlmage battlemage",
-  Ornn: "vanguard",
-  Pantheon: "duelist diver",
-  Poppy: "warden vanguard",
-  Pyke: "catcher assassin",
-  Qiyana: "assassin",
-  Quinn: "lanebully splitpusher",
-  Rakan: "engagesup enchanter",
-  Rammus: "vanguard",
-  RekSai: "tempo diver",
-  Rell: "engagesup vanguard",
-  Renata: "enchanter",
-  Renekton: "duelist juggernaut",
-  Rengar: "assassin",
-  Riven: "skirmisher duelist",
-  Rumble: "battlemage",
-  Ryze: "battlemage",
-  Samira: "hypercarry skirmisher",
-  Sejuani: "vanguard tempo",
-  Senna: "enchanter artillery",
-  Seraphine: "enchanter artillery",
-  Sett: "juggernaut duelist",
-  Shaco: "assassin tempo",
-  Shen: "warden vanguard",
-  Shyvana: "juggernaut",
-  Singed: "splitpusher juggernaut",
-  Sion: "vanguard juggernaut",
-  Sivir: "hypercarry",
-  Skarner: "vanguard",
-  Smolder: "hypercarry",
-  Sona: "enchanter",
-  Soraka: "enchanter",
-  Swain: "battlemage juggernaut",
-  Sylas: "skirmisher battlemage",
-  Syndra: "burstmage controlmage",
-  TahmKench: "warden",
-  Taliyah: "controlmage",
-  Talon: "assassin",
-  Taric: "warden enchanter",
-  Teemo: "artillery splitpusher",
-  Thresh: "catcher warden",
-  Tristana: "hypercarry",
-  Trundle: "juggernaut splitpusher",
-  Tryndamere: "splitpusher duelist",
-  TwistedFate: "controlmage tempo",
-  Twitch: "hypercarry",
-  Udyr: "juggernaut tempo",
-  Urgot: "juggernaut",
-  Varus: "artillery",
-  Vayne: "hypercarry duelist",
-  Veigar: "burstmage",
-  Velkoz: "artillery controlmage",
-  Vex: "burstmage",
-  Vi: "diver",
-  Viego: "skirmisher tempo",
-  Viktor: "battlemage",
-  Vladimir: "battlemage",
-  Volibear: "juggernaut diver",
-  Warwick: "tempo diver",
-  Xayah: "hypercarry",
-  Xerath: "artillery",
-  XinZhao: "diver tempo",
-  Yasuo: "skirmisher",
-  Yone: "skirmisher",
-  Yorick: "splitpusher juggernaut",
-  Yunara: "hypercarry",
-  Yuumi: "enchanter",
-  Zac: "vanguard",
-  Zed: "assassin",
-  Zeri: "hypercarry",
-  Ziggs: "artillery",
-  Zilean: "enchanter controlmage",
-  Zoe: "burstmage artillery",
-  Zyra: "controlmage",
-};
+const TABLE = raw.table as Record<string, string>;
 
 /** The champion's archetypes, main one first; empty for a champion not written up yet. */
 export function archetypesOf(championId: string): Archetype[] {
