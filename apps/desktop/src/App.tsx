@@ -5,6 +5,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useChampSelectMock } from "./dev/champSelectMock";
 import { champSelectFixture } from "./dev/fixtures";
 import { useChampSelect, useLcuStatus, useLobby } from "./lcu";
+import { useMyRank } from "./rank/myRank";
 import { lobbyRoles } from "./clientFlow";
 import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
@@ -173,6 +174,7 @@ function App() {
   const clientLocale = lcu.state === "connected" ? (lcu.region?.locale ?? null) : null;
 
   useEffect(() => setClientLocale(clientLocale), [clientLocale]);
+  useMyRank(lcu.state === "connected");
   useReadyCheckAlert(phase, settings.readyCheckAlert);
   useAutoAcceptReady(phase, settings.autoAcceptReady);
 

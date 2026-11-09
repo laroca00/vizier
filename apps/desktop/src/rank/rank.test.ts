@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { bracketForTier } from "./myRank";
 import { cleanBracket, cleanChoice, rankParam, resolveBracket, withRank } from "./rank";
 
 describe("rank choice", () => {
@@ -21,5 +22,24 @@ describe("rank choice", () => {
     expect(withRank("/v1/tierlist/TOP", "emerald_plus")).toBe("/v1/tierlist/TOP");
     expect(withRank("/v1/tierlist/TOP", "all")).toBe("/v1/tierlist/TOP?rank=all");
     expect(withRank("/v1/builds/1?position=TOP", "master_plus")).toBe("/v1/builds/1?position=TOP&rank=master_plus");
+  });
+});
+
+describe("my rank", () => {
+  it("maps every tier to the closest bracket", () => {
+    const cases: [string, string][] = [
+      ["IRON", "gold_minus"],
+      ["bronze", "gold_minus"],
+      ["SILVER", "gold_minus"],
+      ["GOLD", "gold_minus"],
+      ["PLATINUM", "platinum_plus"],
+      ["EMERALD", "emerald_plus"],
+      ["DIAMOND", "diamond_plus"],
+      ["MASTER", "master_plus"],
+      ["GRANDMASTER", "master_plus"],
+      ["CHALLENGER", "master_plus"],
+    ];
+    for (const [tier, bracket] of cases) expect(bracketForTier(tier)).toBe(bracket);
+    for (const none of ["", "NA", null, undefined]) expect(bracketForTier(none)).toBeNull();
   });
 });

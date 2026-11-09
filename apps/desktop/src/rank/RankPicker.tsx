@@ -12,7 +12,7 @@ export function RankPicker() {
   const label = (choice: RankChoice) =>
     choice === "mine" ? t("Benim rankım ({rank})", { rank: BRACKET_LABELS[resolveBracket(choice, myRank)][lang] }) : BRACKET_LABELS[choice][lang];
   return (
-    <span className="rank-picker" title={rank === "mine" && !myRank ? t("Rankın okunamadı, Zümrüt+ verisi gösteriliyor.") : t("İstatistikler bu rank grubunun maçlarından.")}>
+    <span className="rank-picker" title={rank === "mine" && !myRank ? t("Rankın okunamadı (sırasız ya da client kapalı), Zümrüt+ verisi gösteriliyor.") : t("İstatistikler bu rank grubunun maçlarından.")}>
       <Select
         label={t("Rank")}
         hideLabel

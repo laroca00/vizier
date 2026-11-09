@@ -1,6 +1,7 @@
 pub mod actions;
 pub mod champ_select;
 pub mod lobby;
+pub mod ranked;
 pub mod roster;
 mod client;
 pub mod writes;
