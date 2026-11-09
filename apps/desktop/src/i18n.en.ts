@@ -547,6 +547,9 @@ export const EN: Record<string, string> = {
   "Toplam minyon ve kamp sayın, aynı şampiyonu oynayan Emerald+ oyuncuların o dakikadaki medyanıyla. İlk 15 dakika.":
     "Your minions and camps against Emerald+ players on the same champion at the same minute. First 15 minutes.",
   "Eşya altını farkı": "Item gold difference",
+  "Günün kombosu": "Combo of the day",
+  "Günün kombosu: {champion}": "Combo of the day: {champion}",
+  "Bütün kombolar": "All combos",
   "Draft görseli panoya kopyalandı.": "Draft picture copied to the clipboard.",
   "Draft görseli indirildi.": "Draft picture downloaded.",
   "Vizier'e hoş geldin": "Welcome to Vizier",

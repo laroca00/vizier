@@ -1,6 +1,7 @@
 import { Fragment, useState, type ReactNode } from "react";
 import { ClientStatus } from "../ClientStatus";
 import { greeting } from "../home/greeting";
+import { DailyComboCard } from "../home/DailyComboCard";
 import { HomeEditor } from "../home/HomeEditor";
 import { homeOrderFor, normalizeHome, type HomeCard } from "../home/layout";
 import { QueueView } from "../home/QueueView";
@@ -124,6 +125,7 @@ export function Home({ lcu, lobby = null, draftActive, onOpenChampion, onNavigat
     thisPatch: <ThisPatchCard onOpenChampion={onOpenChampion} onNavigate={onNavigate} />,
     metaPicks: <MetaPicks onOpenChampion={onOpenChampion} />,
     metaMovers: <MetaMovers onOpenChampion={onOpenChampion} />,
+    dailyCombo: <DailyComboCard champions={data.status === "done" ? data.value.champions : new Map()} version={data.status === "done" ? data.value.version : null} onNavigate={onNavigate} />,
   };
 
   return (
