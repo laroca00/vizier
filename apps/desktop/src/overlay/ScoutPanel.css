@@ -84,3 +84,17 @@
   border-radius: 6px;
   background: rgb(255 255 255 / 0.1);
 }
+
+/* The team's plan under its damage bar: the archetype in gilt, the line in plain text. */
+.scout__plan {
+  margin: 2px 0 6px;
+  max-width: 34ch;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--glaze-muted);
+}
+
+.scout__plan-name {
+  font-weight: 600;
+  color: var(--gilt);
+}

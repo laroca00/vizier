@@ -6,6 +6,8 @@ import { champions as loadChampions, championIconUrl, latestVersion } from "../d
 import { formatPercent, useLang, useT } from "../i18n";
 import type { LcuStatus } from "../lcu";
 import { useAsync } from "../useAsync";
+import { ARCHETYPE_NAMES, ARCHETYPE_PLANS, winConditions } from "../draft/winConditions";
+import type { Champion } from "../data/ddragon";
 import { platformOf, rankGames, scoutSides, scoutTags, type RosterPlayer, type ScoutRow, type ScoutTag } from "./scouting";
 import "./ScoutPanel.css";
 
@@ -95,6 +97,7 @@ function Side({ title, rows, damage, version, available }: { title: string; rows
       <p className="scout__legend">
         {t("Fiziksel {ad} · Büyü {ap} · Gerçek {true}", { ad: formatPercent(damage.ad, lang), ap: formatPercent(damage.ap, lang), true: formatPercent(damage.true, lang) })}
       </p>
+      <Plan champions={rows.flatMap((r) => (r.champion ? [r.champion] : []))} />
       <ol className="scout__rows">
         {rows.map(({ player, champion, scout }) => (
           <li key={player.puuid}>
@@ -135,5 +138,18 @@ function Facts({ scout }: { scout: ScoutPlayer | null }) {
         </span>
       ))}
     </>
+  );
+}
+
+/** The team's main plan from the composition rules, in one line; nothing when the draft has no clear one. */
+function Plan({ champions }: { champions: Champion[] }) {
+  const t = useT();
+  const plan = winConditions(champions)[0];
+  if (!plan) return null;
+  return (
+    <p className="scout__plan">
+      <span className="scout__plan-name">{t(ARCHETYPE_NAMES[plan.archetype])}</span>{" "}
+      {t(ARCHETYPE_PLANS[plan.archetype][0], { names: plan.names.join(", ") })}
+    </p>
   );
 }
