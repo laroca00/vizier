@@ -213,10 +213,15 @@ The owner's call: the same overlay features Blitz ships, built fresh in Vizier's
 - [x] 19.5 Skill order overlay: the skill to level now (exists) next to the ability bar, plus the full 18-level order strip on a hotkey. (24d8519; strip of all 18 levels on Ctrl+Shift+K (rebindable), skill hint placed above the ability bar)
 - [ ] 19.4b Benchmark of kill participation and KDA at the current minute: needs per-minute kill, death and assist sums from timeline events in the crawler rollup.
 - [ ] 19.6 Item value difference: per lane pair on the Tab scoreboard (exists) and the team totals, restyled for 19.1.
+<!-- claimed: auto/19-overlay-b 2026-11-09 13:01Z -->
 - [ ] 19.7 Minimap timers: dragon, Baron, Herald and inhibitor respawns (exist) drawn next to their spots on the minimap, and the manual camp timers drawn on the camps. Minimap side and size come from a setting matching the game's minimap options.
+<!-- claimed: auto/19-overlay-b 2026-11-09 13:01Z -->
 - [ ] 19.8 Augment overlay for Arena and Mayhem: the champion's augments with tier, win rate and games while the augment pick is open (the Live Client API doesn't say which three are offered, so the panel lists the best per rarity and has a search box the player types into).
+<!-- claimed: auto/19-overlay-b 2026-11-09 13:01Z -->
 - [ ] 19.9 In-game build panel on a hotkey: the imported build's items in order with what's owned ticked, runes and the skill order, and the next item with gold left (exists, moves here).
+<!-- claimed: auto/19-overlay-b 2026-11-09 13:01Z -->
 - [ ] 19.10 Overlay visual tests: screenshot each mode's fixture in edit and play states with Playwright against `pnpm dev`, kept as reference images.
+<!-- claimed: auto/19-overlay-b 2026-11-09 13:01Z -->
 
 ## 20. Data you can trust
 
