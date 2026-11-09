@@ -769,6 +769,7 @@ export const EN: Record<string, string> = {
   "Hepsini temizle": "Clear all",
   "Ejder doğuyor": "Dragon spawns",
   "Herald doğuyor": "Herald spawns",
+  "Kule plakaları düşüyor": "Turret plates fall",
   "Baron doğuyor": "Baron spawns",
   "Zamanlayıcı": "Timer",
   "Şimdi": "Now",

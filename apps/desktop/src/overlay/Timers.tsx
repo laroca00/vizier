@@ -28,6 +28,8 @@ const FIRST_SPAWNS = [
   { id: "first-dragon", label: "Ejder doğuyor", at: 300, event: "DragonKill" },
   { id: "first-herald", label: "Herald doğuyor", at: 900, event: "HeraldKill" },
   { id: "first-baron", label: "Baron doğuyor", at: 1200, event: "BaronKill" },
+  // Turret plates fall for good at 14:00; the last minutes are worth a push. No event ends it early.
+  { id: "plates", label: "Kule plakaları düşüyor", at: 840, event: null },
 ];
 
 /** Seconds left at which a timer counts as coming up. */
@@ -89,7 +91,11 @@ export function useManualTimers(game: LiveGame | null, time: number): ManualTime
   }, []);
 
   const firsts: TimerRow[] = game
-    ? FIRST_SPAWNS.filter((f) => time < f.at && !game.events.some((e) => e.name === f.event)).map((f) => ({ id: f.id, label: f.label, at: f.at }))
+    ? FIRST_SPAWNS.filter((f) => time < f.at && (f.event === null ? game.gameMode === "CLASSIC" : !game.events.some((e) => e.name === f.event))).map((f) => ({
+        id: f.id,
+        label: f.label,
+        at: f.at,
+      }))
     : [];
   const active = manual.filter((m) => m.at > time - 5);
   const stopwatch = watch.from === null && watch.total === 0 ? null : watch.total + (watch.from === null ? 0 : time - watch.from);
