@@ -1304,6 +1304,5 @@ export const EN: Record<string, string> = {
   "{champion} seçilemedi. İstemciden elle seç.": "Could not pick {champion}. Pick it in the client.",
   "{champion} üzerine getir": "Hover {champion}",
   "{champion} kilitle": "Lock in {champion}",
-  "Seç": "Pick",
   "Kilitle": "Lock in",
 };
