@@ -128,7 +128,7 @@ function Account({
         onClick={() => setOpen((v) => !v)}
       >
         <span className="account__avatar" aria-hidden="true">
-          {name.charAt(0).toUpperCase()}
+          {summoner?.profileIconId ? <AccountIcon id={summoner.profileIconId} fallback={name.charAt(0).toUpperCase()} /> : name.charAt(0).toUpperCase()}
           <span className="account__dot" data-state={lcu.state} />
         </span>
         <span className="account__text" role="status">
@@ -150,5 +150,21 @@ function Account({
         </div>
       )}
     </div>
+  );
+}
+
+// CommunityDragon has every icon by id, including ones newer than the cached Data Dragon version.
+function AccountIcon({ id, fallback }: { id: number; fallback: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <>{fallback}</>;
+  return (
+    <img
+      className="account__icon"
+      src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${id}.jpg`}
+      alt=""
+      width={36}
+      height={36}
+      onError={() => setFailed(true)}
+    />
   );
 }

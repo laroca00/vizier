@@ -52,6 +52,8 @@ pub struct Summoner {
     pub game_name: String,
     pub tag_line: String,
     pub puuid: String,
+    #[serde(default)]
+    pub profile_icon_id: i64,
 }
 
 /// The account's server ("TR", "EUW") and the client's language ("tr_TR", "en_GB").

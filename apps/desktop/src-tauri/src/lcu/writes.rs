@@ -123,7 +123,8 @@ fn merge_item_set(mut document: serde_json::Value, champion_id: i64, title: &str
         "type": "custom",
         "map": "any",
         "mode": "any",
-        "associatedMaps": [11],
+        // An empty list shows the set on every map, so ARAM, Mayhem and Arena get it too.
+        "associatedMaps": [],
         "associatedChampions": [champion_id],
         "blocks": blocks.iter().map(|b| json!({
             "type": b.title,
@@ -134,7 +135,18 @@ fn merge_item_set(mut document: serde_json::Value, champion_id: i64, title: &str
         "startedFrom": "blank",
     }));
     document["itemSets"] = json!(sets);
+    // The client keeps whichever copy has the newer timestamp when it syncs.
+    document["timestamp"] = json!(now_millis());
     document
+}
+
+fn now_millis() -> u64 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)
+}
+
+/// The shop expects a UUID; one fixed per champion keeps a re-import in the same slot.
+fn item_set_uid(champion_id: i64) -> String {
+    format!("5a1e7000-0000-4000-8000-{:012}", champion_id.rem_euclid(1_000_000_000_000))
 }
 
 pub async fn import_item_set(api: &LcuClient, champion_id: i64, title: &str, blocks: &[ItemBlock]) -> Result<(), String> {
@@ -144,7 +156,7 @@ pub async fn import_item_set(api: &LcuClient, champion_id: i64, title: &str, blo
     let summoner: CurrentSummoner = api.get("/lol-summoner/v1/current-summoner").await.map_err(|e| e.to_string())?;
     let path = format!("/lol-item-sets/v1/item-sets/{}/sets", summoner.summoner_id);
     let document: serde_json::Value = api.get(&path).await.map_err(|e| e.to_string())?;
-    let uid = format!("vizier-{champion_id}");
+    let uid = item_set_uid(champion_id);
     let merged = merge_item_set(document, champion_id, title, blocks, &uid);
     api.send(Method::PUT, &path, &merged).await.map_err(|e| e.to_string())
 }
@@ -206,6 +218,15 @@ mod tests {
         assert_eq!(titles, ["My Ahri", "Vizier Zed", "Other app", "Vizier Ahri"]);
         assert_eq!(merged["accountId"], 1);
         assert_eq!(merged["itemSets"][3]["blocks"][0]["items"][1]["id"], "3020");
+        assert_eq!(merged["itemSets"][3]["associatedMaps"], json!([]));
+        assert!(merged["timestamp"].as_u64().unwrap() > 5);
+    }
+
+    #[test]
+    fn item_set_uid_is_a_uuid() {
+        let uid = item_set_uid(103);
+        assert_eq!(uid, "5a1e7000-0000-4000-8000-000000000103");
+        assert_eq!(uid.len(), 36);
     }
 
     #[test]
