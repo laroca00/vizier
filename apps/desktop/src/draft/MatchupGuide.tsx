@@ -9,7 +9,7 @@ import { hasEnoughGames } from "../data/confidence";
 
 export const DIFFICULTY_TEXT: Record<Difficulty, string> = {
   hard: "Zor eşleşme",
-  even: "Dengeli eşleşme",
+  even: "Dengeli ya da belirsiz",
   easy: "Rahat eşleşme",
 };
 
@@ -41,7 +41,7 @@ export function MatchupGuide({ championId, position, opponent, version }: Props)
 
   const matchup = counters.status === "done" ? counters.value.matchups.find((m) => m.championId === opponent.key) : undefined;
   const known = matchup && hasEnoughGames(matchup.games, matchup.winRate) ? matchup : undefined;
-  const difficulty = known ? difficultyOf(known.winRate) : null;
+  const difficulty = known ? difficultyOf(known.winRate, known.games) : null;
   const standIn =
     !known && counters.status === "done" && roster.status === "done" ? standInMatchup(counters.value.matchups, opponent, roster.value.values()) : null;
 

@@ -3,7 +3,7 @@ import type { Champion } from "../data/ddragon";
 import { analyzeComp, traitsOf } from "../data/traits";
 import type { ChampSelect, DraftMember } from "../lcu";
 import { ARAM, RANKED } from "../queues";
-import { hasEnoughGames } from "../data/confidence";
+import { hasEnoughGames, wilson } from "../data/confidence";
 
 export const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"] as const;
 
@@ -183,7 +183,7 @@ export function suggestPicks({ tierList, opponentCounters, opponentId, allies, c
       if (matchup && opponentId) {
         const ours = 1 - matchup.winRate;
         breakdown.counter = (ours - 0.5) * 100 * COUNTER_WEIGHT;
-        if (ours >= 0.51) reasons.push({ kind: "counter", vs: opponentId, winRate: ours, games: matchup.games });
+        if (wilson(ours, matchup.games).low > 0.5) reasons.push({ kind: "counter", vs: opponentId, winRate: ours, games: matchup.games });
       }
       for (const need of needs) {
         if (fills(need, champion)) {
@@ -205,10 +205,15 @@ export function suggestPicks({ tierList, opponentCounters, opponentId, allies, c
 
 export type Difficulty = "hard" | "even" | "easy";
 
-/** How the matchup tends to go, from our champion's win rate against the opponent. */
-export function difficultyOf(winRate: number): Difficulty {
-  if (winRate < 0.48) return "hard";
-  if (winRate > 0.52) return "easy";
+/**
+ * How the matchup tends to go, from our champion's win rate against the
+ * opponent. "hard" and "easy" need the 95% interval to lie fully on one side
+ * of 50%; anything else is "even", which the app words as even or unclear.
+ */
+export function difficultyOf(winRate: number, games: number): Difficulty {
+  const { low, high } = wilson(winRate, games);
+  if (high < 0.5) return "hard";
+  if (low > 0.5) return "easy";
   return "even";
 }
 
@@ -245,7 +250,7 @@ export function matchupLine(
 ): { winRate: number; games: number; difficulty: Difficulty } | null {
   const m = counters.matchups.find((x) => x.championId === opponentId);
   if (!m || !hasEnoughGames(m.games, m.winRate)) return null;
-  return { winRate: m.winRate, games: m.games, difficulty: difficultyOf(m.winRate) };
+  return { winRate: m.winRate, games: m.games, difficulty: difficultyOf(m.winRate, m.games) };
 }
 
 /** ARAM and Mayhem hand out a shared bench; other queues never have one. */

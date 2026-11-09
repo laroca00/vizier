@@ -575,6 +575,7 @@ export const EN: Record<string, string> = {
   "Bu rakibe karşı daha sık alınanlar": "Bought more often against this opponent",
   "Zor eşleşme": "Hard matchup",
   "Dengeli eşleşme": "Even matchup",
+  "Dengeli ya da belirsiz": "Even or unclear",
   "Rahat eşleşme": "Favourable matchup",
   "Öneriler hazırlanıyor": "Preparing picks",
   "Şu an öne çıkan bir seçim yok.": "Nothing stands out right now.",

@@ -8,6 +8,7 @@ import { JournalNote, MatchupNotes } from "../Journal";
 import { MatchupLink } from "../matchupLink";
 import { SkinGallery } from "../SkinGallery";
 import { similarChampions } from "../similar";
+import { difficultyOf } from "../draft/logic";
 import { groupAllies, MIN_ALLY_GAMES } from "../synergy";
 import { championNoteKey, inPool, matchupNoteKey, toggleFavouriteChampion, togglePool, usePersonal } from "../personal";
 import { ProBuildList } from "../ProBuildList";
@@ -368,10 +369,11 @@ function Matchups({ counters, champions, version, onOpenChampion, championId, po
   const personal = usePersonal();
   const all = counters.matchups;
   const shown = Math.min(SHOWN_MATCHUPS, Math.floor(all.length / 2));
+  // A matchup is listed as hard or easy only when its interval clears 50%; a group with none collapses.
   const groups = [
-    { title: "Zorlandığı rakipler", list: all.slice(0, shown) },
-    { title: "Rahat ettiği rakipler", list: all.slice(-shown).reverse() },
-  ];
+    { title: "Zorlandığı rakipler", list: all.slice(0, shown).filter((m) => difficultyOf(m.winRate, m.games) === "hard") },
+    { title: "Rahat ettiği rakipler", list: all.slice(-shown).reverse().filter((m) => difficultyOf(m.winRate, m.games) === "easy") },
+  ].filter((group) => group.list.length > 0);
   // Bars share one scale so a 40% and a 60% matchup look equally far from even.
   const spread = Math.max(...all.map((m) => Math.abs(m.winRate - 0.5)), 0.05);
 
@@ -408,7 +410,6 @@ function Matchups({ counters, champions, version, onOpenChampion, championId, po
 }
 
 const SHOWN_SIMILAR = 5;
-// Fewer games than this and the win rate says more about luck than the champion.
 // Not a rate cut-off: only champions people actually play are worth listing as similar.
 const SIMILAR_MIN_GAMES = 100;
 
