@@ -286,7 +286,9 @@ Builds on: synergies doc and the champion page synergies tab (5.7, 1.11), counte
 <!-- claimed: auto/24-combos-archetypes 2026-11-09T13:46:15Z -->
 - [ ] 25.3 Synergy Explorer page from the Champions section: champion and role in, partners out, with crawler data (games, win rate, badge) and the reason from category rules (engage + follow-up CC, wombo, protect the carry, dive, poke, scaling, lane pressure, disengage) built on archetypes and dimensions. Pairs without data show the reason only, marked editorial. Sort by data or by category.
 - [ ] 25.4 Counterpick Matrix page: up to five pool champions × the role's 20 most common opponents, heatmap cells favourable / neutral / unfavourable / insufficient using `confidenceOf` (not raw win rate), with games in each cell, patch filter, and the best blind pick. Reuses pool coverage logic; the pool coverage panel links to it. Colour-blind safe and readable as a table.
+<!-- claimed: auto/25-matrix-drafts 2026-11-09T13:57:00Z -->
 - [ ] 25.5 Difficulty breakdown on the champion page: mechanics, combos, positioning, skillshots, decisions, macro, consistency as qualitative levels (hand-kept, editorial badge), next to Data Dragon's official difficulty number (labelled official).
+<!-- claimed: auto/25-matrix-drafts 2026-11-09T13:57:00Z -->
 
 ## 26. Team preparation (D1–D3)
 
@@ -294,6 +296,7 @@ Builds on: the draft simulator (12.x, VZD1 codes, undo, Clash planner), composit
 
 - [ ] 26.1 Composition templates (wombo, protect the ADC, front-to-back, dive, poke, pick, split push, heavy engage, disengage, scaling, early pressure): objective, archetypes needed, roles, strengths, weaknesses, game phase, counter-comps; browse page with fitting champions from 25.1.
 - [ ] 26.2 Draft templates in the simulator: name, side, five picks, bans, notes, tags; save, duplicate, edit, delete, open in the simulator; codes reuse VZD1; stored under `vizier.drafts` (already exported).
+<!-- claimed: auto/25-matrix-drafts 2026-11-09T13:57:00Z -->
 - [ ] 26.3 Team Synergy Planner in the simulator and champ select: archetypes per pick, engage, disengage, frontline, CC, damage split, scaling, synergy pairs, and plain gap lines ("güvenilir engage az"). No overall score.
 - [ ] 26.4 Composition match: which template a team is closest to and what it still lacks, with the champions that would fill it from the player's pool first.
 
@@ -302,7 +305,9 @@ Builds on: the draft simulator (12.x, VZD1 codes, undo, Clash planner), composit
 Builds on: the quiz page and store (riddle modes, item game, timed mode, statistics), the simulator's analysis.
 
 - [ ] 27.1 Draft Challenge data model: scenario (both teams with unknown slots, role, question, choices or free champion pick, accepted answers with trade-offs, difficulty, category), stored as JSON with a schema test; the first 30 scenarios written by hand.
+<!-- claimed: auto/25-matrix-drafts 2026-11-09T13:57:00Z -->
 - [ ] 27.2 Draft Challenge page: play a scenario, answer, then the explanation with the alternatives that also work and why; session progress and replay; no win chances.
+<!-- claimed: auto/25-matrix-drafts 2026-11-09T13:57:00Z -->
 - [ ] 27.3 Generated scenarios from the composition rules (a team missing engage, all AP, heavy dive against it), with answers checked by the same rules, so the pool grows without hand writing.
 - [ ] 27.4 Quiz 2.0 categories in the existing quiz: abilities, item effects, runes, matchups (from crawler data with badge), compositions, synergies, roles, mechanics. Difficulty, timed and untimed, explanations after each answer, review and replay missed questions. Results stay in the session plus the existing local stats; no ranking.
 
