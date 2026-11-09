@@ -13,6 +13,7 @@ import { useAsync } from "./useAsync";
 import { getProTeams } from "./api";
 import { useOpenPro } from "./proLink";
 import { guessPosition } from "./pages/matchupRoute";
+import { COMMAND_PREFIX } from "./commands";
 import { CATEGORIES, CATEGORY_TEXT, search, type Category, type Entry, type PaletteLink, type Pro, type Result } from "./paletteSearch";
 
 export type { PaletteLink };
@@ -326,7 +327,7 @@ export function SearchPalette({ open, onClose, onChampion, links = [], onLink, o
                         <NavIcon name={result.link.icon} size={18} />
                       </span>
                       <span>{result.link.label}</span>
-                      <span className="palette__kind">{t("Bölüm")}</span>
+                      <span className="palette__kind">{result.link.id.startsWith(COMMAND_PREFIX) ? t("Komut") : t("Bölüm")}</span>
                     </>
                   )}
                 </li>

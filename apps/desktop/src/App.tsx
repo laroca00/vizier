@@ -33,6 +33,7 @@ import { Sidebar, type NavGroup, type NavItem } from "./Sidebar";
 import { ShortcutsHelp } from "./ShortcutsHelp";
 import { Welcome } from "./Welcome";
 import { isTyping } from "./shortcuts";
+import { COMMAND_PREFIX, commandLinks, commandPatch } from "./commands";
 import { IconButton } from "./ui/Button";
 import { NavIcon } from "./ui/NavIcon";
 import { ErrorBoundary, PageCrashed, Skeleton } from "./ui/States";
@@ -511,8 +512,16 @@ function App() {
         open={searching}
         onClose={() => setSearching(false)}
         onChampion={(id) => openChampion(id)}
-        links={[...groups.flatMap((g) => g.items), ...footItems].map((item) => ({ id: item.id, label: t(item.label), icon: item.icon }))}
-        onLink={(id) => go(pageRoute(id as Page))}
+        links={[
+          ...[...groups.flatMap((g) => g.items), ...footItems].map((item) => ({ id: item.id, label: t(item.label), icon: item.icon })),
+          ...commandLinks(settings).map((c) => ({ ...c, label: t(c.label) })),
+        ]}
+        onLink={(id) => {
+          if (!id.startsWith(COMMAND_PREFIX)) return go(pageRoute(id as Page));
+          if (id === `${COMMAND_PREFIX}keys`) return setShowKeys(true);
+          const patch = commandPatch(id, settings);
+          if (patch) updateSettings(patch);
+        }}
         onMatchup={openMatchup}
         onRoute={go}
       />
