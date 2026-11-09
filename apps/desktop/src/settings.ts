@@ -4,6 +4,8 @@ import { withAutoImportOn } from "./autoImportDefault";
 import type { AutopilotMode } from "./autopilot";
 import type { LanguageSetting } from "./i18n";
 import { DEFAULT_REF, type RefSection } from "./overlay/reference";
+import { cleanBracket, cleanChoice, type RankChoice } from "./rank/rank";
+import type { Bracket } from "@vizier/shared/brackets";
 import type { OverlayTheme, WidgetStyles } from "./overlay/appearance";
 
 export type Settings = {
@@ -81,6 +83,10 @@ export type Settings = {
   navFolded: string[];
   /** The first-run welcome was closed. */
   welcomeSeen: boolean;
+  /** Which rank bracket the crawler stats are read for; Emerald+ until the player picks one. */
+  rank: RankChoice;
+  /** The bracket of the player's own solo queue rank, read from the client; null while unknown. */
+  myRank: Bracket | null;
 };
 
 const DEFAULTS: Settings = {
@@ -127,6 +133,8 @@ const DEFAULTS: Settings = {
   homeLayout: DEFAULT_HOME,
   navFolded: [],
   welcomeSeen: false,
+  rank: "emerald_plus",
+  myRank: null,
 };
 
 const KEY = "vizier.settings";
@@ -145,7 +153,7 @@ function read(): Settings {
       }
       localStorage.setItem(AUTO_IMPORT_KEY, "1");
     }
-    return { ...DEFAULTS, ...stored };
+    return { ...DEFAULTS, ...stored, rank: cleanChoice(stored.rank), myRank: cleanBracket(stored.myRank) };
   } catch {
     return DEFAULTS;
   }
@@ -155,11 +163,13 @@ let current = read();
 
 // The overlay is a second window on the same origin; this keeps it in step
 // with changes made on the settings page.
-window.addEventListener("storage", (event) => {
-  if (event.key !== KEY) return;
-  current = read();
-  for (const listener of listeners) listener();
-});
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key !== KEY) return;
+    current = read();
+    for (const listener of listeners) listener();
+  });
+}
 
 export function updateSettings(patch: Partial<Settings>) {
   current = { ...current, ...patch };
@@ -169,6 +179,10 @@ export function updateSettings(patch: Partial<Settings>) {
     // Settings still apply for this session.
   }
   for (const listener of listeners) listener();
+}
+
+export function getSettings(): Settings {
+  return current;
 }
 
 export function useSettings(): Settings {

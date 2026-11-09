@@ -11,6 +11,7 @@ import { useAsync } from "../useAsync";
 import { usePersonal } from "../personal";
 import { Scatter } from "../charts";
 import { PageHeader } from "../ui/Page";
+import { useBracket } from "../rank/useRank";
 import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
 import { SearchInput, Toggle } from "../ui/Fields";
@@ -59,7 +60,8 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
   const setQueue = (next: number) => change({ queue: next });
   const setPosition = (next: string) => change({ position: next });
   const setHideThin = (next: boolean) => change({ hideThin: next });
-  const [state, retry] = useAsync(`${queue}:${position}`, () => load(queue, position));
+  const bracket = useBracket();
+  const [state, retry] = useAsync(`${queue}:${position}:${bracket}`, () => load(queue, position));
   const ranked = queue === RANKED;
   const personal = usePersonal();
   const poolIds = new Set(personal.pool.filter((p) => !ranked || !p.position || p.position === position).map((p) => p.championId));
@@ -80,6 +82,7 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
   return (
     <LiquidGlass className="panel tiers" radius={28} strength={2.5} scroll>
       <PageHeader
+        rank
         title={t("Tier listesi")}
         subtitle={
           state.status === "done" && state.value.list.patches.length > 0

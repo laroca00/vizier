@@ -2,6 +2,10 @@
 // exactly as written in the code; {placeholders} must match.
 
 export const EN: Record<string, string> = {
+  // Rank filter
+  "Benim rankım ({rank})": "My rank ({rank})",
+  "Rankın okunamadı, Zümrüt+ verisi gösteriliyor.": "Your rank could not be read; showing Emerald+ data.",
+  "İstatistikler bu rank grubunun maçlarından.": "Stats come from games of this rank group.",
   // Shell and navigation
   "Ana menü": "Main menu",
   "Şampiyon seçimi": "Champ select",

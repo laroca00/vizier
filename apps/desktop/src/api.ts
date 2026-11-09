@@ -2,6 +2,9 @@ const API_URL = import.meta.env.VITE_API_URL ?? "https://vizier-api.vizier-api.w
 
 import { createApiCache } from "./apiCache";
 import { ApiError, requestJson } from "./http";
+import type { Bracket } from "@vizier/shared/brackets";
+import { withRank } from "./rank/rank";
+import { currentBracket } from "./rank/useRank";
 
 export { ApiError };
 
@@ -56,14 +59,14 @@ export type Build = Picks & {
 };
 
 /** Null when Vizier has no games for the champion yet. */
-export async function getBuild(championId: number, position: string | null, vs: number | null = null, queue = 420): Promise<Build | null> {
+export async function getBuild(championId: number, position: string | null, vs: number | null = null, queue = 420, rank: Bracket = currentBracket()): Promise<Build | null> {
   const params = new URLSearchParams();
   if (queue !== 420) params.set("queue", String(queue));
   if (position) params.set("position", position.toUpperCase());
   if (vs) params.set("vs", String(vs));
   const query = params.size ? `?${params}` : "";
   try {
-    return await get<Build>(`/v1/builds/${championId}${query}`);
+    return await get<Build>(withRank(`/v1/builds/${championId}${query}`, queue === 420 ? rank : "emerald_plus"));
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
@@ -161,11 +164,11 @@ export type TierEntry = {
 };
 /** The numbers behind a tier; absent on servers that predate it. */
 export type TierRule = { priorGames: number; presenceWeight: number; listGames: number; tierGames: number; cuts: { tier: string; score: number }[] };
-export type TierList = { patches: string[]; updatedAt?: number; games: number; champions: TierEntry[]; rule?: TierRule };
+export type TierList = { patches: string[]; updatedAt?: number; rank?: Bracket; games: number; champions: TierEntry[]; rule?: TierRule };
 
 /** Queues without roles take position ALL. */
-export function getTierList(position: string, queue = 420) {
-  return get<TierList>(`/v1/tierlist/${position}${queue === 420 ? "" : `?queue=${queue}`}`);
+export function getTierList(position: string, queue = 420, rank: Bracket = currentBracket()) {
+  return get<TierList>(withRank(`/v1/tierlist/${position}${queue === 420 ? "" : `?queue=${queue}`}`, queue === 420 ? rank : "emerald_plus"));
 }
 
 export type ChampionOverview = {
@@ -183,13 +186,13 @@ export type ChampionOverview = {
 };
 
 /** Null when Vizier has no games for the champion yet. */
-export async function getChampion(championId: number, position: string | null, queue = 420): Promise<ChampionOverview | null> {
+export async function getChampion(championId: number, position: string | null, queue = 420, rank: Bracket = currentBracket()): Promise<ChampionOverview | null> {
   const params = new URLSearchParams();
   if (position && queue === 420) params.set("position", position);
   if (queue !== 420) params.set("queue", String(queue));
   const query = params.size ? `?${params}` : "";
   try {
-    return await get<ChampionOverview>(`/v1/champions/${championId}${query}`);
+    return await get<ChampionOverview>(withRank(`/v1/champions/${championId}${query}`, queue === 420 ? rank : "emerald_plus"));
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
@@ -198,8 +201,8 @@ export async function getChampion(championId: number, position: string | null, q
 
 export type Synergies = { patches: string[]; updatedAt?: number; games: number; allies: { championId: number; position: string; games: number; winRate: number }[] };
 
-export function getSynergies(championId: number, position: string) {
-  return get<Synergies>(`/v1/champions/${championId}/synergies?position=${position}`);
+export function getSynergies(championId: number, position: string, rank: Bracket = currentBracket()) {
+  return get<Synergies>(withRank(`/v1/champions/${championId}/synergies?position=${position}`, rank));
 }
 
 export type ArenaDuos = { patches: string[]; updatedAt?: number; games: number; partners: { championId: number; games: number; winRate: number }[] };
@@ -231,8 +234,8 @@ export type LaneStat = {
 };
 
 /** Averages from the champion's side against one lane opponent; `games` is 0 until enough timelines are in. */
-export function getLaneStats(championId: number, position: string, vs: number) {
-  return get<LaneStat>(`/v1/champions/${championId}/lane?position=${position}&vs=${vs}`);
+export function getLaneStats(championId: number, position: string, vs: number, rank: Bracket = currentBracket()) {
+  return get<LaneStat>(withRank(`/v1/champions/${championId}/lane?position=${position}&vs=${vs}`, rank));
 }
 
 export type ItemTimes = Record<number, { games: number; minute: number }>;
@@ -244,8 +247,8 @@ export function getItemTimes(championId: number, position: string) {
 
 export type Counters = { patches: string[]; updatedAt?: number; games: number; matchups: { championId: number; games: number; winRate: number }[] };
 
-export function getCounters(championId: number, position: string) {
-  return get<Counters>(`/v1/champions/${championId}/counters?position=${position}`);
+export function getCounters(championId: number, position: string, rank: Bracket = currentBracket()) {
+  return get<Counters>(withRank(`/v1/champions/${championId}/counters?position=${position}`, rank));
 }
 
 export type ProBuild = {
@@ -365,8 +368,8 @@ export function getScout(platform: string, asks: { puuid: string; championId: nu
 export type BenchMinute = { minute: number; games: number; cs: number; level: number; kdaGames?: number; kills?: number; deaths?: number; assists?: number; killParticipation?: number };
 
 /** Average CS and level of ranked games at a few minutes; empty until enough timelines were crawled. */
-export function getBench(championId: number, position: string) {
-  return get<{ minutes: BenchMinute[] }>(`/v1/champions/${championId}/bench?position=${position}`);
+export function getBench(championId: number, position: string, rank: Bracket = currentBracket()) {
+  return get<{ minutes: BenchMinute[] }>(withRank(`/v1/champions/${championId}/bench?position=${position}`, rank));
 }
 
 export type CoverageDoc = {
