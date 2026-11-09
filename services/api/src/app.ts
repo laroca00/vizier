@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception";
 import type { Catalog } from "./archetypes.ts";
 import { POSITIONS, type Build } from "./builds.ts";
 import { AUGMENT_QUEUES, docKey, readDoc } from "./statDocs.ts";
+import type { Coverage } from "./coverage.ts";
 import { STORED_QUEUES } from "./crawler.ts";
 import { proBuilds, proMeta, proPatches, proTeams } from "./pros.ts";
 import type { Store } from "./store.ts";
@@ -232,6 +233,11 @@ export function createApp(store: Store, { statsDb, catalog, augments = false, ar
   app.get("/v1/pros/teams", async (c) => {
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json({ teams: await cached("pro-teams", 60 * MINUTE, () => proTeams(statsDb)) });
+  });
+
+  app.get("/v1/meta/coverage", async (c) => {
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json((await readDoc<Coverage>(statsDb, docKey.coverage())) ?? { patches: [], games: [], timeline: [], players: [] });
   });
 
   app.get("/v1/bans", async (c) => {

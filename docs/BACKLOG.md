@@ -364,6 +364,7 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 - Release a desktop version to ship epic 18 (auto pick, ban and lock, ready check accept; Rust changed). Auto pick and ban are off by default and set in Settings.
 - Release a desktop version (`pnpm release`) after bumping the patch version.
 - Deploy the Worker (`pnpm --filter @vizier/api deploy`).
+- Coverage (20.1): after the Worker deploy and a crawler restart, `/v1/meta/coverage` fills on the next publish and the crawler logs an hourly coverage line. Ranked timelines cover about a quarter of games (2 of ~8 per run); raise `timelinesPerRun` only if the log shows it lagging.
 - Apply pending D1 migrations remotely.
 - Pull and restart the crawler on the VM (Arena duo and item docs appear after the next rollup and publish; duo counts start from games crawled after the update).
 - Apply D1 migration 0013 (lane stats) remotely before the next crawler run on the VM; lane docs fill as timelines are crawled.
