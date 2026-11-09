@@ -2,6 +2,7 @@
 // finished stats to the Worker's D1. Runs on a server of its own because
 // the Worker's free plan caps requests, CPU time and writes per run.
 import { readFileSync } from "node:fs";
+import { coverage } from "../../api/src/coverage.ts";
 import { Crawler, type CrawlOptions } from "../../api/src/crawler.ts";
 import { ProCrawler, syncChallengers } from "../../api/src/pros.ts";
 import { RiotClient, RiotError } from "../../api/src/riot/client.ts";
@@ -113,6 +114,16 @@ every(DAY, "pro accounts", async () => {
   const pros = await new ProCrawler(db, riotClient()).syncAccounts();
   const challengers = await syncChallengers(db, riotClient());
   return `${pros} pro accounts, ${challengers} challengers`;
+});
+// One line an hour so thin data shows in the log before it shows in the app.
+every(HOUR, "coverage", async () => {
+  const report = await coverage(db);
+  const newest = report.patches[0];
+  if (!newest) return "no games yet";
+  const ranked = report.timeline.find((t) => t.patch === newest && t.queue === 420);
+  const queues = report.games.filter((g) => g.patch === newest).map((g) => `${g.queue}:${g.games}`).join(" ");
+  const regions = report.players.map((p) => `${p.region}/${p.source}:${p.players}`).join(" ");
+  return `patch ${newest} games ${queues}; ranked timelines ${ranked?.share === null || !ranked ? "n/a" : `${Math.round(ranked.share * 100)}%`}; players ${regions}`;
 });
 every(ROLLUP_EVERY, "rollup", async () => `${await rollup(db)} rows`);
 every(PRUNE_EVERY, "prune", async () => {

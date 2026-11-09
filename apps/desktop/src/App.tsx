@@ -23,6 +23,7 @@ import { listen } from "@tauri-apps/api/event";
 import { FlatGlass } from "./ui/LiquidGlass";
 import { SplashLayers, SplashProvider } from "./ui/Splash";
 import { UpdateNotice } from "./UpdateNotice";
+import { useOnline } from "./useOnline";
 import { champions } from "./data/ddragon";
 import { Sidebar, type NavGroup, type NavItem } from "./Sidebar";
 import { IconButton } from "./ui/Button";
@@ -127,6 +128,7 @@ async function bringToFront() {
 function App() {
   const lcu = useLcuStatus();
   const settings = useSettings();
+  const online = useOnline();
   const t = useT();
   const mock = useChampSelectMock();
   const draft = useChampSelect() ?? mock ?? fixture;
@@ -344,6 +346,11 @@ function App() {
             </li>
           ))}
         </ol>
+        {!online && (
+          <span className="top__offline" role="status">
+            {t("Çevrimdışı: son kaydedilen veriler gösteriliyor")}
+          </span>
+        )}
         <UpdateNotice />
         <button type="button" className="top__search" aria-keyshortcuts="Control+K" onClick={() => setSearching(true)}>
           <NavIcon name="search" size={16} className="top__icon" />

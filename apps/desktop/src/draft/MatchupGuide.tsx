@@ -1,5 +1,6 @@
 import { getBuild, getCounters } from "../api";
-import { abilityIconUrl, championDetail, championIconUrl, itemIconUrl, items, type Champion } from "../data/ddragon";
+import { standInMatchup } from "../matchupFallback";
+import { abilityIconUrl, champions, championDetail, championIconUrl, itemIconUrl, items, type Champion } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
 import { DataBadge } from "../ui/DataBadge";
 import { useAsync } from "../useAsync";
@@ -28,6 +29,7 @@ export function MatchupGuide({ championId, position, opponent, version }: Props)
   const role = position.toUpperCase();
   const [counters] = useAsync(`counters:${championId}:${role}`, () => getCounters(championId, role));
   const [detail] = useAsync(`detail:${lang}:${opponent.id}`, () => championDetail(opponent.id, lang));
+  const [roster] = useAsync("champions", champions);
   const [buys] = useAsync(`matchup-items:${championId}:${role}:${opponent.key}`, async () => {
     const [general, versus, itemList] = await Promise.all([getBuild(championId, role), getBuild(championId, role, opponent.key), items()]);
     if (!general || !versus || versus.vs === null) return [];
@@ -40,6 +42,8 @@ export function MatchupGuide({ championId, position, opponent, version }: Props)
   const matchup = counters.status === "done" ? counters.value.matchups.find((m) => m.championId === opponent.key) : undefined;
   const known = matchup && matchup.games >= MIN_GAMES ? matchup : undefined;
   const difficulty = known ? difficultyOf(known.winRate) : null;
+  const standIn =
+    !known && counters.status === "done" && roster.status === "done" ? standInMatchup(counters.value.matchups, opponent, roster.value.values()) : null;
 
   return (
     <section className="matchup" aria-label={t("Eşleşme rehberi")}>
@@ -52,10 +56,18 @@ export function MatchupGuide({ championId, position, opponent, version }: Props)
           <p className="build__note">
             {known
               ? t("{opponent} karşısında {rate} kazanma, {games} maç", { opponent: opponent.name, rate: formatPercent(known.winRate, lang, 1), games: known.games })
-              : counters.status === "done"
+              : standIn
+                ? t("Bu eşleşme için az maç var; benzer rakiplere karşı toplam {rate} kazanma, {games} maç", { rate: formatPercent(standIn.winRate, lang, 1), games: standIn.games })
+                : counters.status === "done"
                 ? t("Bu eşleşme için yeterli maç yok.")
                 : t("Yükleniyor")}
-            {matchup && counters.status === "done" && (
+            {standIn && counters.status === "done" && (
+              <>
+                {" "}
+                <DataBadge games={standIn.games} winRate={standIn.winRate} patches={counters.value.patches} source={t("Vizier crawler, benzer rakiplere karşı toplanmış maçlar")} />
+              </>
+            )}
+            {matchup && !standIn && counters.status === "done" && (
               <>
                 {" "}
                 <DataBadge games={matchup.games} winRate={matchup.winRate} patches={counters.value.patches} source={t("Vizier crawler, dereceli maçlar")} />

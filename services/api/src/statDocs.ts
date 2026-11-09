@@ -2,7 +2,12 @@
 // to D1's stat_docs as finished JSON; the Worker only reads them. Keys are
 // shared here so both sides agree.
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
+<<<<<<< HEAD
 import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
+=======
+import { coverage } from "./coverage.ts";
+import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
+>>>>>>> auto/20-trust
 
 // Queues with augments: Arena and ARAM Mayhem.
 export const AUGMENT_QUEUES = [1700, 2400];
@@ -33,6 +38,8 @@ export const docKey = {
   bench: (queue: number, championId: number, position: string) => `bench:${queue}:${championId}:${position}`,
   itemTimes: (championId: number, position: string) => `itemtimes:${championId}:${position}`,
   bans: () => "bans",
+  /** How many games, timelines and followed players sit behind the stats. */
+  coverage: () => "coverage",
   /** One compact row per ranked champion and role, for searching builds without fetching each one. */
   buildIndex: () => "buildindex",
   /** Augment stats for a queue, overall or for one champion. */
@@ -88,6 +95,7 @@ export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown
     }
   }
   yield [docKey.bans(), await banSuggestions(db)];
+  yield [docKey.coverage(), await coverage(db)];
   for (const queue of AUGMENT_QUEUES) {
     yield [docKey.augments(queue, null), await augmentStats(db, queue, null)];
     yield [docKey.augmentChampions(queue), await augmentChampions(db, queue)];

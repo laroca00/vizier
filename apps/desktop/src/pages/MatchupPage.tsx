@@ -14,7 +14,9 @@ import { Button } from "../ui/Button";
 import { Select } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
-import { EmptyState, Skeleton } from "../ui/States";
+import { loadErrorMessage } from "../loadError";
+import { useOnline } from "../useOnline";
+import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { useAsync } from "../useAsync";
 import "../library/library.css";
 import "./MatchupPage.css";
@@ -60,7 +62,8 @@ export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange
   const t = useT();
   const template = useMatchupTemplate();
   const lang = useLang();
-  const [data] = useAsync("static", loadStatic);
+  const [data, retry] = useAsync("static", loadStatic);
+  const online = useOnline();
   const list = data.status === "done" ? [...data.value.champions.values()].sort((a, b) => a.name.localeCompare(b.name, lang)) : [];
   const byKey = data.status === "done" ? data.value.champions : new Map<number, Champion>();
   const me = route.championId === null ? undefined : byKey.get(route.championId);
@@ -69,7 +72,9 @@ export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange
   return (
     <LiquidGlass className="panel tiers matchup-page" radius={28} strength={2.5} scroll>
       <PageHeader title={t("Eşleşme çalışması")} subtitle={t("İki şampiyonun bir rolde karşılaşmasını oyundan önce incele.")} />
-      {data.status !== "done" ? (
+      {data.status === "error" ? (
+        <ErrorState message={t(loadErrorMessage(data.error, online))} onRetry={retry} />
+      ) : data.status !== "done" ? (
         <Skeleton lines={6} label={t("Yükleniyor")} />
       ) : (
         <>

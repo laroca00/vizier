@@ -39,7 +39,10 @@ import { MAYHEM } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { useSplash } from "../ui/Splash";
 import { Tabs } from "../ui/Tabs";
+import { loadErrorMessage } from "../loadError";
+import { ErrorState } from "../ui/States";
 import { useAsync } from "../useAsync";
+import { useOnline } from "../useOnline";
 import "./ChampSelectPage.css";
 // After the page's base styles, which it adjusts.
 import "../draft/draft.css";
@@ -64,7 +67,8 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const t = useT();
   const matchupTemplate = useMatchupTemplate();
   const lang = useLang();
-  const [data] = useAsync("static", loadStatic);
+  const [data, retryStatic] = useAsync("static", loadStatic);
+  const online = useOnline();
   const { pool } = usePersonal();
   const seconds = useSecondsLeft(draft.phaseEndsAt);
   const me = draft.myTeam.find((m) => m.isLocal);
@@ -135,6 +139,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
         </p>
       </header>
 
+      {data.status === "error" && <ErrorState message={t(loadErrorMessage(data.error, online))} onRetry={retryStatic} />}
       {ready && <AutopilotBanner draft={draft} seconds={seconds} champions={ready.champions} />}
 
       <div className="draft__body">
