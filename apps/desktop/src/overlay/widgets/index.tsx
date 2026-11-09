@@ -15,6 +15,7 @@ import { TimersWidget } from "./TimersWidget";
 import { WindowWidget } from "./WindowWidget";
 import { SpikesWidget } from "./SpikesWidget";
 import { DragonsWidget } from "./DragonsWidget";
+import { PlanWidget } from "./PlanWidget";
 
 export const WIDGET_VIEWS: Record<WidgetId, ComponentType<WidgetContext>> = {
   build: BuildWidget,
@@ -31,4 +32,5 @@ export const WIDGET_VIEWS: Record<WidgetId, ComponentType<WidgetContext>> = {
   window: WindowWidget,
   spikes: SpikesWidget,
   dragons: DragonsWidget,
+  plan: PlanWidget,
 };

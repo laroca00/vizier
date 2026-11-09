@@ -18,6 +18,7 @@ export const hasContent: Record<WidgetId, (ctx: WidgetContext, settings: Setting
   window: (ctx) => ctx.opportunity.fallen.some((f) => f.backAt > ctx.time),
   spikes: (ctx) => ctx.spikes.length > 0 && ctx.version !== null,
   dragons: (ctx) => ctx.dragons !== null,
+  plan: (ctx) => ctx.plan !== null,
 };
 
 /**

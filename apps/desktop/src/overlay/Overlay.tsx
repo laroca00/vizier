@@ -1,11 +1,13 @@
 import { createElement, type CSSProperties, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type WheelEvent } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { getAugments, getBench, getBuild, type Build, type Picks } from "../api";
+import { getAugments, getBench, getBuild, getCounters, type Build, type Picks } from "../api";
 import { augmentInfo } from "../augments/data";
 import { augmentQueue, augmentsByRarity } from "../augments/tiers";
 import { readChosenStyle } from "../buildStyles";
-import { champions, items, latestVersion, runes as runeStyles, type Item } from "../data/ddragon";
+import { championDetail, champions, items, latestVersion, runes as runeStyles, type Item } from "../data/ddragon";
+import { threatOf } from "../draft/threats";
+import { matchupRecord, planShown, PLAN_UNTIL, type Plan } from "./plan";
 import { overlayFixture, scoutingFixture } from "../dev/fixtures";
 import { ScoutPanel } from "./ScoutPanel";
 import type { LcuStatus } from "../lcu";
@@ -206,6 +208,20 @@ export function Overlay() {
     return () => void off.then((stop) => stop());
   }, []);
 
+  // The game-start card: our record against the lane opponent and the ability to respect.
+  const laneFoe = game && me ? laneOpponent(game, me) : null;
+  const foeKey = laneFoe ? championKey(laneFoe) : null;
+  const wantPlan = settings.overlayPlan && mode === "rift" && championId !== null && position !== null && foeKey !== null && (time < PLAN_UNTIL || editing);
+  const [planData] = useAsync(wantPlan ? `plan:${lang}:${championId}:${position}:${foeKey}` : null, async () => {
+    const [counters, byKey, detail] = await Promise.all([
+      getCounters(championId!, position!).catch(() => null),
+      champions(),
+      championDetail(foeKey!, lang).catch(() => null),
+    ]);
+    const foe = [...byKey.values()].find((c) => c.id === foeKey) ?? null;
+    return { counters, foe, threat: foe && detail ? threatOf(foe, detail.abilities) : null };
+  });
+
   // Enemy power spikes come from comparing each update with the one before.
   const [spikeLog, setSpikeLog] = useState<Spike[]>([]);
   const lastGame = useRef<Game | null>(null);
@@ -257,6 +273,18 @@ export function Overlay() {
 
   const names = augmentNames.status === "done" ? augmentNames.value : null;
   const fallen = settings.overlayWindow ? fallenPlayers(game, me.team) : [];
+  const foe = planData.status === "done" ? planData.value.foe : null;
+  const planNote = championId && foe ? referenceNote(notes, championId, Number(foe.key)) : null;
+  const plan: Plan | null =
+    planData.status === "done" && foe && foeKey
+      ? {
+          opponent: foe.name,
+          opponentKey: foeKey,
+          matchup: matchupRecord(planData.value.counters, Number(foe.key)),
+          threat: planData.value.threat,
+          note: planNote?.matchup ? planNote.text : null,
+        }
+      : null;
   const championNames = data.status === "done" ? data.value.championNames : null;
   const ctx: WidgetContext = {
     t,
@@ -293,6 +321,7 @@ export function Overlay() {
     augmentNames: names,
     championName: (key) => championNames?.get(key) ?? key,
     dragons: settings.overlayDragons && mode === "rift" ? readDragons(game, me.team) : null,
+    plan: planShown(time, plan, editing) ? plan : null,
     opportunity: { fallen, window: readWindow(fallen, time, timers, mode === "rift") },
     spikes: settings.overlaySpikes ? shownSpikes(liveGame ? spikeLog : editing ? sampleSpikes(game.gameTime) : [], time) : [],
   };

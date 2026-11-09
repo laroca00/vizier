@@ -11,6 +11,7 @@ import type { LiveGame, LivePlayer, SkillKey, Timer } from "../live";
 import type { Fallen, Window } from "../opportunity";
 import type { Spike } from "../spikes";
 import type { DragonRead } from "../dragons";
+import type { Plan } from "../plan";
 
 export type AugmentGroup = { rarity: number; augments: { augmentId: number; tier: string; winRate: number; games: number }[] };
 
@@ -58,4 +59,6 @@ export type WidgetContext = {
   spikes: Spike[];
   /** Dragons per team and the soul; null before the first dragon. */
   dragons: DragonRead | null;
+  /** The game-start card; null once it has had its two minutes. */
+  plan: Plan | null;
 };
