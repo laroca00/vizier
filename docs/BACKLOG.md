@@ -467,6 +467,7 @@ Ideas the owner asked for on top of the data work: overlay, design and new tools
 - [x] 42.9 First-run welcome: champ select, in game and keyboard in three steps with the auto-import and overlay switches inline; shown once. (dbeb73a)
 - [x] 42.10 Draft picture from the simulator: both teams, each side's plan, bans; shared drawing helpers in ui/cardCanvas.ts. (4389bb3)
 - [x] 42.11 Home "Günün kombosu": one combo a day from the pool (any champion when the pool has none), hideable. (6c35d89)
+- [x] 42.12 Overlay timers card counts down to 14:00, when turret plates fall, on Summoner's Rift. (d3d6928)
 
 ## 16. Only when a feature needs it
 
