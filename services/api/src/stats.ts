@@ -4,6 +4,9 @@
 // pool (kinds "pool", "pool-ban", "pool-games"); builds and matchups use
 // every crawled game.
 
+import { DEFAULT_BRACKET, type Bracket } from "@vizier/shared/brackets";
+import { scope } from "./localSchema.ts";
+
 // Shrinks small samples towards 50% so a 3-0 champion doesn't top the list.
 export const sampleLimits = {
   // Win rates are pulled towards 50% as if every champion had this many more
@@ -101,12 +104,12 @@ function assignTiers(entries: Unranked[]): TierEntry[] {
 }
 
 /** Pool matches in ranked and how often each champion was banned in them. */
-async function poolBans(db: D1Database, patches: string[]): Promise<{ matches: number; bans: Map<number, number> }> {
+async function poolBans(db: D1Database, patches: string[], bracket: Bracket): Promise<{ matches: number; bans: Map<number, number> }> {
   // One query per kind: an IN over two kinds makes SQLite skip stat_counts_by_kind and scan every count.
   const byKind = (kind: string) =>
     db
       .prepare(
-        `SELECT champion_id, SUM(games) AS games FROM stat_counts
+        `SELECT champion_id, SUM(games) AS games FROM ${scope("stat_counts", bracket)}
           WHERE kind = ? AND queue_id = ${RANKED} AND patch IN (${placeholders(patches.length)}) GROUP BY champion_id`,
       )
       .bind(kind, ...patches)
@@ -123,12 +126,13 @@ export async function tierList(
   db: D1Database,
   position: string,
   queue = RANKED,
+  bracket: Bracket = DEFAULT_BRACKET,
 ): Promise<{ patches: string[]; games: number; champions: TierEntry[]; rule: TierRule }> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return { patches, games: 0, champions: [], rule: tierRule() };
   const { results: byPatch } = await db
     .prepare(
-      `SELECT champion_id, patch, games, wins FROM stat_counts
+      `SELECT champion_id, patch, games, wins FROM ${scope("stat_counts", bracket)}
         WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ? AND kind = 'pool'`,
     )
     .bind(...patches, position, queue)
@@ -148,12 +152,12 @@ export async function tierList(
 
   // A ban counts against every role the champion plays, so each role gets its share.
   const ranked = queue === RANKED;
-  const bans = ranked ? await poolBans(db, patches) : null;
+  const bans = ranked ? await poolBans(db, patches, bracket) : null;
   const allRoles = new Map<number, number>();
   if (ranked) {
     const { results } = await db
       .prepare(
-        `SELECT champion_id, SUM(games) AS games FROM stat_counts
+        `SELECT champion_id, SUM(games) AS games FROM ${scope("stat_counts", bracket)}
           WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ${RANKED} AND kind = 'pool' GROUP BY champion_id`,
       )
       .bind(...patches)
@@ -216,13 +220,14 @@ export async function championOverview(
   championId: number,
   position: string | null,
   queue = 420,
+  bracket: Bracket = DEFAULT_BRACKET,
 ): Promise<ChampionOverview | null> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return null;
   const ranked = queue === 420;
   const { results: byPosition } = await db
     .prepare(
-      `SELECT team_position AS position, SUM(games) AS games FROM stat_counts
+      `SELECT team_position AS position, SUM(games) AS games FROM ${scope("stat_counts", bracket)}
         WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND queue_id = ? AND kind = 'games'
         GROUP BY team_position ORDER BY games DESC`,
     )
@@ -234,12 +239,12 @@ export async function championOverview(
   const used = !ranked ? "" : position && positions.some((p) => p.position === position) ? position : positions[0]?.position;
   if (used === undefined) return null;
 
-  const list = await tierList(db, used, queue);
+  const list = await tierList(db, used, queue, bracket);
   const entry = list.champions.find((c) => c.championId === championId);
   // Roles above come from every game, so builds cover KR too; the numbers below are the pool's, like the tier list.
   const { results: byPatch } = await db
     .prepare(
-      `SELECT patch, games, wins FROM stat_counts
+      `SELECT patch, games, wins FROM ${scope("stat_counts", bracket)}
         WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ? AND queue_id = ? AND kind = 'pool'`,
     )
     .bind(...patches, championId, used, queue)
@@ -256,7 +261,7 @@ export async function championOverview(
     pickRate: round3(games / Math.max(list.games / slotsPerGame(queue), 1)),
     tier: entry?.tier ?? null,
     winRateChange: patchChange(patches, new Map(byPatch.map((p) => [p.patch, p]))),
-    banRate: ranked ? banRateOf(await poolBans(db, patches), championId) : null,
+    banRate: ranked ? banRateOf(await poolBans(db, patches, bracket), championId) : null,
   };
 }
 
@@ -267,12 +272,13 @@ export async function counters(
   db: D1Database,
   championId: number,
   position: string,
+  bracket: Bracket = DEFAULT_BRACKET,
 ): Promise<{ patches: string[]; games: number; matchups: Matchup[] }> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return { patches, games: 0, matchups: [] };
   const { results } = await db
     .prepare(
-      `SELECT CAST(value AS INTEGER) AS opponent, SUM(games) AS games, SUM(wins) AS wins FROM stat_counts
+      `SELECT CAST(value AS INTEGER) AS opponent, SUM(games) AS games, SUM(wins) AS wins FROM ${scope("stat_counts", bracket)}
         WHERE patch IN (${placeholders(patches.length)}) AND queue_id = 420 AND champion_id = ? AND team_position = ?
           AND kind = 'opponent'
         GROUP BY value`,
@@ -321,12 +327,13 @@ export async function synergies(
   db: D1Database,
   championId: number,
   position: string,
+  bracket: Bracket = DEFAULT_BRACKET,
 ): Promise<{ patches: string[]; games: number; allies: (Matchup & { position: string })[] }> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return { patches, games: 0, allies: [] };
   const { results } = await db
     .prepare(
-      `SELECT value, SUM(games) AS games, SUM(wins) AS wins FROM stat_counts
+      `SELECT value, SUM(games) AS games, SUM(wins) AS wins FROM ${scope("stat_counts", bracket)}
         WHERE patch IN (${placeholders(patches.length)}) AND queue_id = 420 AND champion_id = ? AND team_position = ?
           AND kind = 'ally'
         GROUP BY value`,
@@ -520,14 +527,14 @@ export type LaneStat = {
 const MIN_LANE_GAMES = 10;
 
 /** Lane differences against each opponent with enough timeline games, keyed by opponent id. */
-export async function laneStats(db: D1Database, championId: number, position: string): Promise<Record<number, LaneStat>> {
+export async function laneStats(db: D1Database, championId: number, position: string, bracket: Bracket = DEFAULT_BRACKET): Promise<Record<number, LaneStat>> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return {};
   const { results } = await db
     .prepare(
       `SELECT opponent_id, SUM(games) AS games, SUM(cs10) AS cs10, SUM(cs15) AS cs15, SUM(gold10) AS gold10,
           SUM(gold15) AS gold15, SUM(first_bloods) AS first_bloods
-        FROM lane_sums WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ?
+        FROM ${scope("lane_sums", bracket)} WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ?
         GROUP BY opponent_id HAVING SUM(games) >= ?`,
     )
     .bind(...patches, championId, position, MIN_LANE_GAMES)
@@ -566,13 +573,13 @@ export type BenchMinute = {
 };
 
 /** Average CS and level at the sample minutes for ranked games of this champion and role. */
-export async function benchStats(db: D1Database, championId: number, position: string): Promise<{ minutes: BenchMinute[] }> {
+export async function benchStats(db: D1Database, championId: number, position: string, bracket: Bracket = DEFAULT_BRACKET): Promise<{ minutes: BenchMinute[] }> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return { minutes: [] };
   const { results } = await db
     .prepare(
       `SELECT minute, SUM(games) AS games, SUM(cs) AS cs, SUM(level) AS level,
-          SUM(kda_games) AS kda_games, SUM(kills) AS kills, SUM(deaths) AS deaths, SUM(assists) AS assists, SUM(team_kills) AS team_kills FROM bench_sums
+          SUM(kda_games) AS kda_games, SUM(kills) AS kills, SUM(deaths) AS deaths, SUM(assists) AS assists, SUM(team_kills) AS team_kills FROM ${scope("bench_sums", bracket)}
         WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ?
         GROUP BY minute HAVING SUM(games) >= ? ORDER BY minute`,
     )

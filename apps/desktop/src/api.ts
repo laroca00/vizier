@@ -368,3 +368,19 @@ export type BenchMinute = { minute: number; games: number; cs: number; level: nu
 export function getBench(championId: number, position: string) {
   return get<{ minutes: BenchMinute[] }>(`/v1/champions/${championId}/bench?position=${position}`);
 }
+
+export type CoverageDoc = {
+  patches: string[];
+  games: { patch: string; queue: number; games: number }[];
+  timeline: { patch: string; queue: number; players: number; withTimeline: number; share: number | null }[];
+  players: { region: string; source: "ladder" | "mode"; players: number }[];
+  /** Games per rank bracket and platform; missing before the all-rank crawl was published. */
+  brackets?: { patch: string; queue: number; bracket: string; platform: string; games: number }[];
+  /** Timeline share per rank bracket (ranked solo). */
+  timelineBrackets?: { patch: string; queue: number; bracket: string; players: number; withTimeline: number; share: number | null }[];
+};
+
+/** What the stats stand on: games per patch, rank bracket and platform. */
+export function getCoverage() {
+  return get<CoverageDoc>("/v1/meta/coverage");
+}

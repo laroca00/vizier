@@ -1,4 +1,6 @@
+import { DEFAULT_BRACKET, type Bracket } from "@vizier/shared/brackets";
 import type { Foe, Style } from "./archetypes.ts";
+import { scope } from "./localSchema.ts";
 
 // Below this many games a newest patch is too thin, so older stored patches join in.
 const MIN_GAMES_FOR_PATCH = 30;
@@ -101,6 +103,7 @@ export async function aggregateBuild(
   queue = 420,
   /** Build from this one patch only, without falling back to the older one; for snapshots of a closed patch. */
   onlyPatch?: string,
+  bracket: Bracket = DEFAULT_BRACKET,
 ): Promise<Build | null> {
   const { results: patchRows } = await db
     .prepare("SELECT patch FROM stat_matches GROUP BY patch ORDER BY MAX(last_start) DESC")
@@ -110,7 +113,7 @@ export async function aggregateBuild(
   const query = (patches: string[], kinds: string, extra: string, binds: unknown[]) =>
     db
       .prepare(
-        `SELECT kind, value, SUM(games) AS games, SUM(wins) AS wins FROM stat_counts
+        `SELECT kind, value, SUM(games) AS games, SUM(wins) AS wins FROM ${scope("stat_counts", bracket)}
           WHERE patch IN (${patches.map(() => "?").join(",")}) AND queue_id = ? AND champion_id = ?
             ${position ? "AND team_position = ?" : ""} AND kind IN (${kinds}) ${extra}
           GROUP BY kind, value ORDER BY games DESC, value`,

@@ -1,0 +1,29 @@
+import { BRACKETS, type Bracket } from "@vizier/shared/brackets";
+import type { CoverageDoc } from "../api";
+
+export const PLATFORMS = ["TR1", "EUW1", "KR"] as const;
+
+export type CoverageRow = {
+  bracket: Bracket;
+  /** Ranked games per platform; 0 where none were counted. */
+  platforms: Record<(typeof PLATFORMS)[number], number>;
+  games: number;
+  /** Share of this bracket's ranked games with a timeline; null when unknown. */
+  timelineShare: number | null;
+};
+
+/** One row per bracket for the newest patch with bracket data; empty until the all-rank crawl was published. */
+export function coverageRows(doc: CoverageDoc | null): { patch: string; rows: CoverageRow[] } | null {
+  const counted = doc?.brackets?.filter((b) => b.queue === 420) ?? [];
+  if (!doc || counted.length === 0) return null;
+  const patch = doc.patches.find((p) => counted.some((b) => b.patch === p)) ?? counted[0].patch;
+  const rows = BRACKETS.map((bracket): CoverageRow => {
+    const platforms = { TR1: 0, EUW1: 0, KR: 0 };
+    for (const b of counted) {
+      if (b.patch === patch && b.bracket === bracket && b.platform in platforms) platforms[b.platform as keyof typeof platforms] += b.games;
+    }
+    const timeline = doc.timelineBrackets?.find((r) => r.patch === patch && r.queue === 420 && r.bracket === bracket);
+    return { bracket, platforms, games: platforms.TR1 + platforms.EUW1 + platforms.KR, timelineShare: timeline?.share ?? null };
+  });
+  return { patch, rows };
+}

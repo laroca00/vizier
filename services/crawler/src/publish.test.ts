@@ -5,7 +5,8 @@ import type { Match, Participant } from "../../api/src/riot/types.ts";
 import { emptyCatalog } from "../../api/src/archetypes.ts";
 import { rollup } from "../../api/src/rollup.ts";
 import { sqliteD1 } from "../../api/src/sqliteD1.ts";
-import { publish } from "./publish.ts";
+import { publish, publishTick } from "./publish.ts";
+import { nextExtra, scopeName } from "../../api/src/publishPlan.ts";
 
 const perks = {
   statPerks: { offense: 5008, flex: 5008, defense: 5011 },
@@ -63,5 +64,59 @@ describe("publish", () => {
     const remote = fakeRemote();
     const retry = await publish(local.db, local.sqlite, remote, 2);
     expect(retry.sent).toBe(retry.total);
+  });
+});
+
+const HOUR = 3_600_000;
+
+describe("publish schedule", () => {
+  it("picks the extra set waiting longest, once a day each", () => {
+    const last = new Map<string, number>();
+    const seen: string[] = [];
+    // Six publishes four hours apart: five brackets and the other queues, none twice.
+    for (let tick = 0; tick < 6; tick++) {
+      const extra = nextExtra((name) => last.get(name), tick * 4 * HOUR);
+      expect(extra).not.toBeNull();
+      last.set(scopeName(extra!), tick * 4 * HOUR);
+      seen.push(scopeName(extra!));
+    }
+    expect(new Set(seen).size).toBe(6);
+    // The next day starts the rotation again, oldest first.
+    expect(scopeName(nextExtra((name) => last.get(name), 24 * HOUR)!)).toBe(seen[0]);
+    // Nothing is due before a full day has passed.
+    expect(nextExtra((name) => last.get(name), 5 * 4 * HOUR + 1)).toBeNull();
+  });
+
+  it("sends Emerald+ ranked docs every time and one extra set a publish", async () => {
+    const local = await seeded(1, 12);
+    const remote = fakeRemote();
+    const keysOf = () => remote.statements.flatMap((s) => s.params.filter((_, i) => i % 3 === 0 && typeof s.params[i] === "string") as string[]);
+
+    const first = await publishTick(local.db, local.sqlite, remote, 1);
+    const sentFirst = keysOf();
+    expect(first.extra).not.toBeNull();
+    expect(sentFirst).toContain("tierlist:420:MIDDLE");
+    // Exactly one non-default set came with it.
+    const suffixes = new Set(sentFirst.filter((k) => k.includes(":r=")).map((k) => k.split(":r=")[1]));
+    expect(suffixes.size).toBe(1);
+
+    // Over a day of 4-hour publishes, each of the five brackets goes out once.
+    const sent = new Set<string>();
+    for (let tick = 1; tick <= 6; tick++) {
+      remote.statements.length = 0;
+      const result = await publishTick(local.db, local.sqlite, remote, tick * 4 * HOUR);
+      if (result.extra) sent.add(result.extra);
+    }
+    expect(sent.size).toBeGreaterThanOrEqual(5);
+    expect(local.sqlite.prepare("SELECT COUNT(*) AS n FROM published_docs WHERE key LIKE '%:r=gold_minus'").get()).not.toEqual({ n: 0 });
+  });
+
+  it("keeps other-queue docs out of the ranked publish", async () => {
+    const local = await seeded(1, 12);
+    const remote = fakeRemote();
+    await publish(local.db, local.sqlite, remote, 1, { bracket: "emerald_plus", only: "ranked" });
+    const keys = remote.statements.flatMap((s) => s.params.filter((_, i) => i % 3 === 0) as string[]);
+    expect(keys.some((k) => /^(augments|duos|arenaitems)/.test(k))).toBe(false);
+    expect(keys).toContain("bans");
   });
 });

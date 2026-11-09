@@ -1,9 +1,11 @@
 // Stats are computed by services/crawler next to its raw games and published
 // to D1's stat_docs as finished JSON; the Worker only reads them. Keys are
 // shared here so both sides agree.
+import { DEFAULT_BRACKET, isBracket, type Bracket } from "@vizier/shared/brackets";
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
 import { buildHistory } from "./snapshots.ts";
 import { coverage } from "./coverage.ts";
+import { scope } from "./localSchema.ts";
 import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
 
 // Queues with augments: Arena and ARAM Mayhem.
@@ -17,22 +19,46 @@ const MAX_MATCHUP_BUILDS = 40;
 
 const pos = (position: string | null) => position ?? "ANY";
 
+// Emerald+ keeps the key it always had; any other bracket adds a suffix.
+const RANK = ":r=";
+const rank = (bracket: Bracket) => (bracket === DEFAULT_BRACKET ? "" : `${RANK}${bracket}`);
+
+/** Splits a doc key into its Emerald+ form and the bracket it carries. */
+export function splitRank(key: string): { base: string; bracket: Bracket } {
+  const at = key.lastIndexOf(RANK);
+  const bracket = at < 0 ? null : key.slice(at + RANK.length);
+  return at >= 0 && isBracket(bracket) ? { base: key.slice(0, at), bracket } : { base: key, bracket: DEFAULT_BRACKET };
+}
+
+/** Docs of the queues without a ladder (ARAM, Mayhem, Arena, URF): no bracket applies and they move slowly. */
+export function isOtherQueueKey(key: string): boolean {
+  const [kind, queue] = splitRank(key).base.split(":");
+  if (["augments", "augmentchamps", "duos", "arenaitems"].includes(kind)) return true;
+  return ["tierlist", "champion", "build", "bench"].includes(kind) && Number(queue) !== RANKED;
+}
+
+/** Kinds that exist per bracket; ranked solo only, since other queues have no ladder of their own. */
+export const BRACKET_KINDS = ["tierlist", "champion", "build", "buildvs", "counters", "synergies", "lane", "bench"] as const;
+
 export const docKey = {
-  tierList: (queue: number, position: string) => `tierlist:${queue}:${position}`,
-  champion: (queue: number, championId: number, position: string | null) => `champion:${queue}:${championId}:${pos(position)}`,
-  build: (queue: number, championId: number, position: string | null) => `build:${queue}:${championId}:${pos(position)}`,
+  tierList: (queue: number, position: string, bracket: Bracket = DEFAULT_BRACKET) => `tierlist:${queue}:${position}${rank(bracket)}`,
+  champion: (queue: number, championId: number, position: string | null, bracket: Bracket = DEFAULT_BRACKET) =>
+    `champion:${queue}:${championId}:${pos(position)}${rank(bracket)}`,
+  build: (queue: number, championId: number, position: string | null, bracket: Bracket = DEFAULT_BRACKET) =>
+    `build:${queue}:${championId}:${pos(position)}${rank(bracket)}`,
   /** Ranked builds for each lane opponent with enough games, keyed by opponent id. */
-  matchupBuilds: (championId: number, position: string) => `buildvs:${championId}:${position}`,
-  counters: (championId: number, position: string) => `counters:${championId}:${position}`,
-  synergies: (championId: number, position: string) => `synergies:${championId}:${position}`,
+  matchupBuilds: (championId: number, position: string, bracket: Bracket = DEFAULT_BRACKET) => `buildvs:${championId}:${position}${rank(bracket)}`,
+  counters: (championId: number, position: string, bracket: Bracket = DEFAULT_BRACKET) => `counters:${championId}:${position}${rank(bracket)}`,
+  synergies: (championId: number, position: string, bracket: Bracket = DEFAULT_BRACKET) => `synergies:${championId}:${position}${rank(bracket)}`,
   /** Arena duo partners for a champion. */
   duos: (championId: number) => `duos:1700:${championId}`,
   /** Arena item win rates for a champion. */
   arenaItems: (championId: number) => `arenaitems:1700:${championId}`,
   /** Lane differences against each opponent, keyed by opponent id. */
-  lane: (championId: number, position: string) => `lane:${championId}:${position}`,
+  lane: (championId: number, position: string, bracket: Bracket = DEFAULT_BRACKET) => `lane:${championId}:${position}${rank(bracket)}`,
   /** When each finished item is usually completed, keyed by item id. */
-  bench: (queue: number, championId: number, position: string) => `bench:${queue}:${championId}:${position}`,
+  bench: (queue: number, championId: number, position: string, bracket: Bracket = DEFAULT_BRACKET) =>
+    `bench:${queue}:${championId}:${position}${rank(bracket)}`,
   itemTimes: (championId: number, position: string) => `itemtimes:${championId}:${position}`,
   /** Compact builds of the closed patches, newest first. */
   buildHistory: (championId: number, position: string) => `buildhistory:${championId}:${position}`,
@@ -90,66 +116,73 @@ export async function readDoc<T>(db: D1Database, key: string): Promise<T | null>
   return doc;
 }
 
-/** Every answer the API serves from stats, as [key, value]; null values are not published. */
-export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown]> {
+/**
+ * Every answer the API serves from stats, as [key, value]; null values are not
+ * published. With a bracket other than Emerald+, only the kinds that exist per
+ * bracket (ranked solo) come out, under that bracket's keys.
+ */
+export async function* statDocs(db: D1Database, bracket: Bracket = DEFAULT_BRACKET): AsyncGenerator<[string, unknown]> {
   if ((await latestPatches(db)).length === 0) return;
+  const main = bracket === DEFAULT_BRACKET;
 
   const { results: queues } = await db.prepare("SELECT DISTINCT queue_id FROM stat_matches").all<{ queue_id: number }>();
   for (const { queue_id: queue } of queues) {
     if (queue === RANKED) {
-      for (const position of POSITIONS) yield [docKey.tierList(queue, position), await tierList(db, position, queue)];
-    } else {
+      for (const position of POSITIONS) yield [docKey.tierList(queue, position, bracket), await tierList(db, position, queue, bracket)];
+    } else if (main) {
       yield [docKey.tierList(queue, "ALL"), await tierList(db, "", queue)];
     }
   }
-  yield [docKey.bans(), await banSuggestions(db)];
-  yield [docKey.coverage(), await coverage(db)];
-  for (const queue of AUGMENT_QUEUES) {
-    yield [docKey.augments(queue, null), await augmentStats(db, queue, null)];
-    yield [docKey.augmentChampions(queue), await augmentChampions(db, queue)];
+  if (main) {
+    yield [docKey.bans(), await banSuggestions(db)];
+    yield [docKey.coverage(), await coverage(db)];
+    for (const queue of AUGMENT_QUEUES) {
+      yield [docKey.augments(queue, null), await augmentStats(db, queue, null)];
+      yield [docKey.augmentChampions(queue), await augmentChampions(db, queue)];
+    }
   }
 
   const index: BuildIndexEntry[] = [];
   let indexPatches: string[] = [];
   const { results: champions } = await db
-    .prepare("SELECT DISTINCT queue_id, champion_id FROM stat_counts WHERE kind = 'games'")
+    .prepare(`SELECT DISTINCT queue_id, champion_id FROM ${scope("stat_counts", bracket)} WHERE kind = 'games'${main ? "" : ` AND queue_id = ${RANKED}`}`)
     .all<{ queue_id: number; champion_id: number }>();
   for (const { queue_id: queue, champion_id: championId } of champions) {
-    const overview = await championOverview(db, championId, null, queue);
+    const overview = await championOverview(db, championId, null, queue, bracket);
     if (!overview) continue;
-    yield [docKey.champion(queue, championId, null), overview];
-    yield [docKey.build(queue, championId, null), await aggregateBuild(db, championId, null, null, queue)];
-    if (AUGMENT_QUEUES.includes(queue)) yield [docKey.augments(queue, championId), await augmentStats(db, queue, championId)];
-    if (queue === 1700) {
+    yield [docKey.champion(queue, championId, null, bracket), overview];
+    yield [docKey.build(queue, championId, null, bracket), await aggregateBuild(db, championId, null, null, queue, undefined, bracket)];
+    if (main && AUGMENT_QUEUES.includes(queue)) yield [docKey.augments(queue, championId), await augmentStats(db, queue, championId)];
+    if (main && queue === 1700) {
       yield [docKey.duos(championId), await arenaDuos(db, championId)];
       yield [docKey.arenaItems(championId), await arenaItems(db, championId)];
     }
     if (queue !== RANKED) continue;
 
     for (const { position } of overview.positions) {
-      yield [docKey.champion(queue, championId, position), await championOverview(db, championId, position, queue)];
-      const build = await aggregateBuild(db, championId, position, null, queue);
-      if (build && build.runes.length > 0) {
+      yield [docKey.champion(queue, championId, position, bracket), await championOverview(db, championId, position, queue, bracket)];
+      const build = await aggregateBuild(db, championId, position, null, queue, undefined, bracket);
+      if (main && build && build.runes.length > 0) {
         index.push(indexEntry(championId, position, build));
         indexPatches = build.patches;
       }
-      yield [docKey.build(queue, championId, position), build];
-      yield [docKey.matchupBuilds(championId, position), await matchupBuilds(db, championId, position)];
-      yield [docKey.counters(championId, position), await counters(db, championId, position)];
-      yield [docKey.lane(championId, position), await laneStats(db, championId, position)];
-      yield [docKey.itemTimes(championId, position), await itemTimes(db, championId, position)];
-      if (queue === 420) yield [docKey.bench(queue, championId, position), await benchStats(db, championId, position)];
-      yield [docKey.synergies(championId, position), await synergies(db, championId, position)];
-      yield [docKey.buildHistory(championId, position), await buildHistory(db, championId, position)];
+      yield [docKey.build(queue, championId, position, bracket), build];
+      yield [docKey.matchupBuilds(championId, position, bracket), await matchupBuilds(db, championId, position, bracket)];
+      yield [docKey.counters(championId, position, bracket), await counters(db, championId, position, bracket)];
+      yield [docKey.lane(championId, position, bracket), await laneStats(db, championId, position, bracket)];
+      if (main) yield [docKey.itemTimes(championId, position), await itemTimes(db, championId, position)];
+      yield [docKey.bench(queue, championId, position, bracket), await benchStats(db, championId, position, bracket)];
+      yield [docKey.synergies(championId, position, bracket), await synergies(db, championId, position, bracket)];
+      if (main) yield [docKey.buildHistory(championId, position), await buildHistory(db, championId, position)];
     }
   }
-  if (index.length > 0) yield [docKey.buildIndex(), { patches: indexPatches, builds: index } satisfies BuildIndex];
+  if (main && index.length > 0) yield [docKey.buildIndex(), { patches: indexPatches, builds: index } satisfies BuildIndex];
 }
 
-async function matchupBuilds(db: D1Database, championId: number, position: string): Promise<Record<number, Build>> {
+async function matchupBuilds(db: D1Database, championId: number, position: string, bracket: Bracket): Promise<Record<number, Build>> {
   const { results } = await db
     .prepare(
-      `SELECT CAST(value AS INTEGER) AS opponent, SUM(games) AS games FROM stat_counts
+      `SELECT CAST(value AS INTEGER) AS opponent, SUM(games) AS games FROM ${scope("stat_counts", bracket)}
         WHERE queue_id = ? AND champion_id = ? AND team_position = ? AND kind = 'opponent'
         GROUP BY value HAVING SUM(games) >= ? ORDER BY games DESC LIMIT ?`,
     )
@@ -157,7 +190,7 @@ async function matchupBuilds(db: D1Database, championId: number, position: strin
     .all<{ opponent: number }>();
   const builds: Record<number, Build> = {};
   for (const { opponent } of results) {
-    const build = await aggregateBuild(db, championId, position, opponent, RANKED);
+    const build = await aggregateBuild(db, championId, position, opponent, RANKED, undefined, bracket);
     // aggregateBuild drops the matchup when the newest patches are too thin for it.
     if (build?.vs === opponent) builds[opponent] = build;
   }
