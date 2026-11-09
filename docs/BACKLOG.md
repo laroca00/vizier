@@ -357,15 +357,20 @@ Builds on: `services/api/src/crawler.ts` (seeding, `DIVISION_PAGES`, `APEX_SAMPL
 - [x] 32.4 Call budget per host: the crawl spends its share by group quota (games per group per hour), skips match ids already stored before fetching them, and fetches timelines only for the share the timeline docs need (today's ranked timeline share for emerald+, a lower tunable share below). Hourly log line per group: seeds, games, timelines, calls. Tests for the quota scheduler. (97e8922; GroupBudget: seeds by group deficit, timeline share per group, hourly budget log line)
 - [x] 32.5 Rollup by group: `stat_counts`, `lane_sums`, bench sums and item times gain the tier group as a key column (local SQLite), so every published bracket is a sum of groups. Emerald+ docs computed from `emerald + diamond + master_plus` must come out identical to the old path on a fixture (golden test). (97e8922; rank_group in the roll-up keys; old names are Emerald+ views; golden test)
 - [ ] 32.6 Write budget test: from a fixture-sized rollup, count the docs each publish would send for every bracket and kind, multiply by the publish schedule, add index writes, and fail if the projected day goes over 70,000 D1 row writes. It prints the table so later slices see where the budget goes.
+<!-- claimed: auto/32-budget-brackets 2026-11-09T13:00Z -->
 - [ ] 32.7 Coverage by bracket: `/v1/meta/coverage` gains games per bracket and per region (TR, EUW, KR) per patch and timeline share per bracket (new optional fields). The "Veriler nereden geliyor" section shows the bracket table with game counts.
+<!-- claimed: auto/32-budget-brackets 2026-11-09T13:00Z -->
 - [ ] 32.8 Owner deploy steps written into the queue in order: local schema change on VM start, crawler pull and restart, first all-rank publish, Worker deploy, what to watch in the log in the first hour.
+<!-- claimed: auto/32-budget-brackets 2026-11-09T13:00Z -->
 
 ## 33. Bracket docs and the `?rank=` API
 
 Builds on: `statDocs.ts` (`docKey`), `crawler/src/publish.ts` (changed docs only), `app.ts` routes, `cache.ts`.
 
 - [ ] 33.1 Doc keys with a bracket suffix for every non-default bracket (`...:r=gold_minus`); `emerald_plus` keeps today's key. Kinds with bracket docs: tier lists, champion overview, build, counters, matchup builds, lane, bench, synergies. Item times, build history, augments and Arena stay unbracketed. Key round-trip tests.
+<!-- claimed: auto/32-budget-brackets 2026-11-09T13:00Z -->
 - [ ] 33.2 Publish schedule per bracket: emerald_plus every 4 h as today; the other brackets once a day in rotation (one bracket per publish slot) so a day's writes stay inside the 32.6 budget. Changed-docs-only still applies. Budget test updated and green.
+<!-- claimed: auto/32-budget-brackets 2026-11-09T13:00Z -->
 - [ ] 33.3 Routes take `?rank=` (`all`, `gold_minus`, `platinum_plus`, `emerald_plus`, `diamond_plus`, `master_plus`; unknown → 400; missing → emerald_plus). Responses gain `rank` next to `updatedAt`. Cache keys include the bracket. API tests per route.
 - [ ] 33.4 `?region=` on tier lists and champion overview (`tr`, `euw`, `kr`; missing = pooled as today), published once a day for `emerald_plus` and `all` only. Budget test updated.
 - [ ] 33.5 Rank curve docs: one small doc per queue with each champion and role's win rate, pick rate and games in every bracket side by side (`rankcurve:<queue>`), published once a day, for the elo views in 35.
