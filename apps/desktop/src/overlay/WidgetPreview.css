@@ -1,0 +1,22 @@
+.widget-preview {
+  width: 210px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--glaze);
+  pointer-events: none;
+}
+
+.widget-preview__icon {
+  display: block;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background: var(--hover);
+}
+
+.widget-preview__rows {
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

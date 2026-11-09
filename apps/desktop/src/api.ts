@@ -320,3 +320,24 @@ export type BanSuggestions = { patches: string[]; champions: { championId: numbe
 export function getBans() {
   return get<BanSuggestions>("/v1/bans");
 }
+
+export type ScoutPlayer = {
+  puuid: string;
+  championId: number;
+  /** Ranked solo this season; null when unranked. */
+  rank: { tier: string; division: string; lp: number; wins: number; losses: number; winStreak: boolean } | null;
+  mastery: { level: number; points: number } | null;
+};
+
+/** Rank and mastery of the players on the loading screen; the Worker answers 503 until the owner sets its Riot key. */
+export function getScout(platform: string, asks: { puuid: string; championId: number }[]) {
+  const players = asks.map((a) => `${a.puuid}:${a.championId}`).join(",");
+  return request<{ players: ScoutPlayer[] }>(`/v1/scout?platform=${platform}&players=${players}`);
+}
+
+export type BenchMinute = { minute: number; games: number; cs: number; level: number };
+
+/** Average CS and level of ranked games at a few minutes; empty until enough timelines were crawled. */
+export function getBench(championId: number, position: string) {
+  return get<{ minutes: BenchMinute[] }>(`/v1/champions/${championId}/bench?position=${position}`);
+}

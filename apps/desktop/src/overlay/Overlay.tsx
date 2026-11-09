@@ -1,19 +1,19 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type WheelEvent } from "react";
+import { createElement, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type WheelEvent } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { getAugments, getBuild, type Build, type Picks } from "../api";
-import { augmentInfo, RARITY } from "../augments/data";
+import { getAugments, getBench, getBuild, type Build, type Picks } from "../api";
+import { augmentInfo } from "../augments/data";
 import { augmentQueue, augmentsByRarity } from "../augments/tiers";
 import { readChosenStyle } from "../buildStyles";
-import { champions, itemIconUrl, items, latestVersion, type Item } from "../data/ddragon";
-import { overlayFixture } from "../dev/fixtures";
+import { champions, items, latestVersion, type Item } from "../data/ddragon";
+import { overlayFixture, scoutingFixture } from "../dev/fixtures";
+import { ScoutPanel } from "./ScoutPanel";
 import type { LcuStatus } from "../lcu";
-import { setClientLocale, useLang, useT, type Params } from "../i18n";
+import { setClientLocale, useLang, useT } from "../i18n";
 import { useSettings } from "../settings";
 import { useAsync } from "../useAsync";
 import {
   championKey,
-
   findMe,
   itemDifference,
   nextItem,
@@ -21,11 +21,15 @@ import {
   objectiveTimers,
   scoreboardRows,
   type LiveGame,
-  type Timer,
 } from "./live";
-import { ROW_GAP, SCOREBOARD_SPOT, useLayout, type Spot, type WidgetId } from "./layout";
+import { skillSequence } from "../SkillGrid";
+import { benchRead, expectedAt, pushHistory, BENCH_END_MINUTE } from "./bench";
+import { GRID, ROW_GAP, snapSpot, useLayout, type ScreenSize } from "./layout";
+import { modeOf, widgetsFor, type Spot, type WidgetId } from "./registry";
+import { hasContent } from "./widgets/active";
+import type { WidgetContext } from "./widgets/context";
+import { WIDGET_VIEWS } from "./widgets";
 import { sampleGame } from "./sample";
-import { TimerCard } from "./Timers";
 import "./overlay.css";
 
 /** Subscribes to a value the Rust side reports through an event, and a getter command for its current value. */
@@ -84,7 +88,6 @@ async function loadStatic(): Promise<Static> {
 // A rare pick can have no build; the panels that need it just stay hidden.
 const loadBuild = (championId: number, position: string) => getBuild(championId, position).catch(() => null);
 const AUGMENTS_PER_RARITY = 4;
-const thousands = (gold: number) => `${gold > 0 ? "+" : gold < 0 ? "−" : ""}${(Math.abs(gold) / 1000).toFixed(1)}k`;
 
 /** The build the player picked on the build page, else the most played style. */
 function picksFor(build: Build | null, championId: number, position: string): Picks | null {
@@ -102,7 +105,9 @@ export function Overlay() {
   const hidden = useBackendFlag("overlay_hidden", "overlay-toggle", false);
   const editing = useBackendFlag("overlay_editing", "overlay-edit", new URLSearchParams(location.search).has("edit"));
   const tabHeld = useBackendFlag(null, "overlay-scoreboard", false);
-  const { layout, preview, save, reset } = useLayout();
+  const size = useScreenSize();
+  const mode = modeOf(liveGame?.gameMode ?? "CLASSIC");
+  const { layout, preview, save, reset } = useLayout(mode, size);
   // Arranging the boxes before a game uses a made-up one.
   const game = liveGame ?? (editing ? sampleGame() : null);
   const settings = useSettings();
@@ -119,8 +124,28 @@ export function Overlay() {
   const [augments] = useAsync(wantAugments ? `augments:${queue}:${championId}` : null, () => getAugments(queue!, championId!).catch(() => null));
   const [augmentNames] = useAsync(wantAugments ? `augment-info:${lang}` : null, () => augmentInfo(lang));
 
+  const wantBench = settings.overlayBench && mode === "rift" && championId !== null && position !== null && time / 60 <= BENCH_END_MINUTE;
+  const [benchDoc] = useAsync(wantBench ? `bench:${championId}:${position}` : null, () => getBench(championId!, position!).catch(() => null));
+  const expected = wantBench && benchDoc.status === "done" && benchDoc.value ? expectedAt(benchDoc.value.minutes, time / 60) : null;
+  const benchNow = expected && me ? benchRead({ cs: me.scores.creepScore, level: me.level }, expected) : null;
+  const [csHistory, setCsHistory] = useState<{ at: number; diff: number }[]>([]);
+  const csDiff = benchNow?.csDiff;
+  useEffect(() => {
+    if (csDiff !== undefined) setCsHistory((h) => pushHistory(h, time, csDiff));
+  }, [time, csDiff]);
+
+  // The skill order opens and closes on its hotkey, which arrives like a timer key.
+  const [orderOpen, setOrderOpen] = useState(false);
+  useEffect(() => {
+    if (!isTauri()) return;
+    const off = listen<string>("overlay-timer", ({ payload }) => payload === "skills" && setOrderOpen((open) => !open));
+    return () => void off.then((stop) => stop());
+  }, []);
+
   // The loading screen gets nothing; the overlay starts with the game.
-  if (hidden || !settings.overlay || (loading && !editing)) return null;
+  if (hidden || !settings.overlay) return null;
+  // The loading screen gets the scouting panel; the boxes start with the game.
+  if ((loading || scoutingFixture()) && !editing) return settings.overlayScouting ? <ScoutPanel /> : null;
   if (!game || !me) return null;
   const extra = { build: build.status === "done" ? build.value : null };
   const itemInfo = data.status === "done" ? data.value.items : null;
@@ -135,126 +160,64 @@ export function Overlay() {
   const next = settings.overlayNextItem && itemInfo ? nextItem(me.items.map((i) => i.itemId), buildItems) : null;
   const rows = settings.overlayScoreboard && itemInfo && (tabHeld || editing) ? scoreboardRows(game, gold) : [];
 
-  const boxes: { id: WidgetId; name: string; node: ReactNode }[] = [];
-  if (skill)
-    boxes.push({
-      id: "skill",
-      name: t("Yetenek önerisi"),
-      node: (
-        <section className="overlay__card overlay__skill">
-          <span className="overlay__key">{skill}</span>
-          <span>{t("yükselt")}</span>
-        </section>
-      ),
-    });
-  if (next && data.status === "done") {
-    const info = data.value.items.get(next);
-    const missing = Math.max(0, gold(next) - (game.gold ?? 0));
-    boxes.push({
-      id: "next",
-      name: t("Sıradaki eşya"),
-      node: (
-        <section className="overlay__card overlay__next">
-          <img src={itemIconUrl(data.value.version, next)} alt="" width={34} height={34} />
-          <span className="overlay__next-text">
-            <span className="overlay__caption">{t("Sıradaki eşya")}</span>
-            <span>{info?.name}</span>
-            <span className="overlay__target">{missing > 0 ? t("{gold} altın kaldı", { gold: missing }) : t("Alabilirsin")}</span>
-          </span>
-        </section>
-      ),
-    });
-  }
-  // The card hides itself when it has nothing to count; manual timers live inside it.
-  if (timers.length > 0 || settings.overlayTimers)
-    boxes.push({
-      id: "timers",
-      name: t("Süreler"),
-      node: <TimerCard objectives={timers} objectiveLabel={(timer) => timerLabel(timer, t)} game={game} time={time} />,
-    });
-  if (itemGold)
-    boxes.push({
-      id: "items",
-      name: t("Eşya altını farkı"),
-      node: (
-        <section className="overlay__card">
-          <p className="overlay__caption">{t("Eşya altını farkı")}</p>
-          {itemGold.lane !== null && (
-            <p className="overlay__row" data-ahead={itemGold.lane >= 0}>
-              <span>{t("Koridor rakibine göre")}</span>
-              <span className="overlay__value">{thousands(itemGold.lane)}</span>
-            </p>
-          )}
-          <p className="overlay__row" data-ahead={itemGold.team >= 0}>
-            <span>{t("Takım")}</span>
-            <span className="overlay__value">{thousands(itemGold.team)}</span>
-          </p>
-        </section>
-      ),
-    });
-
-  if (augments.status === "done" && augments.value && augmentNames.status === "done") {
-    const names = augmentNames.value;
-    const groups = augmentsByRarity(augments.value.augments, (id) => names.get(id)?.rarity, AUGMENTS_PER_RARITY);
-    if (groups.length > 0)
-      boxes.push({
-        id: "augments",
-        name: t("Augment önerisi"),
-        node: (
-          <section className="overlay__card overlay__augments">
-            <p className="overlay__caption">{t("En iyi augment'ler")}</p>
-            {groups.map((group) => (
-              <div key={group.rarity} className="overlay__augment-group" data-rarity={group.rarity}>
-                <span className="overlay__augment-rarity">{t(RARITY[group.rarity] ?? "")}</span>
-                <ol>
-                  {group.augments.map((a) => (
-                    <li key={a.augmentId}>
-                      <span className="overlay__augment-tier" data-tier={a.tier}>
-                        {a.tier}
-                      </span>
-                      {names.get(a.augmentId)?.name}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ))}
-          </section>
-        ),
-      });
-  }
+  const names = augmentNames.status === "done" ? augmentNames.value : null;
+  const ctx: WidgetContext = {
+    t,
+    game,
+    me,
+    time,
+    version: data.status === "done" ? data.value.version : null,
+    items: itemInfo,
+    gold,
+    picks,
+    skill,
+    skillOrder: { keys: picks?.skills ? skillSequence(picks.skills) : [], ranked: game.skills.reduce((sum, n) => sum + n, 0), shown: orderOpen || editing },
+    objectives: timers,
+    itemGold,
+    nextItem: next,
+    bench: benchNow ? { read: benchNow, history: csHistory.map((p) => p.diff) } : null,
+    rows,
+    rowGap: layout.rowGap ?? ROW_GAP,
+    augments:
+      augments.status === "done" && augments.value && names
+        ? augmentsByRarity(augments.value.augments, (id) => names.get(id)?.rarity, AUGMENTS_PER_RARITY)
+        : [],
+    augmentNames: names,
+  };
 
   const move = (id: WidgetId, spot: Spot, done: boolean) => (done ? save : preview)({ ...layout, [id]: spot });
-  const rowGap = layout.rowGap ?? ROW_GAP;
+
+  // Widgets that have nothing to show take no box.
+  const boxes = widgetsFor(mode).filter((def) => def.settings.some((key) => settings[key]) && hasContent[def.id](ctx, settings));
 
   return (
-    <div className="overlay-root" data-editing={editing || undefined} aria-hidden={!editing}>
+    <div className="overlay-root" data-editing={editing || undefined} aria-hidden={!editing} style={{ "--overlay-scale": settings.overlayScale } as CSSProperties}>
       {/* Dragged boxes stay in this list too, fixed in place, so a drag never remounts the box it moves. */}
       <div className="overlay">
-        {boxes.map((b) => (
-          <Draggable key={b.id} id={b.id} name={b.name} editing={editing} spot={layout[b.id] ?? null} onMove={move}>
-            {b.node}
-          </Draggable>
-        ))}
+        {boxes
+          .filter((def) => !def.defaultSpot)
+          .map((def) => (
+            <Draggable key={def.id} id={def.id} name={t(def.name)} editing={editing} spot={layout[def.id] ?? null} onMove={move}>
+              {createElement(WIDGET_VIEWS[def.id], ctx)}
+            </Draggable>
+          ))}
       </div>
 
-      {rows.length > 0 && (
-        <Draggable
-          id="scoreboard"
-          name={t("Skor tablosu farkı")}
-          editing={editing}
-          spot={layout.scoreboard ?? SCOREBOARD_SPOT}
-          onMove={move}
-          onWheel={(event) => save({ ...layout, rowGap: Math.min(0.12, Math.max(0.02, rowGap + (event.deltaY < 0 ? 0.001 : -0.001))) })}
-        >
-          <ol className="overlay__scoreboard" style={{ gap: `calc(${rowGap * 100}vh - 22px)` }}>
-            {rows.map((row) => (
-              <li key={row.ally.riotId} data-ahead={row.diff === null ? undefined : row.diff >= 0}>
-                {row.diff === null ? "–" : thousands(row.diff)}
-              </li>
-            ))}
-          </ol>
-        </Draggable>
-      )}
+      {boxes
+        .filter((def) => def.defaultSpot)
+        .map((def) => (
+          <Draggable
+            key={def.id}
+            id={def.id}
+            name={t(def.name)}
+            editing={editing}
+            spot={layout[def.id] ?? def.defaultSpot!}
+            onMove={move}
+            onWheel={def.id === "scoreboard" ? (event) => save({ ...layout, rowGap: Math.min(0.12, Math.max(0.02, ctx.rowGap + (event.deltaY < 0 ? 0.001 : -0.001))) }) : undefined}
+          >
+            {createElement(WIDGET_VIEWS[def.id], ctx)}
+          </Draggable>
+        ))}
 
       {editing && <EditBar onReset={reset} />}
     </div>
@@ -289,7 +252,7 @@ function Draggable({
     const box = ref.current!.getBoundingClientRect();
     const x = Math.min(window.innerWidth - box.width, Math.max(0, event.clientX - grab.current!.dx));
     const y = Math.min(window.innerHeight - box.height, Math.max(0, event.clientY - grab.current!.dy));
-    return { x: x / window.innerWidth, y: y / window.innerHeight };
+    return snapSpot({ x: x / window.innerWidth, y: y / window.innerHeight }, { width: window.innerWidth, height: window.innerHeight }, GRID);
   };
 
   return (
@@ -318,6 +281,16 @@ function Draggable({
   );
 }
 
+function useScreenSize(): ScreenSize {
+  const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+  useEffect(() => {
+    const onResize = () => setSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return size;
+}
+
 function EditBar({ onReset }: { onReset: () => void }) {
   const t = useT();
   return (
@@ -331,12 +304,4 @@ function EditBar({ onReset }: { onReset: () => void }) {
       </button>
     </div>
   );
-}
-
-const TIMER_NAMES = { dragon: "Ejder", baron: "Baron" } as const;
-const LANE_NAMES = { top: "üst", mid: "orta", bot: "alt" } as const;
-
-function timerLabel(timer: Timer, t: (text: string, params?: Params) => string) {
-  if (timer.kind !== "inhibitor") return t(TIMER_NAMES[timer.kind]);
-  return t(timer.ours ? "Bizim {lane} inhibitör" : "Rakip {lane} inhibitör", { lane: t(LANE_NAMES[timer.lane ?? "mid"]) });
 }

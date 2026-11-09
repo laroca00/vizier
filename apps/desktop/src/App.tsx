@@ -8,6 +8,7 @@ import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { noteRecent, usePersonal } from "./personal";
 import { pageRoute, useNavigation, type Page, type Route } from "./router";
+import { changedHotkeys } from "./overlay/hotkeys";
 import { clientOpened, gameEdge, isTrayAction } from "./followClient";
 import { OpenProProvider } from "./proLink";
 import { OpenChampionProvider } from "./championLink";
@@ -217,6 +218,11 @@ function App() {
     });
     return () => void unlisten.then((stop) => stop());
   }, []);
+
+  useEffect(() => {
+    // The Rust side refuses a clash or a combination it cannot read and keeps the old keys.
+    if (isTauri()) invoke("set_hotkeys", { bindings: changedHotkeys(settings.hotkeys) }).catch(() => {});
+  }, [settings.hotkeys]);
 
   useEffect(() => {
     if (isTauri()) invoke("set_overlay_enabled", { enabled: settings.overlay }).catch(() => {});

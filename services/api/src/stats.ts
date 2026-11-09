@@ -548,6 +548,27 @@ export async function laneStats(db: D1Database, championId: number, position: st
   );
 }
 
+// Timelines are fetched for few games, so each minute carries its game count.
+const MIN_BENCH_GAMES = 20;
+
+export type BenchMinute = { minute: number; games: number; cs: number; level: number };
+
+/** Average CS and level at the sample minutes for ranked games of this champion and role. */
+export async function benchStats(db: D1Database, championId: number, position: string): Promise<{ minutes: BenchMinute[] }> {
+  const patches = await latestPatches(db);
+  if (patches.length === 0) return { minutes: [] };
+  const { results } = await db
+    .prepare(
+      `SELECT minute, SUM(games) AS games, SUM(cs) AS cs, SUM(level) AS level FROM bench_sums
+        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ?
+        GROUP BY minute HAVING SUM(games) >= ? ORDER BY minute`,
+    )
+    .bind(...patches, championId, position, MIN_BENCH_GAMES)
+    .all<{ minute: number; games: number; cs: number; level: number }>();
+  const avg = (sum: number, games: number) => Math.round((sum / games) * 10) / 10;
+  return { minutes: results.map((r) => ({ minute: r.minute, games: r.games, cs: avg(r.cs, r.games), level: avg(r.level, r.games) })) };
+}
+
 // Timelines are fetched for few games, so each item time comes with its game count.
 const MIN_ITEM_TIME_GAMES = 10;
 

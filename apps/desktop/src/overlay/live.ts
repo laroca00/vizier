@@ -65,6 +65,22 @@ export function nextSkill(level: number, skills: number[], build: { firstLevels:
   return slot ? SLOTS[slot - 1] : null;
 }
 
+/**
+ * The full 18-level order, played out with the same rules the overlay uses:
+ * the first levels as picked, R whenever it unlocks, then the max order.
+ */
+export function skillSequence(skills: { firstLevels: number[]; maxOrder: number[] }): SkillKey[] {
+  const ranks: [number, number, number, number] = [0, 0, 0, 0];
+  const out: SkillKey[] = [];
+  for (let level = 1; level <= 18; level++) {
+    const key = nextSkill(level, ranks, skills);
+    if (!key) break;
+    ranks[SLOTS.indexOf(key)]++;
+    out.push(key);
+  }
+  return out;
+}
+
 // Respawn delays after a kill. Riot changes these now and then; patch them here.
 const DRAGON_RESPAWN = 300;
 const ELDER_RESPAWN = 360;

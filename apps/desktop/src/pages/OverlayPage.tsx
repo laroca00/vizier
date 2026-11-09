@@ -1,43 +1,46 @@
+import { useEffect, useState } from "react";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import { updateSettings, useSettings } from "../settings";
 import { useT } from "../i18n";
+import { Button } from "../ui/Button";
 import { Toggle } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
+import { HOTKEY_ACTIONS, changedHotkeys, clashing, comboFromEvent, effectiveHotkeys } from "../overlay/hotkeys";
+import { WIDGETS, type OverlayMode } from "../overlay/registry";
+import { WidgetPreview } from "../overlay/WidgetPreview";
 import type { ToggleKey } from "./SettingsPage";
+import "../overlay/overlay-page.css";
 
-const WIDGETS: { key: ToggleKey; label: string; hint: string }[] = [
-  { key: "overlaySkills", label: "Yetenek önerisi", hint: "Yetenek puanın olduğunda hangisini yükselteceğini gösterir." },
-  { key: "overlayObjectives", label: "Ejder, Baron ve inhibitör süreleri", hint: "Kesildiklerinde yeniden doğmalarına kalan süre." },
-  { key: "overlayItems", label: "Eşya altını farkı", hint: "Koridor rakibine ve rakip takıma göre eşyalarına harcanan altın." },
-  { key: "overlayScoreboard", label: "Skor tablosunda eşya farkı", hint: "Tab'a basılıyken her oyuncunun karşısındakine göre eşya altını farkı, tablonun ortasında." },
-  { key: "overlayAugments", label: "Augment önerisi", hint: "Arena ve Şamata'da şampiyonunun her nadirlikteki en iyi augment'leri." },
-  { key: "overlayNextItem", label: "Sıradaki eşya", hint: "Seçtiğin build türünde henüz almadığın ilk eşya ve ona kalan altın." },
-  { key: "overlayTimers", label: "Elle başlatılan zamanlayıcılar", hint: "Kamp, ejder ve Baron zamanlayıcıları, kronometre ve ilk doğuş hatırlatıcıları. Kısayollar aşağıda." },
-  { key: "timerSound", label: "Zamanlayıcı sesi", hint: "Bir süre dolmadan 30 saniye önce ve dolunca kısa bir ses çalar." },
-];
+const MODE_NAMES: Record<OverlayMode, string> = { rift: "Yarık", aram: "ARAM", arena: "Arena", mayhem: "Şamata" };
 
-const SHORTCUTS: [string, string][] = [
-  ["Ctrl+Shift+O", "Paneli gizle ya da göster"],
-  ["Ctrl+Shift+L", "Kutuları yerleştir"],
-  ["Ctrl+Shift+1", "Mavi"],
-  ["Ctrl+Shift+2", "Kırmızı"],
-  ["Ctrl+Shift+3", "Gromp"],
-  ["Ctrl+Shift+4", "Kurtlar"],
-  ["Ctrl+Shift+5", "Kuşlar"],
-  ["Ctrl+Shift+6", "Golemler"],
-  ["Ctrl+Shift+7", "Yengeç"],
-  ["Ctrl+Shift+D", "Ejder"],
-  ["Ctrl+Shift+B", "Baron"],
-  ["Ctrl+Shift+T", "Özel zamanlayıcı"],
-  ["Ctrl+Shift+S", "Kronometreyi başlat ya da durdur"],
-  ["Ctrl+Shift+X", "Hepsini temizle"],
-];
+const SETTING_LABELS: Partial<Record<ToggleKey, string>> = {
+  overlayObjectives: "Ejder, Baron ve inhibitör süreleri",
+  overlayTimers: "Elle başlatılan zamanlayıcılar",
+};
 
-/** What the in-game overlay shows and how to control it. */
+/** What the in-game overlay shows, where, and how to control it. */
 export function OverlayPage() {
   const settings = useSettings();
   const t = useT();
   const off = !settings.overlay;
+  const [capturing, setCapturing] = useState<string | null>(null);
+  const keys = effectiveHotkeys(settings.hotkeys);
+  const clashes = clashing(settings.hotkeys);
+
+  useEffect(() => {
+    if (!capturing) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      event.preventDefault();
+      if (event.code === "Escape") return setCapturing(null);
+      const combo = comboFromEvent(event);
+      if (!combo) return;
+      updateSettings({ hotkeys: { ...settings.hotkeys, [capturing]: combo } });
+      setCapturing(null);
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [capturing, settings.hotkeys]);
 
   return (
     <LiquidGlass className="panel settings" radius={28} strength={2.5} scroll>
@@ -50,13 +53,59 @@ export function OverlayPage() {
           checked={settings.overlay}
           onChange={(overlay) => updateSettings({ overlay })}
         />
+        <div className="settings__actions">
+          <Button disabled={off || !isTauri()} onClick={() => invoke("set_overlay_editing", { editing: true }).catch(() => {})}>
+            {t("Kutuları yerleştir")}
+          </Button>
+          <label className="settings__number">
+            <span className="toggle__label">{t("Boyut")}</span>
+            <input
+              type="range"
+              min={0.8}
+              max={1.4}
+              step={0.05}
+              value={settings.overlayScale}
+              disabled={off}
+              aria-label={t("Boyut")}
+              onChange={(event) => updateSettings({ overlayScale: Number(event.target.value) })}
+            />
+            <span>{Math.round(settings.overlayScale * 100)}%</span>
+          </label>
+        </div>
+        <Toggle
+          label={t("Yükleme ekranında oyuncuları göster")}
+          hint={t("Dereceleri, ustalıkları ve takımların hasar dağılımını gösterir. Dereceler Vizier'in sunucusundan gelir; ayarlanmamışsa yalnızca hasar dağılımı görünür. Gizlemek için paneli gizleme kısayolunu kullan.")}
+          checked={settings.overlayScouting}
+          disabled={off}
+          onChange={(overlayScouting) => updateSettings({ overlayScouting })}
+        />
+        <p className="settings__note">{t("Yerleşim her oyun türü ve ekran boyutu için ayrı tutulur.")}</p>
       </section>
 
       <section className="settings__section enter" aria-labelledby="overlay-widgets">
         <h2 id="overlay-widgets" className="section-title">{t("Paneldekiler")}</h2>
-        {WIDGETS.map(({ key, label, hint }) => (
-          <Toggle key={key} label={t(label)} hint={t(hint)} checked={settings[key]} disabled={off} onChange={(checked) => updateSettings({ [key]: checked })} />
-        ))}
+        <ul className="overlay-widgets">
+          {WIDGETS.map((def) => (
+            <li key={def.id} className="overlay-widgets__item">
+              <WidgetPreview id={def.id} />
+              <div className="overlay-widgets__body">
+                <h3 className="overlay-widgets__name">{t(def.name)}</h3>
+                <p className="settings__note">{t(def.hint)}</p>
+                <p className="overlay-widgets__modes">{def.modes.map((m) => t(MODE_NAMES[m])).join(" · ")}</p>
+                {def.settings.map((key) => (
+                  <Toggle
+                    key={key}
+                    label={def.settings.length > 1 ? t(SETTING_LABELS[key as ToggleKey] ?? def.name) : t("Göster")}
+                    checked={Boolean(settings[key])}
+                    disabled={off}
+                    onChange={(checked) => updateSettings({ [key]: checked })}
+                  />
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <Toggle label={t("Zamanlayıcı sesi")} hint={t("Bir süre dolmadan 30 saniye önce ve dolunca kısa bir ses çalar.")} checked={settings.timerSound} disabled={off} onChange={(timerSound) => updateSettings({ timerSound })} />
         <label className="settings__number">
           <span className="toggle__label">{t("Özel zamanlayıcının süresi, saniye")}</span>
           <input
@@ -76,17 +125,32 @@ export function OverlayPage() {
 
       <section className="settings__section enter" aria-labelledby="overlay-keys">
         <h2 id="overlay-keys" className="section-title">{t("Kısayollar")}</h2>
-        <p className="settings__note">{t("Yalnızca maç sırasında çalışır; geri kalan zamanda bu tuşlar diğer uygulamalara aittir.")}</p>
+        <p className="settings__note">{t("Zamanlayıcı kısayolları yalnızca maç sırasında çalışır; geri kalan zamanda bu tuşlar diğer uygulamalara aittir. Değiştirmek için tuşa tıkla ve yeni kombinasyona bas.")}</p>
         <dl className="shortcuts">
-          {SHORTCUTS.map(([keys, label]) => (
-            <div key={keys}>
+          {HOTKEY_ACTIONS.map((action) => (
+            <div key={action.id} data-clash={clashes.has(action.id) || undefined}>
               <dt>
-                <kbd>{keys}</kbd>
+                <button
+                  type="button"
+                  className="shortcuts__key"
+                  aria-label={t("{action} kısayolunu değiştir", { action: t(action.label) })}
+                  onClick={() => setCapturing(capturing === action.id ? null : action.id)}
+                >
+                  <kbd>{capturing === action.id ? t("Tuşa bas…") : keys[action.id]}</kbd>
+                </button>
               </dt>
-              <dd>{t(label)}</dd>
+              <dd>
+                {t(action.label)}
+                {clashes.has(action.id) && <span className="shortcuts__clash"> · {t("Başka bir kısayolla aynı")}</span>}
+              </dd>
             </div>
           ))}
         </dl>
+        <div className="settings__actions">
+          <Button variant="ghost" disabled={Object.keys(changedHotkeys(settings.hotkeys)).length === 0} onClick={() => updateSettings({ hotkeys: {} })}>
+            {t("Kısayolları varsayılana döndür")}
+          </Button>
+        </div>
       </section>
     </LiquidGlass>
   );

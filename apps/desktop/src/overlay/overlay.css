@@ -7,6 +7,8 @@ html:has(.overlay) body {
 }
 
 .overlay {
+  transform: scale(var(--overlay-scale, 1));
+  transform-origin: top left;
   position: fixed;
   top: 16px;
   left: 16px;
@@ -90,16 +92,10 @@ html:has(.overlay) body {
   }
 }
 
-.overlay:has(.scouting) {
-  width: 300px;
-}
-
-.scouting {
-  gap: 10px;
-}
-
 /* Boxes the player dragged leave the column and sit where they were dropped. */
 .overlay__box[data-placed] {
+  transform: scale(var(--overlay-scale, 1));
+  transform-origin: top left;
   position: fixed;
   width: 210px;
   font-size: 13px;
@@ -332,4 +328,43 @@ html:has(.overlay) body {
 .overlay__augment-tier[data-tier="A"] {
   color: var(--ink);
   background: var(--turquoise);
+}
+
+.overlay__spark {
+  color: var(--gilt);
+}
+
+.overlay__skillstrip {
+  display: flex;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overlay__skillstrip > * {
+  display: grid;
+  min-width: 18px;
+  place-items: center;
+  padding: 1px 2px;
+  border-radius: 5px;
+  font-weight: 600;
+  background: rgb(255 255 255 / 0.08);
+}
+
+.overlay__skillstrip [data-done],
+.overlay__skillstrip > [data-done] {
+  color: var(--glaze-faint);
+  background: transparent;
+  text-decoration: line-through;
+}
+
+.overlay__skillstrip [data-ult] {
+  color: var(--gilt);
+}
+
+.overlay__skilllevel {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--glaze-faint);
 }

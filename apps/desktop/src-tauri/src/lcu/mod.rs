@@ -1,5 +1,6 @@
 pub mod actions;
 pub mod champ_select;
+pub mod roster;
 mod client;
 pub mod writes;
 mod credentials;

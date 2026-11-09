@@ -2,7 +2,7 @@
 // to D1's stat_docs as finished JSON; the Worker only reads them. Keys are
 // shared here so both sides agree.
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
-import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
+import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
 
 // Queues with augments: Arena and ARAM Mayhem.
 export const AUGMENT_QUEUES = [1700, 2400];
@@ -30,6 +30,7 @@ export const docKey = {
   /** Lane differences against each opponent, keyed by opponent id. */
   lane: (championId: number, position: string) => `lane:${championId}:${position}`,
   /** When each finished item is usually completed, keyed by item id. */
+  bench: (queue: number, championId: number, position: string) => `bench:${queue}:${championId}:${position}`,
   itemTimes: (championId: number, position: string) => `itemtimes:${championId}:${position}`,
   bans: () => "bans",
   /** One compact row per ranked champion and role, for searching builds without fetching each one. */
@@ -121,6 +122,7 @@ export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown
       yield [docKey.counters(championId, position), await counters(db, championId, position)];
       yield [docKey.lane(championId, position), await laneStats(db, championId, position)];
       yield [docKey.itemTimes(championId, position), await itemTimes(db, championId, position)];
+      if (queue === 420) yield [docKey.bench(queue, championId, position), await benchStats(db, championId, position)];
       yield [docKey.synergies(championId, position), await synergies(db, championId, position)];
     }
   }

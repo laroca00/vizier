@@ -22,6 +22,14 @@ export type Settings = {
   /** Accept the ready check as soon as a match is found. */
   autoAcceptReady: boolean;
   overlay: boolean;
+  /** Size of every overlay box, 0.8 to 1.4. */
+  overlayScale: number;
+  /** On the loading screen, rank and champion mastery of all ten players. */
+  overlayScouting: boolean;
+  /** Your CS and level against the ranked average at this minute. */
+  overlayBench: boolean;
+  /** The player's own overlay hotkeys, by action id; anything missing keeps its default. */
+  hotkeys: Record<string, string>;
   overlaySkills: boolean;
   overlayObjectives: boolean;
   overlayItems: boolean;
@@ -54,6 +62,10 @@ const DEFAULTS: Settings = {
   autopilotLockSeconds: 0,
   autoAcceptReady: false,
   overlay: true,
+  overlayScale: 1,
+  overlayScouting: true,
+  overlayBench: true,
+  hotkeys: {},
   overlaySkills: true,
   overlayObjectives: true,
   overlayItems: true,

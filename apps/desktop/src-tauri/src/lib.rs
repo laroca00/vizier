@@ -8,7 +8,7 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 use tauri::{Emitter, Manager, WindowEvent};
 use lcu::{ChampSelectState, LcuApi, LcuState, LcuStatus};
 use live::{LiveGame, OverlayState};
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 #[tauri::command]
 fn lcu_status(state: tauri::State<'_, LcuState>) -> LcuStatus {
@@ -81,6 +81,13 @@ async fn import_item_set(
     lcu::writes::import_item_set(&client, champion_id, &title, &blocks).await
 }
 
+/// The ten players of the game that is loading, for the scouting panel.
+#[tauri::command]
+async fn game_roster(api: tauri::State<'_, LcuApi>) -> Result<Vec<lcu::roster::RosterPlayer>, String> {
+    let client = api.get().ok_or(NOT_CONNECTED)?;
+    lcu::roster::current(&client).await
+}
+
 /// Hovers or locks a champion in the player's open pick or ban; `kind` is "pick" or "ban".
 #[tauri::command]
 async fn champ_select_act(api: tauri::State<'_, LcuApi>, kind: String, champion_id: i64, lock: bool) -> Result<(), String> {
@@ -107,16 +114,6 @@ async fn available_champions(api: tauri::State<'_, LcuApi>, kind: String) -> Res
     let kind = lcu::actions::Kind::parse(&kind)?;
     let client = api.get().ok_or(NOT_CONNECTED)?;
     lcu::actions::available(&client, kind).await
-}
-
-/// Ctrl+Shift+O hides and shows the overlay during a game.
-fn overlay_shortcut() -> Shortcut {
-    Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyO)
-}
-
-/// Ctrl+Shift+L lets the player drag the overlay's boxes into place.
-fn edit_shortcut() -> Shortcut {
-    Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyL)
 }
 
 /// Asks WebView2 to trim the main window's memory while it sits in the tray,
@@ -169,36 +166,95 @@ fn set_background(window: tauri::WebviewWindow, state: tauri::State<'_, MainMemo
     refresh_memory(&window);
 }
 
-/// Manual timers on the overlay. They are registered only while a game runs,
-/// so the combinations stay free in every other app.
-const TIMER_SHORTCUTS: [(Code, &str); 12] = [
-    (Code::Digit1, "blue"),
-    (Code::Digit2, "red"),
-    (Code::Digit3, "gromp"),
-    (Code::Digit4, "wolves"),
-    (Code::Digit5, "raptors"),
-    (Code::Digit6, "krugs"),
-    (Code::Digit7, "scuttle"),
-    (Code::KeyD, "dragon"),
-    (Code::KeyB, "baron"),
-    (Code::KeyS, "stopwatch"),
-    (Code::KeyT, "custom"),
-    (Code::KeyX, "clear"),
+/// Overlay actions that have a hotkey, with the combination they start on.
+/// The first two work whenever Vizier runs; the rest are manual timers that
+/// are registered only while a game runs, so the combinations stay free in
+/// every other app.
+const DEFAULT_HOTKEYS: [(&str, &str); 15] = [
+    ("toggle", "Ctrl+Shift+O"),
+    ("edit", "Ctrl+Shift+L"),
+    ("blue", "Ctrl+Shift+1"),
+    ("red", "Ctrl+Shift+2"),
+    ("gromp", "Ctrl+Shift+3"),
+    ("wolves", "Ctrl+Shift+4"),
+    ("raptors", "Ctrl+Shift+5"),
+    ("krugs", "Ctrl+Shift+6"),
+    ("scuttle", "Ctrl+Shift+7"),
+    ("dragon", "Ctrl+Shift+D"),
+    ("baron", "Ctrl+Shift+B"),
+    ("stopwatch", "Ctrl+Shift+S"),
+    ("custom", "Ctrl+Shift+T"),
+    ("clear", "Ctrl+Shift+X"),
+    ("skills", "Ctrl+Shift+K"),
 ];
 
-fn timer_shortcut(code: Code) -> Shortcut {
-    Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), code)
+fn is_timer_action(action: &str) -> bool {
+    action != "toggle" && action != "edit"
+}
+
+/// Merges the player's choices over the defaults and refuses unknown actions,
+/// unreadable combinations and a combination used twice.
+fn resolve_hotkeys(overrides: &std::collections::HashMap<String, String>) -> Result<Vec<(String, Shortcut)>, String> {
+    if let Some(unknown) = overrides.keys().find(|k| !DEFAULT_HOTKEYS.iter().any(|(a, _)| a == k)) {
+        return Err(format!("unknown hotkey action {unknown}"));
+    }
+    let mut resolved: Vec<(String, Shortcut)> = Vec::new();
+    for (action, default) in DEFAULT_HOTKEYS {
+        let text = overrides.get(action).map(String::as_str).unwrap_or(default);
+        let shortcut: Shortcut = text.parse().map_err(|_| format!("cannot read {text}"))?;
+        if let Some((other, _)) = resolved.iter().find(|(_, s)| *s == shortcut) {
+            return Err(format!("{text} is used by {other} and {action}"));
+        }
+        resolved.push((action.to_string(), shortcut));
+    }
+    Ok(resolved)
+}
+
+/// The overlay's current hotkeys, and whether a game is running.
+#[derive(Default)]
+struct Hotkeys {
+    bindings: std::sync::Mutex<Vec<(String, Shortcut)>>,
+    in_game: std::sync::atomic::AtomicBool,
+}
+
+impl Hotkeys {
+    fn action_for(&self, shortcut: &Shortcut) -> Option<String> {
+        self.bindings.lock().ok()?.iter().find(|(_, s)| s == shortcut).map(|(a, _)| a.clone())
+    }
+}
+
+fn apply_hotkeys(app: &tauri::AppHandle, next: Vec<(String, Shortcut)>) {
+    let state = app.state::<Hotkeys>();
+    let in_game = state.in_game.load(std::sync::atomic::Ordering::Relaxed);
+    let shortcuts = app.global_shortcut();
+    let mut bindings = state.bindings.lock().expect("hotkeys lock");
+    for (_, shortcut) in bindings.iter() {
+        let _ = shortcuts.unregister(*shortcut);
+    }
+    for (action, shortcut) in &next {
+        if is_timer_action(action) && !in_game {
+            continue;
+        }
+        // Another app may own the combination; the overlay still works without it.
+        if let Err(error) = shortcuts.register(*shortcut) {
+            eprintln!("hotkey {action}: {error}");
+        }
+    }
+    *bindings = next;
+}
+
+/// The settings page sends the player's own combinations, `{ action: "Ctrl+Shift+K" }`.
+#[tauri::command]
+fn set_hotkeys(app: tauri::AppHandle, bindings: std::collections::HashMap<String, String>) -> Result<(), String> {
+    apply_hotkeys(&app, resolve_hotkeys(&bindings)?);
+    Ok(())
 }
 
 pub fn set_timer_shortcuts(app: &tauri::AppHandle, on: bool) {
-    let shortcuts = app.global_shortcut();
-    for (code, _) in TIMER_SHORTCUTS {
-        let shortcut = timer_shortcut(code);
-        let result = if on { shortcuts.register(shortcut) } else { shortcuts.unregister(shortcut) };
-        if let Err(error) = result {
-            eprintln!("timer shortcut: {error}");
-        }
-    }
+    let state = app.state::<Hotkeys>();
+    state.in_game.store(on, std::sync::atomic::Ordering::Relaxed);
+    let current: Vec<(String, Shortcut)> = state.bindings.lock().expect("hotkeys lock").clone();
+    apply_hotkeys(app, current);
 }
 
 /// Passed by the autostart entry so a login start stays in the tray.
@@ -285,12 +341,11 @@ pub fn run() {
                     if event.state != ShortcutState::Pressed {
                         return;
                     }
-                    if *shortcut == overlay_shortcut() {
-                        live::toggle_hidden(app);
-                    } else if *shortcut == edit_shortcut() {
-                        live::toggle_editing(app);
-                    } else if let Some((_, timer)) = TIMER_SHORTCUTS.iter().find(|(code, _)| *shortcut == timer_shortcut(*code)) {
-                        live::timer_pressed(app, timer);
+                    match app.state::<Hotkeys>().action_for(shortcut).as_deref() {
+                        Some("toggle") => live::toggle_hidden(app),
+                        Some("edit") => live::toggle_editing(app),
+                        Some(timer) => live::timer_pressed(app, timer),
+                        None => {}
                     }
                 })
                 .build(),
@@ -298,6 +353,7 @@ pub fn run() {
         .manage(LcuApi::default())
         .manage(OverlayState::default())
         .manage(MainMemory::default())
+        .manage(Hotkeys::default())
         .invoke_handler(tauri::generate_handler![
             lcu_status,
             champ_select,
@@ -311,6 +367,8 @@ pub fn run() {
             overlay_editing,
             set_overlay_editing,
             set_background,
+            set_hotkeys,
+            game_roster,
             champ_select_act,
             accept_ready_check,
             bench_swap,
@@ -329,11 +387,8 @@ pub fn run() {
             }
             lcu::spawn(app.handle().clone());
             live::spawn(app.handle().clone());
-            // Another app may own the combination; the overlay still works without it.
-            for shortcut in [overlay_shortcut(), edit_shortcut()] {
-                if let Err(error) = app.global_shortcut().register(shortcut) {
-                    eprintln!("overlay shortcut: {error}");
-                }
+            if let Ok(defaults) = resolve_hotkeys(&Default::default()) {
+                apply_hotkeys(app.handle(), defaults);
             }
             Ok(())
         })
@@ -361,4 +416,35 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod hotkey_tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn defaults_resolve_without_clashes() {
+        assert_eq!(resolve_hotkeys(&HashMap::new()).unwrap().len(), DEFAULT_HOTKEYS.len());
+    }
+
+    #[test]
+    fn a_choice_replaces_the_default() {
+        let overrides = HashMap::from([("toggle".to_string(), "Ctrl+Alt+H".to_string())]);
+        let resolved = resolve_hotkeys(&overrides).unwrap();
+        let toggle = resolved.iter().find(|(a, _)| a == "toggle").unwrap();
+        assert_eq!(toggle.1, "Ctrl+Alt+H".parse::<Shortcut>().unwrap());
+    }
+
+    #[test]
+    fn refuses_a_combination_used_twice() {
+        let overrides = HashMap::from([("toggle".to_string(), "Ctrl+Shift+L".to_string())]);
+        assert!(resolve_hotkeys(&overrides).is_err());
+    }
+
+    #[test]
+    fn refuses_unknown_actions_and_unreadable_combinations() {
+        assert!(resolve_hotkeys(&HashMap::from([("fly".to_string(), "Ctrl+F".to_string())])).is_err());
+        assert!(resolve_hotkeys(&HashMap::from([("toggle".to_string(), "banana".to_string())])).is_err());
+    }
 }

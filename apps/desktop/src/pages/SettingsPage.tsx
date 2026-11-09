@@ -18,7 +18,7 @@ const LANGUAGES: { id: LanguageSetting; label: string }[] = [
 ];
 
 /** The on/off settings; language is a choice, not a toggle. */
-export type ToggleKey = Exclude<keyof Settings, "language" | "customTimerSeconds" | "homeLayout" | "autopilot" | "autopilotLockSeconds">;
+export type ToggleKey = Exclude<keyof Settings, "language" | "customTimerSeconds" | "homeLayout" | "autopilot" | "autopilotLockSeconds" | "overlayScale" | "hotkeys">;
 
 const CLIENT_TOGGLES: { key: ToggleKey; label: string; hint: string }[] = [
   { key: "autoImportRunes", label: "Rünleri kendiliğinden aktar", hint: "Şampiyonunu kilitlediğinde önerilen rün sayfası Vizier sayfasına yazılır." },

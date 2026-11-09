@@ -6,6 +6,8 @@ import { POSITIONS, type Build } from "./builds.ts";
 import { AUGMENT_QUEUES, docKey, readDoc } from "./statDocs.ts";
 import { STORED_QUEUES } from "./crawler.ts";
 import { proBuilds, proMeta, proPatches, proTeams } from "./pros.ts";
+import { PLATFORMS, type Platform, type RiotClient } from "./riot/client.ts";
+import { parseAsks, scout } from "./scout.ts";
 import type { Store } from "./store.ts";
 
 const MINUTE = 60_000;
@@ -23,6 +25,8 @@ export type AppOptions = {
   augments?: boolean;
   /** Arena item stats; the owner switches them off with ARENA_ITEMS=off. */
   arenaItems?: boolean;
+  /** Looks players up for the loading screen scouting; without a Riot key the route answers 503. */
+  riot?: RiotClient;
   /** Data Dragon items, to name pro builds' styles; without it they have none. */
   catalog?: () => Promise<Catalog>;
 };
@@ -36,10 +40,10 @@ function queueOf(value: string | undefined): number {
 }
 
 /**
- * Every route reads what services/crawler published to D1, so the Worker
- * makes no Riot calls and needs no Riot key.
+ * Every route but /v1/scout reads what services/crawler published to D1, so
+ * the Worker makes no Riot calls for them and needs no Riot key.
  */
-export function createApp(store: Store, { statsDb, catalog, augments = false, arenaItems = true }: AppOptions = {}) {
+export function createApp(store: Store, { statsDb, catalog, riot, augments = false, arenaItems = true }: AppOptions = {}) {
   // Concurrent misses for the same key share one load.
   const pending = new Map<string, Promise<unknown>>();
 
@@ -146,6 +150,13 @@ export function createApp(store: Store, { statsDb, catalog, augments = false, ar
     return c.json((await readDoc(statsDb, docKey.itemTimes(championId, position))) ?? {});
   });
 
+  app.get("/v1/champions/:championId/bench", async (c) => {
+    const { championId, position } = championRequest(c);
+    if (!position) badRequest("position is required");
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    return c.json((await readDoc(statsDb, docKey.bench(420, championId, position))) ?? { minutes: [] });
+  });
+
   app.get("/v1/champions/:championId/synergies", async (c) => {
     const { championId, position } = championRequest(c);
     if (!position) badRequest("position is required");
@@ -237,6 +248,16 @@ export function createApp(store: Store, { statsDb, catalog, augments = false, ar
   app.get("/v1/bans", async (c) => {
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json((await readDoc(statsDb, docKey.bans())) ?? { patches: [], champions: [] });
+  });
+
+  // The one route that calls Riot. Rank and mastery per player, cached for 15 minutes.
+  app.get("/v1/scout", async (c) => {
+    if (!riot) return c.json({ error: "Scouting is not set up" }, 503);
+    const platform = c.req.query("platform") as Platform;
+    if (!PLATFORMS.includes(platform)) badRequest("Unknown platform");
+    const asks = parseAsks(c.req.query("players"));
+    if (!asks) badRequest("Expected up to 10 puuid:championId pairs");
+    return c.json({ players: await scout(riot, store, platform, asks) });
   });
 
   app.onError((error, c) => {
