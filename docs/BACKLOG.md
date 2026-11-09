@@ -196,16 +196,11 @@ Owner feedback 2026-11-09: the app feels useless because everything waits for th
 
 ## 18. Auto pick, ban and lock
 
-- [ ] 18.1 Rust LCU actions behind typed commands: hover a champion, lock it, ban (`PATCH /lol-champ-select/v1/session/actions/{id}` with `championId` and `completed`), accept the ready check (`POST /lol-matchmaking/v1/ready-check/accept`), swap from the ARAM bench (`POST /lol-champ-select/v1/session/bench/swap/{championId}`). Read `/lol-champ-select/v1/pickable-champion-ids` and `bannable-champion-ids`. Unit tests with the recorded session fixtures for finding the player's current action.
-<!-- claimed: auto/18-autopick 2026-11-09 12:34Z -->
-- [ ] 18.2 Pick plan per role: up to three picks and two bans per role in priority order, edited on the pool page (drag to reorder) and saved in `personal`. Skips champions that are banned, taken by anyone or not owned.
-<!-- claimed: auto/18-autopick 2026-11-09 12:34Z -->
-- [ ] 18.3 Auto hover and lock: when the player's pick turn starts, hover the first available plan pick; lock it right away or N seconds before the timer ends (setting: off / hover only / hover and lock, and the seconds). Auto ban the same way. A clear banner in champ select says what Vizier will do and a button cancels it for this game.
-<!-- claimed: auto/18-autopick 2026-11-09 12:34Z -->
-- [ ] 18.4 Lock from Vizier: "Seç" and "Kilitle" buttons on pick suggestions, pool cards and the hover advice; disabled outside the player's turn with the reason in the tooltip.
-<!-- claimed: auto/18-autopick 2026-11-09 12:34Z -->
-- [ ] 18.5 Auto accept ready check (setting, off by default; uses 18.1) and one-click bench swap on the ARAM bench helper.
-<!-- claimed: auto/18-autopick 2026-11-09 12:34Z -->
+- [x] 18.1 Rust LCU actions behind typed commands: hover a champion, lock it, ban (`PATCH /lol-champ-select/v1/session/actions/{id}` with `championId` and `completed`), accept the ready check (`POST /lol-matchmaking/v1/ready-check/accept`), swap from the ARAM bench (`POST /lol-champ-select/v1/session/bench/swap/{championId}`). Read `/lol-champ-select/v1/pickable-champion-ids` and `bannable-champion-ids`. Unit tests with the recorded session fixtures for finding the player's current action. (6ce510d; actions.rs with Rust tests on session JSON; typed wrappers in lcuActions.ts)
+- [x] 18.2 Pick plan per role: up to three picks and two bans per role in priority order, edited on the pool page (drag to reorder) and saved in `personal`. Skips champions that are banned, taken by anyone or not owned. (6ce510d; plan stored in personal, edited under the pool on the Champions page)
+- [x] 18.3 Auto hover and lock: when the player's pick turn starts, hover the first available plan pick; lock it right away or N seconds before the timer ends (setting: off / hover only / hover and lock, and the seconds). Auto ban the same way. A clear banner in champ select says what Vizier will do and a button cancels it for this game. (6ce510d; off by default; hover only or hover and lock, lock now or N s before the end; banner with per-game cancel)
+- [x] 18.4 Lock from Vizier: "Seç" and "Kilitle" buttons on pick suggestions, pool cards and the hover advice; disabled outside the player's turn with the reason in the tooltip. (6ce510d; Seç and Kilitle on pick suggestions, hover advice and pool picks)
+- [x] 18.5 Auto accept ready check (setting, off by default; uses 18.1) and one-click bench swap on the ARAM bench helper. (6ce510d; auto accept off by default; swap button on bench rows)
 
 ## 19. Overlay rebuild: Blitz's overlay feature set
 
@@ -254,6 +249,7 @@ Code health tasks. Do one only when a feature above depends on it.
 Steps that need the owner's credentials or approval. Add to this list; don't run them.
 
 - Release a desktop version to ship epic 17 (auto-import on by default, tray menu, follow the client; Rust changed, so it needs a full build).
+- Release a desktop version to ship epic 18 (auto pick, ban and lock, ready check accept; Rust changed). Auto pick and ban are off by default and set in Settings.
 - Release a desktop version (`pnpm release`) after bumping the patch version.
 - Deploy the Worker (`pnpm --filter @vizier/api deploy`).
 - Apply pending D1 migrations remotely.
