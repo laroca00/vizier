@@ -471,6 +471,7 @@ Ideas the owner asked for on top of the data work: overlay, design and new tools
 - [x] 42.13 Commands in the Ctrl+K palette: overlay, automatic import and automatic accept on or off, shortcut list, welcome. (f86c172)
 - [x] 42.14 Overlay "Rakip Flash takibi": Ctrl+Shift+F1-F5 per enemy role, countdown with Ionian Boots haste; Rust forwards summoner spells. (c17b135)
 - [x] 42.15 Champ select: on the player's ban turn the ban plan comes first and each suggestion can be hovered or banned from Vizier. (6a1a4c0)
+- [x] 42.16 Champion page at-a-glance row: keystone, core items, skill priority, hardest and easiest lane opponent with games. (7127ce3)
 
 ## 16. Only when a feature needs it
 
