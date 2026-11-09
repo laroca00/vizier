@@ -220,14 +220,10 @@ The owner's call: the same overlay features Blitz ships, built fresh in Vizier's
 
 ## 20. Data you can trust
 
-- [ ] 20.1 Crawler throughput report on the VM log and a `/v1/meta/coverage` route: games per patch, per queue and per region, and timeline share, so thin data is visible. Tune the crawl split if timelines lag.
-<!-- claimed: auto/20-trust 2026-11-09 12:54Z -->
-- [ ] 20.2 Thin data fallbacks: where a matchup has too few games, fill from the champion's general build and the closest matchups (same class and damage type), labelled as such, instead of an empty "yeterli veri yok" line. Sections with nothing to show collapse.
-<!-- claimed: auto/20-trust 2026-11-09 12:54Z -->
-- [ ] 20.3 Data Dragon JSON cached per version in IndexedDB (A6) so pages open instantly after the first run.
-<!-- claimed: auto/20-trust 2026-11-09 12:54Z -->
-- [ ] 20.4 Offline and error audit: every page has a clear offline state and retry; the API being down never shows a blank page.
-<!-- claimed: auto/20-trust 2026-11-09 12:54Z -->
+- [x] 20.1 Crawler throughput report on the VM log and a `/v1/meta/coverage` route: games per patch, per queue and per region, and timeline share, so thin data is visible. Tune the crawl split if timelines lag. (c0f58b3; coverage doc, `/v1/meta/coverage`, hourly crawler log; timeline share is about a quarter, split left as is)
+- [x] 20.2 Thin data fallbacks: where a matchup has too few games, fill from the champion's general build and the closest matchups (same class and damage type), labelled as such, instead of an empty "yeterli veri yok" line. Sections with nothing to show collapse. (c0f58b3; pooled stand-in from same-class opponents in the matchup guide and hover line, empty lane panel collapses)
+- [x] 20.3 Data Dragon JSON cached per version in IndexedDB (A6) so pages open instantly after the first run. (c0f58b3; IndexedDB cache per version, last version kept for offline)
+- [x] 20.4 Offline and error audit: every page has a clear offline state and retry; the API being down never shows a blank page. (c0f58b3; offline chip in the top bar, retry states on matchup, pro meta and champ select)
 
 ## 21. Lobby and queue (picks up 10.1 and 10.2)
 

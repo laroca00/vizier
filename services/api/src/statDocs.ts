@@ -2,12 +2,8 @@
 // to D1's stat_docs as finished JSON; the Worker only reads them. Keys are
 // shared here so both sides agree.
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
-<<<<<<< HEAD
-import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
-=======
 import { coverage } from "./coverage.ts";
-import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
->>>>>>> auto/20-trust
+import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
 
 // Queues with augments: Arena and ARAM Mayhem.
 export const AUGMENT_QUEUES = [1700, 2400];
