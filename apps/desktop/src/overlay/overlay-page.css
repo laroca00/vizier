@@ -42,3 +42,30 @@
   display: grid;
   gap: 4px;
 }
+
+.overlay-widgets__ref {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overlay-widgets__ref li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.overlay-widgets__move {
+  display: flex;
+  gap: 4px;
+}
+
+.overlay-widgets__move button {
+  padding: 0 8px;
+  border-radius: 6px;
+  color: inherit;
+  background: var(--hover);
+}

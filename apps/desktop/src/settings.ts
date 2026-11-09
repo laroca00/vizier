@@ -3,6 +3,7 @@ import { DEFAULT_HOME, type HomeLayout } from "./home/layout";
 import { withAutoImportOn } from "./autoImportDefault";
 import type { AutopilotMode } from "./autopilot";
 import type { LanguageSetting } from "./i18n";
+import { DEFAULT_REF, type RefSection } from "./overlay/reference";
 import type { OverlayTheme, WidgetStyles } from "./overlay/appearance";
 
 export type Settings = {
@@ -43,6 +44,9 @@ export type Settings = {
   overlayTimers: boolean;
   /** In Arena and ARAM Mayhem, the champion's best augments of each rarity. */
   overlayAugments: boolean;
+  /** The quick reference panel and the blocks it holds, in order. */
+  overlayReference: boolean;
+  overlayRefSections: RefSection[];
   /** The build panel that opens on its hotkey. */
   overlayBuild: boolean;
   /** Objective and camp timers drawn on the minimap. */
@@ -91,6 +95,8 @@ const DEFAULTS: Settings = {
   overlayTimers: true,
   overlayAugments: true,
   overlayBuild: true,
+  overlayReference: true,
+  overlayRefSections: DEFAULT_REF,
   overlayMinimap: true,
   overlayMinimapSide: "right",
   overlayMinimapSize: 0.5,

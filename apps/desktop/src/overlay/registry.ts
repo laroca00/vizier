@@ -3,7 +3,7 @@ import type { Settings } from "../settings";
 // What the overlay can show. This file holds only data; each widget's
 // drawing lives in widgets/ and is looked up by id.
 
-export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build";
+export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build" | "reference";
 export type OverlayMode = "rift" | "aram" | "arena" | "mayhem";
 export type Spot = { x: number; y: number };
 
@@ -29,6 +29,7 @@ export const SCOREBOARD_SPOT: Spot = { x: 0.482, y: 0.318 };
 export const SKILL_SPOT: Spot = { x: 0.372, y: 0.82 };
 export const SKILL_ORDER_SPOT: Spot = { x: 0.3, y: 0.74 };
 export const BUILD_SPOT: Spot = { x: 0.012, y: 0.3 };
+export const REFERENCE_SPOT: Spot = { x: 0.012, y: 0.62 };
 
 export const WIDGETS: readonly WidgetDef[] = [
   {
@@ -54,6 +55,14 @@ export const WIDGETS: readonly WidgetDef[] = [
     modes: ["rift", "aram"],
     settings: ["overlayBuild"],
     defaultSpot: BUILD_SPOT,
+  },
+  {
+    id: "reference",
+    name: "Hızlı bakış",
+    hint: "Seçtiğin bloklar kısayolla açılır: build, rünler, yetenek sırası, kombo, eşleşme notu ve eşya bilgisi.",
+    modes: ["rift", "aram"],
+    settings: ["overlayReference"],
+    defaultSpot: REFERENCE_SPOT,
   },
   { id: "next", name: "Sıradaki eşya", hint: "Seçtiğin build türünde henüz almadığın ilk eşya ve ona kalan altın.", modes: MODES, settings: ["overlayNextItem"] },
   { id: "timers", name: "Süreler", hint: "Ejder, Baron ve inhibitör süreleri ile elle başlatılan zamanlayıcılar.", modes: MODES, settings: ["overlayObjectives", "overlayTimers"] },

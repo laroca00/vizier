@@ -6,6 +6,7 @@ import type { WidgetContext } from "./context";
 export const hasContent: Record<WidgetId, (ctx: WidgetContext, settings: Settings) => boolean> = {
   skill: (ctx) => ctx.skill !== null,
   build: (ctx) => ctx.buildPanel.shown && (ctx.buildPanel.items.length > 0 || ctx.skillOrder.keys.length > 0),
+  reference: (ctx, settings) => ctx.reference.shown && settings.overlayRefSections.length > 0,
   next: (ctx) => ctx.nextItem !== null && ctx.version !== null,
   timers: (ctx, settings) => ctx.objectives.length > 0 || settings.overlayTimers,
   skillOrder: (ctx) => ctx.skillOrder.shown && ctx.skillOrder.keys.length > 0,

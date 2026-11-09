@@ -8,6 +8,7 @@ import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
 import { HOTKEY_ACTIONS, changedHotkeys, clashing, comboFromEvent, effectiveHotkeys } from "../overlay/hotkeys";
 import { OPACITY_RANGE, SCALE_RANGE, THEMES, normalizeStyle, withWidgetStyle, type OverlayTheme } from "../overlay/appearance";
+import { REF_NAMES, REF_SECTIONS, moveRef, toggleRef } from "../overlay/reference";
 import { WIDGETS, type OverlayMode } from "../overlay/registry";
 import { WidgetPreview } from "../overlay/WidgetPreview";
 import type { ToggleKey } from "./SettingsPage";
@@ -129,6 +130,24 @@ export function OverlayPage() {
                     <span>{Math.round(normalizeStyle(settings.overlayWidgetStyles[def.id]).opacity * 100)}%</span>
                   </label>
                 </div>
+                {def.id === "reference" && (
+                  <ul className="overlay-widgets__ref" aria-label={t("Bloklar")}>
+                    {[...settings.overlayRefSections, ...REF_SECTIONS.filter((s) => !settings.overlayRefSections.includes(s))].map((section) => {
+                      const on = settings.overlayRefSections.includes(section);
+                      return (
+                        <li key={section}>
+                          <Toggle label={t(REF_NAMES[section])} checked={on} disabled={off} onChange={() => updateSettings({ overlayRefSections: toggleRef(settings.overlayRefSections, section) })} />
+                          {on && (
+                            <span className="overlay-widgets__move">
+                              <button type="button" aria-label={t("Yukarı taşı")} onClick={() => updateSettings({ overlayRefSections: moveRef(settings.overlayRefSections, section, -1) })}>↑</button>
+                              <button type="button" aria-label={t("Aşağı taşı")} onClick={() => updateSettings({ overlayRefSections: moveRef(settings.overlayRefSections, section, 1) })}>↓</button>
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
                 {def.settings.map((key) => (
                   <Toggle
                     key={key}

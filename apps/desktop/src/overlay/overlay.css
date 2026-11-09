@@ -502,3 +502,22 @@ html:has(.overlay) body {
 .overlay__zoom {
   zoom: var(--widget-scale, 1);
 }
+
+.overlay__ref {
+  gap: 8px;
+}
+
+.overlay__ref-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overlay__ref-list li,
+.overlay__ref-note {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+}

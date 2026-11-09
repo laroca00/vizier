@@ -44,6 +44,25 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           </p>
         </section>
       )}
+      {id === "reference" && (
+        <section className="overlay__card">
+          <p className="overlay__skillstrip">
+            {["Q", "W", "E", "Q", "Q", "R"].map((k, i) => (
+              <span key={i} data-done={i < 2 || undefined}>
+                {k}
+              </span>
+            ))}
+          </p>
+          <p className="overlay__row">
+            <span>Q → AA → W</span>
+            <span className="overlay__value">{t("Kombo")}</span>
+          </p>
+          <p className="overlay__row">
+            <span>{t("Eşleşme notu")}</span>
+            <span className="overlay__value">···</span>
+          </p>
+        </section>
+      )}
       {id === "next" && (
         <section className="overlay__card overlay__next">
           <span className="widget-preview__icon" />
