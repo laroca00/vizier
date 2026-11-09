@@ -24,6 +24,7 @@ import { Tabs } from "../ui/Tabs";
 import { PoolMoves } from "../PoolMovesPanel";
 import { PoolExportButton } from "../PoolExportButton";
 import { PoolCoverage } from "./PoolCoverage";
+import { PickPlanPanel } from "./PickPlanPanel";
 import { useAsync } from "../useAsync";
 
 const ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
@@ -274,6 +275,7 @@ function PoolManager({ data, onOpenChampion }: { data: Data; onOpenChampion: Pro
             ))}
         </div>
       )}
+      <PickPlanPanel champions={data.champions} version={data.version} />
       <PoolMoves onOpenChampion={onOpenChampion} />
       <PoolCoverage data={data} />
     </>

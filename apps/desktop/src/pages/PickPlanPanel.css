@@ -1,0 +1,68 @@
+.plan {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.plan__hint {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--glaze-muted);
+}
+
+.plan__roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-3);
+}
+
+.plan__role {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-item);
+  background: var(--hover);
+}
+
+.plan__role-name {
+  margin: 0;
+  font-size: var(--text-small);
+}
+
+.plan__kind {
+  font-size: var(--text-small);
+  color: var(--glaze-muted);
+}
+
+.plan__list {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 2px 4px;
+  border-radius: var(--radius-item);
+  cursor: grab;
+}
+
+.plan__rank {
+  width: 1.2em;
+  color: var(--gilt);
+  font-weight: 600;
+  text-align: center;
+}
+
+.plan__name {
+  flex: 1;
+}
+
+.plan__empty {
+  color: var(--glaze-faint);
+  font-size: var(--text-small);
+}

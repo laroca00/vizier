@@ -4,6 +4,8 @@ import { championIconUrl, type Champion } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
 import { usePersonal } from "../personal";
 import { useAsync } from "../useAsync";
+import { LockButtons } from "./LockButtons";
+import type { DraftTurn } from "../lcu";
 import { suggestPicks, type Need, type PickReason, type ScoreBreakdown } from "./logic";
 
 const NEED_TEXT: Record<Need, string> = {
@@ -31,12 +33,14 @@ type Props = {
   version: string;
   /** Makes each row a button, as in the draft simulator. */
   onPick?: (championId: number) => void;
+  /** In champ select, each row gets Seç and Kilitle buttons. */
+  turn?: DraftTurn | null;
   /** Fewer rows where space is tight. */
   limit?: number;
 };
 
 /** Picks for the player's role from the meta, the lane opponent and what the team lacks. */
-export function PickSuggestions({ role, opponentId, allies, unavailable, champions, version, onPick, limit }: Props) {
+export function PickSuggestions({ role, opponentId, allies, unavailable, champions, version, onPick, limit, turn }: Props) {
   const t = useT();
   const lang = useLang();
   const { pool } = usePersonal();
@@ -115,6 +119,7 @@ export function PickSuggestions({ role, opponentId, allies, unavailable, champio
                   ))}
                 </ul>
               </div>
+              {turn !== undefined && <LockButtons championId={pick.championId} championName={champion.name} turn={turn} gone={unavailable} />}
             </li>
           );
         })}

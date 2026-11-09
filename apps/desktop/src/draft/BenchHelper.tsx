@@ -1,6 +1,10 @@
+import { isTauri } from "@tauri-apps/api/core";
 import { getTierList } from "../api";
 import { championIconUrl, type Champion } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
+import { swapFromBench } from "../lcuActions";
+import { Button } from "../ui/Button";
+import { useToast } from "../ui/Toast";
 import { useAsync } from "../useAsync";
 import { rankBench, rerollAdvice, type BenchSource } from "./bench";
 
@@ -12,6 +16,7 @@ type Props = { current: number; rerolls: number; bench: number[]; allies: number
 export function BenchHelper({ current, rerolls, bench, allies, champions, version }: Props) {
   const t = useT();
   const lang = useLang();
+  const toast = useToast();
   const [tiers] = useAsync("tiers:ALL:450", () => getTierList("ALL", 450));
   if (tiers.status !== "done") return null;
   const rows = rankBench({ tierList: tiers.value.champions, current, bench, allies });
@@ -51,6 +56,17 @@ export function BenchHelper({ current, rerolls, bench, allies, champions, versio
                   {row.take && <li data-kind="counter">{t("Sıradan bunu al")}</li>}
                 </ul>
               </div>
+              {row.source === "bench" && (
+                <Button
+                  size="small"
+                  variant={row.take ? "primary" : "secondary"}
+                  disabled={!isTauri()}
+                  aria-label={t("{champion} ile değiştir", { champion: champion.name })}
+                  onClick={() => swapFromBench(row.championId).catch(() => toast("error", t("Değiştirilemedi. Şampiyon başkası tarafından alınmış olabilir.")))}
+                >
+                  {t("Değiştir")}
+                </Button>
+              )}
             </li>
           );
         })}

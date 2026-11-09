@@ -12,7 +12,7 @@ import { clientOpened, gameEdge, isTrayAction } from "./followClient";
 import { OpenProProvider } from "./proLink";
 import { OpenChampionProvider } from "./championLink";
 import { OpenMatchupProvider } from "./matchupLink";
-import { useReadyCheckAlert } from "./readyCheck";
+import { useAutoAcceptReady, useReadyCheckAlert } from "./readyCheck";
 import { enteredQueueFlow, planPreload, runPreload } from "./preload";
 import { SearchPalette } from "./SearchPalette";
 import { SharePaste } from "./library/SharePaste";
@@ -143,6 +143,7 @@ function App() {
 
   useEffect(() => setClientLocale(clientLocale), [clientLocale]);
   useReadyCheckAlert(phase, settings.readyCheckAlert);
+  useAutoAcceptReady(phase, settings.autoAcceptReady);
 
   // Champ select opens faster when its data is already cached from the lobby.
   const personal = usePersonal();

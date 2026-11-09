@@ -17,8 +17,10 @@ import { ArenaItems } from "../draft/ArenaItems";
 import { ArenaDuo } from "../draft/ArenaDuo";
 import { isArena } from "../draft/arena";
 import { BenchHelper } from "../draft/BenchHelper";
+import { LockButtons } from "../draft/LockButtons";
 import { HoverMatchup } from "../draft/HoverMatchup";
 import { ChampionAugments } from "../augments/ChampionAugments";
+import { AutopilotBanner } from "../draft/AutopilotBanner";
 import { BanPlanner } from "../draft/BanPlannerPanel";
 import { autoView, draftQueue, duoPartnerRole, hasBench, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
@@ -30,7 +32,7 @@ import { useOpponent, type Opponent } from "../draft/useOpponent";
 import { formatPercent, useLang, useT } from "../i18n";
 import { JournalNote, NotePreview, useMatchupTemplate } from "../Journal";
 import { draftPhaseLabel, positionLabel } from "../labels";
-import type { ChampSelect, DraftMember } from "../lcu";
+import type { ChampSelect, DraftMember, DraftTurn } from "../lcu";
 import { MatchupLink } from "../matchupLink";
 import { championNoteKey, matchupNoteKey, usePersonal } from "../personal";
 import { MAYHEM } from "../queues";
@@ -133,6 +135,8 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
         </p>
       </header>
 
+      {ready && <AutopilotBanner draft={draft} seconds={seconds} champions={ready.champions} />}
+
       <div className="draft__body">
         <section key={view} className="draft__main draft__view" aria-label={view === "draft" ? t("Draft") : t("Build")}>
           {view === "draft" ? (
@@ -167,6 +171,8 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                   opponent={ready.champions.get(vs)!}
                   guessed={opponent?.guessed ?? false}
                   version={ready.version}
+                  turn={draft.turn ?? null}
+                  gone={unavailable}
                 />
               )}
               {role && !locked && ready && (
@@ -179,6 +185,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
                     unavailable={unavailable}
                     champions={ready.champions}
                     version={ready.version}
+                    turn={draft.turn ?? null}
                   />
                 </>
               )}
@@ -197,7 +204,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
               )}
               {ready && enemyPicks.length > 0 && <ThreatsPanel enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c): c is Champion => c !== undefined)} />}
               {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} aram={hasBench(draft)} />}
-              {ready && me && <PoolStrip position={me.position} data={ready} opponentId={vs} />}
+              {ready && me && <PoolStrip position={me.position} data={ready} opponentId={vs} turn={draft.turn ?? null} gone={unavailable} />}
             </>
           ) : me && ready && myChampion > 0 ? (
             <>
@@ -494,7 +501,7 @@ function DraftMatchups({ championId, position, data }: { championId: number; pos
  * The player's pool for this role, main picks first. With a lane opponent
  * known, each pick shows how it does against that opponent.
  */
-function PoolStrip({ position, data, opponentId }: { position: string; data: StaticData; opponentId: number | null }) {
+function PoolStrip({ position, data, opponentId, turn, gone }: { position: string; data: StaticData; opponentId: number | null; turn: DraftTurn | null; gone: ReadonlySet<number> }) {
   const t = useT();
   const lang = useLang();
   const { pool } = usePersonal();
@@ -521,6 +528,7 @@ function PoolStrip({ position, data, opponentId }: { position: string; data: Sta
                 {champion?.name}
                 {m && <span className="strip__vs">{t("{rate}, {games} maç", { rate: formatPercent(1 - m.winRate, lang), games: m.games })}</span>}
               </span>
+              {champion && <LockButtons championId={p.championId} championName={champion.name} turn={turn} gone={gone} />}
             </li>
           );
         })}
