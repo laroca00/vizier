@@ -237,6 +237,39 @@ describe("benchmark", () => {
     expect((await benchStats(db, 103, "TOP")).minutes).toEqual([]);
   });
 
+  it("adds kills, deaths, assists and kill participation when timelines carried them", async () => {
+    // The player kills at minute 2, dies at minute 4 and kills again at minute 6.
+    const events = (minute: number) =>
+      minute === 2
+        ? [{ type: "CHAMPION_KILL", timestamp: 110_000, killerId: 1, victimId: 6, assistingParticipantIds: [] }]
+        : minute === 4
+          ? [{ type: "CHAMPION_KILL", timestamp: 230_000, killerId: 6, victimId: 1, assistingParticipantIds: [] }]
+          : minute === 6
+            ? [{ type: "CHAMPION_KILL", timestamp: 350_000, killerId: 1, victimId: 7, assistingParticipantIds: [] }]
+            : [];
+    const withKills = {
+      info: { frames: timeline.info.frames.map((f, minute) => ({ ...f, events: events(minute) })) },
+    };
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, noRiot);
+    for (let n = 1; n <= 20; n++) {
+      const match = game(n, true);
+      match.metadata.matchId = `TR1_K${n}`;
+      match.info.participants = [player(1, 100, 103, true)];
+      await crawler.save(match, withKills);
+    }
+    await rollup(db, noCatalog);
+    const { minutes } = await benchStats(db, 103, "MIDDLE");
+    const at = (m: number) => minutes.find((x) => x.minute === m)!;
+    expect(at(3)).toMatchObject({ kdaGames: 20, kills: 1, deaths: 0, assists: 0, killParticipation: 1 });
+    expect(at(8)).toMatchObject({ kills: 2, deaths: 1, assists: 0, killParticipation: 1 });
+  });
+
+  it("keeps CS and level when no game carried kills", async () => {
+    const { minutes } = await benchStats(await seedBench(20), 103, "MIDDLE");
+    expect(minutes[0].killParticipation).toBeUndefined();
+  });
+
   it("hides minutes with too few games", async () => {
     expect((await benchStats(await seedBench(5), 103, "MIDDLE")).minutes).toEqual([]);
   });

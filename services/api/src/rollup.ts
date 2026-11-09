@@ -1,6 +1,7 @@
 import { buildStyle, foeProfiles, type Catalog } from "./archetypes.ts";
 import { maxOrder, parseRuneKey } from "./builds.ts";
 import { loadCatalog } from "./ddragon.ts";
+import { decodeKda } from "./timeline.ts";
 
 const RANKED_SOLO = 420;
 const ARENA = 1700;
@@ -38,6 +39,7 @@ type Raw = {
   first_blood: number | null;
   purchase_times: string | null;
   level_minutes: string | null;
+  kda_minutes: string | null;
 };
 
 type Count = { patch: string; queue: number; position: string; champion: number; kind: string; value: string; games: number; wins: number };
@@ -82,30 +84,43 @@ function laneUpserts(db: D1Database, sums: Map<string, LaneSum>) {
 /** Minutes the benchmark keeps; the app interpolates between them. */
 export const BENCH_MINUTES = [3, 5, 8, 10, 12, 15];
 
-type BenchSum = { patch: string; position: string; champion: number; minute: number; games: number; cs: number; level: number };
+type BenchSum = { patch: string; position: string; champion: number; minute: number; games: number; cs: number; level: number; kdaGames: number; kills: number; deaths: number; assists: number; teamKills: number };
 
 /** CS and level at the sample minutes, for ranked games whose timeline covered all 15. */
 export function addBench(sums: Map<string, BenchSum>, row: Raw) {
   if (!row.team_position || row.queue_id !== RANKED_SOLO || !row.cs_minutes || !row.level_minutes) return;
   const cs = ids(row.cs_minutes);
   const level = ids(row.level_minutes);
+  const kda = decodeKda(row.kda_minutes);
   if (cs.length < 15 || level.length < 15) return;
   for (const minute of BENCH_MINUTES) {
     const key = [row.patch, row.team_position, row.champion_id, minute].join("\t");
-    const sum = sums.get(key) ?? { patch: row.patch, position: row.team_position, champion: row.champion_id, minute, games: 0, cs: 0, level: 0 };
+    const sum = sums.get(key) ?? { patch: row.patch, position: row.team_position, champion: row.champion_id, minute, games: 0, cs: 0, level: 0, kdaGames: 0, kills: 0, deaths: 0, assists: 0, teamKills: 0 };
     sum.games++;
     sum.cs += cs[minute - 1];
     sum.level += level[minute - 1];
+    // Rows from before the series was kept still count for CS and level.
+    const point = kda.length >= 15 ? kda[minute - 1] : undefined;
+    if (point) {
+      sum.kdaGames++;
+      sum.kills += point.kills;
+      sum.deaths += point.deaths;
+      sum.assists += point.assists;
+      sum.teamKills += point.teamKills;
+    }
     sums.set(key, sum);
   }
 }
 
 function benchUpserts(db: D1Database, sums: Map<string, BenchSum>) {
   const statement = db.prepare(
-    `INSERT INTO bench_sums (patch, team_position, champion_id, minute, games, cs, level) VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT DO UPDATE SET games = games + excluded.games, cs = cs + excluded.cs, level = level + excluded.level`,
+    `INSERT INTO bench_sums (patch, team_position, champion_id, minute, games, cs, level, kda_games, kills, deaths, assists, team_kills)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT DO UPDATE SET games = games + excluded.games, cs = cs + excluded.cs, level = level + excluded.level,
+        kda_games = kda_games + excluded.kda_games, kills = kills + excluded.kills, deaths = deaths + excluded.deaths,
+        assists = assists + excluded.assists, team_kills = team_kills + excluded.team_kills`,
   );
-  return [...sums.values()].map((b) => statement.bind(b.patch, b.position, b.champion, b.minute, b.games, b.cs, b.level));
+  return [...sums.values()].map((b) => statement.bind(b.patch, b.position, b.champion, b.minute, b.games, b.cs, b.level, b.kdaGames, b.kills, b.deaths, b.assists, b.teamKills));
 }
 
 type ItemTime = { patch: string; position: string; champion: number; item: number; games: number; seconds: number };
@@ -220,7 +235,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const { results } = await db
       .prepare(
         `SELECT rowid, match_id, patch, queue_id, team_position, champion_id, win, runes, spells, items, start_items,
-            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes
+            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes
           FROM participant_stats WHERE rowid > ? ORDER BY rowid LIMIT ?`,
       )
       .bind(from, CHUNK)
