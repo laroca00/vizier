@@ -119,6 +119,14 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
             <span>{t("Seviye, ortalama {level}", { level: 6.5 })}</span>
             <span className="overlay__value">−0.5</span>
           </p>
+          <p className="overlay__row">
+            <span>{t("K/D/A, ortalama {kda}", { kda: "1.2/0.9/1.8" })}</span>
+            <span className="overlay__value">2/1/3</span>
+          </p>
+          <p className="overlay__row" data-ahead="true">
+            <span>{t("Kill katılımı, ortalama %{kp}", { kp: 52 })}</span>
+            <span className="overlay__value">%60</span>
+          </p>
         </section>
       )}
       {id === "augments" && (

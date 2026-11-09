@@ -41,3 +41,32 @@ describe("history", () => {
     expect(sparkline([0, 5, -5], 100, 20).split(" ")).toHaveLength(3);
   });
 });
+
+describe("kills and assists", () => {
+  const withKda = [
+    { minute: 5, games: 40, cs: 40, level: 4, kdaGames: 30, kills: 0.5, deaths: 0.4, assists: 0.6, killParticipation: 0.4 },
+    { minute: 10, games: 30, cs: 80, level: 6, kdaGames: 25, kills: 1.5, deaths: 1, assists: 2.5, killParticipation: 0.6 },
+  ];
+  it("interpolates counts from zero and shares between samples", () => {
+    const early = expectedAt(withKda, 2.5)!;
+    expect(early.kda).toEqual({ kills: 0.25, deaths: 0.2, assists: 0.3, games: 30 });
+    expect(early.kp).toBeUndefined();
+    const mid = expectedAt(withKda, 7.5)!;
+    expect(mid.kda).toMatchObject({ kills: 1, games: 25 });
+    expect(mid.kda!.deaths).toBeCloseTo(0.7);
+    expect(mid.kda!.assists).toBeCloseTo(1.55);
+    expect(mid.kp).toEqual({ share: 0.5, games: 25 });
+  });
+  it("leaves them out where the data has none", () => {
+    expect(expectedAt(minutes, 7.5)?.kda).toBeUndefined();
+    expect(expectedAt([{ ...withKda[0] }, { minute: 10, games: 30, cs: 80, level: 6 }], 7.5)?.kda).toBeUndefined();
+  });
+  it("reads your share against the average", () => {
+    const read = benchRead({ cs: 50, level: 5, kills: 2, assists: 3, teamKills: 8 }, expectedAt(withKda, 7.5)!);
+    expect(read.kp).toEqual({ avg: 50, own: 63, diff: 13, games: 25 });
+    expect(read.kda).toMatchObject({ kills: 1, deaths: 0.7, games: 25 });
+  });
+  it("has no share while the team has no kill", () => {
+    expect(benchRead({ cs: 5, level: 5, kills: 0, assists: 0, teamKills: 0 }, expectedAt(withKda, 7.5)!).kp).toMatchObject({ own: null, diff: null });
+  });
+});

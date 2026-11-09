@@ -362,7 +362,7 @@ export function getScout(platform: string, asks: { puuid: string; championId: nu
   return request<{ players: ScoutPlayer[] }>(`/v1/scout?platform=${platform}&players=${players}`);
 }
 
-export type BenchMinute = { minute: number; games: number; cs: number; level: number };
+export type BenchMinute = { minute: number; games: number; cs: number; level: number; kdaGames?: number; kills?: number; deaths?: number; assists?: number; killParticipation?: number };
 
 /** Average CS and level of ranked games at a few minutes; empty until enough timelines were crawled. */
 export function getBench(championId: number, position: string) {

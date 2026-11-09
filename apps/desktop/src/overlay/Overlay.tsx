@@ -144,7 +144,16 @@ export function Overlay() {
   const wantBench = settings.overlayBench && mode === "rift" && championId !== null && position !== null && time / 60 <= BENCH_END_MINUTE;
   const [benchDoc] = useAsync(wantBench ? `bench:${championId}:${position}` : null, () => getBench(championId!, position!).catch(() => null));
   const expected = wantBench && benchDoc.status === "done" && benchDoc.value ? expectedAt(benchDoc.value.minutes, time / 60) : null;
-  const benchNow = expected && me ? benchRead({ cs: me.scores.creepScore, level: me.level }, expected) : null;
+  const benchNow = expected && me ? benchRead(
+        {
+          cs: me.scores.creepScore,
+          level: me.level,
+          kills: me.scores.kills,
+          assists: me.scores.assists,
+          teamKills: game!.players.filter((p) => p.team === me.team).reduce((sum, p) => sum + p.scores.kills, 0),
+        },
+        expected,
+      ) : null;
   const [csHistory, setCsHistory] = useState<{ at: number; diff: number }[]>([]);
   const csDiff = benchNow?.csDiff;
   useEffect(() => {
