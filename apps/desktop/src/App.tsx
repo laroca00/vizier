@@ -50,6 +50,7 @@ const CombosPage = lazy(() => import("./pages/CombosPage").then((m) => ({ defaul
 const MatrixPage = lazy(() => import("./pages/MatrixPage").then((m) => ({ default: m.MatrixPage })));
 const ChallengePage = lazy(() => import("./pages/ChallengePage").then((m) => ({ default: m.ChallengePage })));
 const SynergyPage = lazy(() => import("./pages/SynergyPage").then((m) => ({ default: m.SynergyPage })));
+const TemplatesPage = lazy(() => import("./pages/TemplatesPage").then((m) => ({ default: m.TemplatesPage })));
 const LabPage = lazy(() => import("./pages/LabPage").then((m) => ({ default: m.LabPage })));
 const JournalPage = lazy(() => import("./pages/JournalPage").then((m) => ({ default: m.JournalPage })));
 const ItemsPage = lazy(() => import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage })));
@@ -79,6 +80,7 @@ const LABELS: Record<Page, string> = {
   archetypes: "Şampiyon tipleri",
   matrix: "Karşı seçim matrisi",
   challenge: "Draft meydan okuması",
+  templates: "Takım şablonları",
   synergy: "Sinerji gezgini",
   items: "Eşyalar",
   runes: "Rünler",
@@ -314,6 +316,7 @@ function App() {
         { id: "archetypes", label: "Şampiyon tipleri", icon: "archetypes" },
         { id: "matrix", label: "Karşı seçim matrisi", icon: "matchup" },
         { id: "challenge", label: "Draft meydan okuması", icon: "quiz" },
+        { id: "templates", label: "Takım şablonları", icon: "simulator" },
         { id: "synergy", label: "Sinerji gezgini", icon: "archetypes" },
       ],
     },
@@ -425,6 +428,8 @@ function App() {
               <LabPage route={route} onChange={replace} />
             ) : route.page === "synergy" ? (
               <SynergyPage route={route} onChange={replace} onOpenChampion={(id, position) => openChampion(id, position)} />
+            ) : route.page === "templates" ? (
+              <TemplatesPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "challenge" ? (
               <ChallengePage />
             ) : route.page === "matrix" ? (

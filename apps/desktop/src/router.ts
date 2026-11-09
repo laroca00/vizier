@@ -24,6 +24,7 @@ export type Route =
   | { page: "lab"; championId: number | null; position: string }
   | { page: "matrix"; position: string }
   | { page: "challenge" }
+  | { page: "templates" }
   | { page: "synergy"; championId: number | null; position: string }
   | { page: "items"; itemId?: number }
   | { page: "runes"; runeId?: number }
