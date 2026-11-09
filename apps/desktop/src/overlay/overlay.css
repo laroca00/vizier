@@ -695,3 +695,29 @@ html:has(.overlay) body {
   border-left: 2px solid var(--gilt);
   color: var(--glaze-muted);
 }
+
+/* Enemy Flash countdowns; a Flash that is back reads in the bad-news colour for a moment. */
+.overlay__flashes {
+  gap: 4px;
+}
+
+.overlay__flash {
+  align-items: center;
+}
+
+.overlay__flash-who {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.overlay__flash-who img,
+.overlay__flash-who .widget-preview__icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.overlay__flash[data-ready] .overlay__value {
+  color: #f08a7c;
+}

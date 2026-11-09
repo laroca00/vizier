@@ -176,7 +176,7 @@ fn set_background(window: tauri::WebviewWindow, state: tauri::State<'_, MainMemo
 /// The first two work whenever Vizier runs; the rest are manual timers that
 /// are registered only while a game runs, so the combinations stay free in
 /// every other app.
-const DEFAULT_HOTKEYS: [(&str, &str); 18] = [
+const DEFAULT_HOTKEYS: [(&str, &str); 23] = [
     ("toggle", "Ctrl+Shift+O"),
     ("edit", "Ctrl+Shift+L"),
     ("blue", "Ctrl+Shift+1"),
@@ -195,6 +195,12 @@ const DEFAULT_HOTKEYS: [(&str, &str); 18] = [
     ("augments", "Ctrl+Shift+A"),
     ("build", "Ctrl+Shift+I"),
     ("reference", "Ctrl+Shift+J"),
+    // An enemy used Flash: top, jungle, mid, bottom, support.
+    ("flash1", "Ctrl+Shift+F1"),
+    ("flash2", "Ctrl+Shift+F2"),
+    ("flash3", "Ctrl+Shift+F3"),
+    ("flash4", "Ctrl+Shift+F4"),
+    ("flash5", "Ctrl+Shift+F5"),
 ];
 
 fn is_timer_action(action: &str) -> bool {

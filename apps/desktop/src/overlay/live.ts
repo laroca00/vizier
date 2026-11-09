@@ -13,6 +13,8 @@ export type LivePlayer = {
   isDead?: boolean;
   /** Seconds until respawn; only meaningful while `isDead`. */
   respawnTimer?: number;
+  /** Data Dragon ids of the summoner spells, such as "SummonerFlash". */
+  spells?: string[];
 };
 
 export type LiveEvent = {

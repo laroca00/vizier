@@ -43,6 +43,7 @@ import { CLOCK_TICK_MS } from "./tick";
 import { useManualTimers } from "./Timers";
 import { fallenPlayers, readWindow } from "./opportunity";
 import { readDragons } from "./dragons";
+import { FLASH_SLOTS, flashTimers, type FlashSlot } from "./flash";
 import { newSpikes, sampleSpikes, shownSpikes, type Spike } from "./spikes";
 import type { LiveGame as Game } from "./live";
 import "./overlay.css";
@@ -222,6 +223,19 @@ export function Overlay() {
     return { counters, foe, threat: foe && detail ? threatOf(foe, detail.abilities) : null };
   });
 
+  // Enemy Flashes the player marked with a hotkey, by slot, at the game time of the press.
+  const [flashPresses, setFlashPresses] = useState<Partial<Record<FlashSlot, number>>>({});
+  const clockRef = useRef(time);
+  clockRef.current = time;
+  useEffect(() => {
+    if (!isTauri()) return;
+    const off = listen<string>("overlay-timer", ({ payload }) => {
+      if (payload === "clear") setFlashPresses({});
+      else if ((FLASH_SLOTS as readonly string[]).includes(payload)) setFlashPresses((p) => ({ ...p, [payload]: clockRef.current }));
+    });
+    return () => void off.then((stop) => stop());
+  }, []);
+
   // Enemy power spikes come from comparing each update with the one before.
   const [spikeLog, setSpikeLog] = useState<Spike[]>([]);
   const lastGame = useRef<Game | null>(null);
@@ -322,8 +336,9 @@ export function Overlay() {
     championName: (key) => championNames?.get(key) ?? key,
     dragons: settings.overlayDragons && mode === "rift" ? readDragons(game, me.team) : null,
     plan: planShown(time, plan, editing) ? plan : null,
+    flashes: settings.overlayFlash ? flashTimers(editing && Object.keys(flashPresses).length === 0 ? { flash3: time - 120 } : flashPresses, game, me.team, time) : [],
     opportunity: { fallen, window: readWindow(fallen, time, timers, mode === "rift") },
-    spikes: settings.overlaySpikes ? shownSpikes(liveGame ? spikeLog : editing ? sampleSpikes(game.gameTime) : [], time) : [],
+    spikes: settings.overlaySpikes ? shownSpikes(editing && shownSpikes(spikeLog, time).length === 0 ? sampleSpikes(time) : spikeLog, time) : [],
   };
 
   const move = (id: WidgetId, spot: Spot, done: boolean) => (done ? save : preview)({ ...layout, [id]: spot });
