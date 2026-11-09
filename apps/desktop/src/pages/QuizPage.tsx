@@ -32,6 +32,7 @@ import { useAsync } from "../useAsync";
 import { useToast } from "../ui/Toast";
 import { ItemGame } from "../quiz/ItemGame";
 import { TimedItemGame } from "../quiz/TimedItemGame";
+import { ExamGame } from "../quiz/ExamGame";
 import { StatsView } from "../quiz/StatsView";
 import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
 
@@ -44,7 +45,7 @@ const MODE_LABELS: Record<QuizMode, { label: string; hint: string }> = {
   item: { label: "Eşya", hint: "Bulanık bir eşya ikonu. Her yanlış tahminde netleşir; sonra fiyatı ve ilk harfi açılır." },
 };
 
-type Play = "daily" | "free" | "timed" | "stats";
+type Play = "daily" | "free" | "timed" | "exam" | "stats";
 
 export function QuizPage() {
   const t = useT();
@@ -57,7 +58,7 @@ export function QuizPage() {
     <LiquidGlass className="panel tiers quiz" radius={28} strength={2.5} scroll>
       <PageHeader
         title={t("Şampiyon bilmecesi")}
-        subtitle={play === "stats" ? t("Günün bilmecesindeki sonuçların, bu bilgisayarda tutulur.") : t(MODE_LABELS[mode].hint)}
+        subtitle={play === "stats" ? t("Günün bilmecesindeki sonuçların, bu bilgisayarda tutulur.") : play === "exam" ? t("Yetenek, eşya, rün, eşleşme ve daha fazlası üzerine çoktan seçmeli sorular.") : t(MODE_LABELS[mode].hint)}
         toolbar={
           <Tabs
             label={t("Oyun")}
@@ -65,6 +66,7 @@ export function QuizPage() {
               { id: "daily" as Play, label: t("Günün bilmecesi") },
               { id: "free" as Play, label: t("Serbest") },
               ...(mode === "item" ? [{ id: "timed" as Play, label: t("Zamana karşı") }] : []),
+              { id: "exam" as Play, label: t("Sınav") },
               { id: "stats" as Play, label: t("İstatistik") },
             ]}
             value={play}
@@ -74,6 +76,8 @@ export function QuizPage() {
       />
       {play === "stats" ? (
         <StatsView />
+      ) : play === "exam" ? (
+        data.status === "done" ? <ExamGame data={data.value} /> : data.status === "error" ? <ErrorState message={t("Oyun verisi alınamadı.")} onRetry={retry} /> : <Skeleton lines={5} label={t("Yükleniyor")} />
       ) : (
         <>
       <Tabs

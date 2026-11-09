@@ -157,3 +157,19 @@ describe("timed item game", () => {
     expect(betterScore(7, 9)).toBe(9);
   });
 });
+
+describe("exam tally", () => {
+  it("adds answers per category", async () => {
+    const { addExamAnswers } = await import("./store");
+    const next = addExamAnswers({ runes: { answered: 2, correct: 1 } }, [
+      { category: "runes", correct: true },
+      { category: "roles", correct: false },
+    ]);
+    expect(next).toEqual({ runes: { answered: 3, correct: 2 }, roles: { answered: 1, correct: 0 } });
+  });
+  it("drops malformed rows when reading", async () => {
+    const { parseExamTally } = await import("./store");
+    expect(parseExamTally('{"runes":{"answered":3,"correct":2},"bad":{"answered":1,"correct":4},"x":5}')).toEqual({ runes: { answered: 3, correct: 2 } });
+    expect(parseExamTally("not json")).toEqual({});
+  });
+});
