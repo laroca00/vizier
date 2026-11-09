@@ -561,3 +561,20 @@
   gap: 4px;
   margin-left: auto;
 }
+
+.strengths__lists {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+
+.strengths__lists ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.strengths__lists h3 {
+  margin: 0;
+}
