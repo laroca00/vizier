@@ -368,6 +368,7 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 - Deploy the Worker (`pnpm --filter @vizier/api deploy`).
 - Coverage (20.1): after the Worker deploy and a crawler restart, `/v1/meta/coverage` fills on the next publish and the crawler logs an hourly coverage line. Ranked timelines cover about a quarter of games (2 of ~8 per run); raise `timelinesPerRun` only if the log shows it lagging.
 - Apply pending D1 migrations remotely.
+- Build history (28.1): deploy the Worker for `/v1/builds/history/:championId`, then pull and restart the crawler on the VM. The crawler applies migration 0016 to its own database by itself (the Worker never reads that table, so no remote migration). The first snapshot is written when the next patch has taken over; until then the history is empty and the app says so.
 - Pull and restart the crawler on the VM (Arena duo and item docs appear after the next rollup and publish; duo counts start from games crawled after the update).
 - Apply D1 migration 0013 (lane stats) remotely before the next crawler run on the VM; lane docs fill as timelines are crawled.
 - After the Worker and crawler update, the build docs gain `perks`, `perkGames` and `skillOptions` on the next publish; single-rune counts only cover games rolled up after the crawler update.
