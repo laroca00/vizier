@@ -49,6 +49,7 @@ const ArchetypesPage = lazy(() => import("./pages/ArchetypesPage").then((m) => (
 const CombosPage = lazy(() => import("./pages/CombosPage").then((m) => ({ default: m.CombosPage })));
 const MatrixPage = lazy(() => import("./pages/MatrixPage").then((m) => ({ default: m.MatrixPage })));
 const ChallengePage = lazy(() => import("./pages/ChallengePage").then((m) => ({ default: m.ChallengePage })));
+const SynergyPage = lazy(() => import("./pages/SynergyPage").then((m) => ({ default: m.SynergyPage })));
 const LabPage = lazy(() => import("./pages/LabPage").then((m) => ({ default: m.LabPage })));
 const JournalPage = lazy(() => import("./pages/JournalPage").then((m) => ({ default: m.JournalPage })));
 const ItemsPage = lazy(() => import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage })));
@@ -78,6 +79,7 @@ const LABELS: Record<Page, string> = {
   archetypes: "Şampiyon tipleri",
   matrix: "Karşı seçim matrisi",
   challenge: "Draft meydan okuması",
+  synergy: "Sinerji gezgini",
   items: "Eşyalar",
   runes: "Rünler",
   champion: "Şampiyonlar",
@@ -312,6 +314,7 @@ function App() {
         { id: "archetypes", label: "Şampiyon tipleri", icon: "archetypes" },
         { id: "matrix", label: "Karşı seçim matrisi", icon: "matchup" },
         { id: "challenge", label: "Draft meydan okuması", icon: "quiz" },
+        { id: "synergy", label: "Sinerji gezgini", icon: "archetypes" },
       ],
     },
   ];
@@ -420,6 +423,8 @@ function App() {
               <CombosPage onOpenChampion={(id) => openChampion(id)} />
             ) : route.page === "lab" ? (
               <LabPage route={route} onChange={replace} />
+            ) : route.page === "synergy" ? (
+              <SynergyPage route={route} onChange={replace} onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "challenge" ? (
               <ChallengePage />
             ) : route.page === "matrix" ? (
