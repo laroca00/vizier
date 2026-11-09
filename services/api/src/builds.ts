@@ -99,6 +99,8 @@ export async function aggregateBuild(
   position: string | null,
   vs: number | null = null,
   queue = 420,
+  /** Build from this one patch only, without falling back to the older one; for snapshots of a closed patch. */
+  onlyPatch?: string,
 ): Promise<Build | null> {
   const { results: patchRows } = await db
     .prepare("SELECT patch FROM stat_matches GROUP BY patch ORDER BY MAX(last_start) DESC")
@@ -124,9 +126,9 @@ export async function aggregateBuild(
   };
 
   const load = async (opponent: number | null) => {
-    let patches = [patchRows[0].patch];
+    let patches = [onlyPatch ?? patchRows[0].patch];
     let total = await gamesIn(patches, opponent);
-    if (total.games < MIN_GAMES_FOR_PATCH && patchRows.length > 1) {
+    if (!onlyPatch && total.games < MIN_GAMES_FOR_PATCH && patchRows.length > 1) {
       patches = patchRows.map((p) => p.patch);
       total = await gamesIn(patches, opponent);
     }

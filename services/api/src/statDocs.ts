@@ -2,6 +2,7 @@
 // to D1's stat_docs as finished JSON; the Worker only reads them. Keys are
 // shared here so both sides agree.
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
+import { buildHistory } from "./snapshots.ts";
 import { coverage } from "./coverage.ts";
 import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, championOverview, counters, itemTimes, laneStats, latestPatches, synergies, tierList } from "./stats.ts";
 
@@ -33,6 +34,8 @@ export const docKey = {
   /** When each finished item is usually completed, keyed by item id. */
   bench: (queue: number, championId: number, position: string) => `bench:${queue}:${championId}:${position}`,
   itemTimes: (championId: number, position: string) => `itemtimes:${championId}:${position}`,
+  /** Compact builds of the closed patches, newest first. */
+  buildHistory: (championId: number, position: string) => `buildhistory:${championId}:${position}`,
   bans: () => "bans",
   /** How many games, timelines and followed players sit behind the stats. */
   coverage: () => "coverage",
@@ -137,6 +140,7 @@ export async function* statDocs(db: D1Database): AsyncGenerator<[string, unknown
       yield [docKey.itemTimes(championId, position), await itemTimes(db, championId, position)];
       if (queue === 420) yield [docKey.bench(queue, championId, position), await benchStats(db, championId, position)];
       yield [docKey.synergies(championId, position), await synergies(db, championId, position)];
+      yield [docKey.buildHistory(championId, position), await buildHistory(db, championId, position)];
     }
   }
   if (index.length > 0) yield [docKey.buildIndex(), { patches: indexPatches, builds: index } satisfies BuildIndex];
