@@ -1630,4 +1630,8 @@ export const EN: Record<string, string> = {
   "Taşıyıcıyı koruyan yok: dalış doğrudan ona ulaşır.": "Nobody protects the carry: a dive reaches them directly.",
   "Vizier'in elle tuttuğu tablolardan; maç verisi değil.": "From Vizier's hand-kept tables; not match data.",
   "Ön hat yok: hasarı karşılayacak biri eksik.": "No front line: nobody to take the damage.",
+  "En yakın şablonlar": "Closest templates",
+  "{met} / {total} gereksinim karşılanıyor": "{met} of {total} needs met",
+  "Eksik: {need}": "Missing: {need}",
+  "Doldurabilir: {list}": "Could fill it: {list}",
 };

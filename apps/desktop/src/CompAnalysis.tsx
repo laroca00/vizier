@@ -124,7 +124,7 @@ export function CompAnalysis({ allies, enemies, champions, aram }: Props) {
     <section aria-label={t("Takım kompozisyonu")}>
       <h2 className="draft__heading">{t("Takımının kompozisyonu")}</h2>
       {ours.champions === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary team={ourTeam} report={ours} label={t("Takımın")} />}
-      <TeamPlannerPanel team={ourTeam} />
+      <TeamPlannerPanel team={ourTeam} candidates={champions.values()} unavailable={new Set([...allies, ...enemies])} />
       {aram && aramPlan(ourTeam) && <p className="draft__empty">{t(aramPlan(ourTeam)!.line, { names: aramPlan(ourTeam)!.names.join(", ") })}</p>}
       {ours.champions >= 3 && winConditions(ourTeam, aram).length > 0 && (
         <>
