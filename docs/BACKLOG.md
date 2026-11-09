@@ -468,6 +468,7 @@ Ideas the owner asked for on top of the data work: overlay, design and new tools
 - [x] 42.15 Champ select: on the player's ban turn the ban plan comes first and each suggestion can be hovered or banned from Vizier. (6a1a4c0)
 - [x] 42.16 Champion page at-a-glance row: keystone, core items, skill priority, hardest and easiest lane opponent with games. (7127ce3)
 - [x] 42.17 Overlay "Rakibe karşı eşyalar": champ select item rules on the live enemy team, from the champion's own build pool, dropping each need once answered. (f3523ab)
+- [x] 42.18 Lighter windows: App and Overlay are lazy roots (entry chunk 680 kB to 238 kB), the overlay loads combo text only for the quick reference. (de02270)
 
 ## 16. Only when a feature needs it
 
