@@ -1,0 +1,58 @@
+.templates__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.templates__card {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-item);
+}
+
+.templates__card p {
+  margin: 4px 0;
+}
+
+.templates__head {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.templates__link,
+.templates__champion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: var(--space-2);
+  padding: 2px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-item);
+  background: var(--hover);
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-small);
+  cursor: pointer;
+}
+
+.templates__champions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.templates__champion img {
+  border-radius: 50%;
+}

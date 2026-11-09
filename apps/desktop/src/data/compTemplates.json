@@ -1,0 +1,609 @@
+[
+ {
+  "id": "wombo",
+  "name": {
+   "tr": "Toplu savaş kombosu",
+   "en": "Wombo combo"
+  },
+  "objective": {
+   "tr": "Beş kişi aynı anda yetenek patlatıp rakip takımı tek savaşta silmek.",
+   "en": "Land five abilities at once and wipe the enemy team in one fight."
+  },
+  "phase": "mid",
+  "roles": [
+   "TOP",
+   "JUNGLE",
+   "MIDDLE"
+  ],
+  "needs": [
+   {
+    "trait": "teamfight",
+    "min": 3,
+    "lacking": {
+     "tr": "toplu savaşta vuran isim az",
+     "en": "few champions that hit groups"
+    }
+   },
+   {
+    "trait": "engage",
+    "min": 1,
+    "lacking": {
+     "tr": "savaşı başlatan yok",
+     "en": "nobody to start the fight"
+    }
+   },
+   {
+    "trait": "hardCc",
+    "min": 2,
+    "lacking": {
+     "tr": "güvenilir kontrol az",
+     "en": "little reliable crowd control"
+    }
+   }
+  ],
+  "strengths": {
+   "tr": "Tek bir iyi savaş oyunu bitirir.",
+   "en": "One good fight can end the game."
+  },
+  "weaknesses": {
+   "tr": "Savaşa zorlanmazsa ya da başlatıcı erken yakalanırsa plan çöker.",
+   "en": "The plan falls apart if the start is caught or the fight never comes."
+  },
+  "counteredBy": [
+   "pick",
+   "poke",
+   "split"
+  ]
+ },
+ {
+  "id": "protect",
+  "name": {
+   "tr": "Taşıyıcıyı koru",
+   "en": "Protect the carry"
+  },
+  "objective": {
+   "tr": "Bir taşıyıcının uzun dövüşte ayakta kalıp hasarı vermesini sağlamak.",
+   "en": "Keep one carry alive so they deal damage through a long fight."
+  },
+  "phase": "late",
+  "roles": [
+   "BOTTOM",
+   "UTILITY"
+  ],
+  "needs": [
+   {
+    "archetypes": [
+     "hypercarry",
+     "artillery",
+     "lanebully"
+    ],
+    "min": 1,
+    "lacking": {
+     "tr": "taşınacak bir hasarcı yok",
+     "en": "no carry to protect"
+    }
+   },
+   {
+    "trait": "peel",
+    "min": 2,
+    "lacking": {
+     "tr": "koruyan isim az",
+     "en": "few champions that peel"
+    }
+   },
+   {
+    "trait": "frontline",
+    "min": 1,
+    "lacking": {
+     "tr": "ön hat yok",
+     "en": "no front line"
+    }
+   }
+  ],
+  "strengths": {
+   "tr": "Uzun savaşlarda sürekli ve yüksek hasar.",
+   "en": "Steady, high damage in long fights."
+  },
+  "weaknesses": {
+   "tr": "Taşıyıcı yakalanırsa hasar kalmaz; erken oyunda baskıya açık.",
+   "en": "No damage left if the carry is caught; open to early pressure."
+  },
+  "counteredBy": [
+   "dive",
+   "pick",
+   "poke"
+  ]
+ },
+ {
+  "id": "frontToBack",
+  "name": {
+   "tr": "Önden arkaya",
+   "en": "Front to back"
+  },
+  "objective": {
+   "tr": "Önde hasar yiyenlerin arkasında menzilli hasarcıların rahat vurması.",
+   "en": "Let ranged damage dealers hit safely behind those who soak damage."
+  },
+  "phase": "mid",
+  "roles": [
+   "TOP",
+   "BOTTOM"
+  ],
+  "needs": [
+   {
+    "trait": "frontline",
+    "min": 2,
+    "lacking": {
+     "tr": "ön hat zayıf",
+     "en": "weak front line"
+    }
+   },
+   {
+    "trait": "backline",
+    "min": 2,
+    "lacking": {
+     "tr": "arkadan vuran az",
+     "en": "few damage dealers in back"
+    }
+   },
+   {
+    "trait": "peel",
+    "min": 1,
+    "lacking": {
+     "tr": "koruma az",
+     "en": "little protection"
+    }
+   }
+  ],
+  "strengths": {
+   "tr": "Dengeli ve her savaşta işe yarar.",
+   "en": "Balanced and works in every fight."
+  },
+  "weaknesses": {
+   "tr": "Özel bir kozu yok; rakip daha keskin bir plan kurarsa geride kalır.",
+   "en": "No special trick; falls behind a sharper enemy plan."
+  },
+  "counteredBy": [
+   "pick",
+   "split"
+  ]
+ },
+ {
+  "id": "dive",
+  "name": {
+   "tr": "Dalış",
+   "en": "Dive"
+  },
+  "objective": {
+   "tr": "Arka hatta atlayıp birkaç saniyede en tehlikeli hedefi düşürmek.",
+   "en": "Jump on the back line and drop the most dangerous target in seconds."
+  },
+  "phase": "mid",
+  "roles": [
+   "JUNGLE",
+   "MIDDLE"
+  ],
+  "needs": [
+   {
+    "archetypes": [
+     "diver",
+     "assassin"
+    ],
+    "min": 2,
+    "lacking": {
+     "tr": "dalacak isim az",
+     "en": "few champions that dive"
+    }
+   },
+   {
+    "trait": "engage",
+    "min": 1,
+    "lacking": {
+     "tr": "savaşı açan yok",
+     "en": "nobody to open"
+    }
+   },
+   {
+    "trait": "hardCc",
+    "min": 1,
+    "lacking": {
+     "tr": "kontrol az",
+     "en": "little crowd control"
+    }
+   }
+  ],
+  "strengths": {
+   "tr": "Hızlı ve kararlı; rakip taşıyıcıyı hemen yok eder.",
+   "en": "Fast and decisive; removes the enemy carry quickly."
+  },
+  "weaknesses": {
+   "tr": "Koruma ve kontrolle karşılanırsa dalanlar boşa gider.",
+   "en": "Wasted if met with peel and control."
+  },
+  "counteredBy": [
+   "protect",
+   "disengage"
+  ]
+ },
+ {
+  "id": "poke",
+  "name": {
+   "tr": "Uzaktan yıpratma",
+   "en": "Poke"
+  },
+  "objective": {
+   "tr": "Savaş başlamadan rakibin canını eritip kule ve obje almak.",
+   "en": "Whittle the enemy down before the fight and take towers and objectives."
+  },
+  "phase": "mid",
+  "roles": [
+   "MIDDLE",
+   "BOTTOM",
+   "UTILITY"
+  ],
+  "needs": [
+   {
+    "trait": "poke",
+    "min": 3,
+    "lacking": {
+     "tr": "uzaktan vuran az",
+     "en": "few long-range damage dealers"
+    }
+   },
+   {
+    "trait": "waveclear",
+    "min": 1,
+    "lacking": {
+     "tr": "dalga temizleyen yok",
+     "en": "nobody to clear waves"
+    }
+   },
+   {
+    "trait": "disengage",
+    "min": 1,
+    "lacking": {
+     "tr": "dalışa karşı araç yok",
+     "en": "no answer to a dive"
+    }
+   }
+  ],
+  "strengths": {
+   "tr": "Güvenli kuşatma; rakip hata yapmadan hasar yer.",
+   "en": "Safe sieges; the enemy takes damage without a mistake."
+  },
+  "weaknesses": {
+   "tr": "Rakip dalarsa ya da savaşa zorlarsa zayıf kalır.",
+   "en": "Weak if the enemy dives or forces a fight."
+  },
+  "counteredBy": [
+   "dive",
+   "heavyEngage",
+   "pick"
+  ]
+ },
+ {
+  "id": "pick",
+  "name": {
+   "tr": "Tek hedef avı",
+   "en": "Pick"
+  },
+  "objective": {
+   "tr": "Haritada yalnız kalanı yakalayıp sayı üstünlüğüyle obje almak.",
+   "en": "Catch a lone target and take an objective with the numbers advantage."
+  },
+  "phase": "mid",
+  "roles": [
+   "JUNGLE",
+   "UTILITY"
+  ],
+  "needs": [
+   {
+    "trait": "pick",
+    "min": 2,
+    "lacking": {
+     "tr": "yakalayan isim az",
+     "en": "few champions that catch"
+    }
+   },
+   {
+    "trait": "hardCc",
+    "min": 2,
+    "lacking": {
+     "tr": "kontrol az",
+     "en": "little crowd control"
+    }
+   }
+  ],
+  "strengths": {
+   "tr": "Dağınık oynayan takımları cezalandırır.",
+   "en": "Punishes teams that move apart."
+  },
+  "weaknesses": {
+   "tr": "Rakip hep bir arada kalırsa av çıkmaz.",
+   "en": "No prey if the enemy stays together."
+  },
+  "counteredBy": [
+   "frontToBack",
+   "protect"
+  ]
+ },
+ {
+  "id": "split",
+  "name": {
+   "tr": "Yan koridor baskısı",
+   "en": "Split push"
+  },
+  "objective": {
+   "tr": "Bir yan koridoru tek kişiyle itip rakibi bölmek, haritayı genişletmek.",
+   "en": "Push one side lane with one player to stretch the enemy and the map."
+  },
+  "phase": "late",
+  "roles": [
+   "TOP"
+  ],
+  "needs": [
+   {
+    "trait": "splitPush",
+    "min": 1,
+    "lacking": {
+     "tr": "yan koridora gidecek isim yok",
+     "en": "nobody to take a side lane"
+    }
+   },
+   {
+    "trait": "teamfight",
+    "min": 2,
+    "lacking": {
+     "tr": "4'e 5 savaşta tutunacak güç az",
+     "en": "too weak to hold a 4v5"
+    }
+   },
+   {
+    "trait": "waveclear",
+    "min": 2,
+    "lacking": {
+     "tr": "dalga temizleyen az",
+     "en": "few wave clearers"
+    }
+   }
+  ],
+  "strengths": {
+   "tr": "Rakibi iki yere bölerek harita baskısı kurar.",
+   "en": "Splits the enemy and builds map pressure."
+  },
+  "weaknesses": {
+   "tr": "Yan koridordaki yakalanırsa plan biter; takım savaşı kaybedebilir.",
+   "en": "If the side laner is caught the plan ends; fights can be lost."
+  },
+  "counteredBy": [
+   "pick",
+   "dive"
+  ]
+ },
+ {
+  "id": "heavyEngage",
+  "name": {
+   "tr": "Yoğun başlatma",
+   "en": "Heavy engage"
+  },
+  "objective": {
+   "tr": "Birden çok başlatıcıyla rakibi köşeye sıkıştırıp savaşı zorlamak.",
+   "en": "Corner the enemy with several starters and force the fight."
+  },
+  "phase": "mid",
+  "roles": [
+   "TOP",
+   "JUNGLE",
+   "UTILITY"
+  ],
+  "needs": [
+   {
+    "trait": "engage",
+    "min": 3,
+    "lacking": {
+     "tr": "başlatıcı az",
+     "en": "few starters"
+    }
+   },
+   {
+    "trait": "hardCc",
+    "min": 3,
+    "lacking": {
+     "tr": "kontrol az",
+     "en": "little crowd control"
+    }
+   },
+   {
+    "trait": "frontline",
+    "min": 2,
+    "lacking": {
+     "tr": "ön hat zayıf",
+     "en": "weak front line"
+    }
+   }
+  ],
+  "strengths": {
+   "tr": "Savaşı istediği an açar; poke takımlarını ezer.",
+   "en": "Opens the fight when it wants; crushes poke teams."
+  },
+  "weaknesses": {
+   "tr": "Hasar kaynağı az kalabilir; koruyan takıma karşı yavaştır.",
+   "en": "May lack damage; slow against a protecting team."
+  },
+  "counteredBy": [
+   "disengage",
+   "protect"
+  ]
+ },
+ {
+  "id": "disengage",
+  "name": {
+   "tr": "Geri çekilme",
+   "en": "Disengage"
+  },
+  "objective": {
+   "tr": "Rakibin girişini püskürtüp güvenle hasar vermek.",
+   "en": "Fend off the enemy's entry and deal damage safely."
+  },
+  "phase": "late",
+  "roles": [
+   "BOTTOM",
+   "UTILITY"
+  ],
+  "needs": [
+   {
+    "trait": "disengage",
+    "min": 2,
+    "lacking": {
+     "tr": "püskürtme aracı az",
+     "en": "few ways to fend off"
+    }
+   },
+   {
+    "trait": "backline",
+    "min": 2,
+    "lacking": {
+     "tr": "arkadan vuran az",
+     "en": "few damage dealers in back"
+    }
+   },
+   {
+    "trait": "peel",
+    "min": 2,
+    "lacking": {
+     "tr": "koruma az",
+     "en": "little protection"
+    }
+   }
+  ],
+  "strengths": {
+   "tr": "Dalış ve başlatma takımlarına karşı güvenli.",
+   "en": "Safe against dive and engage teams."
+  },
+  "weaknesses": {
+   "tr": "Kendi başına savaşı açamaz; poke ve kuşatma ile bastırılır.",
+   "en": "Can't open fights; pressured by poke and sieges."
+  },
+  "counteredBy": [
+   "poke",
+   "split"
+  ]
+ },
+ {
+  "id": "scaling",
+  "name": {
+   "tr": "Geç oyun",
+   "en": "Scaling"
+  },
+  "objective": {
+   "tr": "Erken oyunu sağ atlatıp eşyalar tamamlanınca üstün gelmek.",
+   "en": "Survive the early game and win once items are done."
+  },
+  "phase": "late",
+  "roles": [
+   "BOTTOM",
+   "MIDDLE"
+  ],
+  "needs": [
+   {
+    "phase": "late",
+    "min": 2,
+    "lacking": {
+     "tr": "geç güçlenen az",
+     "en": "few late-game champions"
+    }
+   },
+   {
+    "trait": "frontline",
+    "min": 1,
+    "lacking": {
+     "tr": "erkenden dayanacak ön hat yok",
+     "en": "no front line to hold early"
+    }
+   },
+   {
+    "trait": "waveclear",
+    "min": 1,
+    "lacking": {
+     "tr": "dalga temizleyen yok",
+     "en": "nobody to clear waves"
+    }
+   },
+   {
+    "trait": "peel",
+    "min": 1,
+    "lacking": {
+     "tr": "koruma yok",
+     "en": "no protection"
+    }
+   }
+  ],
+  "strengths": {
+   "tr": "Uzun oyunda en güçlü hasar ve etki.",
+   "en": "The strongest damage and impact in a long game."
+  },
+  "weaknesses": {
+   "tr": "Erken baskıyla kuleler ve ejderler gider.",
+   "en": "Early pressure costs towers and dragons."
+  },
+  "counteredBy": [
+   "earlyPressure",
+   "dive"
+  ]
+ },
+ {
+  "id": "earlyPressure",
+  "name": {
+   "tr": "Erken baskı",
+   "en": "Early pressure"
+  },
+  "objective": {
+   "tr": "İlk dakikalarda koridorları ve ormanı ezip oyunu geç oyuna kalmadan bitirmek.",
+   "en": "Crush lanes and the jungle in the first minutes and end the game before it scales."
+  },
+  "phase": "early",
+  "roles": [
+   "JUNGLE",
+   "UTILITY",
+   "BOTTOM"
+  ],
+  "needs": [
+   {
+    "phase": "early",
+    "min": 3,
+    "lacking": {
+     "tr": "erken güçlü isim az",
+     "en": "few strong early champions"
+    }
+   },
+   {
+    "trait": "objectives",
+    "min": 1,
+    "lacking": {
+     "tr": "obje alan hızlı biri yok",
+     "en": "nobody quick on objectives"
+    }
+   },
+   {
+    "trait": "hardCc",
+    "min": 2,
+    "lacking": {
+     "tr": "kontrol az",
+     "en": "little crowd control"
+    }
+   }
+  ],
+  "strengths": {
+   "tr": "Geç oyun takımlarını erken kapatır.",
+   "en": "Shuts scaling teams down early."
+  },
+  "weaknesses": {
+   "tr": "Avantaj verilmezse oyun uzar ve takım geride kalır.",
+   "en": "If the lead isn't taken the game drags on and the team falls behind."
+  },
+  "counteredBy": [
+   "scaling",
+   "disengage"
+  ]
+ }
+]

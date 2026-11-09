@@ -24,6 +24,8 @@ export type Route =
   | { page: "lab"; championId: number | null; position: string }
   | { page: "matrix"; position: string }
   | { page: "challenge" }
+  | { page: "templates" }
+  | { page: "synergy"; championId: number | null; position: string }
   | { page: "items"; itemId?: number }
   | { page: "runes"; runeId?: number }
   | { page: "overlay" }
@@ -36,6 +38,7 @@ export type Page = Route["page"];
 export function pageRoute(page: Page): Route {
   if (page === "matchup") return { page, championId: null, opponentId: null, position: "MIDDLE" };
   if (page === "lab") return { page, championId: null, position: "MIDDLE" };
+  if (page === "synergy") return { page, championId: null, position: "MIDDLE" };
   if (page === "matrix") return { page, position: "MIDDLE" };
   if (page === "pro") return { page, player: "" };
   if (page === "champion") return { page, championId: 0, position: null, queue: 420 };

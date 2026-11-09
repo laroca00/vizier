@@ -46,6 +46,8 @@ export type Scenario = {
   accepted: Answer[];
   /** Tempting picks that miss the point, with the reason. */
   rejected: Answer[];
+  /** Built from the composition rules instead of written by hand. */
+  generated?: boolean;
 };
 
 export const SCENARIOS = raw as Scenario[];

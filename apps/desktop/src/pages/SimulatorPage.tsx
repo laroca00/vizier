@@ -39,6 +39,7 @@ import { ErrorState, Skeleton } from "../ui/States";
 import { Tabs } from "../ui/Tabs";
 import { useToast } from "../ui/Toast";
 import { useAsync } from "../useAsync";
+import { TeamPlannerPanel } from "../draft/TeamPlannerPanel";
 import { ThreatsPanel } from "../draft/ThreatsPanel";
 import { PickSuggestions } from "../draft/PickSuggestions";
 import { loadChampionRoles, type ChampionRoles } from "./ChampionsPage";
@@ -399,6 +400,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
         <section aria-label={t("Mavi takım")}>
           <h2 className="draft__heading">{t("Mavi takım")}</h2>
           {blue.length === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary team={blue} report={blueReport} label={t("Mavi takım")} />}
+          <TeamPlannerPanel team={blue} candidates={data.champions.values()} unavailable={new Set([...draft.red, ...draft.bans])} />
           {blue.length >= 3 && <WinConditions team={blue} />}
           <Plans advice={adviceAgainst(redReport, blueReport)} title={t("Kırmızıya karşı plan")} />
           <ThreatsPanel enemies={red} title={t("Kırmızı takımın tehditleri")} />
@@ -406,6 +408,7 @@ function Simulator({ data }: { data: ChampionRoles }) {
         <section aria-label={t("Kırmızı takım")}>
           <h2 className="draft__heading">{t("Kırmızı takım")}</h2>
           {red.length === 0 ? <p className="draft__empty">{t("Henüz seçim yok")}</p> : <CompSummary team={red} report={redReport} label={t("Kırmızı takım")} />}
+          <TeamPlannerPanel team={red} candidates={data.champions.values()} unavailable={new Set([...draft.blue, ...draft.bans])} />
           {red.length >= 3 && <WinConditions team={red} />}
           <Plans advice={adviceAgainst(blueReport, redReport)} title={t("Maviye karşı plan")} />
           <ThreatsPanel enemies={blue} title={t("Mavi takımın tehditleri")} />

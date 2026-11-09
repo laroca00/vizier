@@ -1,0 +1,29 @@
+.planner {
+  margin: var(--space-3) 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-item);
+}
+
+.planner summary {
+  cursor: pointer;
+}
+
+.planner ul {
+  display: grid;
+  gap: 2px;
+  margin: var(--space-2) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planner__counts li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.planner__counts li[data-empty] > span:first-child,
+.planner__gaps li {
+  color: var(--gilt);
+}
