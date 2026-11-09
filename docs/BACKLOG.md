@@ -280,6 +280,7 @@ Builds on: synergies doc and the champion page synergies tab (5.7, 1.11), counte
 - [x] 25.1 Archetype table: the 18 archetypes of the brief, many per champion, hand-kept and tested for coverage; each archetype has a short description, strengths, weaknesses and its usual team role. (85cbcf1; data/archetypes.json: 18 archetypes (own list, the brief's list was not in the repo) and 1-3 per champion for every champion, coverage tested, editorial)
 - [x] 25.2 Archetype Explorer page: browse and combine archetypes ("disengage + protect the carry"), filter by role, search; links into synergies and the champion page. (85cbcf1; archetype explorer: combine types (a champion needs all), search, role filter from the build index, opens the champion page (its synergies list); no separate synergy link)
 - [ ] 25.3 Synergy Explorer page from the Champions section: champion and role in, partners out, with crawler data (games, win rate, badge) and the reason from category rules (engage + follow-up CC, wombo, protect the carry, dive, poke, scaling, lane pressure, disengage) built on archetypes and dimensions. Pairs without data show the reason only, marked editorial. Sort by data or by category.
+<!-- claimed: auto/26-synergy-comps 2026-11-09T14:13:00Z -->
 - [x] 25.4 Counterpick Matrix page: up to five pool champions × the role's 20 most common opponents, heatmap cells favourable / neutral / unfavourable / insufficient using `confidenceOf` (not raw win rate), with games in each cell, patch filter, and the best blind pick. Reuses pool coverage logic; the pool coverage panel links to it. Colour-blind safe and readable as a table. (9b67611; counterpick matrix page `?view=matrix` with up to five pool champions against the role's 20 most played opponents, cells judged by the 95% interval with marks, games per cell, current-patch toggle, best blind pick; linked from pool coverage)
 - [x] 25.5 Difficulty breakdown on the champion page: mechanics, combos, positioning, skillshots, decisions, macro, consistency as qualitative levels (hand-kept, editorial badge), next to Data Dragon's official difficulty number (labelled official). (9b67611; seven areas as three levels for every champion (data/difficultyBreakdown.ts, editorial badge, coverage test) next to Data Dragon's number on the champion page)
 
@@ -288,9 +289,12 @@ Builds on: synergies doc and the champion page synergies tab (5.7, 1.11), counte
 Builds on: the draft simulator (12.x, VZD1 codes, undo, Clash planner), composition analysis (`analyzeComp`, `compDimensions`, `teamDamage`, `teamCurve`, win conditions).
 
 - [ ] 26.1 Composition templates (wombo, protect the ADC, front-to-back, dive, poke, pick, split push, heavy engage, disengage, scaling, early pressure): objective, archetypes needed, roles, strengths, weaknesses, game phase, counter-comps; browse page with fitting champions from 25.1.
+<!-- claimed: auto/26-synergy-comps 2026-11-09T14:13:00Z -->
 - [x] 26.2 Draft templates in the simulator: name, side, five picks, bans, notes, tags; save, duplicate, edit, delete, open in the simulator; codes reuse VZD1; stored under `vizier.drafts` (already exported). (9b67611; saved drafts in the simulator now carry side, tags and a note; search and tag filter; copy keeps them; codes stay VZD1 (side, tags and note are not in the code))
 - [ ] 26.3 Team Synergy Planner in the simulator and champ select: archetypes per pick, engage, disengage, frontline, CC, damage split, scaling, synergy pairs, and plain gap lines ("güvenilir engage az"). No overall score.
+<!-- claimed: auto/26-synergy-comps 2026-11-09T14:13:00Z -->
 - [ ] 26.4 Composition match: which template a team is closest to and what it still lacks, with the champions that would fill it from the player's pool first.
+<!-- claimed: auto/26-synergy-comps 2026-11-09T14:13:00Z -->
 
 ## 27. Draft Challenge and Quiz 2.0 (C2, C4)
 
@@ -299,6 +303,7 @@ Builds on: the quiz page and store (riddle modes, item game, timed mode, statist
 - [x] 27.1 Draft Challenge data model: scenario (both teams with unknown slots, role, question, choices or free champion pick, accepted answers with trade-offs, difficulty, category), stored as JSON with a schema test; the first 30 scenarios written by hand. (9b67611; scenario model with a validator and 30 hand-written scenarios in challenge/scenarios.json (Turkish and English, editorial), schema test)
 - [x] 27.2 Draft Challenge page: play a scenario, answer, then the explanation with the alternatives that also work and why; session progress and replay; no win chances. (9b67611; draft challenge page `?view=challenge`: topic and difficulty filters, choices plus free pick, reasons and alternatives after the answer, summary, replay of missed scenarios)
 - [ ] 27.3 Generated scenarios from the composition rules (a team missing engage, all AP, heavy dive against it), with answers checked by the same rules, so the pool grows without hand writing.
+<!-- claimed: auto/26-synergy-comps 2026-11-09T14:13:00Z -->
 - [ ] 27.4 Quiz 2.0 categories in the existing quiz: abilities, item effects, runes, matchups (from crawler data with badge), compositions, synergies, roles, mechanics. Difficulty, timed and untimed, explanations after each answer, review and replay missed questions. Results stay in the session plus the existing local stats; no ranking.
 
 ## 28. Build history and checks (B2–B4)
