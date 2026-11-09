@@ -300,15 +300,20 @@ Builds on: the quiz page and store (riddle modes, item game, timed mode, statist
 - [x] 27.2 Draft Challenge page: play a scenario, answer, then the explanation with the alternatives that also work and why; session progress and replay; no win chances. (9b67611; draft challenge page `?view=challenge`: topic and difficulty filters, choices plus free pick, reasons and alternatives after the answer, summary, replay of missed scenarios)
 - [x] 27.3 Generated scenarios from the composition rules (a team missing engage, all AP, heavy dive against it), with answers checked by the same rules, so the pool grows without hand writing. (ac64d3a; challenge/generate.ts builds scenarios for a missing starter, all-physical, all-magic and heavy dive; accepted and rejected lists are the rule's verdict on every champion that suits the role, so any pick is graded by the same rule; optional toggle on the challenge start screen)
 - [ ] 27.4 Quiz 2.0 categories in the existing quiz: abilities, item effects, runes, matchups (from crawler data with badge), compositions, synergies, roles, mechanics. Difficulty, timed and untimed, explanations after each answer, review and replay missed questions. Results stay in the session plus the existing local stats; no ranking.
+<!-- claimed: auto/27-quiz-history 2026-11-09T14:24:00Z -->
 
 ## 28. Build history and checks (B2–B4)
 
 Builds on: build docs (two newest patches kept), the library store and editors, pro builds (11.x), the patch tracker diffs.
 
 - [ ] 28.1 Build snapshots: the crawler keeps a compact per-patch summary of each champion/role build doc (items, runes, boots, skill order with games) when a patch closes, in a new table (backward compatible, small, written once per patch). Route `/v1/builds/history`.
+<!-- claimed: auto/27-quiz-history 2026-11-09T14:24:00Z -->
 - [ ] 28.2 Build Evolution view on the champion page: pick two patches, see items, runes, boots and skill order rising and falling with games; patches without a snapshot say so.
+<!-- claimed: auto/27-quiz-history 2026-11-09T14:24:00Z -->
 - [ ] 28.3 Build Compatibility Checker in the library: removed or changed items and runes (against current Data Dragon), duplicate or incompatible items (one boots, one mythic-style uniques where they still exist), rune page rules, role mismatch, item order; suggestions shown, nothing changed without the player's OK.
+<!-- claimed: auto/27-quiz-history 2026-11-09T14:24:00Z -->
 - [ ] 28.4 Pro Build Timeline: each pro game's build as a timeline (items in buy order, runes, spells, skill order, opponent, patch, date), compare two pro builds, filter by player, team and patch, save to the library, open the champion. Only fields the pro data has.
+<!-- claimed: auto/27-quiz-history 2026-11-09T14:24:00Z -->
 
 ## 29. Personal workspace (E1–E3)
 
