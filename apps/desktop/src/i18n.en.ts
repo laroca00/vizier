@@ -1634,4 +1634,6 @@ export const EN: Record<string, string> = {
   "{met} / {total} gereksinim karşılanıyor": "{met} of {total} needs met",
   "Eksik: {need}": "Missing: {need}",
   "Doldurabilir: {list}": "Could fill it: {list}",
+  "Kurallardan üretilen senaryolar ekle": "Add scenarios built from the rules",
+  "Eksik başlatıcı, tek tür hasar ya da yoğun dalış gibi durumlar her seferinde yeniden kurulur.": "Situations like a missing starter, one damage type or a heavy dive are built fresh each time.",
 };

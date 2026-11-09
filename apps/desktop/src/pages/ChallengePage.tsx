@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { CATEGORIES, CATEGORY_TEXT, SLOT_ROLES, type Category, type Scenario } from "../challenge/scenarios";
+import { generateSet } from "../challenge/generate";
 import { advance, answerFor, choicesOf, finished, grade, pick, record, replayMissed, startSession, summary, type Filter, type Session, type Verdict } from "../challenge/session";
 import { championIconUrl, champions, latestVersion, type Champion } from "../data/ddragon";
 import { useLang, useT } from "../i18n";
@@ -7,7 +8,7 @@ import { POSITIONS } from "../labels";
 import { loadErrorMessage } from "../loadError";
 import { Button } from "../ui/Button";
 import { DataBadge } from "../ui/DataBadge";
-import { SearchInput, Select } from "../ui/Fields";
+import { SearchInput, Select, Toggle } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
@@ -18,7 +19,7 @@ import "./ChallengePage.css";
 async function load() {
   const [version, all] = await Promise.all([latestVersion(), champions()]);
   const byId = new Map<string, Champion>([...all.values()].map((c) => [c.id, c]));
-  return { version, byId };
+  return { version, byId, all };
 }
 type Data = Awaited<ReturnType<typeof load>>;
 
@@ -29,6 +30,7 @@ export function ChallengePage() {
   const [data, retry] = useAsync("challenge-static", load);
   const [filter, setFilter] = useState<Filter>({ category: "all", difficulty: 0 });
   const [session, setSession] = useState<Session | null>(null);
+  const [extra, setExtra] = useState<Scenario[]>([]);
   return (
     <LiquidGlass className="panel tiers challenge" radius={28} strength={2.5} scroll>
       <PageHeader title={t("Draft meydan okuması")} subtitle={t("Bir draft durumu, bir soru: ne seçersin? Cevaptan sonra nedenini ve işe yarayan diğer seçimleri görürsün.")} />
@@ -37,16 +39,19 @@ export function ChallengePage() {
       ) : data.status !== "done" ? (
         <Skeleton lines={6} label={t("Yükleniyor")} />
       ) : session ? (
-        <Play data={data.value} session={session} onChange={setSession} onQuit={() => setSession(null)} filter={filter} />
+        <Play data={data.value} session={session} extra={extra} onChange={setSession} onQuit={() => setSession(null)} />
       ) : (
-        <Start filter={filter} onFilter={setFilter} onStart={(s) => setSession(startSession(s))} />
+        <Start filter={filter} onFilter={setFilter} champions={[...data.value.all.values()]} onStart={(s, generated) => { setExtra(generated); setSession(startSession([...s, ...generated])); }} />
       )}
     </LiquidGlass>
   );
 }
 
-function Start({ filter, onFilter, onStart }: { filter: Filter; onFilter: (f: Filter) => void; onStart: (list: Scenario[]) => void }) {
+const GENERATED_COUNT = 8;
+
+function Start({ filter, onFilter, champions: roster, onStart }: { filter: Filter; onFilter: (f: Filter) => void; champions: Champion[]; onStart: (list: Scenario[], generated: Scenario[]) => void }) {
   const t = useT();
+  const [withGenerated, setWithGenerated] = useState(false);
   const list = useMemo(() => pick(filter), [filter]);
   return (
     <div className="challenge__start">
@@ -72,20 +77,27 @@ function Start({ filter, onFilter, onStart }: { filter: Filter; onFilter: (f: Fi
           onChange={(d) => onFilter({ ...filter, difficulty: Number(d) as Filter["difficulty"] })}
         />
       </div>
-      {list.length === 0 ? (
+      <Toggle label={t("Kurallardan üretilen senaryolar ekle")} hint={t("Eksik başlatıcı, tek tür hasar ya da yoğun dalış gibi durumlar her seferinde yeniden kurulur.")} checked={withGenerated} onChange={setWithGenerated} />
+      {list.length === 0 && !withGenerated ? (
         <EmptyState title={t("Senaryo yok")}>{t("Bu filtreyle senaryo bulunamadı.")}</EmptyState>
       ) : (
-        <Button variant="primary" onClick={() => onStart(list)}>
-          {t("{count} senaryoyla başla", { count: list.length })}
+        <Button
+          variant="primary"
+          onClick={() => {
+            const generated = withGenerated ? generateSet(GENERATED_COUNT, roster) : [];
+            onStart(list, generated);
+          }}
+        >
+          {t("{count} senaryoyla başla", { count: list.length + (withGenerated ? GENERATED_COUNT : 0) })}
         </Button>
       )}
     </div>
   );
 }
 
-function Play({ data, session, onChange, onQuit, filter }: { data: Data; session: Session; onChange: (s: Session | null) => void; onQuit: () => void; filter: Filter }) {
+function Play({ data, session, extra, onChange, onQuit }: { data: Data; session: Session; extra: Scenario[]; onChange: (s: Session | null) => void; onQuit: () => void }) {
   const t = useT();
-  const scenarios = useMemo(() => new Map(pick({ category: "all", difficulty: 0 }).map((s) => [s.id, s])), []);
+  const scenarios = useMemo(() => new Map([...pick({ category: "all", difficulty: 0 }), ...extra].map((s) => [s.id, s])), [extra]);
   if (finished(session)) {
     const sum = summary(session);
     const replay = replayMissed(session, [...scenarios.values()]);
@@ -96,8 +108,7 @@ function Play({ data, session, onChange, onQuit, filter }: { data: Data; session
         {sum.other > 0 && <p className="build__note">{t("{count} seçimin senaryonun listesinde yoktu; doğru ya da yanlış sayılmadı.", { count: sum.other })}</p>}
         <div className="challenge__actions">
           {replay && <Button onClick={() => onChange(replay)}>{t("Kaçırdıklarını tekrar oyna ({count})", { count: Object.values(session.results).filter((v) => v === "rejected").length })}</Button>}
-          <Button variant="primary" onClick={() => onChange(startSession(pick(filter)))}>{t("Yeniden başla")}</Button>
-          <Button variant="ghost" onClick={onQuit}>{t("Konulara dön")}</Button>
+          <Button variant="primary" onClick={onQuit}>{t("Yeniden başla")}</Button>
         </div>
       </div>
     );

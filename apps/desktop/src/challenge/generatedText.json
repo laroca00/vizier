@@ -1,0 +1,26 @@
+{
+ "noEngage": {
+  "question": { "tr": "Takımda savaşı başlatacak kimse yok. Ne seçersin?", "en": "Nobody on the team can start a fight. What do you pick?" },
+  "lesson": { "tr": "Başlatıcı yoksa takım, rakip hata yapana kadar beklemek zorunda kalır.", "en": "With no starter the team has to wait for the enemy to make a mistake." },
+  "yes": { "tr": "{name} savaşı başlatabilir.", "en": "{name} can start the fight." },
+  "no": { "tr": "{name} savaşı başlatamaz; boşluk sürer.", "en": "{name} can't start the fight; the gap stays." }
+ },
+ "allPhysical": {
+  "question": { "tr": "Takımın hasarı neredeyse hep fiziksel. Ne seçersin?", "en": "Your team's damage is nearly all physical. What do you pick?" },
+  "lesson": { "tr": "Tek tür hasar, rakibin tek tür direnç almasını yeter kılar.", "en": "One damage type lets the enemy stack a single resistance." },
+  "yes": { "tr": "{name} büyü hasarı ekler.", "en": "{name} adds magic damage." },
+  "no": { "tr": "{name} yine fiziksel hasar verir.", "en": "{name} adds more physical damage." }
+ },
+ "allMagic": {
+  "question": { "tr": "Takımın hasarı neredeyse hep büyü. Ne seçersin?", "en": "Your team's damage is nearly all magic. What do you pick?" },
+  "lesson": { "tr": "Tek tür hasar, rakibin tek tür direnç almasını yeter kılar.", "en": "One damage type lets the enemy stack a single resistance." },
+  "yes": { "tr": "{name} fiziksel hasar ekler.", "en": "{name} adds physical damage." },
+  "no": { "tr": "{name} yine büyü hasarı verir.", "en": "{name} adds more magic damage." }
+ },
+ "heavyDive": {
+  "question": { "tr": "Rakip dalışa kurulu ve takımında koruyan yok. Ne seçersin?", "en": "The enemy is built to dive and your team has no protection. What do you pick?" },
+  "lesson": { "tr": "Dalışa karşı kontrol ve koruma, hasardan değerlidir.", "en": "Against a dive, control and protection are worth more than damage." },
+  "yes": { "tr": "{name} taşıyıcıyı korur ya da dalışı püskürtür.", "en": "{name} protects the carry or fends off the dive." },
+  "no": { "tr": "{name} dalışa karşı koruma sağlamaz.", "en": "{name} gives no protection against the dive." }
+ }
+}
