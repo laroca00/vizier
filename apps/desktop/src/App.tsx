@@ -120,6 +120,7 @@ function devRoute(): Route | null {
   if (view === "pro") return { page: "pro", player: "Chovy" };
   if (view === "lab") return { page: "lab", championId: 103, position: "MIDDLE" };
   if (view === "matchup") return { page: "matchup", championId: 103, opponentId: 238, position: "MIDDLE" };
+  if (view === "champion") return { page: "champion", championId: Number(new URLSearchParams(location.search).get("id") ?? 103), position: null, queue: 420 };
   return view && view in LABELS && view !== "champion" ? pageRoute(view as Page) : null;
 }
 
