@@ -40,6 +40,7 @@ import { laneOpponent, panelCombos, referenceNote } from "./reference";
 import { CLOCK_TICK_MS } from "./tick";
 import { useManualTimers } from "./Timers";
 import { fallenPlayers, readWindow } from "./opportunity";
+import { readDragons } from "./dragons";
 import { newSpikes, sampleSpikes, shownSpikes, type Spike } from "./spikes";
 import type { LiveGame as Game } from "./live";
 import "./overlay.css";
@@ -291,6 +292,7 @@ export function Overlay() {
     augmentsShown,
     augmentNames: names,
     championName: (key) => championNames?.get(key) ?? key,
+    dragons: settings.overlayDragons && mode === "rift" ? readDragons(game, me.team) : null,
     opportunity: { fallen, window: readWindow(fallen, time, timers, mode === "rift") },
     spikes: settings.overlaySpikes ? shownSpikes(liveGame ? spikeLog : editing ? sampleSpikes(game.gameTime) : [], time) : [],
   };

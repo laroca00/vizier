@@ -3,7 +3,7 @@ import type { Settings } from "../settings";
 // What the overlay can show. This file holds only data; each widget's
 // drawing lives in widgets/ and is looked up by id.
 
-export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build" | "reference" | "window" | "spikes";
+export type WidgetId = "skill" | "next" | "timers" | "items" | "augments" | "scoreboard" | "bench" | "skillOrder" | "minimap" | "build" | "reference" | "window" | "spikes" | "dragons";
 export type OverlayMode = "rift" | "aram" | "arena" | "mayhem";
 export type Spot = { x: number; y: number };
 
@@ -87,6 +87,13 @@ export const WIDGETS: readonly WidgetDef[] = [
     hint: "Bir rakip 6, 11 ya da 16. seviyeye geldiğinde veya bir eşyayı tamamladığında kısa bir bildirim; koridor rakibin en üstte.",
     modes: ["rift", "aram"],
     settings: ["overlaySpikes"],
+  },
+  {
+    id: "dragons",
+    name: "Ejder ruhu",
+    hint: "İki takımın aldığı ejderler ve türleri, ruhun türü ve bir takım ruh noktasına geldiğinde bir uyarı.",
+    modes: ["rift"],
+    settings: ["overlayDragons"],
   },
   { id: "items", name: "Eşya altını farkı", hint: "Koridor rakibine ve rakip takıma göre eşyalarına harcanan altın.", modes: MODES, settings: ["overlayItems"] },
   { id: "bench", name: "Karşılaştırma", hint: "İlk 15 dakikada minyon, seviye, K/D/A ve kill katılımın, aynı şampiyon ve rolün Emerald+ ortalamasıyla (veri yeterliyse).", modes: ["rift"], settings: ["overlayBench"] },

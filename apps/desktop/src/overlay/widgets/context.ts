@@ -10,6 +10,7 @@ import type { RefSection } from "../reference";
 import type { LiveGame, LivePlayer, SkillKey, Timer } from "../live";
 import type { Fallen, Window } from "../opportunity";
 import type { Spike } from "../spikes";
+import type { DragonRead } from "../dragons";
 
 export type AugmentGroup = { rarity: number; augments: { augmentId: number; tier: string; winRate: number; games: number }[] };
 
@@ -55,4 +56,6 @@ export type WidgetContext = {
   opportunity: { fallen: Fallen[]; window: Window | null };
   /** Fresh notices of enemy ultimate ranks and finished items. */
   spikes: Spike[];
+  /** Dragons per team and the soul; null before the first dragon. */
+  dragons: DragonRead | null;
 };
