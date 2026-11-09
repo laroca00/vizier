@@ -7,7 +7,7 @@ Product scope: prepare, explore, customize. No post-game analysis or coaching (a
 ## How to work through this file
 
 - Epics are in priority order. Inside an epic, slices are in order.
-- **Who takes which epic (owner's decision, 2026-11-09):** the cloud routine builds every open epic from 17 on, in order. Local sessions only fix bugs and ship releases.
+- **Who takes which epic (owner's decision, 2026-11-09):** the cloud routine builds every open epic from 17 on, in order. Since 2026-11-10 that means the data expansion epics 32–41, in order. Local sessions only fix bugs and ship releases.
 - **Runs can overlap.** Before starting a job, read `origin/main`'s BACKLOG: a slice with `<!-- claimed: <branch> <UTC time> -->` under it that is less than 3 hours old belongs to another run; take the next free job. Claim your job by adding that line under each of its slices, committing it on main as `docs: claim <ids>` and pushing before writing code. Remove the claim lines when you tick the slices.
 - **Rust in the cloud:** first try `sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev librsvg2-dev libayatana-appindicator3-dev`, then `cargo test --lib` in `apps/desktop/src-tauri`. If the install fails, still write the Rust part with unit tests that don't need Tauri, keep it small and close to the existing code, and add "cargo check <slice ids>" to the Owner deploy queue.
 - **One run is one job: the next 4–5 unchecked slices of the highest epic that isn't blocked**, built together as one feature on one branch (`auto/<epic>-<topic>`), one commit per slice. If the epic has fewer slices left, take the rest of it plus the start of the next epic. Don't stop after a single slice; a run should be long, finishing the whole job, and then start the next job if time is left.
@@ -334,6 +334,119 @@ Builds on: the search palette (champions, pros, matchups, items, keystones, save
 - [x] 31.2 Quick reference panels the player builds: pick any of build, runes, skill order, combo, matchup note, item info, and show them on a hotkey. (b9b5635; "Hızlı bakış" widget: build, runes, skill order, combo, matchup note, next item info in the order the player picks, on Ctrl+Shift+J; cargo test --lib green)
 - [x] 31.3 Safe fallbacks: every widget shows a quiet empty state when Live Client data is missing or late, and the overlay never blocks the game when the API is down. Performance check: one render per second at most, measured in the fixture preview. (d659677; one render per second (pnpm perf:overlay measures 1.00/s in all four fixtures), a broken widget no longer takes the overlay down, opened panels with no data say so quietly; reference images regenerated)
 
+---
+
+# Data expansion: every rank, more data, more answers (owner's priority, 2026-11-10)
+
+Until now the stats came from Emerald+ (TR, EUW) and KR Challenger only. From here on Vizier collects **all ranks, Iron to Challenger**, keeps Emerald+ as the default view, and lets the player pick a rank bracket everywhere. Epics 32–37 are data work and come first; 38–41 are the ideas the wider data makes possible. Rules for all of them:
+
+- **Budget first.** The binding limits are the Riot key's rate (`RIOT_SHARE`, 70% per routing host) and D1's free 100k row writes a day (index writes count). Every slice that adds docs, rows or calls states its cost in the commit message and stays inside the budget test from 32.6. Nothing moves to a paid plan.
+- **Backward compatible.** Every existing doc key, route and response shape keeps meaning exactly what it means today (Emerald+). Bracket data lives under new keys and an optional `?rank=` parameter; old app versions never see a change.
+- **Crawler and rollup code** lives in `services/api/src` and runs on the VM over local SQLite (`services/crawler`). Local schema changes go in the crawler's own startup schema path; D1 migrations only when the Worker needs a new table. VM restarts, Worker deploys and remote migrations go to the Owner deploy queue, in the order they must run.
+- **Rank of a game** is the tier of the seed player whose match list it came from (matchmaking keeps a lobby close in rank). The first seed that stores a match wins; never count a match twice.
+- **Brackets** are stored per tier group: `iron_bronze`, `silver`, `gold`, `platinum`, `emerald`, `diamond`, `master_plus`. Published brackets are sums of groups: `all`, `gold_minus` (Iron–Gold), `platinum_plus`, `emerald_plus` (today's data, the default), `diamond_plus`, `master_plus`. Names and the summing live in one tested module used by the crawler, the Worker and the app.
+- Thin buckets go through `confidenceOf` like everything else; a bracket too thin for a champion says so instead of silently falling back.
+
+## 32. All-rank crawl
+
+Builds on: `services/api/src/crawler.ts` (seeding, `DIVISION_PAGES`, `APEX_SAMPLE`, `crawl_players`), `services/crawler/src/main.ts` (`REGIONS`, `RUN_SIZE`, `RIOT_SHARE`), `rollup.ts`, `coverage.ts`.
+
+- [ ] 32.1 Bracket module: tier groups, published brackets, `bracketOfTier(tier)`, `bracketsContaining(group)`, labels (tr/en), in a file both the API and the desktop app can import without pulling server code (if a shared package is needed, A17 starts here). Tests for every tier and every published bracket.
+- [ ] 32.2 Stratified seeding: `leagues: "all"` seeds every tier from Iron to Challenger with a quota per group (default iron_bronze 10%, silver 14%, gold 16%, platinum 16%, emerald 16%, diamond 14%, master_plus 14%, in one tunable table). Division pages are picked at random page numbers inside each division (stop at the first empty page and remember the last page per division) so seeds spread across the ladder, not only its first 205 names. TR and EUW on the Europe host move to `all`; KR moves from Challenger to `all` with the same quotas. Tests with a fake Riot client: quotas met, empty pages handled, a failed page never wipes the pool.
+- [ ] 32.3 Rank on every game: raw ranked rows get the seed's tier group (`rank_group`, nullable; old rows take the group of the seed tier they had). A match already stored from another seed keeps its first group. Tests for dedupe and the first-wins rule.
+- [ ] 32.4 Call budget per host: the crawl spends its share by group quota (games per group per hour), skips match ids already stored before fetching them, and fetches timelines only for the share the timeline docs need (today's ranked timeline share for emerald+, a lower tunable share below). Hourly log line per group: seeds, games, timelines, calls. Tests for the quota scheduler.
+- [ ] 32.5 Rollup by group: `stat_counts`, `lane_sums`, bench sums and item times gain the tier group as a key column (local SQLite), so every published bracket is a sum of groups. Emerald+ docs computed from `emerald + diamond + master_plus` must come out identical to the old path on a fixture (golden test).
+- [ ] 32.6 Write budget test: from a fixture-sized rollup, count the docs each publish would send for every bracket and kind, multiply by the publish schedule, add index writes, and fail if the projected day goes over 70,000 D1 row writes. It prints the table so later slices see where the budget goes.
+- [ ] 32.7 Coverage by bracket: `/v1/meta/coverage` gains games per bracket and per region (TR, EUW, KR) per patch and timeline share per bracket (new optional fields). The "Veriler nereden geliyor" section shows the bracket table with game counts.
+- [ ] 32.8 Owner deploy steps written into the queue in order: local schema change on VM start, crawler pull and restart, first all-rank publish, Worker deploy, what to watch in the log in the first hour.
+
+## 33. Bracket docs and the `?rank=` API
+
+Builds on: `statDocs.ts` (`docKey`), `crawler/src/publish.ts` (changed docs only), `app.ts` routes, `cache.ts`.
+
+- [ ] 33.1 Doc keys with a bracket suffix for every non-default bracket (`...:r=gold_minus`); `emerald_plus` keeps today's key. Kinds with bracket docs: tier lists, champion overview, build, counters, matchup builds, lane, bench, synergies. Item times, build history, augments and Arena stay unbracketed. Key round-trip tests.
+- [ ] 33.2 Publish schedule per bracket: emerald_plus every 4 h as today; the other brackets once a day in rotation (one bracket per publish slot) so a day's writes stay inside the 32.6 budget. Changed-docs-only still applies. Budget test updated and green.
+- [ ] 33.3 Routes take `?rank=` (`all`, `gold_minus`, `platinum_plus`, `emerald_plus`, `diamond_plus`, `master_plus`; unknown → 400; missing → emerald_plus). Responses gain `rank` next to `updatedAt`. Cache keys include the bracket. API tests per route.
+- [ ] 33.4 `?region=` on tier lists and champion overview (`tr`, `euw`, `kr`; missing = pooled as today), published once a day for `emerald_plus` and `all` only. Budget test updated.
+- [ ] 33.5 Rank curve docs: one small doc per queue with each champion and role's win rate, pick rate and games in every bracket side by side (`rankcurve:<queue>`), published once a day, for the elo views in 35.
+
+## 34. Rank everywhere in the app
+
+Builds on: the API client (`request<T>()`, per-route TTL cache, `useAsync`), the settings store, tier list, champion page, matchup page, champ select, overlay benchmark, loading screen scouting.
+
+- [ ] 34.1 Rank filter: one `RankPicker` (the six brackets plus "Benim rankım") on every page that shows crawler stats; the choice is saved in settings, shown as a chip in the page header and passed as `?rank=` through the API client. Default stays Emerald+. Tests for the settings migration and query building.
+- [ ] 34.2 "Benim rankım": read the player's solo queue tier from the LCU (typed Rust command over `/lol-ranked/v1/current-ranked-stats`, fixture test) and map it to the closest published bracket (Silver → gold_minus, Platinum → platinum_plus, Emerald → emerald_plus, ...). Unranked or client closed → Emerald+ with a note.
+- [ ] 34.3 Tier list, champion page (header, builds, runes, counters, synergies) and matchup page follow the filter; every badge tooltip names the bracket. A value too thin in the bracket is greyed with the reason.
+- [ ] 34.4 Champ select follows the player's bracket by default: pick suggestions, ban planner, hover advice, teammate picks and the imported build use it (setting "Şampiyon seçiminde kendi rankımın verisi", on). The import toast names the bracket the build came from.
+- [ ] 34.5 Overlay benchmark and loading screen scouting compare against the player's bracket instead of Emerald+ when it has enough games; the widget says which bracket it uses.
+- [ ] 34.6 Region filter (TR, EUW, KR, Hepsi) next to the rank filter on the tier list and champion page, from 33.4.
+
+## 35. Elo views: what changes with rank
+
+Builds on: 33.5 rank curve docs, tier list, champion page, the `dataviz` rules, `DataBadge`.
+
+- [ ] 35.1 "Rank'a göre" panel on the champion page: win rate and pick rate per bracket as a small line chart with games under each point, and a plain line only when the change is outside the interval ("yüksek rankta daha iyi", "düşük rankta güçlü").
+- [ ] 35.2 Elo explorer page (`?view=elo`): champions whose win rate rises or falls most from gold_minus to master_plus, per role, with games and badges; role and minimum games filters. Menu, palette and route as usual.
+- [ ] 35.3 "Düşük elo dostu" and "Yüksek elo ödüllendirir" tags on tier list rows and in pool builder suggestions, only when the data supports them (interval rule from 22.2).
+- [ ] 35.4 Queue view and autofill picks (21.2) use the player's bracket and prefer champions that are strong in it.
+
+## 36. More from every game (new aggregate stats)
+
+Builds on: raw ranked rows, timelines, `rollup.ts`, lane sums, item times, the champion page. Every new stat is bracketed like the rest and fits the budget test.
+
+- [ ] 36.1 Win rate by game length: per champion and role, games and win rate in five buckets (<20, 20–25, 25–30, 30–35, 35+ min). Chart on the champion page; the draft phase curve (1.5) uses it when the data is thick enough and keeps the hand-kept curve as the labelled fallback.
+- [ ] 36.2 Jungle paths: from timeline participant frames, the first camp side (topside or botside, by position at 1:30–2:00), the first lane visited after the clear (level 3–4 position near a lane) and the first gank minute, summed per jungler. Champion page "İlk tur" section with games per path. Tests on recorded frames.
+- [ ] 36.3 Objectives per champion and role: team first dragon, first grubs or herald, first tower and first blood rates against the role average, with games. On the champion page, and "objektif gücü" tags where clear.
+- [ ] 36.4 Item path tree: first, second and third completed item as a tree with win rate and games per branch (top 3 per level), from purchase order. Champion page build tab and the Itemization Lab's column picker.
+- [ ] 36.5 Start and timing: most common starting items with win rate, and the median minute of boots and first completed item per champion and role (extends item times).
+- [ ] 36.6 Builds of players who play the champion a lot: games from seeds with many games on it in the kept window (anonymised, no names, no profiles), summed as their own build doc with games. Shown as "Çok oynayanlar" next to the popular build when it differs.
+- [ ] 36.7 Daily history: once a day a compact row per champion, role and bracket (win rate, pick rate, ban rate, games), kept for the two newest patches. Route `/v1/history/:championId`. Sparkline on the champion page header and tier list rows.
+
+## 37. Data quality and trust
+
+Builds on: rollup, coverage, `confidenceOf`, 22.x.
+
+- [ ] 37.1 Leaver and remake filter: drop games that ended in early surrender or where a player left (`gameEndedInEarlySurrender`, AFK signs such as near-zero gold or damage), counted in coverage as dropped.
+- [ ] 37.2 Role fix: when `teamPosition` is empty or two players share it, infer roles from Smite, items and timeline lane positions; fixture tests. Coverage counts how many games needed it.
+- [ ] 37.3 Sanity checks on every rollup: average win rate of all champions near 50%, pick rates summing to 10 per game per bracket, no champion with more games than the patch total. A failing check holds the publish for that bracket and logs why.
+- [ ] 37.4 New patch blending: in the first days of a patch, when a champion's new-patch sample is thin, show the previous patch labelled "geçen yama" instead of empty values, until the new sample passes the confidence rule.
+- [ ] 37.5 Status card under About: last publish per bracket, games today, timeline share and any bracket held by 37.3, from coverage.
+
+## 38. Stats Explorer
+
+Builds on: tier list data, 33.x brackets, 36.x stats, the search palette.
+
+- [ ] 38.1 Stats Explorer page (`?view=stats`): every champion and role in one sortable table with win rate, pick rate, ban rate, games, KDA, CS/min, gold diff at 15 and average game length; filters for role, rank, region and patch; a badge on every cell.
+- [ ] 38.2 Column picker and saved views in settings, with three ready ones: lane bullies (gold diff at 15), late game (35+ win rate), ban targets.
+- [ ] 38.3 Compare up to three champions side by side across every stat and bracket, opened from the explorer or the champion page.
+- [ ] 38.4 Intent searches for the explorer ("en yüksek winrate jungle", "lane bully top") through the 30.2 intent rules.
+
+## 39. Rising and falling
+
+Builds on: 36.7 history, the patch tracker, Home 2.0 cards.
+
+- [ ] 39.1 Movers: champions whose win rate or pick rate moved most within the patch (history plus the interval rule), per bracket. Home card and a tab on the tier list.
+- [ ] 39.2 Patch impact: for each champion changed in the patch tracker's diff, win rate before and after with games once the new patch has enough data.
+- [ ] 39.3 Pool notices: a quiet line on Home when a champion in the player's pool rose or fell clearly in their bracket.
+
+## 40. Modes with more data
+
+Builds on: `mode_players`, the ARAM, Mayhem and Arena docs. All-rank seeding brings far more mode players.
+
+- [ ] 40.1 Mode player pool sized for all ranks: raise `MODE_PLAYERS_MAX` within the call budget, spread checks across the seed groups, report mode games per day in coverage.
+- [ ] 40.2 ARAM win rate by game length (36.1 for ARAM) on the ARAM champion page and tier list.
+- [ ] 40.3 Arena item win rates per champion behind the existing `ARENA_ITEMS` switch; budget test updated.
+- [ ] 40.4 Mayhem augment pairs: the two augments that do best together on a champion (taken in the same game), top five per champion with games, behind `AUGMENTS`.
+
+## 41. Smarter preparation from the new data
+
+Builds on: champ select (epic 1), Matchup Academy (24), the lab (23).
+
+- [ ] 41.1 Matchup page: lane gold and CS diff at 10 and 15 by bracket, and the matchup's win rate per game length bucket ("15. dakikaya kadar zor, sonra senin") when the data supports it.
+- [ ] 41.2 Pick suggestions get a "senin rankında" reason line when bracket data changes the order compared with Emerald+.
+- [ ] 41.3 Jungle paths from 36.2 in champ select: the player's jungler and the enemy jungler's most common first path, with games.
+- [ ] 41.4 Item path tree (36.4) offered as an import choice in champ select ("en çok kazanan yol" or "en popüler").
+
 ## 16. Only when a feature needs it
 
 Code health tasks. Do one only when a feature above depends on it.
@@ -354,6 +467,7 @@ Steps that need the owner's credentials or approval. Add to this list; don't run
 
 Everything up to 0.8.6 is shipped (2026-11-10): D1 migrations through 0017 applied, Worker deployed, crawler pulled and restarted, `RIOT_KEY` set, desktop 0.8.6 released.
 
+- Data expansion: once 32 and 33 are merged, run the steps 32.8 lists, in order. Until then the VM keeps crawling Emerald+ as before.
 - Mayhem queue id: the probe on euw1 found no 2400/2401/2403/2405/2410/2450 games among Challenger players. Run it with the Riot ID of someone who plays Mayhem (`probeQueues.ts euw1 "Name#TAG"`), then trim `MAYHEM_QUEUES`.
 - Check the lobby reading (epic 21) once against a live client.
 - Optional: set `ARENA_ITEMS=off` on the Worker to hide Arena item stats; they are on by default.
