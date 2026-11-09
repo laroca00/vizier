@@ -3,6 +3,7 @@ import { DEFAULT_HOME, type HomeLayout } from "./home/layout";
 import { withAutoImportOn } from "./autoImportDefault";
 import type { AutopilotMode } from "./autopilot";
 import type { LanguageSetting } from "./i18n";
+import type { OverlayTheme, WidgetStyles } from "./overlay/appearance";
 
 export type Settings = {
   autoImportRunes: boolean;
@@ -24,6 +25,10 @@ export type Settings = {
   overlay: boolean;
   /** Size of every overlay box, 0.8 to 1.4. */
   overlayScale: number;
+  /** Colour of the overlay cards. */
+  overlayTheme: OverlayTheme;
+  /** Size and opacity the player set for single widgets. */
+  overlayWidgetStyles: WidgetStyles;
   /** On the loading screen, rank and champion mastery of all ten players. */
   overlayScouting: boolean;
   /** Your CS and level against the ranked average at this minute. */
@@ -73,6 +78,8 @@ const DEFAULTS: Settings = {
   autoAcceptReady: false,
   overlay: true,
   overlayScale: 1,
+  overlayTheme: "navy",
+  overlayWidgetStyles: {},
   overlayScouting: true,
   overlayBench: true,
   hotkeys: {},

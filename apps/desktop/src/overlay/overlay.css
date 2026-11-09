@@ -27,7 +27,7 @@ html:has(.overlay) body {
   gap: 3px;
   padding: 9px 12px;
   border-radius: 12px;
-  background: rgb(8 18 54 / 0.78);
+  background: rgb(var(--overlay-bg, 8 18 54) / calc(0.78 * var(--overlay-alpha, 1)));
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
   animation: rise var(--duration-standard) var(--ease-enter) both;
   --rise: 4px;
@@ -160,7 +160,7 @@ html:has(.overlay) body {
   border-radius: 14px;
   font-size: 13px;
   color: var(--glaze);
-  background: rgb(8 18 54 / 0.92);
+  background: rgb(var(--overlay-bg, 8 18 54) / calc(0.92 * var(--overlay-alpha, 1)));
   box-shadow: inset 0 0 0 1px rgb(214 180 106 / 0.5);
   transform: translateX(-50%);
   pointer-events: auto;
@@ -199,7 +199,7 @@ html:has(.overlay) body {
   width: 58px;
   height: 22px;
   border-radius: 7px;
-  background: rgb(8 18 54 / 0.85);
+  background: rgb(var(--overlay-bg, 8 18 54) / calc(0.85 * var(--overlay-alpha, 1)));
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
 }
 
@@ -230,7 +230,7 @@ html:has(.overlay) body {
   box-sizing: border-box;
   border-radius: 7px;
   font-size: 12px;
-  background: rgb(8 18 54 / 0.85);
+  background: rgb(var(--overlay-bg, 8 18 54) / calc(0.85 * var(--overlay-alpha, 1)));
   box-shadow: inset 0 0 0 1px rgb(214 180 106 / 0.45);
 }
 
@@ -434,7 +434,7 @@ html:has(.overlay) body {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--glaze);
-  background: rgb(8 18 54 / 0.85);
+  background: rgb(var(--overlay-bg, 8 18 54) / calc(0.85 * var(--overlay-alpha, 1)));
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18);
 }
 
@@ -496,4 +496,9 @@ html:has(.overlay) body {
 
 .overlay__build-items li:not([data-owned]) img {
   filter: grayscale(0.7);
+}
+
+/* Per-widget size; zoom (not transform) so the box's layout space follows it. */
+.overlay__zoom {
+  zoom: var(--widget-scale, 1);
 }

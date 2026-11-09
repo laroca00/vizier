@@ -1,4 +1,4 @@
-import { createElement, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type WheelEvent } from "react";
+import { createElement, type CSSProperties, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type WheelEvent } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getAugments, getBench, getBuild, type Build, type Picks } from "../api";
@@ -24,6 +24,7 @@ import {
 } from "./live";
 import { skillSequence } from "../SkillGrid";
 import { benchRead, expectedAt, pushHistory, BENCH_END_MINUTE } from "./bench";
+import { rootVars, widgetVars } from "./appearance";
 import { GRID, ROW_GAP, snapSpot, useLayout, type ScreenSize } from "./layout";
 import { modeOf, widgetsFor, type Spot, type WidgetId } from "./registry";
 import { hasContent } from "./widgets/active";
@@ -224,13 +225,13 @@ export function Overlay() {
   const pinned = shown.filter((def) => def.fixed);
 
   return (
-    <div className="overlay-root" data-editing={editing || undefined} aria-hidden={!editing} style={{ "--overlay-scale": settings.overlayScale } as CSSProperties}>
+    <div className="overlay-root" data-editing={editing || undefined} aria-hidden={!editing} style={rootVars(settings.overlayTheme, settings.overlayScale)}>
       {/* Dragged boxes stay in this list too, fixed in place, so a drag never remounts the box it moves. */}
       <div className="overlay">
         {boxes
           .filter((def) => !def.defaultSpot)
           .map((def) => (
-            <Draggable key={def.id} id={def.id} name={t(def.name)} editing={editing} spot={layout[def.id] ?? null} onMove={move}>
+            <Draggable key={def.id} id={def.id} name={t(def.name)} editing={editing} spot={layout[def.id] ?? null} onMove={move} vars={widgetVars(settings.overlayWidgetStyles[def.id])}>
               {createElement(WIDGET_VIEWS[def.id], ctx)}
             </Draggable>
           ))}
@@ -246,6 +247,7 @@ export function Overlay() {
             editing={editing}
             spot={layout[def.id] ?? def.defaultSpot!}
             onMove={move}
+            vars={widgetVars(settings.overlayWidgetStyles[def.id])}
             onWheel={def.id === "scoreboard" ? (event) => save({ ...layout, rowGap: Math.min(0.12, Math.max(0.02, ctx.rowGap + (event.deltaY < 0 ? 0.001 : -0.001))) }) : undefined}
           >
             {createElement(WIDGET_VIEWS[def.id], ctx)}
@@ -253,7 +255,7 @@ export function Overlay() {
         ))}
 
       {pinned.map((def) => (
-        <div key={def.id} className="overlay__pins">
+        <div key={def.id} className="overlay__pins" style={widgetVars(settings.overlayWidgetStyles[def.id])}>
           {createElement(WIDGET_VIEWS[def.id], ctx)}
         </div>
       ))}
@@ -274,6 +276,7 @@ function Draggable({
   spot,
   onMove,
   onWheel,
+  vars,
   children,
 }: {
   id: WidgetId;
@@ -282,6 +285,7 @@ function Draggable({
   spot: Spot | null;
   onMove: (id: WidgetId, spot: Spot, done: boolean) => void;
   onWheel?: (event: WheelEvent) => void;
+  vars: CSSProperties;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -300,7 +304,7 @@ function Draggable({
       className="overlay__box"
       data-placed={spot ? true : undefined}
       data-name={editing ? name : undefined}
-      style={spot ? { left: `${spot.x * 100}vw`, top: `${spot.y * 100}vh` } : undefined}
+      style={spot ? { ...vars, left: `${spot.x * 100}vw`, top: `${spot.y * 100}vh` } : vars}
       onPointerDown={(event) => {
         if (!editing) return;
         const box = ref.current!.getBoundingClientRect();
@@ -315,7 +319,7 @@ function Draggable({
       }}
       onWheel={editing ? onWheel : undefined}
     >
-      {children}
+      <div className="overlay__zoom">{children}</div>
     </div>
   );
 }

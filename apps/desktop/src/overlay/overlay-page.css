@@ -37,3 +37,8 @@
 .shortcuts [data-clash] .shortcuts__clash {
   color: var(--bole);
 }
+
+.overlay-widgets__style {
+  display: grid;
+  gap: 4px;
+}
