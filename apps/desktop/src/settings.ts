@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { DEFAULT_HOME, type HomeLayout } from "./home/layout";
+import { withAutoImportOn } from "./autoImportDefault";
 import type { LanguageSetting } from "./i18n";
 
 export type Settings = {
@@ -31,8 +32,8 @@ export type Settings = {
 };
 
 const DEFAULTS: Settings = {
-  autoImportRunes: false,
-  autoImportSpells: false,
+  autoImportRunes: true,
+  autoImportSpells: true,
   autoImportItems: true,
   showOnChampSelect: true,
   readyCheckAlert: false,
@@ -54,9 +55,20 @@ const DEFAULTS: Settings = {
 const KEY = "vizier.settings";
 const listeners = new Set<() => void>();
 
+const AUTO_IMPORT_KEY = "vizier.settings.autoImportOn";
+
 function read(): Settings {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") };
+    const raw = localStorage.getItem(KEY);
+    let stored: Partial<Settings> = JSON.parse(raw ?? "{}");
+    if (localStorage.getItem(AUTO_IMPORT_KEY) !== "1") {
+      if (raw !== null) {
+        stored = withAutoImportOn(stored);
+        localStorage.setItem(KEY, JSON.stringify({ ...DEFAULTS, ...stored }));
+      }
+      localStorage.setItem(AUTO_IMPORT_KEY, "1");
+    }
+    return { ...DEFAULTS, ...stored };
   } catch {
     return DEFAULTS;
   }
