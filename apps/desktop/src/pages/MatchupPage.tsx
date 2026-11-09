@@ -11,6 +11,7 @@ import { PowerSpikes } from "../draft/PowerSpikes";
 import { StatsDuel } from "../draft/StatsDuel";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { useLang, useT } from "../i18n";
+import { AcademyNotes } from "../AcademyNotes";
 import { JournalNote, useMatchupTemplate } from "../Journal";
 import { POSITIONS } from "../labels";
 import { matchupNoteKey } from "../personal";
@@ -140,6 +141,7 @@ export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange
                 />
               </section>
               <JournalNote noteKey={matchupNoteKey(route.championId, route.opponentId)} label={t("Eşleşme notun")} template={template} />
+              <AcademyNotes noteKey={matchupNoteKey(route.championId, route.opponentId)} />
             </div>
           ) : (
             <EmptyState title={t("İki şampiyon seç")}>{t("Eşleşmeyi görmek için iki farklı şampiyon ve bir rol seç.")}</EmptyState>

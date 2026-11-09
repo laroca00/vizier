@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { addAcademy, parseAcademy, removeAcademy, type AcademyKind, type AcademyNotes } from "./academyNotes";
 import { addToPlan, moveInPlan, parsePlan, removeFromPlan, type PickPlan, type PlanKind } from "./pickPlan";
 
 // What the player keeps for themselves: their champion pool, favourite
@@ -29,9 +30,11 @@ export type Personal = {
   recent: number[];
   /** Picks and bans to try in champ select, per role. */
   plan: PickPlan;
+  /** Reminders and favourite plans per matchup, under the same keys as `notes`; absent in data from before the academy. */
+  academy: AcademyNotes;
 };
 
-const DEFAULTS: Personal = { pool: [], favourites: [], followed: [], notes: {}, recent: [], plan: {} };
+const DEFAULTS: Personal = { pool: [], favourites: [], followed: [], notes: {}, recent: [], plan: {}, academy: {} };
 const MAX_RECENT = 8;
 const KEY = "vizier.personal";
 const listeners = new Set<() => void>();
@@ -57,7 +60,7 @@ export function parsePersonal(raw: string | null): Personal {
     const notes = data.notes && typeof data.notes === "object" ? data.notes : {};
     // Older versions also kept goals here; they are dropped on the next write.
     const followed = Array.isArray(data.followed) ? data.followed.filter((p): p is string => typeof p === "string") : [];
-    return { pool, favourites: ids(data.favourites), followed, notes, recent: ids(data.recent), plan: parsePlan(data.plan) };
+    return { pool, favourites: ids(data.favourites), followed, notes, recent: ids(data.recent), plan: parsePlan(data.plan), academy: parseAcademy(data.academy) };
   } catch {
     return DEFAULTS;
   }
@@ -166,3 +169,6 @@ export function noteRecent(championId: number) {
 export const addPlanned = (role: string, kind: PlanKind, championId: number) => update((p) => ({ plan: addToPlan(p.plan, role, kind, championId) }));
 export const removePlanned = (role: string, kind: PlanKind, championId: number) => update((p) => ({ plan: removeFromPlan(p.plan, role, kind, championId) }));
 export const movePlanned = (role: string, kind: PlanKind, from: number, to: number) => update((p) => ({ plan: moveInPlan(p.plan, role, kind, from, to) }));
+
+export const addAcademyNote = (key: string, kind: AcademyKind, text: string) => update((p) => ({ academy: addAcademy(p.academy, key, kind, text) }));
+export const removeAcademyNote = (key: string, kind: AcademyKind, index: number) => update((p) => ({ academy: removeAcademy(p.academy, key, kind, index) }));

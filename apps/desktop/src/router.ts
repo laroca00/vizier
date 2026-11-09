@@ -19,6 +19,8 @@ export type Route =
   | { page: "matchup"; championId: number | null; opponentId: number | null; position: string }
   | { page: "champion"; championId: number; position: string | null; queue: number }
   | { page: "journal" }
+  | { page: "combos" }
+  | { page: "archetypes" }
   | { page: "lab"; championId: number | null; position: string }
   | { page: "items"; itemId?: number }
   | { page: "runes"; runeId?: number }

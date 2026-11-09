@@ -23,7 +23,9 @@ export type IconName =
   | "journal"
   | "items"
   | "runes"
-  | "lab";
+  | "lab"
+  | "combos"
+  | "archetypes";
 
 // Drawn for Vizier on a 20px grid with a 1.6 stroke, so they sit with the
 // Geologica text at the same weight.
@@ -43,6 +45,8 @@ const PATHS: Record<IconName, string> = {
   close: "M5.5 5.5l9 9M14.5 5.5l-9 9",
   overlay: "M3.5 4.5h13v9h-13zM7 16.5h6M10 13.5v3M6.5 7.5h3v2.5h-3z",
   champions: "M10 3l6 2.5v4c0 3.6-2.5 6.3-6 7.5-3.5-1.2-6-3.9-6-7.5v-4zM7.5 9.5l2 2 3.5-4",
+  archetypes: "M6 4.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM14 10.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM9.5 8.5l1 3",
+  combos: "M3.5 5.5h4v4h-4zM12.5 10.5h4v4h-4zM7.5 7.5h3a2 2 0 0 1 2 2v1",
   lab: "M8 3.5h4M9 3.5v4.6L4.8 15a1.2 1.2 0 0 0 1 1.8h8.4a1.2 1.2 0 0 0 1-1.8L11 8.1V3.5M6.8 12.5h6.4",
   matchup: "M3.5 5.5l5.5 4.5-5.5 4.5zM16.5 5.5 11 10l5.5 4.5z",
   simulator: "M3.5 4.5h5v11h-5zM11.5 4.5h5v11h-5zM5 8h2M5 11h2M13 8h2M13 11h2",
