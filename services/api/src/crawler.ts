@@ -1,3 +1,4 @@
+import { TIER_GROUPS, type TierGroup } from "@vizier/shared/brackets";
 import type { Platform, Region, RiotClient } from "./riot/client.ts";
 import { buildPaths, csByMinute, encodeKda, goldAtMinute, kdaByMinute, levelByMinute, type BuildPath, type KdaPoint, type Timeline } from "./timeline.ts";
 import { patchOf, type LeagueEntryWithPuuid, type LeagueList, type Match, type Participant } from "./riot/types.ts";
@@ -69,6 +70,34 @@ function divisionPages(tier: string, pages: number): [string, string][] {
   );
 }
 
+// Seeds per platform and the share each tier group gets of them. The share is
+// of players followed, not of games: the crawl spends games by the same table.
+export const SEED_SIZE = 4800;
+export const SEED_QUOTA: Record<TierGroup, number> = {
+  iron_bronze: 0.1,
+  silver: 0.14,
+  gold: 0.16,
+  platinum: 0.16,
+  emerald: 0.16,
+  diamond: 0.14,
+  master_plus: 0.14,
+};
+/** Riot tiers behind each group, lowest first; the apex group is read from the league lists. */
+export const GROUP_TIERS: Record<TierGroup, string[]> = {
+  iron_bronze: ["IRON", "BRONZE"],
+  silver: ["SILVER"],
+  gold: ["GOLD"],
+  platinum: ["PLATINUM"],
+  emerald: ["EMERALD"],
+  diamond: ["DIAMOND"],
+  master_plus: ["MASTER", "GRANDMASTER", "CHALLENGER"],
+};
+const PAGE_SIZE = 205;
+// Until a division's last page is known, pages are drawn from the first this many.
+const PAGE_PROBE = 30;
+const PAGE_TRIES = 12;
+const DIVISIONS = ["I", "II", "III", "IV"];
+
 function sample<T>(items: T[], size: number): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -86,7 +115,7 @@ export type CrawlOptions = {
   /** Where the seed players come from; all must belong to `region`. */
   platforms: Platform[];
   /** Challenger only, every apex league, or apex plus the top Diamond and Emerald pages. */
-  leagues: "challenger" | "apex" | "emerald+";
+  leagues: "challenger" | "apex" | "emerald+" | "all";
   playersPerRun: number;
   matchesPerRun: number;
   /** Games from the other stored queues, on top of ranked. */
@@ -172,6 +201,10 @@ export class Crawler {
     const players: { puuid: string; tier: string }[] = [];
     const apex = leagues === "challenger" ? APEX_LEAGUES.slice(0, 1) : APEX_LEAGUES;
     for (const platform of platforms) {
+      if (leagues === "all") {
+        players.push(...(await this.seedAll(platform)));
+        continue;
+      }
       const top: { puuid: string; tier: string }[] = [];
       for (const [tier, path] of apex) {
         const league = await this.riot.get<LeagueList>(platform, path, path);
@@ -192,8 +225,16 @@ export class Crawler {
     const statements = players.filter((p) => p.puuid).map((p) => insert.bind(p.puuid, p.tier, region));
     // The list is replaced, not added to, so the mix follows the seed above
     // instead of growing towards whoever was seeded before. A failed seed
-    // (the key expired, say) keeps the old list.
-    if (statements.length > 0) statements.unshift(this.db.prepare("DELETE FROM crawl_players WHERE region = ?").bind(region));
+    // (the key expired, say) keeps the old list. With every rank, only the
+    // tiers that came back are replaced, so one failed page keeps its tier.
+    if (statements.length > 0) {
+      const tiers = [...new Set(players.map((p) => p.tier))];
+      statements.unshift(
+        leagues === "all"
+          ? this.db.prepare(`DELETE FROM crawl_players WHERE region = ? AND tier IN (${tiers.map(() => "?").join(",")})`).bind(region, ...tiers)
+          : this.db.prepare("DELETE FROM crawl_players WHERE region = ?").bind(region),
+      );
+    }
     // D1 caps a batch's size; chunk to stay well inside it.
     for (let i = 0; i < statements.length; i += 100) await this.db.batch(statements.slice(i, i + 100));
     await this.db
@@ -201,6 +242,75 @@ export class Crawler {
       .bind(stateKey, String(this.now()))
       .run();
     return players.length;
+  }
+
+  /**
+   * A ladder-wide seed: each tier group gets its quota, filled from random
+   * pages of each division so seeds spread over the whole ladder.
+   */
+  private async seedAll(platform: Platform): Promise<{ puuid: string; tier: string }[]> {
+    const players: { puuid: string; tier: string }[] = [];
+    for (const group of TIER_GROUPS) {
+      const quota = Math.round(SEED_SIZE * SEED_QUOTA[group]);
+      if (group === "master_plus") {
+        const top: { puuid: string; tier: string }[] = [];
+        for (const [tier, path] of APEX_LEAGUES) {
+          const league = await this.riot.get<LeagueList>(platform, path, path);
+          for (const entry of league?.entries ?? []) top.push({ puuid: entry.puuid, tier });
+        }
+        players.push(...sample(top, quota));
+        continue;
+      }
+      const divisions = GROUP_TIERS[group].flatMap((tier) => DIVISIONS.map((division) => [tier, division] as const));
+      const each = Math.ceil(quota / divisions.length);
+      for (const [tier, division] of divisions) {
+        const found: { puuid: string; tier: string }[] = [];
+        const taken = new Set<number>();
+        for (let i = 0; i < Math.ceil(each / PAGE_SIZE); i++) {
+          const page = await this.randomPage(platform, tier, division, taken);
+          for (const entry of page) if (entry.puuid) found.push({ puuid: entry.puuid, tier });
+        }
+        players.push(...sample(found, each));
+      }
+    }
+    return players;
+  }
+
+  /**
+   * A random page of a division. The last page is learned from the first
+   * empty or short page and remembered, so later draws stay inside the ladder.
+   * A failed call returns nothing and teaches nothing.
+   */
+  private async randomPage(platform: Platform, tier: string, division: string, taken: Set<number>): Promise<LeagueEntryWithPuuid[]> {
+    const key = `last_page:${platform}:${tier}:${division}`;
+    const row = await this.db.prepare("SELECT value FROM crawl_state WHERE key = ?").bind(key).first<{ value: string }>();
+    let last = row ? Number(row.value) : null;
+    const remember = (page: number) =>
+      this.db.prepare("INSERT OR REPLACE INTO crawl_state (key, value) VALUES (?, ?)").bind(key, String(page)).run();
+    for (let attempt = 0; attempt < PAGE_TRIES; attempt++) {
+      const upper = last ?? PAGE_PROBE;
+      const open = Array.from({ length: upper }, (_, i) => i + 1).filter((n) => !taken.has(n));
+      if (open.length === 0) return [];
+      const page = open[Math.floor(Math.random() * open.length)];
+      const entries = await this.riot.get<LeagueEntryWithPuuid[]>(
+        platform,
+        "/lol/league/v4/entries",
+        `/lol/league/v4/entries/RANKED_SOLO_5x5/${tier}/${division}?page=${page}`,
+      );
+      if (entries === null) return [];
+      if (entries.length === 0) {
+        last = page - 1;
+        await remember(last);
+        continue;
+      }
+      taken.add(page);
+      if (entries.length < PAGE_SIZE && last !== page) {
+        last = page;
+        await remember(page);
+      }
+      return entries;
+    }
+    return [];
   }
 
   private async collectMatchIds(): Promise<string[]> {

@@ -34,8 +34,8 @@ const DAY = 24 * HOUR;
 // roughly one run per two minutes per region on a development key.
 const RUN_SIZE = { playersPerRun: 4, matchesPerRun: 40, extraMatchesPerRun: 4, timelinesPerRun: 20 };
 const REGIONS: CrawlOptions[] = [
-  { region: "europe", platforms: ["tr1", "euw1"], leagues: "emerald+", ...RUN_SIZE },
-  { region: "asia", platforms: ["kr"], leagues: "challenger", ...RUN_SIZE },
+  { region: "europe", platforms: ["tr1", "euw1"], leagues: "all", ...RUN_SIZE },
+  { region: "asia", platforms: ["kr"], leagues: "all", ...RUN_SIZE },
 ];
 
 const env = process.env;
