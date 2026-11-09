@@ -1,0 +1,10 @@
+.rank-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rank-picker__note {
+  font-size: 12px;
+  color: var(--glaze-muted);
+}

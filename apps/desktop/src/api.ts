@@ -1,6 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "https://vizier-api.vizier-api.workers.dev";
 
 import { createApiCache } from "./apiCache";
+import { activeBracket, withRank } from "./rankChoice";
 import { ApiError, requestJson } from "./http";
 
 export { ApiError };
@@ -9,8 +10,10 @@ export { ApiError };
 // publishes every few hours, so answers are kept per route (see apiCache.ts).
 const cache = createApiCache(typeof sessionStorage === "undefined" ? null : sessionStorage);
 
-function get<T>(path: string, init?: RequestInit): Promise<T> {
-  if (init) return request<T>(path, init);
+function get<T>(route: string, init?: RequestInit): Promise<T> {
+  if (init) return request<T>(route, init);
+  // The cache key carries the bracket, so each rank keeps its own answers.
+  const path = withRank(route, activeBracket());
   return cache.get(path, () => request<T>(path));
 }
 

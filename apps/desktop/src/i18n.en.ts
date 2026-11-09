@@ -124,6 +124,8 @@ export const EN: Record<string, string> = {
   "Ligler ve maç sayıları": "Ranks and game counts",
   "Yama {patch}, dereceli tek/çift maçları": "Patch {patch}, ranked solo/duo games",
   "Lig": "Rank",
+  "Benim rankım": "My rank",
+  "Rankın bilinmiyor, Zümrüt+ gösteriliyor": "Your rank is unknown, showing Emerald+",
   "Zaman çizelgeli": "With timeline",
   "Şampiyon, eşya, rün ve yetenek bilgileri Riot'un Data Dragon ve CommunityDragon dosyalarından gelir.": "Champion, item, rune and ability details come from Riot's Data Dragon and CommunityDragon files.",
   "Yalnızca en yeni iki yama tutulur; eski yamaların maçları güncel oyunu anlatmaz.": "Only the two newest patches are kept; games from older patches don't describe the live game.",
