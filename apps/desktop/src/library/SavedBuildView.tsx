@@ -1,3 +1,4 @@
+import { FavouriteButton } from "../workspace/FavouriteButton";
 import { isTauri } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { championIconUrl, itemIconUrl, runeIconUrl, spellIconUrl } from "../data/ddragon";
@@ -47,6 +48,7 @@ export function SavedBuildView({ build, data, others = [], onEdit, onSelect }: P
             {[champion?.name, build.position ? positionLabel(build.position) : t("Her rol"), t(SOURCES[build.source])].filter(Boolean).join(", ")}
           </p>
         </div>
+        <FavouriteButton kind="build" id={build.id} label={build.name} championId={build.championId} />
         <button
           type="button"
           className="saved__star"

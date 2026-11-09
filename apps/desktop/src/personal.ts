@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { addAcademy, parseAcademy, removeAcademy, type AcademyKind, type AcademyNotes } from "./academyNotes";
+import { changeSpace, parseSpaces, type ChampionSpace, type ChampionSpaces } from "./championSpace";
+import { dropCollection, parseFavourites, patchFavourite, toggleFavourite as toggleFav, type FavKind, type Favourite } from "./favourites";
 import { addToPlan, moveInPlan, parsePlan, removeFromPlan, type PickPlan, type PlanKind } from "./pickPlan";
 
 // What the player keeps for themselves: their champion pool, favourite
@@ -32,13 +34,19 @@ export type Personal = {
   plan: PickPlan;
   /** Reminders and favourite plans per matchup, under the same keys as `notes`; absent in data from before the academy. */
   academy: AcademyNotes;
+  /** Starred items of every kind with their tags and collections; absent in data from before favourites. */
+  favs: Favourite[];
+  favCollections: string[];
+  /** Per champion: preferred role, labels, reminders and links, by champion id. */
+  spaces: ChampionSpaces;
 };
 
-const DEFAULTS: Personal = { pool: [], favourites: [], followed: [], notes: {}, recent: [], plan: {}, academy: {} };
+const DEFAULTS: Personal = { pool: [], favourites: [], followed: [], notes: {}, recent: [], plan: {}, academy: {}, favs: [], favCollections: [], spaces: {} };
 const MAX_RECENT = 8;
 const KEY = "vizier.personal";
 const listeners = new Set<() => void>();
 
+const collections = (value: unknown) => (Array.isArray(value) ? [...new Set(value.filter((v): v is string => typeof v === "string").map((v) => v.trim().slice(0, 30)).filter(Boolean))].slice(0, 12) : []);
 const ids = (value: unknown) => (Array.isArray(value) ? value.filter((n): n is number => typeof n === "number") : []);
 
 /**
@@ -60,7 +68,7 @@ export function parsePersonal(raw: string | null): Personal {
     const notes = data.notes && typeof data.notes === "object" ? data.notes : {};
     // Older versions also kept goals here; they are dropped on the next write.
     const followed = Array.isArray(data.followed) ? data.followed.filter((p): p is string => typeof p === "string") : [];
-    return { pool, favourites: ids(data.favourites), followed, notes, recent: ids(data.recent), plan: parsePlan(data.plan), academy: parseAcademy(data.academy) };
+    return { pool, favourites: ids(data.favourites), followed, notes, recent: ids(data.recent), plan: parsePlan(data.plan), academy: parseAcademy(data.academy), favs: parseFavourites(data.favs), favCollections: collections(data.favCollections), spaces: parseSpaces(data.spaces) };
   } catch {
     return DEFAULTS;
   }
@@ -172,3 +180,11 @@ export const movePlanned = (role: string, kind: PlanKind, from: number, to: numb
 
 export const addAcademyNote = (key: string, kind: AcademyKind, text: string) => update((p) => ({ academy: addAcademy(p.academy, key, kind, text) }));
 export const removeAcademyNote = (key: string, kind: AcademyKind, index: number) => update((p) => ({ academy: removeAcademy(p.academy, key, kind, index) }));
+
+export const toggleFavouriteItem = (item: { kind: FavKind; id: string; label: string; championId?: number | null }) => update((p) => ({ favs: toggleFav(p.favs, item, Date.now()) }));
+export const tagFavourite = (kind: FavKind, id: string, tags: string[]) => update((p) => ({ favs: patchFavourite(p.favs, kind, id, { tags }) }));
+export const fileFavourite = (kind: FavKind, id: string, collection: string | null) => update((p) => ({ favs: patchFavourite(p.favs, kind, id, { collection }) }));
+export const noteFavouriteOpened = (kind: FavKind, id: string) => update((p) => (p.favs.some((f) => f.kind === kind && f.id === id) ? { favs: patchFavourite(p.favs, kind, id, { openedAt: Date.now() }) } : {}));
+export const addFavCollection = (name: string) => update((p) => (name.trim() && !p.favCollections.includes(name.trim()) && p.favCollections.length < 12 ? { favCollections: [...p.favCollections, name.trim().slice(0, 30)] } : {}));
+export const removeFavCollection = (name: string) => update((p) => ({ favCollections: p.favCollections.filter((c) => c !== name), favs: dropCollection(p.favs, name) }));
+export const updateSpace = (championId: number, change: (space: ChampionSpace) => ChampionSpace) => update((p) => ({ spaces: changeSpace(p.spaces, championId, change) }));

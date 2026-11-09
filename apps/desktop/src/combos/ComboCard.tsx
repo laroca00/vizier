@@ -3,6 +3,7 @@ import { CATEGORY_TEXT, type Combo } from "../data/combos";
 import { useLang, useT } from "../i18n";
 import { DataBadge } from "../ui/DataBadge";
 import { useAsync } from "../useAsync";
+import { FavouriteButton } from "../workspace/FavouriteButton";
 import "./combos.css";
 
 const SPELL_KEYS: Record<string, number> = { Flash: 4, Ignite: 14, Ghost: 6, Smite: 11 };
@@ -48,6 +49,7 @@ export function ComboCard({ champion, version, combo, patch, changedIn = null }:
           {"●".repeat(combo.difficulty)}
           {"○".repeat(3 - combo.difficulty)}
         </span>
+        <FavouriteButton kind="combo" id={`${champion.id}/${combo.id}`} label={`${champion.name}: ${combo.name[lang]}`} championId={champion.key} />
         <DataBadge editorial source={t("Yama {patch} için elle yazıldı; sonraki yamalarda yetenekler değişmiş olabilir.", { patch })} />
       </header>
       {changedIn && <p className="build__note">{t("Yama {patch} bu kombodaki bir yeteneği değiştirdi; zamanlamayı kontrol et.", { patch: changedIn })}</p>}

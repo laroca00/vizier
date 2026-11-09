@@ -5,6 +5,7 @@ import { formatPercent, useLang, useT } from "../i18n";
 import { positionLabel } from "../labels";
 import { summarizeKeystones } from "../runeExplorer";
 import { LiquidGlass } from "../ui/LiquidGlass";
+import { FavouriteButton } from "../workspace/FavouriteButton";
 import { PageHeader } from "../ui/Page";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { useAsync } from "../useAsync";
@@ -71,6 +72,7 @@ export function RunesPage({ onOpenChampion, initialRune = null }: { onOpenChampi
           {open ? (
             <article className="items-page__detail">
               <h2 className="section-title">{keystoneName(data.value.styles, open.keystone)}</h2>
+              <FavouriteButton kind="rune" id={String(open.keystone)} label={keystoneName(data.value.styles, open.keystone)} />
               <p className="state__text">{t("{games} maç, {rate} kazanma", { games: open.games, rate: formatPercent(open.winRate, lang, 1) })}</p>
               <ul className="items-page__builders">
                 {open.builds.slice(0, CHAMPIONS_SHOWN).map((b) => {

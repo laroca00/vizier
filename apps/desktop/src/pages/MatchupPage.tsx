@@ -18,6 +18,7 @@ import { matchupNoteKey } from "../personal";
 import { Button } from "../ui/Button";
 import { Select } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
+import { FavouriteButton } from "../workspace/FavouriteButton";
 import { PageHeader } from "../ui/Page";
 import { loadErrorMessage } from "../loadError";
 import { useOnline } from "../useOnline";
@@ -98,6 +99,7 @@ export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange
           </div>
           {isComplete(route) && me && opponent ? (
             <div className="matchup-page__body">
+              <FavouriteButton kind="matchup" id={`${route.championId}:${route.opponentId}`} label={`${me.name} – ${opponent.name}`} championId={route.championId} />
               <AcademyBlock sources={["crawler", "ddragon"]}>
                 <MatchupGuide championId={route.championId} position={route.position} opponent={opponent} version={data.value.version} />
               </AcademyBlock>
