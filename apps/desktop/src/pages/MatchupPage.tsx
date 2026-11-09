@@ -11,7 +11,7 @@ import { PowerSpikes } from "../draft/PowerSpikes";
 import { StatsDuel } from "../draft/StatsDuel";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { useLang, useT } from "../i18n";
-import { AcademyNotes } from "../AcademyNotes";
+import { AcademyNotes } from "../AcademyNotesPanel";
 import { JournalNote, useMatchupTemplate } from "../Journal";
 import { POSITIONS } from "../labels";
 import { matchupNoteKey, noteMatchupOpened } from "../personal";

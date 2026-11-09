@@ -8,7 +8,7 @@ import { Button } from "../ui/Button";
 import { ErrorState } from "../ui/States";
 import { useAsync } from "../useAsync";
 import { buySteps, compareProBuilds, opening, skillLetters } from "./proTimeline";
-import "./ProTimeline.css";
+import "./ProTimelineView.css";
 
 type Props = { filter: ProFilter; emptyText: string; onOpenChampion: (championId: number, position: string | null) => void };
 

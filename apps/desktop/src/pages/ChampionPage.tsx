@@ -1,4 +1,4 @@
-import { BuildEvolution } from "../patches/BuildEvolution";
+import { BuildEvolution } from "../patches/BuildEvolutionView";
 import { ChampionHistory } from "../patches/ChampionHistory";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { useState } from "react";

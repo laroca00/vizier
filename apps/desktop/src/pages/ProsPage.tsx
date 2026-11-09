@@ -4,7 +4,7 @@ import { getProPatches, getProTeams, type ProGroup } from "../api";
 import { champions, roleIconUrl } from "../data/ddragon";
 import { POSITIONS } from "../labels";
 import { ProBuildList } from "../ProBuildList";
-import { ProTimelineList } from "../pros/ProTimeline";
+import { ProTimelineList } from "../pros/ProTimelineView";
 import { Select } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";

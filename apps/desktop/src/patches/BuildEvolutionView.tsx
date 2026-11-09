@@ -6,7 +6,7 @@ import { DataBadge } from "../ui/DataBadge";
 import { Select } from "../ui/Fields";
 import { useAsync } from "../useAsync";
 import { compareBuilds, snapshotOf, type ItemChange, type Move } from "./buildEvolution";
-import "./BuildEvolution.css";
+import "./BuildEvolutionView.css";
 
 const MOVE_TEXT: Record<Move, string> = { rising: "Yükseliyor", falling: "Düşüyor", steady: "Aynı", new: "Yeni", gone: "Çıktı" };
 const MOVE_MARK: Record<Move, string> = { rising: "▲", falling: "▼", steady: "●", new: "+", gone: "−" };

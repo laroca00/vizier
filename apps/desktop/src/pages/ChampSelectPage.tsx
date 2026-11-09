@@ -30,7 +30,7 @@ import { ItemAdvicePanel } from "../draft/ItemAdvicePanel";
 import { PoolBuild } from "../draft/PoolBuild";
 import { useOpponent, type Opponent } from "../draft/useOpponent";
 import { formatPercent, useLang, useT } from "../i18n";
-import { AcademyPreview } from "../AcademyNotes";
+import { AcademyPreview } from "../AcademyNotesPanel";
 import { JournalNote, NotePreview, useMatchupTemplate } from "../Journal";
 import { draftPhaseLabel, positionLabel } from "../labels";
 import type { ChampSelect, DraftMember, DraftTurn } from "../lcu";
