@@ -1,11 +1,7 @@
 // Stats are computed by services/crawler next to its raw games and published
 // to D1's stat_docs as finished JSON; the Worker only reads them. Keys are
 // shared here so both sides agree.
-<<<<<<< HEAD
 import { BRACKETS, DEFAULT_BRACKET, REGIONS, isBracket, type Bracket, type Region } from "@vizier/shared/brackets";
-=======
-import { DEFAULT_BRACKET, isBracket, REGION_BRACKETS, REGIONS, type Bracket, type Region } from "@vizier/shared/brackets";
->>>>>>> auto/33-rank-api
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
 import { buildHistory } from "./snapshots.ts";
 import { coverage } from "./coverage.ts";
@@ -25,7 +21,6 @@ const pos = (position: string | null) => position ?? "ANY";
 
 // Emerald+ keeps the key it always had; any other bracket adds a suffix.
 const RANK = ":r=";
-const area = (region?: Region) => (region ? `:g=${region}` : "");
 const rank = (bracket: Bracket) => (bracket === DEFAULT_BRACKET ? "" : `${RANK}${bracket}`);
 
 /** Splits a doc key into its Emerald+ form and the bracket it carries. */
@@ -38,9 +33,7 @@ export function splitRank(key: string): { base: string; bracket: Bracket } {
 /** Docs of the queues without a ladder (ARAM, Mayhem, Arena, URF): no bracket applies and they move slowly. */
 export function isOtherQueueKey(key: string): boolean {
   const [kind, queue] = splitRank(key).base.split(":");
-  if (["augments", "augmentchamps", "duos", "arenaitems", "rankcurve"].includes(kind)) return true;
-  // Region tier lists go out once a day with the other queues.
-  if (kind === "tierlist" && splitRank(key).base.includes(":g=")) return true;
+  if (["augments", "augmentchamps", "duos", "arenaitems"].includes(kind)) return true;
   return ["tierlist", "champion", "build", "bench"].includes(kind) && Number(queue) !== RANKED;
 }
 
@@ -48,9 +41,7 @@ export function isOtherQueueKey(key: string): boolean {
 export const BRACKET_KINDS = ["tierlist", "champion", "build", "buildvs", "counters", "synergies", "lane", "bench"] as const;
 
 export const docKey = {
-  /** With a region the tier list covers that region's games only (Emerald+ and all ranks only). */
-  tierList: (queue: number, position: string, bracket: Bracket = DEFAULT_BRACKET, region?: Region) =>
-    `tierlist:${queue}:${position}${area(region)}${rank(bracket)}`,
+  tierList: (queue: number, position: string, bracket: Bracket = DEFAULT_BRACKET) => `tierlist:${queue}:${position}${rank(bracket)}`,
   champion: (queue: number, championId: number, position: string | null, bracket: Bracket = DEFAULT_BRACKET) =>
     `champion:${queue}:${championId}:${pos(position)}${rank(bracket)}`,
   build: (queue: number, championId: number, position: string | null, bracket: Bracket = DEFAULT_BRACKET) =>
@@ -71,15 +62,11 @@ export const docKey = {
   itemTimes: (championId: number, position: string) => `itemtimes:${championId}:${position}`,
   /** Compact builds of the closed patches, newest first. */
   buildHistory: (championId: number, position: string) => `buildhistory:${championId}:${position}`,
-<<<<<<< HEAD
   /** A role's tier list for one region; a region without games has no doc. One doc each, to stay under D1's statement size. */
   tierRegion: (position: string, region: Region, bracket: Bracket = DEFAULT_BRACKET) => `tierregion:${RANKED}:${position}:${region}${rank(bracket)}`,
   /** A champion's overview per region and role: { ANY: { tr, euw, kr }, MIDDLE: { ... } }. */
   championRegions: (championId: number, bracket: Bracket = DEFAULT_BRACKET) => `champregions:${RANKED}:${championId}${rank(bracket)}`,
   /** Win rate, pick rate and games of every champion and role in all six brackets; ranked solo only. */
-=======
-  /** A queue's champions and roles in every bracket side by side; one doc, sent daily. */
->>>>>>> auto/33-rank-api
   rankCurve: (queue: number) => `rankcurve:${queue}`,
   bans: () => "bans",
   /** How many games, timelines and followed players sit behind the stats. */
@@ -140,7 +127,7 @@ export async function readDoc<T>(db: D1Database, key: string): Promise<T | null>
  * published. With a bracket other than Emerald+, only the kinds that exist per
  * bracket (ranked solo) come out, under that bracket's keys.
  */
-export async function* statDocs(db: D1Database, bracket: Bracket = DEFAULT_BRACKET, { daily = false }: { daily?: boolean } = {}): AsyncGenerator<[string, unknown]> {
+export async function* statDocs(db: D1Database, bracket: Bracket = DEFAULT_BRACKET): AsyncGenerator<[string, unknown]> {
   if ((await latestPatches(db)).length === 0) return;
   const main = bracket === DEFAULT_BRACKET;
 
@@ -150,14 +137,6 @@ export async function* statDocs(db: D1Database, bracket: Bracket = DEFAULT_BRACK
       for (const position of POSITIONS) yield [docKey.tierList(queue, position, bracket), await tierList(db, position, queue, bracket)];
     } else if (main) {
       yield [docKey.tierList(queue, "ALL"), await tierList(db, "", queue)];
-    }
-  }
-  if (main && daily) yield [docKey.rankCurve(RANKED), await rankCurve(db, RANKED)];
-  if (main && daily) {
-    for (const rankBracket of REGION_BRACKETS) {
-      for (const region of REGIONS) {
-        for (const position of POSITIONS) yield [docKey.tierList(RANKED, position, rankBracket, region), await tierList(db, position, RANKED, rankBracket, region)];
-      }
     }
   }
   if (main) {

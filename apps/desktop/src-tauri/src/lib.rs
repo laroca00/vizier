@@ -94,19 +94,11 @@ async fn game_roster(api: tauri::State<'_, LcuApi>) -> Result<Vec<lcu::roster::R
     lcu::roster::current(&client).await
 }
 
-<<<<<<< HEAD
 /// The player's ranked solo tier, for the "my rank" bracket; None while unranked.
 #[tauri::command]
 async fn my_rank(api: tauri::State<'_, LcuApi>) -> Result<Option<lcu::rank::SoloRank>, String> {
     let client = api.get().ok_or(NOT_CONNECTED)?;
     lcu::rank::current(&client).await
-=======
-/// The player's solo queue tier (upper case), or none when unranked.
-#[tauri::command]
-async fn my_ranked_tier(api: tauri::State<'_, LcuApi>) -> Result<Option<String>, String> {
-    let client = api.get().ok_or(NOT_CONNECTED)?;
-    lcu::ranked::current(&client).await
->>>>>>> auto/33-rank-api
 }
 
 /// Hovers or locks a champion in the player's open pick or ban; `kind` is "pick" or "ban".
@@ -401,11 +393,7 @@ pub fn run() {
             set_background,
             set_hotkeys,
             game_roster,
-<<<<<<< HEAD
             my_rank,
-=======
-            my_ranked_tier,
->>>>>>> auto/33-rank-api
             champ_select_act,
             accept_ready_check,
             bench_swap,

@@ -4,13 +4,8 @@ import { withAutoImportOn } from "./autoImportDefault";
 import type { AutopilotMode } from "./autopilot";
 import type { LanguageSetting } from "./i18n";
 import { DEFAULT_REF, type RefSection } from "./overlay/reference";
-<<<<<<< HEAD
 import { DEFAULT_BRACKET } from "@vizier/shared/brackets";
 import { sanitizeRank, setRankChoice, type RankChoice } from "./rankChoice";
-=======
-import { cleanBracket, cleanChoice, type RankChoice } from "./rank/rank";
-import type { Bracket } from "@vizier/shared/brackets";
->>>>>>> auto/33-rank-api
 import type { OverlayTheme, WidgetStyles } from "./overlay/appearance";
 
 export type Settings = {
@@ -90,15 +85,8 @@ export type Settings = {
   navFolded: string[];
   /** The first-run welcome was closed. */
   welcomeSeen: boolean;
-<<<<<<< HEAD
   /** Which rank bracket the crawler stats show; "mine" follows the player's own rank. */
   rank: RankChoice;
-=======
-  /** Which rank bracket the crawler stats are read for; Emerald+ until the player picks one. */
-  rank: RankChoice;
-  /** The bracket of the player's own solo queue rank, read from the client; null while unknown. */
-  myRank: Bracket | null;
->>>>>>> auto/33-rank-api
 };
 
 const DEFAULTS: Settings = {
@@ -146,12 +134,7 @@ const DEFAULTS: Settings = {
   homeLayout: DEFAULT_HOME,
   navFolded: [],
   welcomeSeen: false,
-<<<<<<< HEAD
   rank: DEFAULT_BRACKET,
-=======
-  rank: "emerald_plus",
-  myRank: null,
->>>>>>> auto/33-rank-api
 };
 
 const KEY = "vizier.settings";
@@ -170,11 +153,7 @@ function read(): Settings {
       }
       localStorage.setItem(AUTO_IMPORT_KEY, "1");
     }
-<<<<<<< HEAD
     return { ...DEFAULTS, ...stored, rank: sanitizeRank(stored.rank) };
-=======
-    return { ...DEFAULTS, ...stored, rank: cleanChoice(stored.rank), myRank: cleanBracket(stored.myRank) };
->>>>>>> auto/33-rank-api
   } catch {
     return DEFAULTS;
   }
@@ -185,22 +164,12 @@ setRankChoice(current.rank);
 
 // The overlay is a second window on the same origin; this keeps it in step
 // with changes made on the settings page.
-<<<<<<< HEAD
 window.addEventListener("storage", (event) => {
   if (event.key !== KEY) return;
   current = read();
   setRankChoice(current.rank);
   for (const listener of listeners) listener();
 });
-=======
-if (typeof window !== "undefined") {
-  window.addEventListener("storage", (event) => {
-    if (event.key !== KEY) return;
-    current = read();
-    for (const listener of listeners) listener();
-  });
-}
->>>>>>> auto/33-rank-api
 
 export function getSettings(): Settings {
   return current;
@@ -215,10 +184,6 @@ export function updateSettings(patch: Partial<Settings>) {
     // Settings still apply for this session.
   }
   for (const listener of listeners) listener();
-}
-
-export function getSettings(): Settings {
-  return current;
 }
 
 export function useSettings(): Settings {

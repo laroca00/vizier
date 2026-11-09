@@ -2,7 +2,7 @@ import { BRACKETS, DEFAULT_BRACKET } from "@vizier/shared/brackets";
 import { describe, expect, it } from "vitest";
 import { emptyCatalog } from "./archetypes.ts";
 import { rollup } from "./rollup.ts";
-import { BRACKET_KINDS, docKey, isOtherQueueKey, splitRank, statDocs } from "./statDocs.ts";
+import { BRACKET_KINDS, docKey, splitRank, statDocs } from "./statDocs.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
 
 describe("doc keys with a bracket", () => {
@@ -87,39 +87,5 @@ describe("statDocs per bracket", () => {
     // A bracket with no games for a champion publishes nothing for it.
     const top = await collect("master_plus");
     expect([...top.keys()].some((k) => k.startsWith("champion:"))).toBe(false);
-  });
-});
-
-describe("region tier lists", () => {
-  it("counts each region apart, publishes Emerald+ and all-rank docs, and the routes read them", async () => {
-    const { db, sqlite } = fakeD1();
-    // Champion 103 wins every TR game and loses every KR game; EUW has none.
-    for (let i = 0; i < 40; i++) game(sqlite, `TR1_${i}`, "diamond", true, 103);
-    for (let i = 0; i < 40; i++) game(sqlite, `KR_${i}`, "diamond", false, 103);
-    for (let i = 0; i < 40; i++) game(sqlite, `TR1_g${i}`, "gold", false, 103);
-    await rollup(db, async () => ({ ...emptyCatalog(), finished: new Set([3157]) }));
-
-    const docs = new Map<string, any>();
-    for await (const [key, value] of statDocs(db, "emerald_plus", { daily: true })) docs.set(key, value);
-    const tr = docs.get("tierlist:420:MIDDLE:g=tr");
-    const kr = docs.get("tierlist:420:MIDDLE:g=kr");
-    expect(tr.champions.find((c: any) => c.championId === 103)).toMatchObject({ games: 40, winRate: 1 });
-    expect(kr.champions.find((c: any) => c.championId === 103)).toMatchObject({ games: 40, winRate: 0 });
-    expect(docs.get("tierlist:420:MIDDLE:g=euw").champions).toEqual([]);
-    // Pooled keeps meaning TR + EUW Emerald+: KR stays out.
-    expect(docs.get("tierlist:420:MIDDLE").champions.find((c: any) => c.championId === 103).games).toBe(40);
-    // Region docs for Emerald+ and all ranks go out daily with the other queues, not every 4 hours.
-    expect(docKey.tierList(420, "MIDDLE", "all", "tr")).toBe("tierlist:420:MIDDLE:g=tr:r=all");
-    expect(splitRank("tierlist:420:MIDDLE:g=tr:r=all")).toEqual({ base: "tierlist:420:MIDDLE:g=tr", bracket: "all" });
-    expect(isOtherQueueKey("tierlist:420:MIDDLE:g=tr:r=all")).toBe(true);
-    expect(isOtherQueueKey("tierlist:420:MIDDLE:r=all")).toBe(false);
-    expect([...docs.keys()].filter((k) => k.includes(":g=")).length).toBe(2 * 3 * 5);
-    const curve = docs.get("rankcurve:420");
-    const row = curve.champions.find((c: any) => c.championId === 103 && c.position === "MIDDLE");
-    // 40 TR and 40 KR diamond games: KR is outside the pool. Gold: 40 TR losses.
-    expect(row.b.emerald_plus).toEqual([40, 1, expect.any(Number)]);
-    expect(row.b.gold_minus).toEqual([40, 0, expect.any(Number)]);
-    expect(row.b.all[0]).toBe(80);
-    expect(row.b.master_plus).toBeUndefined();
   });
 });

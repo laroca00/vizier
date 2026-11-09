@@ -26,7 +26,6 @@ export async function publish(db: D1Database, sqlite: DatabaseSync, remote: Remo
 
   const changed: Doc[] = [];
   let total = 0;
-<<<<<<< HEAD
   async function* docs(): AsyncGenerator<[string, unknown]> {
     for await (const [key, value] of statDocs(db, scope.bracket)) {
       if (scope.only && isOtherQueueKey(key) !== (scope.only === "other")) continue;
@@ -36,9 +35,6 @@ export async function publish(db: D1Database, sqlite: DatabaseSync, remote: Remo
     if (scope.curve) yield* rankCurveDocs(db);
   }
   for await (const [key, value] of docs()) {
-=======
-  for await (const [key, value] of statDocs(db, scope.bracket, { daily: scope.only !== "ranked" })) {
->>>>>>> auto/33-rank-api
     if (value === null) continue;
     total++;
     const body = JSON.stringify(value);

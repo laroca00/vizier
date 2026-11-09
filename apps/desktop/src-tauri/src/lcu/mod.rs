@@ -1,11 +1,7 @@
 pub mod actions;
 pub mod champ_select;
 pub mod lobby;
-<<<<<<< HEAD
 pub mod rank;
-=======
-pub mod ranked;
->>>>>>> auto/33-rank-api
 pub mod roster;
 mod client;
 pub mod writes;
