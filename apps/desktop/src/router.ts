@@ -20,6 +20,7 @@ export type Route =
   | { page: "champion"; championId: number; position: string | null; queue: number }
   | { page: "journal" }
   | { page: "lab"; championId: number | null; position: string }
+  | { page: "matrix"; position: string }
   | { page: "items"; itemId?: number }
   | { page: "runes"; runeId?: number }
   | { page: "overlay" }
@@ -32,6 +33,7 @@ export type Page = Route["page"];
 export function pageRoute(page: Page): Route {
   if (page === "matchup") return { page, championId: null, opponentId: null, position: "MIDDLE" };
   if (page === "lab") return { page, championId: null, position: "MIDDLE" };
+  if (page === "matrix") return { page, position: "MIDDLE" };
   if (page === "pro") return { page, player: "" };
   if (page === "champion") return { page, championId: 0, position: null, queue: 420 };
   return { page };

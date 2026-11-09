@@ -15,6 +15,7 @@ import { OpenProProvider } from "./proLink";
 import { OpenChampionProvider } from "./championLink";
 import { OpenSourcesProvider } from "./sourcesLink";
 import { OpenMatchupProvider } from "./matchupLink";
+import { OpenPageProvider } from "./pageLink";
 import { useAutoAcceptReady, useReadyCheckAlert } from "./readyCheck";
 import { enteredQueueFlow, planPreload, runPreload } from "./preload";
 import { SearchPalette } from "./SearchPalette";
@@ -44,6 +45,7 @@ const SimulatorPage = lazy(() => import("./pages/SimulatorPage").then((m) => ({ 
 const PatchesPage = lazy(() => import("./pages/PatchesPage").then((m) => ({ default: m.PatchesPage })));
 const MatchupPage = lazy(() => import("./pages/MatchupPage").then((m) => ({ default: m.MatchupPage })));
 const AugmentsPage = lazy(() => import("./pages/AugmentsPage").then((m) => ({ default: m.AugmentsPage })));
+const MatrixPage = lazy(() => import("./pages/MatrixPage").then((m) => ({ default: m.MatrixPage })));
 const LabPage = lazy(() => import("./pages/LabPage").then((m) => ({ default: m.LabPage })));
 const JournalPage = lazy(() => import("./pages/JournalPage").then((m) => ({ default: m.JournalPage })));
 const ItemsPage = lazy(() => import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage })));
@@ -69,6 +71,7 @@ const LABELS: Record<Page, string> = {
   matchup: "Eşleşme",
   journal: "Günlük",
   lab: "Eşya laboratuvarı",
+  matrix: "Karşı seçim matrisi",
   items: "Eşyalar",
   runes: "Rünler",
   champion: "Şampiyonlar",
@@ -299,6 +302,7 @@ function App() {
         { id: "runes", label: "Rünler", icon: "runes" },
         { id: "journal", label: "Günlük", icon: "journal" },
         { id: "lab", label: "Eşya laboratuvarı", icon: "lab" },
+        { id: "matrix", label: "Karşı seçim matrisi", icon: "matchup" },
       ],
     },
   ];
@@ -324,6 +328,7 @@ function App() {
     <OpenMatchupProvider value={openMatchup}>
     <OpenChampionProvider value={openChampion}>
     <OpenSourcesProvider value={() => go({ page: "about" })}>
+    <OpenPageProvider value={go}>
     <OpenProProvider value={(player) => go({ page: "pro", player })}>
     <div className="shell" data-navigated={navigated || undefined} data-collapsed={settings.sidebarCollapsed || undefined}>
       <Sidebar
@@ -402,6 +407,8 @@ function App() {
               <JournalPage onOpenChampion={(id) => openChampion(id)} onOpenMatchup={openMatchup} />
             ) : route.page === "lab" ? (
               <LabPage route={route} onChange={replace} />
+            ) : route.page === "matrix" ? (
+              <MatrixPage route={route} onChange={replace} />
             ) : route.page === "quiz" ? (
               <QuizPage />
             ) : route.page === "patches" ? (
@@ -442,6 +449,7 @@ function App() {
       />
     </div>
     </OpenProProvider>
+    </OpenPageProvider>
     </OpenSourcesProvider>
     </OpenChampionProvider>
     </OpenMatchupProvider>

@@ -1,0 +1,113 @@
+.matrix__blind {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.matrix__blind img,
+.matrix__champion img {
+  border-radius: 50%;
+}
+
+.matrix__scroll {
+  overflow-x: auto;
+  margin-top: var(--space-3);
+}
+
+.matrix__table {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-size: var(--text-small);
+}
+
+.matrix__table th {
+  font-weight: var(--weight-medium);
+  text-align: center;
+  padding: 2px 4px;
+}
+
+.matrix__table thead th {
+  vertical-align: bottom;
+}
+
+.matrix__table tbody th {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  min-width: 150px;
+}
+
+.matrix__champion {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.matrix__name {
+  display: block;
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-meta);
+  color: var(--glaze-muted);
+}
+
+.matrix__cell {
+  min-width: 64px;
+  padding: 4px;
+  text-align: center;
+  border-radius: var(--radius-item);
+  background: var(--hover);
+}
+
+.matrix__open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.matrix__games {
+  display: block;
+  font-size: var(--text-meta);
+  color: var(--glaze-faint);
+}
+
+/* Blue against orange plus a shape mark: readable without telling red from green. */
+.matrix__cell[data-state="favourable"],
+.matrix__legend [data-state="favourable"] {
+  background: color-mix(in srgb, var(--data-series) 32%, transparent);
+}
+
+.matrix__cell[data-state="unfavourable"],
+.matrix__legend [data-state="unfavourable"] {
+  background: color-mix(in srgb, var(--data-physical) 38%, transparent);
+}
+
+.matrix__cell[data-state="insufficient"] {
+  color: var(--glaze-faint);
+}
+
+.matrix__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-small);
+}
+
+.matrix__legend li {
+  padding: 2px 8px;
+  border-radius: var(--radius-item);
+  background: var(--hover);
+}
