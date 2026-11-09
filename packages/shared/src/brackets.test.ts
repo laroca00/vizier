@@ -68,3 +68,14 @@ describe("brackets", () => {
     expect(parseBracket("bogus")).toBeNull();
   });
 });
+
+import { REGIONS, REGION_BRACKETS, REGION_PLATFORM, isRegion } from "./brackets.ts";
+
+describe("regions", () => {
+  it("maps each region to its match id prefix", () => {
+    expect(REGIONS.map((r) => REGION_PLATFORM[r])).toEqual(["TR1", "EUW1", "KR"]);
+    expect(isRegion("kr")).toBe(true);
+    expect(isRegion("na")).toBe(false);
+    expect(REGION_BRACKETS).toEqual(["emerald_plus", "all"]);
+  });
+});

@@ -1,6 +1,6 @@
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
-import { DEFAULT_BRACKET, parseBracket, type Bracket } from "@vizier/shared/brackets";
+import { DEFAULT_BRACKET, REGION_BRACKETS, isRegion, parseBracket, type Bracket, type Region } from "@vizier/shared/brackets";
 import { HTTPException } from "hono/http-exception";
 import type { Catalog } from "./archetypes.ts";
 import { POSITIONS, type Build } from "./builds.ts";
@@ -41,6 +41,14 @@ function rankOf(c: Context, queue = 420): Bracket {
   const rank = parseBracket(c.req.query("rank"));
   if (!rank) badRequest("Unsupported rank");
   return queue === 420 ? rank : DEFAULT_BRACKET;
+}
+
+/** `?region=`: missing means all three pooled, unknown is a 400. */
+function regionOf(c: Context): Region | null {
+  const region = c.req.query("region");
+  if (region === undefined) return null;
+  if (!isRegion(region)) badRequest("Unsupported region");
+  return region;
 }
 
 /** The doc with the bracket it belongs to, so the app can show which one it got. */
@@ -126,7 +134,12 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
     const position = c.req.param("position").toUpperCase();
     if (queue === 420 ? !POSITIONS.has(position) : position !== "ALL") badRequest("Unsupported position");
     const rank = rankOf(c, queue);
+    const region = queue === 420 ? regionOf(c) : null;
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    if (region) {
+      const list = REGION_BRACKETS.includes(rank) ? await readDoc<object>(statsDb, docKey.tierRegion(position, region, rank)) : null;
+      return c.json({ ...withRank(list ?? { patches: [], games: 0, champions: [] }, rank), region });
+    }
     const list = await readDoc<object>(statsDb, docKey.tierList(queue, position, rank));
     return c.json(withRank(list ?? { patches: [], games: 0, champions: [] }, rank));
   });
@@ -143,7 +156,17 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
     const { championId, position } = championRequest(c);
     const queue = queueOf(c.req.query("queue"));
     const rank = rankOf(c, queue);
+    const region = queue === 420 ? regionOf(c) : null;
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    if (region) {
+      const roles = REGION_BRACKETS.includes(rank)
+        ? await readDoc<Record<string, Partial<Record<Region, object>>>>(statsDb, docKey.championRegions(championId, rank))
+        : null;
+      // Same fallback as below: a role without games in this region gets the champion's most played.
+      const found = (position && roles?.[position]?.[region]) || roles?.ANY?.[region];
+      if (!found) return c.json({ error: "No games for this champion yet", rank, region }, 404);
+      return c.json({ ...withRank(found, rank), region });
+    }
     // A role the champion has no games in gets its most played role, as championOverview does.
     const overview =
       (await readDoc<object>(statsDb, docKey.champion(queue, championId, queue === 420 ? position : null, rank))) ??

@@ -109,6 +109,12 @@ describe("publish schedule", () => {
     }
     expect(sent.size).toBeGreaterThanOrEqual(5);
     expect(local.sqlite.prepare("SELECT COUNT(*) AS n FROM published_docs WHERE key LIKE '%:r=gold_minus'").get()).not.toEqual({ n: 0 });
+    // Region docs came with two of the extras: Emerald+ with the other queues, 'all' with its bracket.
+    const regionKeys = local.sqlite.prepare("SELECT key FROM published_docs WHERE key LIKE 'tierregion:%' OR key LIKE 'champregions:%'").all().map((r) => String(r.key));
+    expect(regionKeys).toContain("tierregion:420:MIDDLE:tr");
+    expect(regionKeys).toContain("tierregion:420:MIDDLE:tr:r=all");
+    expect(regionKeys).toContain("champregions:420:103");
+    expect(regionKeys).toContain("champregions:420:103:r=all");
   });
 
   it("keeps other-queue docs out of the ranked publish", async () => {

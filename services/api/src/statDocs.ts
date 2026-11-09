@@ -1,7 +1,7 @@
 // Stats are computed by services/crawler next to its raw games and published
 // to D1's stat_docs as finished JSON; the Worker only reads them. Keys are
 // shared here so both sides agree.
-import { DEFAULT_BRACKET, isBracket, type Bracket } from "@vizier/shared/brackets";
+import { DEFAULT_BRACKET, REGIONS, isBracket, type Bracket, type Region } from "@vizier/shared/brackets";
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
 import { buildHistory } from "./snapshots.ts";
 import { coverage } from "./coverage.ts";
@@ -62,6 +62,10 @@ export const docKey = {
   itemTimes: (championId: number, position: string) => `itemtimes:${championId}:${position}`,
   /** Compact builds of the closed patches, newest first. */
   buildHistory: (championId: number, position: string) => `buildhistory:${championId}:${position}`,
+  /** A role's tier list for one region; a region without games has no doc. One doc each, to stay under D1's statement size. */
+  tierRegion: (position: string, region: Region, bracket: Bracket = DEFAULT_BRACKET) => `tierregion:${RANKED}:${position}:${region}${rank(bracket)}`,
+  /** A champion's overview per region and role: { ANY: { tr, euw, kr }, MIDDLE: { ... } }. */
+  championRegions: (championId: number, bracket: Bracket = DEFAULT_BRACKET) => `champregions:${RANKED}:${championId}${rank(bracket)}`,
   bans: () => "bans",
   /** How many games, timelines and followed players sit behind the stats. */
   coverage: () => "coverage",
@@ -195,4 +199,32 @@ async function matchupBuilds(db: D1Database, championId: number, position: strin
     if (build?.vs === opponent) builds[opponent] = build;
   }
   return builds;
+}
+
+/**
+ * Tier lists and champion overviews split by region (TR, EUW, KR) for one
+ * bracket: a tier list doc per role and region, one overview doc per champion.
+ */
+export async function* regionDocs(db: D1Database, bracket: Bracket): AsyncGenerator<[string, unknown]> {
+  if ((await latestPatches(db)).length === 0) return;
+  const at = (region: Region) => ({ bracket, region });
+  for (const position of POSITIONS) {
+    for (const region of REGIONS) {
+      const list = await tierList(db, position, RANKED, at(region));
+      if (list.games > 0) yield [docKey.tierRegion(position, region, bracket), list];
+    }
+  }
+  const { results: champions } = await db
+    .prepare(`SELECT DISTINCT champion_id FROM ${scope("stat_counts", bracket)} WHERE kind = 'games' AND queue_id = ${RANKED}`)
+    .all<{ champion_id: number }>();
+  for (const { champion_id: championId } of champions) {
+    const roles: Record<string, Partial<Record<Region, unknown>>> = {};
+    for (const region of REGIONS) {
+      const overview = await championOverview(db, championId, null, RANKED, at(region));
+      if (!overview) continue;
+      (roles.ANY ??= {})[region] = overview;
+      for (const { position } of overview.positions) (roles[position] ??= {})[region] = await championOverview(db, championId, position, RANKED, at(region));
+    }
+    if (Object.keys(roles).length > 0) yield [docKey.championRegions(championId, bracket), roles];
+  }
 }

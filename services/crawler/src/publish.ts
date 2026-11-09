@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { DEFAULT_BRACKET, type Bracket } from "@vizier/shared/brackets";
 import { nextExtra, scopeName, type ExtraScope } from "../../api/src/publishPlan.ts";
-import { isOtherQueueKey, statDocs } from "../../api/src/statDocs.ts";
+import { isOtherQueueKey, regionDocs, statDocs } from "../../api/src/statDocs.ts";
 
 // D1 binds at most 100 parameters a statement, three per doc here.
 const DOCS_PER_STATEMENT = 33;
@@ -17,7 +17,8 @@ type Doc = { key: string; body: string; hash: string };
  * Sends the docs that changed since the last publish. A doc is marked as
  * published only once its statement succeeded, so a failed run resends it.
  */
-export type Scope = { bracket: Bracket; only?: "ranked" | "other" };
+/** `regions` adds the per-region docs of the bracket (see regionDocs). */
+export type Scope = { bracket: Bracket; only?: "ranked" | "other"; regions?: boolean };
 
 export async function publish(db: D1Database, sqlite: DatabaseSync, remote: Remote, now = Date.now(), scope: Scope = { bracket: DEFAULT_BRACKET }) {
   sqlite.exec("CREATE TABLE IF NOT EXISTS published_docs (key TEXT PRIMARY KEY, hash TEXT NOT NULL)");
@@ -25,9 +26,15 @@ export async function publish(db: D1Database, sqlite: DatabaseSync, remote: Remo
 
   const changed: Doc[] = [];
   let total = 0;
-  for await (const [key, value] of statDocs(db, scope.bracket)) {
+  async function* docs(): AsyncGenerator<[string, unknown]> {
+    for await (const [key, value] of statDocs(db, scope.bracket)) {
+      if (scope.only && isOtherQueueKey(key) !== (scope.only === "other")) continue;
+      yield [key, value];
+    }
+    if (scope.regions) yield* regionDocs(db, scope.bracket);
+  }
+  for await (const [key, value] of docs()) {
     if (value === null) continue;
-    if (scope.only && isOtherQueueKey(key) !== (scope.only === "other")) continue;
     total++;
     const body = JSON.stringify(value);
     const hash = createHash("sha1").update(body).digest("hex");
@@ -68,8 +75,11 @@ function lastRun(sqlite: DatabaseSync, name: string): number | undefined {
   return row ? Number(row.value) : undefined;
 }
 
+// Region docs ride with two of the daily extras so the rotation still fits the day's publishes.
 const extraScope = (extra: ExtraScope): Scope =>
-  extra.kind === "other" ? { bracket: DEFAULT_BRACKET, only: "other" } : { bracket: extra.bracket, only: "ranked" };
+  extra.kind === "other"
+    ? { bracket: DEFAULT_BRACKET, only: "other", regions: true }
+    : { bracket: extra.bracket, only: "ranked", regions: extra.bracket === "all" };
 
 /**
  * One scheduled publish: Emerald+ ranked docs, then at most one extra set (see

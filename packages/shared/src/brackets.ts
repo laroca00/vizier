@@ -86,3 +86,16 @@ export const GROUP_LABELS: Record<TierGroup, { tr: string; en: string }> = {
 export function groupsSql(bracket: Bracket): string {
   return MEMBERS[bracket].map((g) => `'${g}'`).join(",");
 }
+
+/** Regions a request can ask for; missing means the pool of all three. */
+export const REGIONS = ["tr", "euw", "kr"] as const;
+export type Region = (typeof REGIONS)[number];
+/** The prefix of a match id, where the game was played. */
+export const REGION_PLATFORM: Record<Region, string> = { tr: "TR1", euw: "EUW1", kr: "KR" };
+export const REGION_LABELS: Record<Region, string> = { tr: "TR", euw: "EUW", kr: "KR" };
+/** Region views exist for these brackets only; the rest would multiply the docs for little gain. */
+export const REGION_BRACKETS: readonly Bracket[] = ["emerald_plus", "all"];
+
+export function isRegion(value: unknown): value is Region {
+  return typeof value === "string" && (REGIONS as readonly string[]).includes(value);
+}

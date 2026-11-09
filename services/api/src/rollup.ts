@@ -177,6 +177,9 @@ class Tally {
   }
 }
 
+/** A match id starts with the platform it was played on. */
+const platformOf = (matchId: string) => matchId.split("_")[0];
+
 const ids = (csv: string) => csv.split(",").filter(Boolean).map(Number);
 
 /**
@@ -264,6 +267,8 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     for (const row of rows) {
       tally.add(row, "games", "", row.win);
       if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
+      // Ranked solo by platform, for the region views of tier lists and champion pages.
+      if (row.queue_id === RANKED_SOLO) tally.add(row, "region", platformOf(row.match_id), row.win);
       const choices = buildChoices(row, catalog.finished);
       addItemTimes(itemTimes, row, catalog.finished);
       addBench(bench, row);
@@ -378,7 +383,11 @@ async function rollupMatches(db: D1Database) {
   }
   tallyPoolMatches(tally, results);
   // Games per tier group and platform, for the coverage doc: the prefix of a match id is where it was played.
-  for (const m of results) tally.add(matchRow(m), "matches", m.match_id.split("_")[0], 0);
+  for (const m of results) {
+    tally.add(matchRow(m), "matches", platformOf(m.match_id), 0);
+    if (m.queue_id !== RANKED_SOLO) continue;
+    for (const id of new Set(ids(m.bans ?? ""))) tally.add({ ...matchRow(m), champion_id: id }, "ban-region", platformOf(m.match_id), 0);
+  }
   const insertGames = db.prepare(
     `INSERT INTO stat_matches (patch, queue_id, games, last_start) VALUES (?, ?, ?, ?)
       ON CONFLICT DO UPDATE SET games = games + excluded.games, last_start = MAX(last_start, excluded.last_start)`,

@@ -5,7 +5,7 @@
 // every crawled game.
 
 import { DEFAULT_BRACKET, type Bracket } from "@vizier/shared/brackets";
-import { scope } from "./localSchema.ts";
+import { scope, type Where } from "./localSchema.ts";
 
 // Shrinks small samples towards 50% so a 3-0 champion doesn't top the list.
 export const sampleLimits = {
@@ -104,7 +104,7 @@ function assignTiers(entries: Unranked[]): TierEntry[] {
 }
 
 /** Pool matches in ranked and how often each champion was banned in them. */
-async function poolBans(db: D1Database, patches: string[], bracket: Bracket): Promise<{ matches: number; bans: Map<number, number> }> {
+async function poolBans(db: D1Database, patches: string[], bracket: Where): Promise<{ matches: number; bans: Map<number, number> }> {
   // One query per kind: an IN over two kinds makes SQLite skip stat_counts_by_kind and scan every count.
   const byKind = (kind: string) =>
     db
@@ -126,7 +126,7 @@ export async function tierList(
   db: D1Database,
   position: string,
   queue = RANKED,
-  bracket: Bracket = DEFAULT_BRACKET,
+  bracket: Where = DEFAULT_BRACKET,
 ): Promise<{ patches: string[]; games: number; champions: TierEntry[]; rule: TierRule }> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return { patches, games: 0, champions: [], rule: tierRule() };
@@ -220,7 +220,7 @@ export async function championOverview(
   championId: number,
   position: string | null,
   queue = 420,
-  bracket: Bracket = DEFAULT_BRACKET,
+  bracket: Where = DEFAULT_BRACKET,
 ): Promise<ChampionOverview | null> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return null;

@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { BRACKETS, DEFAULT_BRACKET, groupsSql, type Bracket } from "@vizier/shared/brackets";
+import { BRACKETS, DEFAULT_BRACKET, REGIONS, REGION_BRACKETS, REGION_PLATFORM, groupsSql, type Bracket, type Region } from "@vizier/shared/brackets";
 
 /**
  * Local-only schema, applied on every start after the D1 migrations. The
@@ -18,8 +18,33 @@ export const LEGACY_GROUP = "emerald";
  * The view a bracket's reads go through. Emerald+ keeps the plain table name;
  * every other bracket has `<table>__<bracket>`.
  */
-export const scope = (table: "stat_counts" | "lane_sums" | "bench_sums" | "item_time_sums", bracket: Bracket = DEFAULT_BRACKET) =>
-  bracket === DEFAULT_BRACKET ? table : `${table}__${bracket}`;
+export type Where = Bracket | { bracket: Bracket; region: Region };
+
+export const scope = (table: "stat_counts" | "lane_sums" | "bench_sums" | "item_time_sums", where: Where = DEFAULT_BRACKET) => {
+  if (typeof where === "object") return `${table}__${where.bracket}__${where.region}`;
+  return where === DEFAULT_BRACKET ? table : `${table}__${where}`;
+};
+
+/**
+ * A region's counts shaped like the pool's: the same kinds the tier list and
+ * champion overview already read, so they work on a region unchanged.
+ */
+function regionViews(sqlite: DatabaseSync) {
+  for (const bracket of REGION_BRACKETS) {
+    for (const region of REGIONS) {
+      const name = scope("stat_counts", { bracket, region });
+      const platform = REGION_PLATFORM[region];
+      const part = (from: string, to: string) =>
+        `SELECT patch, queue_id, team_position, champion_id, '${to}' AS kind, '' AS value, SUM(games) AS games, SUM(wins) AS wins
+          FROM stat_counts_g WHERE kind = '${from}' AND value = '${platform}' AND rank_group IN (${groupsSql(bracket)})
+          GROUP BY patch, queue_id, team_position, champion_id`;
+      sqlite.exec(`DROP VIEW IF EXISTS ${name}`);
+      sqlite.exec(
+        `CREATE VIEW ${name} AS ${part("region", "pool")} UNION ALL ${part("region", "games")} UNION ALL ${part("matches", "pool-games")} UNION ALL ${part("ban-region", "pool-ban")}`,
+      );
+    }
+  }
+}
 
 type Spec = { name: string; key: string[]; values: string[]; index?: string };
 
@@ -115,4 +140,5 @@ export function localSchema(sqlite: DatabaseSync) {
     emeraldView(sqlite, spec);
     bracketViews(sqlite, spec);
   }
+  regionViews(sqlite);
 }
