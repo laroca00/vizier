@@ -8,6 +8,7 @@ import { ChampSelectPage } from "./pages/ChampSelectPage";
 import { Home } from "./pages/Home";
 import { noteRecent, usePersonal } from "./personal";
 import { pageRoute, useNavigation, type Page, type Route } from "./router";
+import { gameEdge } from "./followClient";
 import { OpenProProvider } from "./proLink";
 import { OpenChampionProvider } from "./championLink";
 import { OpenMatchupProvider } from "./matchupLink";
@@ -171,6 +172,26 @@ function App() {
     if (!active && draftActive.current && route.page === "draft") replace({ page: "home" });
     draftActive.current = active;
   }, [draft, settings.showOnChampSelect, navigate, replace, route.page]);
+
+  // Remembers whether the window was up when the game began, so it only returns if it was.
+  const phaseBefore = useRef<string | null>(phase);
+  const wasUp = useRef(false);
+  useEffect(() => {
+    const edge = gameEdge(phaseBefore.current, phase);
+    phaseBefore.current = phase;
+    if (!edge || !isTauri()) return;
+    if (edge === "start" && settings.hideOnGame) {
+      invoke<boolean>("main_window_up")
+        .then((up) => {
+          wasUp.current = up;
+          if (up) return invoke("hide_to_tray");
+        })
+        .catch(() => {});
+    } else if (edge === "end" && wasUp.current) {
+      wasUp.current = false;
+      invoke("show_from_tray").catch(() => {});
+    }
+  }, [phase, settings.hideOnGame]);
 
   useEffect(() => {
     if (isTauri()) invoke("set_overlay_enabled", { enabled: settings.overlay }).catch(() => {});

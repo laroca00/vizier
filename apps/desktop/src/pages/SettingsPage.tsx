@@ -26,6 +26,7 @@ const CLIENT_TOGGLES: { key: ToggleKey; label: string; hint: string }[] = [
   { key: "autoImportItems", label: "Eşya setini kendiliğinden aktar", hint: "Önerilen eşyalar oyun içi mağazada Vizier seti olarak görünür." },
   { key: "readyCheckAlert", label: "Maç bulununca haber ver", hint: "Kısa bir ses çalar ve görev çubuğundaki simge yanıp söner." },
   { key: "showOnChampSelect", label: "Şampiyon seçiminde Vizier'i öne getir", hint: "Tepsideyken bile seçim başlayınca pencere açılır." },
+  { key: "hideOnGame", label: "Oyun başlayınca tepsiye in", hint: "Oyun bitince, açıksa, pencere geri gelir." },
 ];
 
 function useAutostart() {

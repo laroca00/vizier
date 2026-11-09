@@ -1265,4 +1265,6 @@ export const EN: Record<string, string> = {
   "boş rün sayfası yok": "no free rune page",
   "istemci kapalı": "client is closed",
   "istemci reddetti": "client refused it",
+  "Oyun başlayınca tepsiye in": "Go to the tray when a game starts",
+  "Oyun bitince, açıksa, pencere geri gelir.": "The window comes back when the game ends, if it was open.",
 };

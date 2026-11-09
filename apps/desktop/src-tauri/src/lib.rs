@@ -185,6 +185,26 @@ fn show_main_window(app: &tauri::AppHandle) {
     }
 }
 
+/// True when the player can currently see the main window.
+#[tauri::command]
+fn main_window_up(app: tauri::AppHandle) -> bool {
+    app.get_webview_window("main").is_some_and(|w| w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false))
+}
+
+/// Sends the main window to the tray while a game runs.
+#[tauri::command]
+fn hide_to_tray(app: tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.hide();
+        set_low_memory(&window, true);
+    }
+}
+
+#[tauri::command]
+fn show_from_tray(app: tauri::AppHandle) {
+    show_main_window(&app);
+}
+
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     let show = MenuItem::with_id(app, "show", "Vizier\u{2019}i aç", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Çıkış", true, None::<&str>)?;
@@ -251,7 +271,10 @@ pub fn run() {
             set_overlay_enabled,
             overlay_editing,
             set_overlay_editing,
-            set_background
+            set_background,
+            main_window_up,
+            hide_to_tray,
+            show_from_tray
         ])
         .setup(|app| {
             setup_tray(app)?;

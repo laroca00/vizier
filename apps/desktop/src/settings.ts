@@ -8,6 +8,8 @@ export type Settings = {
   autoImportSpells: boolean;
   autoImportItems: boolean;
   showOnChampSelect: boolean;
+  /** The main window goes to the tray when a game starts and comes back when it ends. */
+  hideOnGame: boolean;
   /** A tone and a taskbar flash when a match is found; off unless the player asks. */
   readyCheckAlert: boolean;
   overlay: boolean;
@@ -36,6 +38,7 @@ const DEFAULTS: Settings = {
   autoImportSpells: true,
   autoImportItems: true,
   showOnChampSelect: true,
+  hideOnGame: true,
   readyCheckAlert: false,
   overlay: true,
   overlaySkills: true,
