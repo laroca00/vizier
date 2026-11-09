@@ -31,7 +31,8 @@ export function QueueView({ flow, lobby, onOpenChampion }: Props) {
   const { entries, patches, byKey, version } = state.value;
   const mine = queuePool(personal.pool, roles, entries);
   const inPool = new Set(personal.pool.map((p) => p.championId));
-  const autofill = roles.length > 0 && !fill ? autofillPicks(roles, entries, (id) => byKey.get(id)?.info.difficulty ?? null, inPool, patches) : [];
+  // In the lobby the roles can still change, so the other-role picks wait for the queue.
+  const autofill = flow !== "lobby" && roles.length > 0 && !fill ? autofillPicks(roles, entries, (id) => byKey.get(id)?.info.difficulty ?? null, inPool, patches) : [];
 
   const row = (championId: number, position: string, entry: TierEntry | null, extra?: { buildName?: string | null; main?: boolean; showRole?: boolean }) => {
     const champion = byKey.get(championId);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TierEntry } from "../api";
 import type { PatchDiff } from "../patches/load";
-import { DEFAULT_HOME, moveCard, normalizeHome, toggleCard } from "./layout";
+import { DEFAULT_HOME, homeOrderFor, moveCard, normalizeHome, toggleCard } from "./layout";
 import { thisPatchRows } from "./thisPatch";
 
 const tier = (championId: number, tierName: string, winRate: number, winRateChange: number | null): TierEntry => ({ championId, games: 500, winRate, pickRate: 0.05, tier: tierName, winRateChange });
@@ -24,6 +24,17 @@ describe("thisPatchRows", () => {
 
   it("works without a cached diff", () => {
     expect(thisPatchRows([{ championId: 86, position: "TOP" }], lists, null)[0]).toMatchObject({ tier: "S", verdict: null, changes: [] });
+  });
+});
+
+describe("home follows the client", () => {
+  it("puts the patch and meta cards first while the client is closed", () => {
+    expect(homeOrderFor(DEFAULT_HOME, false)).toEqual(["thisPatch", "metaPicks", "metaMovers", "lists", "pros"]);
+    expect(homeOrderFor(DEFAULT_HOME, true)).toEqual(DEFAULT_HOME.order);
+  });
+  it("leaves a layout the player arranged alone", () => {
+    const own = moveCard(DEFAULT_HOME, "metaPicks", -1);
+    expect(homeOrderFor(own, false)).toEqual(own.order);
   });
 });
 

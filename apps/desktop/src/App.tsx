@@ -416,7 +416,7 @@ function App() {
                 onOpenChampion={openChampion}
               />
             ) : (
-              <Home lcu={lcu} draftActive={draft !== null} onOpenChampion={openChampion} onNavigate={go} onSearch={() => setSearching(true)} />
+              <Home lcu={lcu} lobby={lobby} draftActive={draft !== null} onOpenChampion={openChampion} onNavigate={go} onSearch={() => setSearching(true)} />
             )}
             </Suspense>
           </ErrorBoundary>

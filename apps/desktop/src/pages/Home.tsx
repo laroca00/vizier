@@ -1,7 +1,9 @@
 import { Fragment, useState, type ReactNode } from "react";
 import { ClientStatus } from "../ClientStatus";
 import { HomeEditor } from "../home/HomeEditor";
-import { normalizeHome, type HomeCard } from "../home/layout";
+import { homeOrderFor, normalizeHome, type HomeCard } from "../home/layout";
+import { QueueView } from "../home/QueueView";
+import { flowOf, inQueueFlow, type Lobby } from "../clientFlow";
 import { ThisPatchCard } from "../home/ThisPatchCard";
 import { useSettings } from "../settings";
 import { openExternal, PATCH_NOTES } from "../links";
@@ -25,6 +27,7 @@ import "./Home.css";
 
 type Props = {
   lcu: LcuStatus;
+  lobby?: Lobby | null;
   draftActive: boolean;
   onOpenChampion: (championId: number, position: string | null) => void;
   onNavigate: (route: Route) => void;
@@ -37,7 +40,7 @@ async function loadStatic() {
   return { version, champions: byKey };
 }
 
-export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }: Props) {
+export function Home({ lcu, lobby = null, draftActive, onOpenChampion, onNavigate, onSearch }: Props) {
   const t = useT();
   const lang = useLang();
   const personal = usePersonal();
@@ -47,6 +50,7 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
   const solvedToday = useQuizRecords().filter((r) => r.day === today && r.solved).length;
   const patch = data.status === "done" ? data.value.version.split(".").slice(0, 2).join(".") : null;
   const layout = normalizeHome(useSettings().homeLayout);
+  const flow = flowOf(lcu);
   const [editing, setEditing] = useState(false);
   const shows = (card: HomeCard) => !layout.hidden.includes(card);
 
@@ -156,7 +160,9 @@ export function Home({ lcu, draftActive, onOpenChampion, onNavigate, onSearch }:
 
         {editing && <HomeEditor layout={layout} onDone={() => setEditing(false)} />}
 
-        {layout.order
+        {inQueueFlow(flow) && <QueueView flow={flow} lobby={lobby} onOpenChampion={onOpenChampion} />}
+
+        {homeOrderFor(layout, flow !== "closed")
           .filter((card): card is Exclude<HomeCard, "pros"> => card !== "pros" && shows(card))
           .map((card) => (
             <Fragment key={card}>{cards[card]}</Fragment>
