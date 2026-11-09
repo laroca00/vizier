@@ -272,6 +272,7 @@ Builds on: the matchup page (4.1–4.6: lane stats, stats duel, ability compare,
 - [x] 24.4 Combo data model and the first 40 champions (most played in the crawler): name, difficulty, ability sequence, purpose, timing notes, common mistakes, category (basic, trading, all-in, burst, escape, flash, teamfight, animation), patch checked. Stored in the repo as JSON with a schema test; all labelled editorial. (85cbcf1; data/combos.json: 45 combos for 40 champions, Turkish and English, tested schema; written from game knowledge against 16.21, editorial and unreviewed by the owner)
 - [x] 24.5 Combos section on the champion page and a Combo Library page with search and category filters; the sequence is drawn with ability icons and arrows (original drawing, no video or copied art). (85cbcf1; combos on the champion page and a Combo Library page with search and category filters; sequences drawn with Data Dragon ability icons and arrows)
 - [ ] 24.6 Combos for the remaining champions, plus a patch check that flags combos whose abilities changed in the patch tracker's diff.
+<!-- claimed: auto/31-overlay-polish 2026-11-09T14:42:00Z -->
 <!-- in progress: 439b4f7 patch check done and 24 more champions written (64 total); the rest of the roster still needs combos -->
 
 ## 25. Champion intelligence (A1–A4)
@@ -332,8 +333,11 @@ Builds on: the search palette (champions, pros, matchups, items, keystones, save
 ## 31. Overlay 2.0 polish (after epic 19)
 
 - [ ] 31.1 Overlay themes, transparency and scale per widget; settings preview uses the fixtures.
+<!-- claimed: auto/31-overlay-polish 2026-11-09T14:42:00Z -->
 - [ ] 31.2 Quick reference panels the player builds: pick any of build, runes, skill order, combo, matchup note, item info, and show them on a hotkey.
+<!-- claimed: auto/31-overlay-polish 2026-11-09T14:42:00Z -->
 - [ ] 31.3 Safe fallbacks: every widget shows a quiet empty state when Live Client data is missing or late, and the overlay never blocks the game when the API is down. Performance check: one render per second at most, measured in the fixture preview.
+<!-- claimed: auto/31-overlay-polish 2026-11-09T14:42:00Z -->
 
 ## 16. Only when a feature needs it
 
