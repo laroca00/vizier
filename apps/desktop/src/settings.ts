@@ -44,6 +44,8 @@ export type Settings = {
   overlayPlan: boolean;
   /** Countdowns for enemy Flashes the player marks with hotkeys. */
   overlayFlash: boolean;
+  /** Item answers to the enemy team that the player hasn't bought. */
+  overlayItemAnswers: boolean;
   /** The player's own overlay hotkeys, by action id; anything missing keeps its default. */
   hotkeys: Record<string, string>;
   overlaySkills: boolean;
@@ -105,6 +107,7 @@ const DEFAULTS: Settings = {
   overlayDragons: true,
   overlayPlan: true,
   overlayFlash: true,
+  overlayItemAnswers: true,
   hotkeys: {},
   overlaySkills: true,
   overlayObjectives: true,

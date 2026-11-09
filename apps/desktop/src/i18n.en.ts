@@ -551,6 +551,12 @@ export const EN: Record<string, string> = {
   "Toplam minyon ve kamp sayın, aynı şampiyonu oynayan Emerald+ oyuncuların o dakikadaki medyanıyla. İlk 15 dakika.":
     "Your minions and camps against Emerald+ players on the same champion at the same minute. First 15 minutes.",
   "Eşya altını farkı": "Item gold difference",
+  "Rakip takıma göre işe yarayan eşyalar (iyileşme kesici, büyü direnci, zırh...), yalnızca şampiyonunun build'lerinde olanlardan; aldığın an listeden düşer.": "Items that answer the enemy team (anti-heal, magic resist, armor...), only from your champion's own builds; each drops off once you buy it.",
+  "Rakibe karşı": "Against them",
+  "İyileşme kesici": "Anti-heal",
+  "Kontrol kırıcı": "Cleanse",
+  "Hayatta kalma": "Survival",
+  "Tank delici": "Tank shred",
   "Kısa özet": "At a glance",
   "Yetenek önceliği": "Skill priority",
   "En zor rakip": "Hardest opponent",

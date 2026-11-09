@@ -174,6 +174,24 @@ export function WidgetPreview({ id }: { id: WidgetId }) {
           </p>
         </section>
       )}
+      {id === "answers" && (
+        <section className="overlay__card overlay__answers">
+          <p className="overlay__caption">{t("Rakibe karşı")}</p>
+          <p className="overlay__row overlay__answer">
+            <span>{t("İyileşme kesici")}</span>
+            <span className="overlay__answer-items">
+              <span className="widget-preview__icon" />
+              <span className="widget-preview__icon" />
+            </span>
+          </p>
+          <p className="overlay__row overlay__answer">
+            <span>{t("Büyü direnci")}</span>
+            <span className="overlay__answer-items">
+              <span className="widget-preview__icon" />
+            </span>
+          </p>
+        </section>
+      )}
       {id === "flash" && (
         <section className="overlay__card overlay__flashes">
           <p className="overlay__caption">{t("Rakip Flash")}</p>

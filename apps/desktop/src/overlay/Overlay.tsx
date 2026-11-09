@@ -5,7 +5,7 @@ import { getAugments, getBench, getBuild, getCounters, type Build, type Picks } 
 import { augmentInfo } from "../augments/data";
 import { augmentQueue, augmentsByRarity } from "../augments/tiers";
 import { readChosenStyle } from "../buildStyles";
-import { championDetail, champions, items, latestVersion, runes as runeStyles, type Item } from "../data/ddragon";
+import { championDetail, champions, items, latestVersion, runes as runeStyles, type Champion, type Item } from "../data/ddragon";
 import { threatOf } from "../draft/threats";
 import { matchupRecord, planShown, PLAN_UNTIL, type Plan } from "./plan";
 import { overlayFixture, scoutingFixture } from "../dev/fixtures";
@@ -44,6 +44,9 @@ import { useManualTimers } from "./Timers";
 import { fallenPlayers, readWindow } from "./opportunity";
 import { readDragons } from "./dragons";
 import { FLASH_SLOTS, flashTimers, type FlashSlot } from "./flash";
+import { itemAdvice } from "../draft/itemAdvice";
+import { buildPool } from "../draft/ItemAdvicePanel";
+import { openAnswers } from "./itemAnswers";
 import { newSpikes, sampleSpikes, shownSpikes, type Spike } from "./spikes";
 import type { LiveGame as Game } from "./live";
 import "./overlay.css";
@@ -95,6 +98,8 @@ type Static = {
   championIds: Map<string, number>;
   /** Data Dragon id to the name players read. */
   championNames: Map<string, string>;
+  /** Data Dragon id to the champion, for the trait rules. */
+  championsById: Map<string, Champion>;
   items: Map<number, Item>;
 };
 
@@ -104,6 +109,7 @@ async function loadStatic(): Promise<Static> {
     version,
     championIds: new Map([...byKey.values()].map((c) => [c.id, c.key])),
     championNames: new Map([...byKey.values()].map((c) => [c.id, c.name])),
+    championsById: new Map([...byKey.values()].map((c) => [c.id, c])),
     items: itemList,
   };
 }
@@ -300,6 +306,10 @@ export function Overlay() {
         }
       : null;
   const championNames = data.status === "done" ? data.value.championNames : null;
+  const byId = data.status === "done" ? data.value.championsById : null;
+  const enemyChampions = byId ? game.players.filter((p) => p.team !== me.team).flatMap((p) => byId.get(championKey(p)) ?? []) : [];
+  const answers =
+    settings.overlayItemAnswers && extra.build ? openAnswers(itemAdvice(enemyChampions, buildPool(extra.build)), me.items.map((i) => i.itemId)) : [];
   const ctx: WidgetContext = {
     t,
     game,
@@ -336,6 +346,7 @@ export function Overlay() {
     championName: (key) => championNames?.get(key) ?? key,
     dragons: settings.overlayDragons && mode === "rift" ? readDragons(game, me.team) : null,
     plan: planShown(time, plan, editing) ? plan : null,
+    itemAnswers: answers,
     flashes: settings.overlayFlash ? flashTimers(editing && Object.keys(flashPresses).length === 0 ? { flash3: time - 120 } : flashPresses, game, me.team, time) : [],
     opportunity: { fallen, window: readWindow(fallen, time, timers, mode === "rift") },
     spikes: settings.overlaySpikes ? shownSpikes(editing && shownSpikes(spikeLog, time).length === 0 ? sampleSpikes(time) : spikeLog, time) : [],

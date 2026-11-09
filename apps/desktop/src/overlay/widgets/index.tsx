@@ -17,6 +17,7 @@ import { SpikesWidget } from "./SpikesWidget";
 import { DragonsWidget } from "./DragonsWidget";
 import { PlanWidget } from "./PlanWidget";
 import { FlashWidget } from "./FlashWidget";
+import { ItemAnswersWidget } from "./ItemAnswersWidget";
 
 export const WIDGET_VIEWS: Record<WidgetId, ComponentType<WidgetContext>> = {
   build: BuildWidget,
@@ -35,4 +36,5 @@ export const WIDGET_VIEWS: Record<WidgetId, ComponentType<WidgetContext>> = {
   dragons: DragonsWidget,
   plan: PlanWidget,
   flash: FlashWidget,
+  answers: ItemAnswersWidget,
 };
