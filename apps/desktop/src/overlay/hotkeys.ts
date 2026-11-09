@@ -19,6 +19,8 @@ export const HOTKEY_ACTIONS: readonly HotkeyAction[] = [
   { id: "custom", label: "Özel zamanlayıcı", combo: "Ctrl+Shift+T" },
   { id: "clear", label: "Hepsini temizle", combo: "Ctrl+Shift+X" },
   { id: "skills", label: "Yetenek sırasını göster ya da gizle", combo: "Ctrl+Shift+K" },
+  { id: "augments", label: "Augment kartını göster ya da gizle", combo: "Ctrl+Shift+A" },
+  { id: "build", label: "Build panelini göster ya da gizle", combo: "Ctrl+Shift+I" },
 ];
 
 type KeyEvent = Pick<KeyboardEvent, "code" | "ctrlKey" | "shiftKey" | "altKey" | "metaKey">;

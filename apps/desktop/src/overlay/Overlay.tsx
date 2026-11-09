@@ -137,6 +137,14 @@ export function Overlay() {
     if (csDiff !== undefined) setCsHistory((h) => pushHistory(h, time, csDiff));
   }, [time, csDiff]);
 
+  // The augment card shows by default; the player can hide it for rounds where it only gets in the way.
+  const [augmentsShown, setAugmentsShown] = useState(true);
+  useEffect(() => {
+    if (!isTauri()) return;
+    const off = listen<string>("overlay-timer", ({ payload }) => payload === "augments" && setAugmentsShown((shown) => !shown));
+    return () => void off.then((stop) => stop());
+  }, []);
+
   // The skill order opens and closes on its hotkey, which arrives like a timer key.
   const [orderOpen, setOrderOpen] = useState(false);
   useEffect(() => {
@@ -188,6 +196,8 @@ export function Overlay() {
       augments.status === "done" && augments.value && names
         ? augmentsByRarity(augments.value.augments, (id) => names.get(id)?.rarity, AUGMENTS_PER_RARITY)
         : [],
+    augmentPatches: augments.status === "done" && augments.value ? augments.value.patches : [],
+    augmentsShown,
     augmentNames: names,
   };
 

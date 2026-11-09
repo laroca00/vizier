@@ -339,6 +339,24 @@ html:has(.overlay) body {
   text-overflow: ellipsis;
 }
 
+.overlay__augment-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overlay__augment-rate {
+  flex: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--glaze-muted);
+}
+
+.overlay__augment-rate[data-weak] {
+  opacity: 0.5;
+}
+
 .overlay__augment-tier {
   flex: none;
   display: inline-grid;

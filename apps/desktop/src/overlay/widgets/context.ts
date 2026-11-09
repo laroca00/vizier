@@ -6,7 +6,7 @@ import type { MinimapBox, CampSide } from "../minimap";
 import type { ManualTimers } from "../Timers";
 import type { LiveGame, LivePlayer, SkillKey, Timer } from "../live";
 
-export type AugmentGroup = { rarity: number; augments: { augmentId: number; tier: string }[] };
+export type AugmentGroup = { rarity: number; augments: { augmentId: number; tier: string; winRate: number; games: number }[] };
 
 /** Everything a widget may draw from, worked out once per frame by the overlay. */
 export type WidgetContext = {
@@ -35,5 +35,9 @@ export type WidgetContext = {
   /** Your CS and level against the average, with the CS gap over time; null without data or after minute 15. */
   bench: { read: BenchRead; history: number[] } | null;
   augments: AugmentGroup[];
+  /** Patches the augment numbers come from, for the confidence read. */
+  augmentPatches: string[];
+  /** The card shows unless the player hid it with its hotkey. */
+  augmentsShown: boolean;
   augmentNames: Map<number, { name: string }> | null;
 };
