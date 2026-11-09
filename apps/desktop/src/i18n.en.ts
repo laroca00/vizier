@@ -1515,7 +1515,6 @@ export const EN: Record<string, string> = {
   "Harita yönetimi": "Macro",
   "İstikrar": "Consistency",
   "Düşük": "Low",
-  "Orta": "Medium",
   "Yüksek": "High",
   "Zorluk dağılımı": "Difficulty breakdown",
   "Riot'un resmi zorluk puanı: {score} / 10 (Data Dragon).": "Riot's official difficulty score: {score} / 10 (Data Dragon).",
