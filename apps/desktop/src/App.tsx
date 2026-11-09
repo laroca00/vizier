@@ -44,6 +44,7 @@ const SimulatorPage = lazy(() => import("./pages/SimulatorPage").then((m) => ({ 
 const PatchesPage = lazy(() => import("./pages/PatchesPage").then((m) => ({ default: m.PatchesPage })));
 const MatchupPage = lazy(() => import("./pages/MatchupPage").then((m) => ({ default: m.MatchupPage })));
 const AugmentsPage = lazy(() => import("./pages/AugmentsPage").then((m) => ({ default: m.AugmentsPage })));
+const LabPage = lazy(() => import("./pages/LabPage").then((m) => ({ default: m.LabPage })));
 const JournalPage = lazy(() => import("./pages/JournalPage").then((m) => ({ default: m.JournalPage })));
 const ItemsPage = lazy(() => import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage })));
 const RunesPage = lazy(() => import("./pages/RunesPage").then((m) => ({ default: m.RunesPage })));
@@ -67,6 +68,7 @@ const LABELS: Record<Page, string> = {
   augments: "Augment'ler",
   matchup: "Eşleşme",
   journal: "Günlük",
+  lab: "Eşya laboratuvarı",
   items: "Eşyalar",
   runes: "Rünler",
   champion: "Şampiyonlar",
@@ -98,6 +100,7 @@ function devRoute(): Route | null {
   if (!import.meta.env.DEV) return null;
   const view = new URLSearchParams(location.search).get("view");
   if (view === "pro") return { page: "pro", player: "Chovy" };
+  if (view === "lab") return { page: "lab", championId: 103, position: "MIDDLE" };
   if (view === "matchup") return { page: "matchup", championId: 103, opponentId: 238, position: "MIDDLE" };
   return view && view in LABELS && view !== "champion" ? pageRoute(view as Page) : null;
 }
@@ -295,6 +298,7 @@ function App() {
         { id: "items", label: "Eşyalar", icon: "items" },
         { id: "runes", label: "Rünler", icon: "runes" },
         { id: "journal", label: "Günlük", icon: "journal" },
+        { id: "lab", label: "Eşya laboratuvarı", icon: "lab" },
       ],
     },
   ];
@@ -396,6 +400,8 @@ function App() {
               <RunesPage onOpenChampion={(id, position) => openChampion(id, position)} initialRune={route.runeId ?? null} />
             ) : route.page === "journal" ? (
               <JournalPage onOpenChampion={(id) => openChampion(id)} onOpenMatchup={openMatchup} />
+            ) : route.page === "lab" ? (
+              <LabPage route={route} onChange={replace} />
             ) : route.page === "quiz" ? (
               <QuizPage />
             ) : route.page === "patches" ? (
