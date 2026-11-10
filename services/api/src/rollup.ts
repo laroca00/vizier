@@ -400,6 +400,8 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       if (row.queue_id === RANKED_SOLO && row.opponent_champion_id) {
         const opponent = row.opponent_champion_id;
         tally.add(row, "opponent", String(opponent), row.win);
+        // The matchup's win rate by game length, for the matchup page.
+        if (row.duration) tally.add(row, "vs-length", `${opponent}|${lengthBucket(row.duration)}`, row.win);
         for (const [kind, value] of choices) tally.add(row, `vs-${kind}`, `${opponent}|${value}`, row.win);
       }
       if (row.augments) {

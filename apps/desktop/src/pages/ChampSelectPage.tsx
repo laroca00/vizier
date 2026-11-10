@@ -22,6 +22,7 @@ import { HoverMatchup } from "../draft/HoverMatchup";
 import { ChampionAugments } from "../augments/ChampionAugments";
 import { AutopilotBanner } from "../draft/AutopilotBanner";
 import { BanPlanner } from "../draft/BanPlannerPanel";
+import { JungleRead } from "../draft/JungleRead";
 import { autoView, draftQueue, duoPartnerRole, hasBench, shownChampion, type DraftView } from "../draft/logic";
 import { MatchupGuide } from "../draft/MatchupGuide";
 import { PickSuggestions } from "../draft/PickSuggestions";
@@ -93,6 +94,10 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const [chosenOpponent, setChosenOpponent] = useState<number | null>(null);
   const opponent = useOpponent(enemyPicks, role, chosenOpponent);
   const vs = opponent?.championId ?? null;
+  // Both junglers' first routes: the team's by the assigned role, the enemy's by the usual-role guess.
+  const enemyJungler = useOpponent(enemyPicks, "JUNGLE", null);
+  const allyJungleMember = draft.myTeam.find((m) => m.position.toLowerCase() === "jungle");
+  const allyJungler = allyJungleMember ? shownChampion(allyJungleMember) : 0;
 
   const allyIds = draft.myTeam.map(shownChampion).filter((id) => id > 0);
   const allies = ready
@@ -220,6 +225,13 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
               )}
               {draft.phase !== "FINALIZATION" && !banFirst && banSection}
               {ready && enemyPicks.length > 0 && <ThreatsPanel enemies={enemyPicks.map((id) => ready.champions.get(id)).filter((c): c is Champion => c !== undefined)} />}
+              {ready && (
+                <JungleRead
+                  ally={ready.champions.get(allyJungler) ?? null}
+                  enemy={enemyJungler ? (ready.champions.get(enemyJungler.championId) ?? null) : null}
+                  version={ready.version}
+                />
+              )}
               {ready && <CompAnalysis allies={allyIds} enemies={enemyPicks} champions={ready.champions} aram={hasBench(draft)} />}
               {ready && me && <PoolStrip position={me.position} data={ready} opponentId={vs} turn={draft.turn ?? null} gone={unavailable} />}
             </>

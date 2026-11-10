@@ -270,7 +270,12 @@ export function getItemTimes(championId: number, position: string) {
   return get<ItemTimes>(`/v1/champions/${championId}/item-times?position=${position}`);
 }
 
-export type Counters = { patches: string[]; updatedAt?: number; games: number; matchups: { championId: number; games: number; winRate: number }[] };
+export type Counters = {
+  patches: string[];
+  updatedAt?: number;
+  games: number;
+  matchups: { championId: number; games: number; winRate: number; /** Games and win rate by game length bucket; missing in older docs. */ lengths?: { bucket: number; games: number; winRate: number }[] }[];
+};
 
 export function getCounters(championId: number, position: string) {
   return get<Counters>(`/v1/champions/${championId}/counters?position=${position}`);
@@ -465,4 +470,14 @@ export function getTierListAt(position: string, bracket: string) {
 
 export function getStatsBoardAt(position: string, bracket: string) {
   return get<StatsBoard>(`/v1/stats/board/${position}?rank=${bracket}`);
+}
+
+/** The lane averages for one bracket whatever the rank filter says. */
+export function getLaneStatsAt(championId: number, position: string, vs: number, bracket: string) {
+  return get<LaneStat>(`/v1/champions/${championId}/lane?position=${position}&vs=${vs}&rank=${bracket}`);
+}
+
+/** Counters for one bracket whatever the rank filter says. */
+export function getCountersAt(championId: number, position: string, bracket: string) {
+  return get<Counters>(`/v1/champions/${championId}/counters?position=${position}&rank=${bracket}`);
 }

@@ -7,6 +7,7 @@ import { PhaseRead } from "../draft/PhaseRead";
 import { StrengthsPanel } from "../draft/StrengthsPanel";
 import { AbilityCompare } from "../draft/AbilityCompare";
 import { LaneStats } from "../draft/LaneStatsPanel";
+import { MatchupLength } from "../draft/MatchupLength";
 import { PowerSpikes } from "../draft/PowerSpikes";
 import { StatsDuel } from "../draft/StatsDuel";
 import { MatchupGuide } from "../draft/MatchupGuide";
@@ -130,6 +131,9 @@ export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange
               </AcademyBlock>
               <AcademyBlock sources={["crawler"]}>
                 <LaneStats championId={route.championId} position={route.position} opponentId={route.opponentId} />
+              </AcademyBlock>
+              <AcademyBlock sources={["crawler"]}>
+                <MatchupLength championId={route.championId} opponentId={route.opponentId} position={route.position} />
               </AcademyBlock>
               <AcademyBlock sources={["ddragon"]}>
                 <StatsDuel champion={me} opponent={opponent} />

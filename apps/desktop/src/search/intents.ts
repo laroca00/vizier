@@ -48,3 +48,45 @@ export function comboQuery(query: string, champions: Champion[]): Champion | nul
   const name = needle.slice(0, needle.length - word.length);
   return name ? (champions.find((c) => fold(c.name) === name) ?? null) : null;
 }
+
+const word = (text: string) => text.toLocaleLowerCase("tr").split(/[^\p{L}\p{N}]+/u).filter(Boolean).map(fold);
+
+// Words that name a stat of the explorer; a stat is found when any of its words is a whole word of the query.
+const STAT_WORDS: [string, string[]][] = [
+  ["goldDiff15", ["bully", "bullies", "golddiff", "goldlead", "ezen", "ezenler"]],
+  ["lateWinRate", ["lategame", "gecoyun"]],
+  ["winRate", ["winrate", "kazanma", "kazanmaorani", "galibiyet", "wr"]],
+  ["pickRate", ["pickrate", "secilme", "populer", "popular"]],
+  ["banRate", ["banrate", "yasaklanma", "yasak", "ban", "banned"]],
+  ["kda", ["kda"]],
+  ["csPerMinute", ["cs", "csdk", "farm", "csmin"]],
+  ["minutes", ["sure", "suresi", "length", "duration"]],
+];
+const ROLE_WORDS: [string, string[]][] = [
+  ["TOP", ["top", "ust", "toplane", "ustkoridor"]],
+  ["JUNGLE", ["jungle", "jungler", "jg", "orman", "ormanci"]],
+  ["MIDDLE", ["mid", "middle", "orta", "midlane"]],
+  ["BOTTOM", ["adc", "bot", "bottom", "alt", "nisanci"]],
+  ["UTILITY", ["support", "sup", "destek", "utility"]],
+];
+const LOW_WORDS = ["lowest", "worst", "least", "dusuk", "endusuk", "az", "enaz"];
+
+/**
+ * "en yüksek winrate jungle", "lane bully top", "lowest kda support": the table
+ * of the stats explorer that answers it, or null when the phrase names no stat.
+ * Multi-word stats ("lane bully", "late game", "gold diff") are joined first.
+ */
+export function statsIntent(query: string, topics: Topic[]): Topic | null {
+  const raw = word(query);
+  if (raw.length === 0) return null;
+  const tokens = [...raw];
+  for (let i = 0; i < raw.length - 1; i++) tokens.push(raw[i] + raw[i + 1]);
+  const stat = STAT_WORDS.find(([, words]) => words.some((w) => tokens.includes(w)))?.[0];
+  if (!stat) return null;
+  const role = ROLE_WORDS.find(([, words]) => words.some((w) => raw.includes(w)))?.[0] ?? "ALL";
+  const asc = raw.some((w) => LOW_WORDS.includes(w)) || tokens.includes("endusuk") || tokens.includes("enaz");
+  // A lone stat word is too common to hijack the results; it needs a role, a direction or another word.
+  if (raw.length < 2 && !asc) return null;
+  const id = `stats:${stat}:${role}:${asc ? "asc" : "desc"}`;
+  return topics.find((t) => t.id === id) ?? null;
+}

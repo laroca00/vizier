@@ -1,4 +1,4 @@
-import { DEFAULT_STATS_VIEW } from "../data/statsTable";
+import { DEFAULT_STATS_VIEW, type StatsColumn } from "../data/statsTable";
 import { ARCHETYPES } from "../data/archetypes";
 import { COMP_TEMPLATES } from "../data/compTemplates";
 import { combosOf } from "../data/combos";
@@ -47,6 +47,44 @@ const ACADEMY: { id: string; tr: string; en: string; words: string[]; route: Rou
   { id: "challenge", tr: "Draft meydan okuması", en: "Draft challenge", words: ["draft", "challenge", "meydan okuma"], route: { page: "challenge" } },
 ];
 
+const STAT_NAMES: Record<string, { tr: string; en: string }> = {
+  winRate: { tr: "kazanma oranı", en: "win rate" },
+  pickRate: { tr: "seçilme oranı", en: "pick rate" },
+  banRate: { tr: "yasaklanma oranı", en: "ban rate" },
+  kda: { tr: "KDA", en: "KDA" },
+  csPerMinute: { tr: "CS/dk", en: "CS/min" },
+  goldDiff15: { tr: "15. dk altın farkı", en: "gold diff at 15" },
+  lateWinRate: { tr: "geç oyun kazanma", en: "late-game win rate" },
+  minutes: { tr: "oyun süresi", en: "game length" },
+};
+const ROLE_NAMES: Record<string, { tr: string; en: string }> = {
+  ALL: { tr: "Tüm roller", en: "All roles" },
+  TOP: { tr: "Üst", en: "Top" },
+  JUNGLE: { tr: "Orman", en: "Jungle" },
+  MIDDLE: { tr: "Orta", en: "Mid" },
+  BOTTOM: { tr: "Alt", en: "Bot" },
+  UTILITY: { tr: "Destek", en: "Support" },
+};
+
+/**
+ * "Orman · en yüksek kazanma oranı": a ready table of the stats explorer for
+ * every stat, role and direction. They have no search terms of their own and
+ * are only found through the phrases in intents.ts.
+ */
+export function statsTopics(lang: Lang): Topic[] {
+  return Object.keys(STAT_NAMES).flatMap((stat) =>
+    Object.keys(ROLE_NAMES).flatMap((position) =>
+      (["desc", "asc"] as const).map((dir): Topic => ({
+        id: `stats:${stat}:${position}:${dir}`,
+        group: "academy",
+        name: `${ROLE_NAMES[position][lang]} · ${dir === "desc" ? (lang === "tr" ? "en yüksek" : "highest") : lang === "tr" ? "en düşük" : "lowest"} ${STAT_NAMES[stat][lang]}`,
+        terms: [],
+        target: { route: { page: "stats", ...DEFAULT_STATS_VIEW, position, sort: stat as StatsColumn, desc: dir === "desc" } },
+      })),
+    ),
+  );
+}
+
 const terms = (...words: string[]) => words.map(fold).filter(Boolean);
 
 /** The topics that need no network and no player data. */
@@ -56,6 +94,7 @@ export function staticTopics(lang: Lang): Topic[] {
     ...COMP_TEMPLATES.map((t): Topic => ({ id: `template:${t.id}`, group: "template", name: t.name[lang], terms: terms(t.name.tr, t.name.en), target: { route: { page: "templates" } } })),
     ...DIRECTIONS.map((d): Topic => ({ id: `lab:${d.id}`, group: "lab", name: d.label, terms: terms(d.label, d.id.replace("-", " ")), target: { route: { page: "lab", championId: null, position: "MIDDLE" } } })),
     ...QUIZ.map((q): Topic => ({ id: `quiz:${q.id}`, group: "quiz", name: q[lang], terms: terms(q.tr, q.en), target: { route: { page: "quiz" } } })),
+    ...statsTopics(lang),
     ...ACADEMY.map((a): Topic => ({ id: `academy:${a.id}`, group: "academy", name: a[lang], terms: terms(a.tr, a.en, ...a.words), target: { route: a.route } })),
   ];
 }

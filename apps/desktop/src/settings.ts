@@ -7,6 +7,7 @@ import { DEFAULT_REF, type RefSection } from "./overlay/reference";
 import { DEFAULT_BRACKET } from "@vizier/shared/brackets";
 import { sanitizeRank, sanitizeRegion, setDraftOwnRank, setRankChoice, setRegionChoice, type RankChoice, type RegionChoice } from "./rankChoice";
 import { ALL_COLUMNS, sanitizeColumns, sanitizeViews, type ColumnChoice, type SavedView } from "./data/statsViews";
+import { sanitizeImportPath, type ImportPath } from "./lab/itemPath";
 import type { OverlayTheme, WidgetStyles } from "./overlay/appearance";
 
 export type Settings = {
@@ -96,6 +97,8 @@ export type Settings = {
   region: RegionChoice;
   /** Columns the stats explorer shows beside the champion. */
   statsColumns: ColumnChoice;
+  /** Which route of the item tree the core items of an imported item set follow. */
+  importItemPath: ImportPath;
   /** Views the player saved in the stats explorer; the ready ones are built in. */
   statsViews: SavedView[];
 };
@@ -150,6 +153,7 @@ const DEFAULTS: Settings = {
   champSelectOwnRank: true,
   region: "all",
   statsColumns: ALL_COLUMNS,
+  importItemPath: "default",
   statsViews: [],
 };
 
@@ -169,7 +173,7 @@ function read(): Settings {
       }
       localStorage.setItem(AUTO_IMPORT_KEY, "1");
     }
-    return { ...DEFAULTS, ...stored, rank: sanitizeRank(stored.rank), region: sanitizeRegion(stored.region), statsColumns: sanitizeColumns(stored.statsColumns), statsViews: sanitizeViews(stored.statsViews) };
+    return { ...DEFAULTS, ...stored, rank: sanitizeRank(stored.rank), region: sanitizeRegion(stored.region), statsColumns: sanitizeColumns(stored.statsColumns), statsViews: sanitizeViews(stored.statsViews), importItemPath: sanitizeImportPath(stored.importItemPath) };
   } catch {
     return DEFAULTS;
   }

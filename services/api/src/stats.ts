@@ -386,7 +386,13 @@ export async function championOverview(
   };
 }
 
-export type Matchup = { championId: number; games: number; winRate: number };
+export type Matchup = {
+  championId: number;
+  games: number;
+  winRate: number;
+  /** The matchup's games and win rate in each game length bucket (see ChampionOverview.lengths); missing for docs from before. */
+  lengths?: { bucket: number; games: number; winRate: number }[];
+};
 
 /** The champion's win rate against each lane opponent; hardest first. */
 export async function counters(
@@ -406,9 +412,25 @@ export async function counters(
     )
     .bind(...patches, championId, position)
     .all<{ opponent: number; games: number; wins: number }>();
+  const { results: byLength } = await db
+    .prepare(
+      `SELECT value, SUM(games) AS games, SUM(wins) AS wins FROM ${scope("stat_counts", bracket)}
+        WHERE patch IN (${placeholders(patches.length)}) AND queue_id = 420 AND champion_id = ? AND team_position = ? AND kind = 'vs-length'
+        GROUP BY value`,
+    )
+    .bind(...patches, championId, position)
+    .all<{ value: string; games: number; wins: number }>();
+  const lengthsOf = new Map<number, { bucket: number; games: number; winRate: number }[]>();
+  for (const r of byLength) {
+    const [opponent, bucket] = r.value.split("|").map(Number);
+    lengthsOf.set(opponent, [...(lengthsOf.get(opponent) ?? []), { bucket, games: r.games, winRate: round3(r.wins / r.games) }]);
+  }
   const matchups = results
     .filter((r) => r.games >= sampleLimits.pairGames)
-    .map((r) => ({ championId: r.opponent, games: r.games, winRate: round3(r.wins / r.games), score: smoothed(r.wins, r.games) }))
+    .map((r) => {
+      const lengths = lengthsOf.get(r.opponent)?.sort((a, b) => a.bucket - b.bucket);
+      return { championId: r.opponent, games: r.games, winRate: round3(r.wins / r.games), ...(lengths ? { lengths } : {}), score: smoothed(r.wins, r.games) };
+    })
     .sort((a, b) => a.score - b.score)
     .map(({ score: _, ...m }) => m);
   return { patches, games: results.reduce((sum, r) => sum + r.games, 0), matchups };
