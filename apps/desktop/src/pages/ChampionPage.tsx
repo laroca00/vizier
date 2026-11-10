@@ -28,6 +28,8 @@ import { useAsync } from "../useAsync";
 import { ChampionSummaryCard } from "./ChampionSummaryCard";
 import { RankCurvePanel } from "./RankCurvePanel";
 import { LengthPanel } from "./LengthPanel";
+import { JunglePanel } from "./JunglePanel";
+import { ObjectivePanel } from "./ObjectivePanel";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { ComboSection } from "../combos/ComboSection";
 import { Tabs } from "../ui/Tabs";
@@ -39,6 +41,7 @@ import { MatchupGuide } from "../draft/MatchupGuide";
 import { Select } from "../ui/Fields";
 import { ChampionWorkspace } from "../workspace/ChampionWorkspace";
 import "./ChampionPage.css";
+import "../ui/EloTag.css";
 
 const SHOWN_MATCHUPS = 5;
 const MIN_ROLE_GAMES = 10;
@@ -299,6 +302,8 @@ function Overview({ overview, championId, championName, champions, version, queu
           />
         </section>
         {ranked && overview.lengths && <LengthPanel lengths={overview.lengths} patches={overview.patches} updatedAt={overview.updatedAt} />}
+        {ranked && overview.jungle && <JunglePanel jungle={overview.jungle} patches={overview.patches} updatedAt={overview.updatedAt} />}
+        {ranked && overview.objectives && <ObjectivePanel objectives={overview.objectives} winRate={overview.winRate} patches={overview.patches} updatedAt={overview.updatedAt} />}
         {ranked && position && <RankCurvePanel championId={championId} position={position} />}
         {ranked && position && version && <BuildEvolution key={`${championId}:${position}`} championId={championId} position={position} version={version} />}
         {ranked && (

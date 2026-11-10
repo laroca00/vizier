@@ -8,6 +8,7 @@ import { BuildEditor } from "../library/BuildEditor";
 import { createBuild, useLibrary, type SavedBuild } from "../library/store";
 import { Button } from "../ui/Button";
 import { useToast } from "../ui/Toast";
+import { pathColumn, type PathKind } from "../lab/itemPath";
 import { DIRECTIONS, directionColumn, type DirectionId } from "../lab/directions";
 import { STAT_PRICES } from "../data/itemGold";
 import { runningTotals, shownStats, statValue } from "../lab/totals";
@@ -28,6 +29,8 @@ import { ChampionField } from "./MatchupPage";
 import "../library/library.css";
 import "./MatchupPage.css";
 import "./LabPage.css";
+
+type PathChoice = PathKind | "none";
 
 export type LabRoute = { page: "lab"; championId: number | null; position: string };
 
@@ -82,6 +85,7 @@ function LabColumns({ data, championId, position }: { data: LibraryData; champio
   const [custom, setCustom] = useState<SavedBuild | null>(null);
   const [editing, setEditing] = useState(false);
   const [proKey, setProKey] = useState("");
+  const [pathKind, setPathKind] = useState<PathKind | null>(null);
   const [pros] = useAsync(`lab-pros:${championId}:${position}`, () => getProBuilds({ championId, position, limit: 10 }).catch(() => []));
   const toast = useToast();
   const saved = mine.find((b) => b.id === pickedId) ?? mine[0] ?? null;
@@ -95,6 +99,8 @@ function LabColumns({ data, championId, position }: { data: LibraryData; champio
   const pro = proList.find((p) => p.matchId === proKey);
   if (pro) columns.push(proColumn(pro, championId, { position, finished }));
   if (custom) columns.push(customColumn(custom));
+  const route = build.value && pathKind ? pathColumn(build.value, pathKind, championId, { position, finished }) : null;
+  if (route) columns.push(route);
   const extra = build.value ? directionColumn(direction, build.value, data.details, championId, position) : null;
   if (extra) columns.push(extra);
   if (columns.length === 0) return <EmptyState title={t("Bu rol için build yok")}>{t("Henüz yeterli maç ya da kayıtlı build yok. Başka bir rol dene.")}</EmptyState>;
@@ -112,6 +118,18 @@ function LabColumns({ data, championId, position }: { data: LibraryData; champio
         {direction !== "standard" && !extra && <p className="build__note">{t("Bu yöne uyan yeterli eşya bu şampiyonun build'lerinde yok.")}</p>}
       </div>
       <div className="lab__controls">
+        {(build.value?.itemTree?.length ?? 0) > 0 && (
+          <Select<PathChoice>
+            label={t("Eşya yolu")}
+            value={pathKind ?? "none"}
+            options={[
+              { value: "none", label: t("Yok") },
+              { value: "winning", label: t("En çok kazanan yol") },
+              { value: "popular", label: t("En popüler yol") },
+            ]}
+            onChange={(next) => setPathKind(next === "none" ? null : next)}
+          />
+        )}
         {proList.length > 0 && (
           <Select
             label={t("Pro build ekle")}

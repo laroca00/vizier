@@ -18,13 +18,15 @@ export type RawChampion = { key: string; tags: string[]; info: { attack: number;
 export type Catalog = {
   /** Items that build into nothing, worth at least 900 gold. */
   finished: Set<number>;
+  /** Boots of every tier, to time the first pair. */
+  boots: Set<number>;
   styles: Map<number, Style>;
   /** Champions whose damage is mostly magic. */
   magic: Set<number>;
   tanks: Set<number>;
 };
 
-export const emptyCatalog = (): Catalog => ({ finished: new Set(), styles: new Map(), magic: new Set(), tanks: new Set() });
+export const emptyCatalog = (): Catalog => ({ finished: new Set(), boots: new Set(), styles: new Map(), magic: new Set(), tanks: new Set() });
 
 export const isFinished = (item: RawItem) =>
   !item.into?.length && !item.consumed && !item.tags?.includes("Trinket") && item.gold.total >= 900;
@@ -87,6 +89,7 @@ export function foeProfiles(enemies: number[], catalog: Catalog): Foe[] {
 export function catalogFrom(items: Record<string, RawItem>, champions: Record<string, RawChampion>): Catalog {
   const catalog = emptyCatalog();
   for (const [id, item] of Object.entries(items)) {
+    if (item.tags?.includes("Boots")) catalog.boots.add(Number(id));
     if (!isFinished(item)) continue;
     catalog.finished.add(Number(id));
     const style = itemStyle(item);

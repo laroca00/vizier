@@ -140,3 +140,27 @@
 .comparison__name img {
   border-radius: 6px;
 }
+
+.item-tree {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 0 18px;
+  list-style: none;
+  border-left: 1px solid var(--data-grid);
+}
+
+.item-tree:first-of-type {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.item-tree li[data-enough="false"] {
+  opacity: 0.55;
+}
+
+.item-tree__node {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

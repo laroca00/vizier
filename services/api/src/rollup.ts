@@ -2,7 +2,7 @@ import { buildStyle, foeProfiles, type Catalog } from "./archetypes.ts";
 import { maxOrder, parseRuneKey } from "./builds.ts";
 import { loadCatalog } from "./ddragon.ts";
 import { LEGACY_GROUP } from "./localSchema.ts";
-import { decodeKda } from "./timeline.ts";
+import { decodeJungle, decodeKda } from "./timeline.ts";
 
 const RANKED_SOLO = 420;
 const ARENA = 1700;
@@ -43,6 +43,8 @@ type Raw = {
   kda_minutes: string | null;
   rank_group: string | null;
   duration: number | null;
+  jungle_path: string | null;
+  objectives: string | null;
 };
 
 /** Game lengths are counted in five buckets: under 20, 20 to 25, 25 to 30, 30 to 35 and 35 minutes or more. */
@@ -201,6 +203,22 @@ const POOL_BAN = "pool-ban";
 const POOL_GAMES = "pool-games";
 const matchRow = (m: { patch: string; queue_id: number; rank_group: string | null }) => ({ rank_group: m.rank_group, patch: m.patch, queue_id: m.queue_id, team_position: "", champion_id: 0 });
 
+/** The first completed items in buy order, each once, up to `limit`. */
+export function completedItems(row: { purchase_order: string | null }, finished: Set<number>, limit = CORE_ITEMS): number[] {
+  const done: number[] = [];
+  for (const id of ids(row.purchase_order ?? "")) if (finished.has(id) && !done.includes(id) && done.length < limit) done.push(id);
+  return done;
+}
+
+/** Minute (whole, capped) the first matching purchase was made, or null when there was none. */
+export function firstMinute(row: { purchase_order: string | null; purchase_times: string | null }, wanted: Set<number>): number | null {
+  const bought = ids(row.purchase_order ?? "");
+  const times = ids(row.purchase_times ?? "");
+  const at = bought.findIndex((id, i) => wanted.has(id) && times[i] !== undefined);
+  return at < 0 ? null : Math.min(MAX_TIMING_MINUTE, Math.floor(times[at] / 60));
+}
+export const MAX_TIMING_MINUTE = 30;
+
 /** What a row adds to its champion's build, as [kind, value] pairs. */
 function buildChoices(row: Raw, finished: Set<number>): [string, string][] {
   const choices: [string, string][] = [
@@ -212,8 +230,7 @@ function buildChoices(row: Raw, finished: Set<number>): [string, string][] {
   if (!row.skill_order) return choices;
   if (row.start_items) choices.push(["start", ids(row.start_items).sort((a, b) => a - b).join(",")]);
   choices.push(["skill", `${maxOrder(row.skill_order).join("")}|${row.skill_order.slice(0, 3)}`]);
-  const core: number[] = [];
-  for (const id of ids(row.purchase_order ?? "")) if (finished.has(id) && !core.includes(id) && core.length < CORE_ITEMS) core.push(id);
+  const core = completedItems(row, finished);
   if (core.length === CORE_ITEMS) choices.push(["core", core.join(",")]);
   return choices;
 }
@@ -249,7 +266,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const { results } = await db
       .prepare(
         `SELECT rowid, match_id, patch, queue_id, team_position, champion_id, win, runes, spells, items, start_items,
-            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, duration
+            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, duration, jungle_path, objectives
           FROM participant_stats WHERE rowid > ? ORDER BY rowid LIMIT ?`,
       )
       .bind(from, CHUNK)
@@ -276,6 +293,29 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       if (row.queue_id === RANKED_SOLO) tally.add(row, "region", platformOf(row.match_id), row.win);
       // Win rate by game length, from every ranked game (builds read the same pool); older rolled games have no bucket.
       if (row.queue_id === RANKED_SOLO && row.duration) tally.add(row, "length", String(lengthBucket(row.duration)), row.win);
+      // The jungler's route: first camps' side with the first lane, and the first gank minute, each its own count.
+      const route = decodeJungle(row.jungle_path);
+      if (route) {
+        tally.add(row, "jpath", `${route.side}|${route.lane}`, row.win);
+        tally.add(row, "jgank", route.gankMinute === null ? "none" : String(route.gankMinute), row.win);
+      }
+      // Which objectives the team took first: obj-games is the denominator, obj counts the games it took each.
+      if (row.queue_id === RANKED_SOLO && row.objectives !== null) {
+        tally.add(row, "obj-games", "", row.win);
+        for (const letter of row.objectives) tally.add(row, "obj", letter, row.win);
+      }
+      // The path of the first completed items: each prefix is its own count, so the doc can grow a tree from them.
+      if (row.queue_id === RANKED_SOLO && row.skill_order) {
+        const path = completedItems(row, catalog.finished);
+        for (let n = 1; n <= path.length; n++) tally.add(row, `path${n}`, path.slice(0, n).join(","), row.win);
+      }
+      // When the first boots and the first finished item were bought, as whole minutes, so a median can be read back.
+      if (row.queue_id === RANKED_SOLO && row.skill_order) {
+        const boots = firstMinute(row, catalog.boots);
+        if (boots !== null) tally.add(row, "boots-min", String(boots), row.win);
+        const first = firstMinute(row, catalog.finished);
+        if (first !== null) tally.add(row, "first-min", String(first), row.win);
+      }
       const choices = buildChoices(row, catalog.finished);
       addItemTimes(itemTimes, row, catalog.finished);
       addBench(bench, row);

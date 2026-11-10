@@ -23,7 +23,7 @@ export type TimelineFrame = {
   timestamp: number;
   participantFrames: Record<
     string,
-    { totalGold: number; xp: number; minionsKilled: number; jungleMinionsKilled: number; level: number }
+    { totalGold: number; xp: number; minionsKilled: number; jungleMinionsKilled: number; level: number; position?: { x: number; y: number } }
   >;
   events: TimelineEvent[];
 };
@@ -180,4 +180,56 @@ export function goldAtMinute(timeline: Timeline, minute: number): Map<number, nu
   if (!frame) return result;
   for (const [id, pf] of Object.entries(frame.participantFrames)) result.set(Number(id), pf.totalGold);
   return result;
+}
+
+export type Lane = "top" | "mid" | "bot";
+
+/**
+ * Which lane a map position sits in, or null in the jungle, river or a base. The map is 14,800
+ * units square with the blue base bottom-left and the red base top-right; the lanes hug the left
+ * and top edges (top), the bottom and right edges (bot) and the diagonal between the bases (mid).
+ */
+export function laneAt({ x, y }: { x: number; y: number }): Lane | null {
+  if ((x < 3000 && y > 3500) || (y > 11800 && x < 11300)) return "top";
+  if ((y < 3000 && x > 3500) || (x > 11800 && y < 11300)) return "bot";
+  if (Math.abs(x - y) < 1200 && x > 4500 && x < 10300) return "mid";
+  return null;
+}
+
+export type JunglePath = {
+  /** The half of the map the first camps were cleared on, from where the jungler stood at 2:00. */
+  side: "top" | "bot";
+  /** The first lane the jungler stood in between 3:00 and 6:00, or none while still clearing. */
+  lane: Lane | "none";
+  /** Whole minute of the first kill or assist inside a lane, or null when there was none by minute 15. */
+  gankMinute: number | null;
+};
+
+/** The early route of one jungler, or null when the frames carry no positions. */
+export function junglePath(timeline: Timeline, participantId: number): JunglePath | null {
+  const frames = timeline.info.frames;
+  const at2 = frames[2]?.participantFrames[String(participantId)]?.position;
+  if (!at2) return null;
+  let lane: JunglePath["lane"] = "none";
+  for (const frame of frames.slice(3, 7)) {
+    const found = frame.participantFrames[String(participantId)]?.position;
+    const there = found ? laneAt(found) : null;
+    if (there) {
+      lane = there;
+      break;
+    }
+  }
+  const gank = frames
+    .flatMap((f) => f.events)
+    .filter((e) => e.type === "CHAMPION_KILL" && e.timestamp <= (PACE_MINUTES + 1) * 60_000 && e.position && laneAt(e.position))
+    .find((e) => e.killerId === participantId || e.assistingParticipantIds?.includes(participantId));
+  return { side: at2.y > at2.x ? "top" : "bot", lane, gankMinute: gank ? Math.floor(gank.timestamp / 60_000) : null };
+}
+
+export const encodeJungle = (p: JunglePath) => `${p.side}|${p.lane}|${p.gankMinute ?? ""}`;
+
+export function decodeJungle(text: string | null): JunglePath | null {
+  const [side, lane, gank] = (text ?? "").split("|");
+  if ((side !== "top" && side !== "bot") || !["top", "mid", "bot", "none"].includes(lane)) return null;
+  return { side, lane: lane as JunglePath["lane"], gankMinute: gank ? Number(gank) : null };
 }

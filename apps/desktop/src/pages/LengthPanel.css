@@ -63,3 +63,22 @@
 .length__games {
   color: var(--glaze-muted);
 }
+
+.jungle__paths {
+  display: grid;
+  gap: 6px;
+  max-width: 520px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.jungle__paths li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.jungle__paths li[data-enough="false"] {
+  opacity: 0.55;
+}

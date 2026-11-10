@@ -4,6 +4,7 @@ import { createApiCache } from "./apiCache";
 import { activeBracket, activeRegion, withRank } from "./rankChoice";
 import { ApiError, requestJson } from "./http";
 import type { RankCurveDoc } from "./data/rankCurve";
+import type { ItemNode } from "./lab/itemPath";
 
 export { ApiError };
 
@@ -57,6 +58,12 @@ export type Build = Picks & {
   perkGames?: number;
   /** The most played skill orders; `share` is out of the games that had a timeline. */
   skillOptions?: Choice<{ maxOrder: number[]; firstLevels: number[]; share: number }>[];
+  /** First, second and third completed item as a tree (most played branches first); missing from older docs. */
+  itemTree?: ItemNode[];
+  /** The most played starting items with win rate; missing from older docs. */
+  startOptions?: Choice<{ ids: number[] }>[];
+  /** Median minute of the first boots and the first finished item. */
+  timing?: { boots: { games: number; medianMinute: number } | null; firstItem: { games: number; medianMinute: number } | null };
 };
 
 /** Null when Vizier has no games for the champion yet. */
@@ -186,6 +193,14 @@ export type ChampionOverview = {
   banRate: number | null;
   /** Games and win rate by game length (see data/lengthStats); missing before the crawler counted them and in region views. */
   lengths?: { bucket: number; games: number; winRate: number }[];
+  /** Jungle only: the first camps' side with the first lane, and the first gank minute. */
+  jungle?: {
+    games: number;
+    paths: { side: "top" | "bot"; lane: "top" | "mid" | "bot" | "none"; games: number; winRate: number }[];
+    gank: { games: number; medianMinute: number } | null;
+  };
+  /** How often the team took each first objective (d dragon, g grubs, h herald, t tower, c first blood) against the role. */
+  objectives?: { games: number; rates: { key: string; games: number; rate: number; winRate: number; roleRate: number }[] };
 };
 
 /** Null when Vizier has no games for the champion yet. */

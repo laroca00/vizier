@@ -135,6 +135,10 @@ export function localSchema(sqlite: DatabaseSync) {
   // The tier group of the seed a game came from; null on rows from before.
   addColumn(sqlite, "participant_stats", "rank_group", "TEXT");
   addColumn(sqlite, "crawled_matches", "rank_group", "TEXT");
+  // The jungler's early route (side, first lane, first gank minute) from the timeline.
+  addColumn(sqlite, "participant_stats", "jungle_path", "TEXT");
+  // Letters of the objectives the player's team took first; null on games from before.
+  addColumn(sqlite, "participant_stats", "objectives", "TEXT");
   for (const spec of TABLES) {
     if (isTable(sqlite, spec.name)) split(sqlite, spec);
     emeraldView(sqlite, spec);
