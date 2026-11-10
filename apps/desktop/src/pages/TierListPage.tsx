@@ -4,6 +4,7 @@ import { MatchupLink } from "../matchupLink";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { getBans, getTierHistory, getTierList } from "../api";
 import { tierTrend } from "../data/history";
+import { previousPatchBlend } from "../data/patchBlend";
 import { TrendSpark } from "../ui/TrendSpark";
 import { DEFAULT_BRACKET } from "@vizier/shared/brackets";
 import { championIconUrl, champions, latestVersion, roleIconUrl } from "../data/ddragon";
@@ -231,6 +232,7 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
                 <tbody>
                   {rows.map((c) => {
                     const champion = state.value.champions.get(c.championId);
+                    const blend = previousPatchBlend(c.byPatch);
                     const mine = poolIds.has(c.championId) ? "pool" : personal.favourites.includes(c.championId) ? "favourite" : undefined;
                     return (
                       <tr key={c.championId} data-mine={mine} data-thin={isThin(c) || undefined}>
@@ -256,8 +258,14 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
                             {mine && <span className="tiers__mine">{mine === "pool" ? t("Havuzunda") : t("Favori")}</span>}
                           </button>
                         </td>
-                        <td title={sampleTitle(t, lang, { ...c, bracket: rankLabel(bracket, lang === "en" ? "en" : "tr"), patches: state.value.list.patches, updatedAt: state.value.list.updatedAt })}>
-                          {percent(c.winRate)} <TrendSpark trend={tierTrend(trendDoc, c.championId)} />
+                        <td title={sampleTitle(t, lang, { ...c, ...(blend ?? {}), bracket: rankLabel(bracket, lang === "en" ? "en" : "tr"), patches: blend ? [blend.patch] : state.value.list.patches, updatedAt: state.value.list.updatedAt })}>
+                          {percent(blend ? blend.winRate : c.winRate)}{" "}
+                          {blend && (
+                            <span className="tiers__thin" title={t("Yeni yamada az maç var; yama {patch} gösteriliyor.", { patch: blend.patch })}>
+                              {t("geçen yama")}
+                            </span>
+                          )}{" "}
+                          <TrendSpark trend={tierTrend(trendDoc, c.championId)} />
                         </td>
                         <td className="tiers__change" data-trend={trendOf(c.winRateChange) ?? undefined}
                           title={c.winRateChange == null ? t("Önceki yamada yeterli maç yok.") : t("Önceki yamaya göre {change} puan", { change: signed(c.winRateChange) })}

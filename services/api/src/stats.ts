@@ -45,7 +45,19 @@ export type TierEntry = {
   winRateChange: number | null;
   /** Change in pick rate over the same two patches; null when either has too few games. */
   pickRateChange?: number | null;
+  /** Games and win rate on each of the two newest patches (newest first), so a thin new patch can show the previous one. */
+  byPatch?: PatchSample[];
 };
+
+export type PatchSample = { patch: string; games: number; winRate: number };
+
+const patchSamples = (patches: string[], byPatch: Map<string, { games: number; wins: number }>): PatchSample[] | undefined =>
+  patches.length < 2
+    ? undefined
+    : patches.map((patch) => {
+        const p = byPatch.get(patch);
+        return { patch, games: p?.games ?? 0, winRate: p && p.games > 0 ? round3(p.wins / p.games) : 0 };
+      });
 
 const smoothed = (wins: number, games: number) => (wins + sampleLimits.priorGames / 2) / (games + sampleLimits.priorGames);
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
@@ -181,6 +193,7 @@ export async function tierList(
         presence: pickRate + (banRate ?? 0) * roleShare,
         winRateChange: patchChange(patches, c.patches),
         pickRateChange: pickChange(patches, c.patches, patchGames, slotsPerGame(queue)),
+        byPatch: patchSamples(patches, c.patches),
       };
     });
   return { patches, games: total, champions: assignTiers(entries), rule: tierRule() };
@@ -222,6 +235,8 @@ export type ChampionOverview = {
   jungle?: JungleRoutes;
   /** How often the champion's team took each first objective, against the role's average. Missing before games carried it. */
   objectives?: ObjectiveRates;
+  /** Games and win rate on each of the two newest patches (newest first); missing with one patch. */
+  byPatch?: PatchSample[];
 };
 
 export type ObjectiveRates = {
@@ -350,6 +365,7 @@ export async function championOverview(
   const games = byPatch.reduce((sum, p) => sum + p.games, 0);
   const wins = byPatch.reduce((sum, p) => sum + p.wins, 0);
 
+  const samples = patchSamples(patches, new Map(byPatch.map((p) => [p.patch, p])));
   const lengths = ranked ? await lengthRows(db, patches, championId, used, bracket) : [];
   const objectives = ranked && used ? await objectiveRates(db, patches, championId, used, bracket) : null;
   const jungle = ranked && used === "JUNGLE" ? await jungleRoutes(db, patches, championId, bracket) : null;
@@ -362,6 +378,7 @@ export async function championOverview(
     pickRate: round3(games / Math.max(list.games / slotsPerGame(queue), 1)),
     tier: entry?.tier ?? null,
     winRateChange: patchChange(patches, new Map(byPatch.map((p) => [p.patch, p]))),
+    ...(samples ? { byPatch: samples } : {}),
     banRate: ranked ? banRateOf(await poolBans(db, patches, bracket), championId) : null,
     ...(lengths.length > 0 ? { lengths } : {}),
     ...(jungle ? { jungle } : {}),

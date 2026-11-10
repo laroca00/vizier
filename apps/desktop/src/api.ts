@@ -172,6 +172,8 @@ export type TierEntry = {
   winRateChange: number | null;
   /** Pick rate change over the same two patches; absent on servers that predate it. */
   pickRateChange?: number | null;
+  /** Games and win rate on the two newest patches, newest first; absent on servers that predate it. */
+  byPatch?: { patch: string; games: number; winRate: number }[];
 };
 /** The numbers behind a tier; absent on servers that predate it. */
 export type TierRule = { priorGames: number; presenceWeight: number; listGames: number; tierGames: number; cuts: { tier: string; score: number }[] };
@@ -194,6 +196,8 @@ export type ChampionOverview = {
   winRateChange: number | null;
   /** Null outside ranked or before enough ranked games. */
   banRate: number | null;
+  /** Games and win rate on the two newest patches, newest first; absent on servers that predate it. */
+  byPatch?: { patch: string; games: number; winRate: number }[];
   /** Games and win rate by game length (see data/lengthStats); missing before the crawler counted them and in region views. */
   lengths?: { bucket: number; games: number; winRate: number }[];
   /** Jungle only: the first camps' side with the first lane, and the first gank minute. */
