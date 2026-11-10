@@ -52,3 +52,16 @@ export function pathColumn(build: Build, kind: PathKind, championId: number, ctx
     style: null,
   };
 }
+
+export type ImportPath = "default" | PathKind;
+
+/**
+ * The core items a champ select import uses: the build's own, or one route of the item tree when the
+ * player asked for it and the tree has one. The route found (if any) is returned for the label.
+ */
+export function importCore(coreItems: { ids: number[] } | null, tree: ItemNode[] | undefined, choice: ImportPath, totalGames: number): { ids: number[]; path: ChosenPath | null } {
+  const path = choice === "default" ? null : chosenPath(tree, choice, totalGames);
+  return { ids: path?.ids ?? coreItems?.ids ?? [], path };
+}
+
+export const sanitizeImportPath = (value: unknown): ImportPath => (value === "winning" || value === "popular" ? value : "default");
