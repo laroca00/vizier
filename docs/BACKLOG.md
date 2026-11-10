@@ -387,14 +387,18 @@ Builds on: 33.5 rank curve docs, tier list, champion page, the `dataviz` rules, 
 
 - [x] 35.1 "Rank'a göre" panel on the champion page: win rate and pick rate per bracket as a small line chart with games under each point, and a plain line only when the change is outside the interval ("yüksek rankta daha iyi", "düşük rankta güçlü"). (b449d49; RankCurvePanel on the champion page from /v1/meta/rank-curve, verdict line only when intervals do not overlap)
 - [ ] 35.2 Elo explorer page (`?view=elo`): champions whose win rate rises or falls most from gold_minus to master_plus, per role, with games and badges; role and minimum games filters. Menu, palette and route as usual.
+<!-- claimed: auto/35-elo-views 2026-11-10T03:31Z -->
 - [ ] 35.3 "Düşük elo dostu" and "Yüksek elo ödüllendirir" tags on tier list rows and in pool builder suggestions, only when the data supports them (interval rule from 22.2).
+<!-- claimed: auto/35-elo-views 2026-11-10T03:31Z -->
 - [ ] 35.4 Queue view and autofill picks (21.2) use the player's bracket and prefer champions that are strong in it.
+<!-- claimed: auto/35-elo-views 2026-11-10T03:31Z -->
 
 ## 36. More from every game (new aggregate stats)
 
 Builds on: raw ranked rows, timelines, `rollup.ts`, lane sums, item times, the champion page. Every new stat is bracketed like the rest and fits the budget test.
 
 - [ ] 36.1 Win rate by game length: per champion and role, games and win rate in five buckets (<20, 20–25, 25–30, 30–35, 35+ min). Chart on the champion page; the draft phase curve (1.5) uses it when the data is thick enough and keeps the hand-kept curve as the labelled fallback.
+<!-- claimed: auto/35-elo-views 2026-11-10T03:31Z -->
 - [ ] 36.2 Jungle paths: from timeline participant frames, the first camp side (topside or botside, by position at 1:30–2:00), the first lane visited after the clear (level 3–4 position near a lane) and the first gank minute, summed per jungler. Champion page "İlk tur" section with games per path. Tests on recorded frames.
 - [ ] 36.3 Objectives per champion and role: team first dragon, first grubs or herald, first tower and first blood rates against the role average, with games. On the champion page, and "objektif gücü" tags where clear.
 - [ ] 36.4 Item path tree: first, second and third completed item as a tree with win rate and games per branch (top 3 per level), from purchase order. Champion page build tab and the Itemization Lab's column picker.
