@@ -203,6 +203,13 @@ const POOL_BAN = "pool-ban";
 const POOL_GAMES = "pool-games";
 const matchRow = (m: { patch: string; queue_id: number; rank_group: string | null }) => ({ rank_group: m.rank_group, patch: m.patch, queue_id: m.queue_id, team_position: "", champion_id: 0 });
 
+/** The first completed items in buy order, each once, up to `limit`. */
+export function completedItems(row: { purchase_order: string | null }, finished: Set<number>, limit = CORE_ITEMS): number[] {
+  const done: number[] = [];
+  for (const id of ids(row.purchase_order ?? "")) if (finished.has(id) && !done.includes(id) && done.length < limit) done.push(id);
+  return done;
+}
+
 /** What a row adds to its champion's build, as [kind, value] pairs. */
 function buildChoices(row: Raw, finished: Set<number>): [string, string][] {
   const choices: [string, string][] = [
@@ -214,8 +221,7 @@ function buildChoices(row: Raw, finished: Set<number>): [string, string][] {
   if (!row.skill_order) return choices;
   if (row.start_items) choices.push(["start", ids(row.start_items).sort((a, b) => a - b).join(",")]);
   choices.push(["skill", `${maxOrder(row.skill_order).join("")}|${row.skill_order.slice(0, 3)}`]);
-  const core: number[] = [];
-  for (const id of ids(row.purchase_order ?? "")) if (finished.has(id) && !core.includes(id) && core.length < CORE_ITEMS) core.push(id);
+  const core = completedItems(row, finished);
   if (core.length === CORE_ITEMS) choices.push(["core", core.join(",")]);
   return choices;
 }
@@ -288,6 +294,11 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       if (row.queue_id === RANKED_SOLO && row.objectives !== null) {
         tally.add(row, "obj-games", "", row.win);
         for (const letter of row.objectives) tally.add(row, "obj", letter, row.win);
+      }
+      // The path of the first completed items: each prefix is its own count, so the doc can grow a tree from them.
+      if (row.queue_id === RANKED_SOLO && row.skill_order) {
+        const path = completedItems(row, catalog.finished);
+        for (let n = 1; n <= path.length; n++) tally.add(row, `path${n}`, path.slice(0, n).join(","), row.win);
       }
       const choices = buildChoices(row, catalog.finished);
       addItemTimes(itemTimes, row, catalog.finished);

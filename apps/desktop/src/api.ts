@@ -4,6 +4,7 @@ import { createApiCache } from "./apiCache";
 import { activeBracket, activeRegion, withRank } from "./rankChoice";
 import { ApiError, requestJson } from "./http";
 import type { RankCurveDoc } from "./data/rankCurve";
+import type { ItemNode } from "./lab/itemPath";
 
 export { ApiError };
 
@@ -57,6 +58,8 @@ export type Build = Picks & {
   perkGames?: number;
   /** The most played skill orders; `share` is out of the games that had a timeline. */
   skillOptions?: Choice<{ maxOrder: number[]; firstLevels: number[]; share: number }>[];
+  /** First, second and third completed item as a tree (most played branches first); missing from older docs. */
+  itemTree?: ItemNode[];
 };
 
 /** Null when Vizier has no games for the champion yet. */

@@ -7,7 +7,7 @@ import type { BuildDraft, SavedBuild } from "../library/store";
 // wins most among those with enough games, and one of the player's own.
 
 export type LabColumn = {
-  id: "popular" | "winrate" | "saved" | "pro" | "custom" | "direction";
+  id: "popular" | "winrate" | "saved" | "pro" | "custom" | "direction" | "path";
   /** What the column is, in Turkish for t(). */
   label: string;
   build: BuildDraft;

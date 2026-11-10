@@ -1,6 +1,7 @@
 import { BootsSpells } from "./BootsSpells";
 import { DataBadge } from "./ui/DataBadge";
 import { BuildPath } from "./BuildPathPanel";
+import { ItemTree } from "./ItemTreePanel";
 import { RunePageView } from "./RunePageView";
 import { formatPercent, useLang, useT, type Lang } from "./i18n";
 import { rankLabel, useBracket } from "./rank";
@@ -448,6 +449,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
       <BootsSpells picks={picks} total={shown.games} items={state.value.items} spells={state.value.spells} version={version} />
 
       <BuildPath picks={picks} items={state.value.items} version={version} times={state.value.itemTimes} />
+      <ItemTree tree={"itemTree" in shown ? shown.itemTree : undefined} items={state.value.items} version={version} />
 
       {shownItems.length > 0 && (
         <section className="build__block" aria-label={t("Sık alınan eşyalar")}>
