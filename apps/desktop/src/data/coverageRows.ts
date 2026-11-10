@@ -44,3 +44,10 @@ export function droppedGames(doc: CoverageDoc | null, patch: string): { surrende
 export function roleFixedGames(doc: CoverageDoc | null, patch: string): number {
   return doc?.roleFixed?.filter((r) => r.patch === patch && r.queue === 420).reduce((sum, r) => sum + r.games, 0) ?? 0;
 }
+
+/** Mode games (ARAM, Mayhem, Arena) per day, newest first, or an empty list for older docs. */
+export function modeGamesPerDay(doc: CoverageDoc | null): { day: string; games: number }[] {
+  const byDay = new Map<string, number>();
+  for (const r of doc?.modeDays ?? []) byDay.set(r.day, (byDay.get(r.day) ?? 0) + r.games);
+  return [...byDay].map(([day, games]) => ({ day, games })).sort((a, b) => b.day.localeCompare(a.day));
+}

@@ -409,6 +409,9 @@ export type CoverageDoc = {
   dropped?: { patch: string; queue: number; reason: string; games: number }[];
   /** Counted games whose roles were inferred; missing in older docs. */
   roleFixed?: { patch: string; queue: number; games: number }[];
+  /** Counted mode games per UTC day over the last two weeks, and the mode players followed per tier group; missing in older docs. */
+  modeDays?: { day: string; queue: number; games: number }[];
+  modeGroups?: { group: string | null; players: number }[];
 };
 
 /** What the stats stand on: games per patch, rank bracket and platform. */

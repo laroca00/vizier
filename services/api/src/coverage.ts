@@ -20,9 +20,13 @@ export type Coverage = {
   dropped?: { patch: string; queue: number; reason: string; games: number }[];
   /** Counted games whose roles had to be inferred, per patch; absent in older docs. */
   roleFixed?: { patch: string; queue: number; games: number }[];
+  /** Counted ARAM, Mayhem and Arena games per UTC day over the last two weeks, and the mode players followed per tier group; absent in older docs. */
+  modeDays?: { day: string; queue: number; games: number }[];
+  modeGroups?: { group: TierGroup | null; players: number }[];
   timelineBrackets?: { patch: string; queue: number; bracket: Bracket; players: number; withTimeline: number; share: number | null }[];
 };
 
+const MODE_DAYS = 14;
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 /**
@@ -78,8 +82,23 @@ export async function coverage(db: D1Database): Promise<Coverage> {
     .prepare("SELECT patch, queue_id AS queue, SUM(games) AS games FROM stat_counts_g WHERE kind = 'role-fixed' GROUP BY patch, queue_id")
     .all<{ patch: string; queue: number; games: number }>()
     .catch(() => ({ results: [] }));
+  const since = Date.now() - MODE_DAYS * 86_400_000;
+  const modeDays = await db
+    .prepare(
+      `SELECT strftime('%Y-%m-%d', game_start / 1000, 'unixepoch') AS day, queue_id AS queue, COUNT(*) AS games
+        FROM crawled_matches WHERE queue_id != 420 AND dropped IS NULL AND game_start >= ? GROUP BY day, queue_id ORDER BY day DESC, queue_id`,
+    )
+    .bind(since)
+    .all<{ day: string; queue: number; games: number }>()
+    .catch(() => ({ results: [] }));
+  const modeGroups = await db
+    .prepare("SELECT rank_group AS grp, COUNT(*) AS players FROM mode_players GROUP BY rank_group")
+    .all<{ grp: TierGroup | null; players: number }>()
+    .catch(() => ({ results: [] }));
   return {
     patches,
+    modeDays: modeDays.results,
+    modeGroups: modeGroups.results.map((r) => ({ group: r.grp, players: r.players })),
     roleFixed: fixedRows.results.filter((r) => keep.has(r.patch)),
     dropped: droppedRows.results.filter((r) => keep.has(r.patch)).sort((a, b) => a.patch.localeCompare(b.patch) * -1 || a.reason.localeCompare(b.reason)),
     games: games.results.filter((r) => keep.has(r.patch)),

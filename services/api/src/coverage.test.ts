@@ -48,6 +48,29 @@ describe("coverage", () => {
     expect(share("all")).toBe(0.375);
   });
 
+  it("counts mode games per day and mode players per tier group", async () => {
+    const { db, sqlite } = fakeD1();
+    const day = (n: number) => Date.now() - n * 86_400_000;
+    const put = sqlite.prepare("INSERT INTO crawled_matches (match_id, patch, game_start, queue_id, dropped) VALUES (?, '16.21', ?, ?, ?)");
+    put.run("a", day(0), 450, null);
+    put.run("b", day(0), 450, null);
+    put.run("c", day(1), 1700, null);
+    put.run("d", day(1), 450, "remake");
+    put.run("e", day(3), 420, null);
+    put.run("f", day(40), 450, null);
+    const players = sqlite.prepare("INSERT INTO mode_players (puuid, region, queue_id, added_at, rank_group) VALUES (?, 'asia', 450, 1, ?)");
+    players.run("p1", "silver");
+    players.run("p2", "silver");
+    players.run("p3", null);
+    const result = await coverage(db);
+    const today = new Date(day(0)).toISOString().slice(0, 10);
+    expect(result.modeDays?.find((r) => r.day === today && r.queue === 450)?.games).toBe(2);
+    expect(result.modeDays?.filter((r) => r.queue === 1700)).toHaveLength(1);
+    // Ranked, dropped and old games stay out.
+    expect(result.modeDays?.reduce((sum, r) => sum + r.games, 0)).toBe(3);
+    expect(result.modeGroups).toEqual(expect.arrayContaining([{ group: "silver", players: 2 }, { group: null, players: 1 }]));
+  });
+
   it("is served from the published doc, empty before the first publish", async () => {
     const app = createApp(new MemoryStore(), { statsDb: await seeded() });
     expect(await (await app.request("/v1/meta/coverage")).json()).toEqual({ patches: [], games: [], timeline: [], players: [] });
