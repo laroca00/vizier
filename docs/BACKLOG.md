@@ -436,7 +436,9 @@ Builds on: `mode_players`, the ARAM, Mayhem and Arena docs. All-rank seeding bri
 - [x] 40.1 Mode player pool sized for all ranks: raise `MODE_PLAYERS_MAX` within the call budget, spread checks across the seed groups, report mode games per day in coverage. (805bc47; mode players carry the tier group (local column rank_group), pool 12,000 shared per group, mode checks rotate over groups; coverage gains modeDays and modeGroups (About does not show them yet))
 - [x] 40.2 ARAM win rate by game length (36.1 for ARAM) on the ARAM champion page and tier list. (805bc47; ARAM length buckets rolled up, ARAM champion page panel and tier list tag (strong in short/long games) when intervals do not overlap)
 - [ ] 40.3 Arena item win rates per champion behind the existing `ARENA_ITEMS` switch; budget test updated.
+<!-- claimed: auto/40-arena-mayhem 2026-11-10T04:40Z -->
 - [ ] 40.4 Mayhem augment pairs: the two augments that do best together on a champion (taken in the same game), top five per champion with games, behind `AUGMENTS`.
+<!-- claimed: auto/40-arena-mayhem 2026-11-10T04:40Z -->
 
 ## 41. Smarter preparation from the new data
 
