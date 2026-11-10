@@ -782,9 +782,12 @@ export type BoardRow = {
   minutes: number;
   /** Gold lead over the lane opponent at 15 minutes, from games with a timeline; null when there are too few. */
   goldDiff15: { games: number; value: number } | null;
+  /** Win rate in games of 35 minutes or more; null with fewer than 20 of them. */
+  late: { games: number; winRate: number } | null;
 };
 
 const MIN_BOARD_GAMES = 20;
+const MIN_LATE_GAMES = 20;
 
 /**
  * Averages for the stats explorer, one row per champion in a role. The win,
@@ -812,6 +815,15 @@ export async function statsBoard(db: D1Database, position: string, bracket: Brac
     .bind(...patches, position)
     .all<{ champion_id: number; games: number; gold15: number }>();
   const laneBy = new Map(lane.results.map((r) => [r.champion_id, r]));
+  const { results: lateRows } = await db
+    .prepare(
+      `SELECT champion_id, SUM(games) AS games, SUM(wins) AS wins FROM ${table}
+        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ${RANKED} AND kind = 'length' AND value = '4'
+        GROUP BY champion_id`,
+    )
+    .bind(...patches, position)
+    .all<{ champion_id: number; games: number; wins: number }>();
+  const lateBy = new Map(lateRows.map((r) => [r.champion_id, r]));
   const by = new Map<number, Map<string, number>>();
   for (const r of results) by.set(r.champion_id, (by.get(r.champion_id) ?? new Map()).set(r.kind, r.games));
   const rows: BoardRow[] = [];
@@ -823,6 +835,7 @@ export async function statsBoard(db: D1Database, position: string, bracket: Brac
     const deaths = avg("sum-deaths");
     const assists = avg("sum-assists");
     const l = laneBy.get(championId);
+    const late = lateBy.get(championId);
     rows.push({
       championId,
       games: n,
@@ -833,6 +846,7 @@ export async function statsBoard(db: D1Database, position: string, bracket: Brac
       csPerMinute: Math.round(avg("sum-cspm", 100) * 10) / 10,
       minutes: Math.round(avg("sum-secs", 60) * 10) / 10,
       goldDiff15: l && l.games >= MIN_LANE_GAMES ? { games: l.games, value: Math.round(l.gold15 / l.games) } : null,
+      late: late && late.games >= MIN_LATE_GAMES ? { games: late.games, winRate: round3(late.wins / late.games) } : null,
     });
   }
   return { patches, rows: rows.sort((a, b) => b.games - a.games || a.championId - b.championId) };

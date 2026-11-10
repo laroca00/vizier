@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BoardRow, TierEntry } from "../api";
-import { averageSolid, goldDiffSolid, joinStats, viewStats, winRateSolid } from "./statsTable";
+import { averageSolid, goldDiffSolid, joinStats, lateSolid, viewStats, winRateSolid } from "./statsTable";
 
 const tier = (championId: number, games: number, winRate: number, pickRate = 0.1, banRate: number | null = 0.05): TierEntry =>
   ({ championId, games, winRate, pickRate, banRate, tier: "A", winRateChange: null });
@@ -46,5 +46,17 @@ describe("solid samples", () => {
     expect([winRateSolid(few), winRateSolid(many)]).toEqual([false, true]);
     expect([averageSolid(few), averageSolid(many)]).toEqual([false, true]);
     expect([goldDiffSolid(few), goldDiffSolid(many)]).toEqual([false, true]);
+  });
+});
+
+describe("late games", () => {
+  it("sorts by the win rate after 35 minutes and judges it by its interval", () => {
+    const rows = joinStats("TOP", [tier(1, 900, 0.5), tier(2, 900, 0.5), tier(3, 900, 0.5)], {
+      rows: [board(1, { late: { games: 400, winRate: 0.55 } }), board(2, { late: { games: 400, winRate: 0.6 } }), board(3, { late: null })],
+    });
+    const sorted = viewStats(rows, { sort: "lateWinRate", desc: true, minGames: 0, query: "" }, (id) => String(id));
+    expect(sorted.map((r) => r.championId)).toEqual([2, 1, 3]);
+    expect(rows.map(lateSolid)).toEqual([true, true, false]);
+    expect(lateSolid(joinStats("TOP", [tier(4, 900, 0.5)], { rows: [board(4, { late: { games: 20, winRate: 0.9 } })] })[0])).toBe(false);
   });
 });

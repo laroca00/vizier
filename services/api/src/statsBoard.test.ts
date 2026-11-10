@@ -29,7 +29,7 @@ describe("stats board", () => {
     await rollup(db, async () => emptyCatalog());
 
     const emerald = (await statsBoard(db, "MIDDLE", "emerald_plus")).rows.find((r) => r.championId === 103);
-    expect(emerald).toMatchObject({ games: 25, kills: 8, deaths: 4, assists: 4, kda: 3, csPerMinute: 8, minutes: 30, goldDiff15: null });
+    expect(emerald).toMatchObject({ games: 25, kills: 8, deaths: 4, assists: 4, kda: 3, csPerMinute: 8, minutes: 30, goldDiff15: null, late: null });
     const gold = (await statsBoard(db, "MIDDLE", "gold_minus")).rows.find((r) => r.championId === 103);
     expect(gold).toMatchObject({ games: 25, kda: 1, csPerMinute: 6 });
     const all = (await statsBoard(db, "MIDDLE", "all")).rows.find((r) => r.championId === 103);
@@ -47,5 +47,18 @@ describe("stats board", () => {
     expect(await (await app.request("/v1/stats/board/middle")).json()).toMatchObject({ rows: [{ championId: 103 }], rank: "emerald_plus" });
     expect(await (await app.request("/v1/stats/board/top?rank=gold_minus")).json()).toMatchObject({ rows: [], rank: "gold_minus" });
     expect((await app.request("/v1/stats/board/nowhere")).status).toBe(400);
+  });
+});
+
+describe("stats board, late games", () => {
+  it("adds the win rate of games from 35 minutes on when there are enough", async () => {
+    const { db, sqlite } = fakeD1();
+    for (let i = 0; i < 25; i++) game(sqlite, `EUW1_l${i}`, "emerald", { kills: 8, assists: 4, deaths: 4, cs_pm: 8 });
+    sqlite.prepare("UPDATE participant_stats SET duration = 2400, win = CASE WHEN rowid % 4 = 0 THEN 0 ELSE 1 END").run();
+    await rollup(db, async () => emptyCatalog());
+    const row = (await statsBoard(db, "MIDDLE")).rows.find((r) => r.championId === 103);
+    expect(row?.late?.games).toBe(25);
+    expect(row?.late?.winRate).toBeGreaterThan(0.5);
+    expect(row?.minutes).toBe(40);
   });
 });

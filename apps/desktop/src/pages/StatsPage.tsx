@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { getStatsBoard, getTierList, type StatsBoard, type TierList } from "../api";
 import { pooled } from "../data/confidence";
 import { championIconUrl, champions, latestVersion, roleIconUrl } from "../data/ddragon";
@@ -6,11 +6,15 @@ import {
   averageSolid,
   goldDiffSolid,
   joinStats,
+  lateSolid,
   viewStats,
   winRateSolid,
   type StatsColumn,
   type StatsRow,
 } from "../data/statsTable";
+import { ALL_COLUMNS, matchesView, PRESET_VIEWS, viewFrom, withView, type SavedView } from "../data/statsViews";
+import { updateSettings, useSettings } from "../settings";
+import { Button } from "../ui/Button";
 import { formatPercent, useLang, useT } from "../i18n";
 import { POSITIONS } from "../labels";
 import { loadErrorMessage } from "../loadError";
@@ -18,7 +22,7 @@ import { useOpenChampion } from "../championLink";
 import { rankLabel, useBracket } from "../rank";
 import { activeRegion, subscribeRank } from "../rankChoice";
 import { DataBadge } from "../ui/DataBadge";
-import { SearchInput, Select } from "../ui/Fields";
+import { FilterChips, SearchInput, Select } from "../ui/Fields";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { PageHeader } from "../ui/Page";
 import { RankPicker, RegionPicker } from "../ui/RankPicker";
@@ -87,6 +91,7 @@ export function StatsPage({ route, onChange }: Props) {
           </>
         }
       />
+      <ViewBar route={route} onChange={onChange} />
       {state.status === "error" ? (
         <ErrorState message={t(loadErrorMessage(state.error, online))} onRetry={retry} />
       ) : state.status !== "done" ? (
@@ -98,12 +103,77 @@ export function StatsPage({ route, onChange }: Props) {
   );
 }
 
+const COLUMN_LABELS: Record<Exclude<StatsColumn, "name">, string> = {
+  winRate: "Kazanma",
+  pickRate: "Seçilme",
+  banRate: "Yasaklanma",
+  games: "Maç",
+  kda: "KDA",
+  csPerMinute: "CS/dk",
+  goldDiff15: "Altın farkı 15",
+  minutes: "Süre",
+  lateWinRate: "35+ dk kazanma",
+};
+
+const PRESET_NAMES: Record<string, string> = { "preset:lane": "Hat ezenler", "preset:late": "Geç oyun", "preset:bans": "Yasak hedefleri" };
+
+/** Ready and saved views, the column picker, and saving the table as it is. */
+function ViewBar({ route, onChange }: { route: StatsRoute; onChange: (next: StatsRoute) => void }) {
+  const t = useT();
+  const { statsColumns, statsViews } = useSettings();
+  const [name, setName] = useState("");
+  const all = [...PRESET_VIEWS, ...statsViews];
+  const current = all.find((v) => matchesView(v, route, statsColumns));
+  const apply = (view: SavedView) => {
+    onChange({ ...route, position: view.position, sort: view.sort, desc: view.desc, minGames: view.minGames });
+    updateSettings({ statsColumns: view.columns });
+  };
+  const label = (view: SavedView) => (PRESET_NAMES[view.id] ? t(PRESET_NAMES[view.id]) : view.name);
+  const save = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    updateSettings({ statsViews: withView(statsViews, viewFrom(`v${Date.now().toString(36)}`, trimmed, route, statsColumns)) });
+    setName("");
+  };
+  return (
+    <div className="stats__views">
+      <Select<string>
+        label={t("Görünüm")}
+        value={current?.id ?? "custom"}
+        options={[{ value: "custom", label: t("Özel") }, ...all.map((v) => ({ value: v.id, label: label(v) }))]}
+        onChange={(id) => {
+          const view = all.find((v) => v.id === id);
+          if (view) apply(view);
+        }}
+      />
+      <FilterChips<Exclude<StatsColumn, "name">>
+        label={t("Sütunlar")}
+        chips={ALL_COLUMNS.map((id) => ({ id, label: t(COLUMN_LABELS[id]) }))}
+        selected={statsColumns}
+        onChange={(next) => updateSettings({ statsColumns: next.length > 0 ? ALL_COLUMNS.filter((c) => next.includes(c)) : statsColumns })}
+      />
+      <span className="stats__save">
+        <SearchInput label={t("Görünüm adı")} value={name} onChange={setName} placeholder={t("Görünüm adı")} onKeyDown={(e) => e.key === "Enter" && save()} />
+        <Button size="small" onClick={save} disabled={!name.trim()}>
+          {t("Görünümü kaydet")}
+        </Button>
+        {current && !current.id.startsWith("preset:") && (
+          <Button size="small" onClick={() => updateSettings({ statsViews: statsViews.filter((v) => v.id !== current.id) })}>
+            {t("Görünümü sil")}
+          </Button>
+        )}
+      </span>
+    </div>
+  );
+}
+
 type Loaded = { version: string; names: Map<number, { id: string; name: string }>; rows: StatsRow[]; lists: TierList[] };
 
 function StatsTable({ route, onChange, data, rank }: { route: StatsRoute; onChange: (next: StatsRoute) => void; data: Loaded; rank: string }) {
   const t = useT();
   const lang = useLang();
   const openChampion = useOpenChampion();
+  const { statsColumns } = useSettings();
   const nameOf = (id: number) => data.names.get(id)?.name ?? String(id);
   const all = viewStats(data.rows, route, nameOf);
   const rows = all.slice(0, SHOWN);
@@ -122,62 +192,76 @@ function StatsTable({ route, onChange, data, rank }: { route: StatsRoute; onChan
   if (data.rows.length === 0) return <EmptyState title={t("Henüz veri yok.")}>{t("Bu rank için tablo yayınlandığında burada görünür.")}</EmptyState>;
   if (all.length === 0) return <EmptyState title={t("Bu süzgeçle şampiyon yok.")}>{t("En az maç sayısını düşür ya da aramayı temizle.")}</EmptyState>;
 
+  const shown = statsColumns;
   const averageTitle = (row: StatsRow, what: string) =>
     row.board ? t("{what}: {games} maçtan; {rank}", { what, games: row.board.games.toLocaleString(), rank }) : t("Bu şampiyon ve rol için henüz ortalama yok.");
+  const sign = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n)}`;
+  const HINTS: Partial<Record<StatsColumn, string>> = {
+    kda: t("(öldürme + asist) / ölüm, oyun başına ortalamalardan"),
+    goldDiff15: t("15. dakikada kendi hat rakibine göre altın farkı; zaman çizelgesi olan oyunlardan"),
+    minutes: t("Ortalama oyun süresi, dakika"),
+    lateWinRate: t("35 dakika ve üstü süren maçlardaki kazanma oranı"),
+  };
+  const cell = (row: StatsRow, column: Exclude<StatsColumn, "name">) => {
+    const sample = { games: row.games, winRate: row.winRate, bracket: rank, patches };
+    const averages = averageSolid(row);
+    switch (column) {
+      case "winRate":
+        return <td key={column} data-solid={winRateSolid(row)} title={sampleTitle(t, lang, sample, t("Vizier crawler, dereceli maçlar"))}>{percent(row.winRate)}</td>;
+      case "pickRate":
+        return <td key={column} title={t("{games} maç", { games: row.games.toLocaleString() })}>{percent(row.pickRate)}</td>;
+      case "banRate":
+        return <td key={column} title={t("{games} maç", { games: row.games.toLocaleString() })}>{row.banRate === null ? "–" : percent(row.banRate)}</td>;
+      case "games":
+        return <td key={column}>{row.games.toLocaleString()}</td>;
+      case "kda":
+        return <td key={column} data-solid={averages} title={averageTitle(row, "KDA")}>{row.board ? row.board.kda.toFixed(2) : "–"}</td>;
+      case "csPerMinute":
+        return <td key={column} data-solid={averages} title={averageTitle(row, t("CS/dk"))}>{row.board ? row.board.csPerMinute.toFixed(1) : "–"}</td>;
+      case "minutes":
+        return <td key={column} data-solid={averages} title={averageTitle(row, t("Süre"))}>{row.board ? row.board.minutes.toFixed(1) : "–"}</td>;
+      case "goldDiff15":
+        return (
+          <td
+            key={column}
+            data-solid={goldDiffSolid(row)}
+            title={row.board?.goldDiff15 ? t("{what}: {games} maçtan; {rank}", { what: t("Altın farkı 15"), games: row.board.goldDiff15.games.toLocaleString(), rank }) : t("Bu şampiyon ve rol için henüz ortalama yok.")}
+          >
+            {row.board?.goldDiff15 ? sign(row.board.goldDiff15.value) : "–"}
+          </td>
+        );
+      case "lateWinRate": {
+        const late = row.board?.late;
+        return (
+          <td key={column} data-solid={lateSolid(row)} title={late ? sampleTitle(t, lang, { games: late.games, winRate: late.winRate, bracket: rank, patches }, t("35 dakika ve üstü süren maçlar")) : t("Bu şampiyon ve rol için henüz ortalama yok.")}>
+            {late ? percent(late.winRate) : "–"}
+          </td>
+        );
+      }
+    }
+  };
   return (
     <div className="tiers__list stats__scroll">
       <table className="tiers__table stats__table">
         <thead>
           <tr>
             {sortHeader("name", t("Şampiyon"))}
-            {sortHeader("winRate", t("Kazanma"))}
-            {sortHeader("pickRate", t("Seçilme"))}
-            {sortHeader("banRate", t("Yasaklanma"))}
-            {sortHeader("games", t("Maç"))}
-            {sortHeader("kda", "KDA", t("(öldürme + asist) / ölüm, oyun başına ortalamalardan"))}
-            {sortHeader("csPerMinute", t("CS/dk"))}
-            {sortHeader("goldDiff15", t("Altın farkı 15"), t("15. dakikada kendi hat rakibine göre altın farkı; zaman çizelgesi olan oyunlardan"))}
-            {sortHeader("minutes", t("Süre"), t("Ortalama oyun süresi, dakika"))}
+            {shown.map((column) => sortHeader(column, t(COLUMN_LABELS[column]), HINTS[column]))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => {
-            const sample = { games: row.games, winRate: row.winRate, bracket: rank, patches };
-            const solid = winRateSolid(row);
-            const averages = averageSolid(row);
-            return (
-              <tr key={`${row.championId}:${row.position}`}>
-                <td>
-                  <button type="button" className="tiers__champion" onClick={() => openChampion(row.championId, row.position, 420)}>
-                    {data.names.get(row.championId) && <img src={championIconUrl(data.version, data.names.get(row.championId)!.id)} alt="" width={26} height={26} />}
-                    {nameOf(row.championId)}
-                    {route.position === "ALL" && <img className="role-icon" src={roleIconUrl(row.position)} alt={t(POSITIONS[row.position])} title={t(POSITIONS[row.position])} width={16} height={16} />}
-                  </button>
-                </td>
-                <td data-solid={solid} title={sampleTitle(t, lang, sample, t("Vizier crawler, dereceli maçlar"))}>
-                  {percent(row.winRate)}
-                </td>
-                <td title={t("{games} maç", { games: row.games.toLocaleString() })}>{percent(row.pickRate)}</td>
-                <td title={t("{games} maç", { games: row.games.toLocaleString() })}>{row.banRate === null ? "–" : percent(row.banRate)}</td>
-                <td>{row.games.toLocaleString()}</td>
-                <td data-solid={averages} title={averageTitle(row, "KDA")}>
-                  {row.board ? row.board.kda.toFixed(2) : "–"}
-                </td>
-                <td data-solid={averages} title={averageTitle(row, t("CS/dk"))}>
-                  {row.board ? row.board.csPerMinute.toFixed(1) : "–"}
-                </td>
-                <td
-                  data-solid={goldDiffSolid(row)}
-                  title={row.board?.goldDiff15 ? t("{what}: {games} maçtan; {rank}", { what: t("Altın farkı 15"), games: row.board.goldDiff15.games.toLocaleString(), rank }) : t("Bu şampiyon ve rol için henüz ortalama yok.")}
-                >
-                  {row.board?.goldDiff15 ? `${row.board.goldDiff15.value > 0 ? "+" : row.board.goldDiff15.value < 0 ? "−" : ""}${Math.abs(row.board.goldDiff15.value)}` : "–"}
-                </td>
-                <td data-solid={averages} title={averageTitle(row, t("Süre"))}>
-                  {row.board ? row.board.minutes.toFixed(1) : "–"}
-                </td>
-              </tr>
-            );
-          })}
+          {rows.map((row) => (
+            <tr key={`${row.championId}:${row.position}`}>
+              <td>
+                <button type="button" className="tiers__champion" onClick={() => openChampion(row.championId, row.position, 420)}>
+                  {data.names.get(row.championId) && <img src={championIconUrl(data.version, data.names.get(row.championId)!.id)} alt="" width={26} height={26} />}
+                  {nameOf(row.championId)}
+                  {route.position === "ALL" && <img className="role-icon" src={roleIconUrl(row.position)} alt={t(POSITIONS[row.position])} title={t(POSITIONS[row.position])} width={16} height={16} />}
+                </button>
+              </td>
+              {shown.map((column) => cell(row, column))}
+            </tr>
+          ))}
         </tbody>
       </table>
       {all.length > SHOWN && <p className="build__note">{t("İlk {count} satır gösteriliyor; süzgeci daralt.", { count: SHOWN })}</p>}

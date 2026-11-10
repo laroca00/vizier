@@ -18,3 +18,17 @@
   margin-left: 6px;
   opacity: 0.8;
 }
+
+.stats__views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.stats__save {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}

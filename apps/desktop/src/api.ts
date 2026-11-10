@@ -448,6 +448,8 @@ export type BoardRow = {
   csPerMinute: number;
   minutes: number;
   goldDiff15: { games: number; value: number } | null;
+  /** Win rate in games of 35 minutes or more; missing in older docs. */
+  late?: { games: number; winRate: number } | null;
 };
 export type StatsBoard = { patches: string[]; updatedAt?: number; rank?: string; rows: BoardRow[] };
 

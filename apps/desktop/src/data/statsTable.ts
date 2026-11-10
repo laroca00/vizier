@@ -1,9 +1,9 @@
 import type { BoardRow, TierEntry } from "../api";
 import { hasEnoughGames } from "./confidence";
 
-export type StatsColumn = "name" | "winRate" | "pickRate" | "banRate" | "games" | "kda" | "csPerMinute" | "goldDiff15" | "minutes";
+export type StatsColumn = "name" | "winRate" | "pickRate" | "banRate" | "games" | "kda" | "csPerMinute" | "goldDiff15" | "minutes" | "lateWinRate";
 
-export const STATS_COLUMNS: StatsColumn[] = ["name", "winRate", "pickRate", "banRate", "games", "kda", "csPerMinute", "goldDiff15", "minutes"];
+export const STATS_COLUMNS: StatsColumn[] = ["name", "winRate", "pickRate", "banRate", "games", "kda", "csPerMinute", "goldDiff15", "minutes", "lateWinRate"];
 
 export type StatsRow = {
   championId: number;
@@ -49,6 +49,8 @@ export function columnValue(row: StatsRow, column: Exclude<StatsColumn, "name">)
       return row.board?.goldDiff15?.value ?? null;
     case "minutes":
       return row.board?.minutes ?? null;
+    case "lateWinRate":
+      return row.board?.late?.winRate ?? null;
   }
 }
 
@@ -79,3 +81,4 @@ export const MIN_LANE_AVERAGE_GAMES = 30;
 export const winRateSolid = (row: StatsRow) => hasEnoughGames(row.games, row.winRate);
 export const averageSolid = (row: StatsRow) => (row.board?.games ?? 0) >= MIN_AVERAGE_GAMES;
 export const goldDiffSolid = (row: StatsRow) => (row.board?.goldDiff15?.games ?? 0) >= MIN_LANE_AVERAGE_GAMES;
+export const lateSolid = (row: StatsRow) => !!row.board?.late && hasEnoughGames(row.board.late.games, row.board.late.winRate);
