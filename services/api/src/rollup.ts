@@ -6,6 +6,7 @@ import { decodeJungle, decodeKda } from "./timeline.ts";
 
 const RANKED_SOLO = 420;
 const ARAM_QUEUE = 450;
+const MAYHEM_QUEUE = 2400;
 const ARENA = 1700;
 const CHUNK = 5000;
 const CORE_ITEMS = 3;
@@ -407,7 +408,11 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       }
       if (row.augments) {
         tally.add(row, "augmented", "", row.win);
-        for (const id of new Set(ids(row.augments))) tally.add(row, "augment", String(id), row.win);
+        const taken = [...new Set(ids(row.augments))].sort((a, b) => a - b);
+        for (const id of taken) tally.add(row, "augment", String(id), row.win);
+        // Pairs taken in the same game, Mayhem only: a champion sees few distinct pairs a patch, and Arena picks are rarely a deliberate pairing.
+        if (row.queue_id === MAYHEM_QUEUE)
+          for (let i = 0; i < taken.length; i++) for (let j = i + 1; j < taken.length; j++) tally.add(row, "augpair", `${taken[i]}|${taken[j]}`, row.win);
       }
       if (row.queue_id === RANKED_SOLO && row.team_id !== null) {
         const team = `${row.match_id}:${row.team_id}`;

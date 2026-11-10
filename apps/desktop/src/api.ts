@@ -117,7 +117,9 @@ export type AugmentStat = {
   /** Win rate minus the champion's own rate with any augment; older servers leave it out. */
   delta?: number;
 };
-export type AugmentStats = { patches: string[]; updatedAt?: number; games: number; augments: AugmentStat[] };
+/** Two augments taken in the same game; Mayhem champion docs only. */
+export type AugmentPair = { augmentIds: [number, number]; games: number; winRate: number; delta: number };
+export type AugmentStats = { patches: string[]; updatedAt?: number; games: number; augments: AugmentStat[]; pairs?: AugmentPair[] };
 
 /** Null while the server has augment stats switched off. */
 export async function getAugments(queue: number, championId: number | null): Promise<AugmentStats | null> {

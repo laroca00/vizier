@@ -130,6 +130,47 @@ describe("augments", () => {
   });
 });
 
+describe("Mayhem augment pairs", () => {
+  it("rates the pairs taken in one game against the champion's own rate", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, noRiot);
+    // Ahri always takes 7; 9 comes with every win, 11 with every loss; 3 rides along in all games.
+    for (let n = 1; n <= 40; n++) {
+      const win = n % 2 === 1;
+      const match = game(n, win);
+      match.metadata.matchId = `TR1_M${n}`;
+      match.info.queueId = 450;
+      match.info.participants = [
+        { ...player(1, 100, 103, win), teamPosition: "", playerAugment1: 7, playerAugment2: win ? 9 : 11, playerAugment3: 3 } as Participant,
+        { ...player(6, 200, 238, !win), teamPosition: "", playerAugment1: 7 } as Participant,
+      ];
+      await crawler.save(match);
+    }
+    await rollup(db, noCatalog);
+    const ahri = await augmentStats(db, 2400, 103);
+    expect(ahri.pairs?.[0]).toMatchObject({ augmentIds: [3, 9], games: 20, winRate: 1, delta: 0.5 });
+    expect(ahri.pairs?.map((p) => p.augmentIds)).toEqual(expect.arrayContaining([[7, 9], [3, 7], [3, 11]]));
+    expect(ahri.pairs?.length).toBeLessThanOrEqual(5);
+    // Pairs belong to one champion on Mayhem only: the overall list and other queues have none.
+    expect((await augmentStats(db, 2400, null)).pairs).toBeUndefined();
+    expect((await augmentStats(db, 1700, 103)).pairs).toBeUndefined();
+  });
+
+  it("leaves out pairs with too few games", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, noRiot);
+    for (let n = 1; n <= 4; n++) {
+      const match = game(n, true);
+      match.metadata.matchId = `TR1_N${n}`;
+      match.info.queueId = 450;
+      match.info.participants = [{ ...player(1, 100, 103, true), teamPosition: "", playerAugment1: 7, playerAugment2: 9 } as Participant];
+      await crawler.save(match);
+    }
+    await rollup(db, noCatalog);
+    expect((await augmentStats(db, 2400, 103)).pairs).toBeUndefined();
+  });
+});
+
 describe("arena duos", () => {
   it("pairs the two players of a subteam and counts a top-four finish as a win", async () => {
     const { db } = fakeD1();
