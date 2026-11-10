@@ -26,6 +26,7 @@ import { LiquidGlass } from "../ui/LiquidGlass";
 import { SplashLayers, useSkinSplash, useSplashUrl } from "../ui/Splash";
 import { useAsync } from "../useAsync";
 import { ChampionSummaryCard } from "./ChampionSummaryCard";
+import { RankCurvePanel } from "./RankCurvePanel";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { ComboSection } from "../combos/ComboSection";
 import { Tabs } from "../ui/Tabs";
@@ -296,6 +297,7 @@ function Overview({ overview, championId, championName, champions, version, queu
             queue={queue}
           />
         </section>
+        {ranked && position && <RankCurvePanel championId={championId} position={position} />}
         {ranked && position && version && <BuildEvolution key={`${championId}:${position}`} championId={championId} position={position} version={version} />}
         {ranked && (
           <section className="enter champion__pros" aria-label={t("Pro maçları")}>

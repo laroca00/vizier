@@ -3,6 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL ?? "https://vizier-api.vizier-api.w
 import { createApiCache } from "./apiCache";
 import { activeBracket, activeRegion, withRank } from "./rankChoice";
 import { ApiError, requestJson } from "./http";
+import type { RankCurveDoc } from "./data/rankCurve";
 
 export { ApiError };
 
@@ -387,4 +388,9 @@ export type CoverageDoc = {
 /** What the stats stand on: games per patch, rank bracket and platform. */
 export function getCoverage() {
   return get<CoverageDoc>("/v1/meta/coverage");
+}
+
+/** Win rate, pick rate and games of every champion and role in each bracket, side by side; empty until the crawler publishes it. */
+export function getRankCurve() {
+  return get<RankCurveDoc>("/v1/meta/rank-curve");
 }
