@@ -60,6 +60,10 @@ export type Build = Picks & {
   skillOptions?: Choice<{ maxOrder: number[]; firstLevels: number[]; share: number }>[];
   /** First, second and third completed item as a tree (most played branches first); missing from older docs. */
   itemTree?: ItemNode[];
+  /** The most played starting items with win rate; missing from older docs. */
+  startOptions?: Choice<{ ids: number[] }>[];
+  /** Median minute of the first boots and the first finished item. */
+  timing?: { boots: { games: number; medianMinute: number } | null; firstItem: { games: number; medianMinute: number } | null };
 };
 
 /** Null when Vizier has no games for the champion yet. */

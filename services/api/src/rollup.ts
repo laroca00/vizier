@@ -210,6 +210,15 @@ export function completedItems(row: { purchase_order: string | null }, finished:
   return done;
 }
 
+/** Minute (whole, capped) the first matching purchase was made, or null when there was none. */
+export function firstMinute(row: { purchase_order: string | null; purchase_times: string | null }, wanted: Set<number>): number | null {
+  const bought = ids(row.purchase_order ?? "");
+  const times = ids(row.purchase_times ?? "");
+  const at = bought.findIndex((id, i) => wanted.has(id) && times[i] !== undefined);
+  return at < 0 ? null : Math.min(MAX_TIMING_MINUTE, Math.floor(times[at] / 60));
+}
+export const MAX_TIMING_MINUTE = 30;
+
 /** What a row adds to its champion's build, as [kind, value] pairs. */
 function buildChoices(row: Raw, finished: Set<number>): [string, string][] {
   const choices: [string, string][] = [
@@ -299,6 +308,13 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       if (row.queue_id === RANKED_SOLO && row.skill_order) {
         const path = completedItems(row, catalog.finished);
         for (let n = 1; n <= path.length; n++) tally.add(row, `path${n}`, path.slice(0, n).join(","), row.win);
+      }
+      // When the first boots and the first finished item were bought, as whole minutes, so a median can be read back.
+      if (row.queue_id === RANKED_SOLO && row.skill_order) {
+        const boots = firstMinute(row, catalog.boots);
+        if (boots !== null) tally.add(row, "boots-min", String(boots), row.win);
+        const first = firstMinute(row, catalog.finished);
+        if (first !== null) tally.add(row, "first-min", String(first), row.win);
       }
       const choices = buildChoices(row, catalog.finished);
       addItemTimes(itemTimes, row, catalog.finished);

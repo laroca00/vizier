@@ -59,7 +59,13 @@ export type Build = Picks & {
   skillOptions: Choice<{ maxOrder: number[]; firstLevels: number[]; share: number }>[];
   /** First, second and third completed item as a tree, the most played branches first. Empty for matchup builds. */
   itemTree: ItemNode[];
+  /** The most played starting items with their win rate. Empty for matchup builds. */
+  startOptions: Choice<{ ids: number[] }>[];
+  /** Median minute of the first boots and the first finished item; missing until enough timelines. */
+  timing?: { boots: Timing | null; firstItem: Timing | null };
 };
+
+export type Timing = { games: number; medianMinute: number };
 
 export type ItemNode = { id: number; games: number; winRate: number; next: ItemNode[] };
 
@@ -154,7 +160,7 @@ export async function aggregateBuild(
   const kinds = ["rune", "spell", "item", "start", "core", "skill"];
   const { results } = used
     ? await query(patches, kinds.map((k) => `'vs-${k}'`).join(","), "AND value >= ? AND value < ?", [`${used}|`, `${used}}`])
-    : await query(patches, [...kinds.map((k) => `'${k}'`), ...kinds.map((k) => `'s-${k}'`), "'style'", "'foe'", "'foe-item'", "'perk'", "'path1'", "'path2'", "'path3'"].join(","), "", []);
+    : await query(patches, [...kinds.map((k) => `'${k}'`), ...kinds.map((k) => `'s-${k}'`), "'style'", "'foe'", "'foe-item'", "'perk'", "'path1'", "'path2'", "'path3'", "'boots-min'", "'first-min'"].join(","), "", []);
   const unprefixed = (kind: string, prefix?: string) =>
     results
       .filter((r) => r.kind === kind && (prefix === undefined || r.value.startsWith(`${prefix}|`)))
@@ -173,6 +179,7 @@ export async function aggregateBuild(
     perkGames: 0,
     skillOptions: [],
     itemTree: [],
+    startOptions: [],
   };
   if (used) return build;
 
@@ -181,6 +188,13 @@ export async function aggregateBuild(
     .filter((r) => r.value !== "0")
     .slice(0, MAX_PERKS)
     .map((r) => ({ id: Number(r.value), games: r.games, winRate: rate(r.wins, r.games) }));
+  build.startOptions = unprefixed("start")
+    .filter((r) => r.games >= MIN_START_GAMES)
+    .slice(0, TOP_STARTS)
+    .map((r) => ({ ids: ids(r.value), games: r.games, winRate: rate(r.wins, r.games) }));
+  const boots = medianMinute(unprefixed("boots-min"));
+  const firstItem = medianMinute(unprefixed("first-min"));
+  if (boots || firstItem) build.timing = { boots, firstItem };
   build.itemTree = itemTree(unprefixed("path1"), unprefixed("path2"), unprefixed("path3"));
   const skillRows = unprefixed("skill");
   const skillGames = skillRows.reduce((sum, r) => sum + r.games, 0);
@@ -263,4 +277,18 @@ export function itemTree(first: PathCount[], second: PathCount[], third: PathCou
   const roots = attach(grow("", first) as (ItemNode & { key: string })[], 0);
   const strip = (nodes: (ItemNode & { key?: string })[]): ItemNode[] => nodes.map(({ key: _key, ...node }) => ({ ...node, next: strip(node.next as (ItemNode & { key?: string })[]) }));
   return strip(roots);
+}
+
+const TOP_STARTS = 5;
+const MIN_START_GAMES = 20;
+const MIN_TIMING_GAMES = 20;
+
+/** The median minute out of per-minute game counts, or null below the minimum games. */
+export function medianMinute(rows: { value: string; games: number }[]): Timing | null {
+  const sorted = rows.map((r) => ({ minute: Number(r.value), games: r.games })).sort((a, b) => a.minute - b.minute);
+  const games = sorted.reduce((sum, r) => sum + r.games, 0);
+  if (games < MIN_TIMING_GAMES) return null;
+  let seen = 0;
+  const median = sorted.find((r) => (seen += r.games) >= games / 2);
+  return median ? { games, medianMinute: median.minute } : null;
 }
