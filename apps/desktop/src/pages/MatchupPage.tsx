@@ -120,7 +120,7 @@ export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange
                 <AbilityCompare champion={me} opponent={opponent} version={data.value.version} />
               </AcademyBlock>
               <AcademyBlock sources={["editorial"]}>
-                <PhaseRead champion={me} opponent={opponent} />
+                <PhaseRead champion={me} opponent={opponent} position={route.position} />
               </AcademyBlock>
               <AcademyBlock sources={["crawler", "ddragon"]}>
                 <PowerSpikes champion={me} opponent={opponent} position={route.position} version={data.value.version} />

@@ -4,6 +4,7 @@ import { formatPercent, useLang, useT } from "../i18n";
 import { POSITIONS } from "../labels";
 import { MatchupLink } from "../matchupLink";
 import { suggestForGaps } from "../poolSuggest";
+import { EloTag, useEloTags } from "../ui/EloTag";
 import { COMMON_OPPONENTS, coverage, gaps, poolByRole, safestBlind, type CoverageRow, type Matchups } from "../poolCoverage";
 import { useOpenPage } from "../pageLink";
 import { usePersonal } from "../personal";
@@ -119,6 +120,7 @@ function Suggestions({
   percent: (n: number) => string;
 }) {
   const t = useT();
+  const eloTag = useEloTags();
   const [state] = useAsync(gapIds.length ? `pool-suggest:${role}:${poolIds.join(",")}:${gapIds.join(",")}` : null, async () => {
     const tiers = await getTierList(role);
     const candidates = tiers.champions
@@ -143,6 +145,7 @@ function Suggestions({
               <span className="tier" data-tier={s.tier}>
                 {s.tier}
               </span>
+              <EloTag verdict={eloTag(s.championId, role)} />
             </span>
             <span className="coverage__rate">{percent(s.winRate)}</span>
             <span className="build__stat">{t("{games} maç", { games: s.games })}</span>

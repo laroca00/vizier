@@ -213,7 +213,24 @@ export type ChampionOverview = {
   winRateChange: number | null;
   /** Share of ranked games the champion was banned in; null outside ranked. */
   banRate: number | null;
+  /**
+   * Games and win rate by game length, in buckets 0 to 4 (under 20, 20 to 25, 25 to 30, 30 to 35, 35+ minutes).
+   * Only buckets with games are listed; missing outside ranked, in region views and for docs older than it.
+   */
+  lengths?: { bucket: number; games: number; winRate: number }[];
 };
+
+async function lengthRows(db: D1Database, patches: string[], championId: number, position: string, bracket: Where) {
+  const { results } = await db
+    .prepare(
+      `SELECT CAST(value AS INTEGER) AS bucket, SUM(games) AS games, SUM(wins) AS wins FROM ${scope("stat_counts", bracket)}
+        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ? AND queue_id = ${RANKED} AND kind = 'length'
+        GROUP BY value ORDER BY bucket`,
+    )
+    .bind(...patches, championId, position)
+    .all<{ bucket: number; games: number; wins: number }>();
+  return results.map((r) => ({ bucket: r.bucket, games: r.games, winRate: round3(r.wins / r.games) }));
+}
 
 export async function championOverview(
   db: D1Database,
@@ -252,6 +269,7 @@ export async function championOverview(
   const games = byPatch.reduce((sum, p) => sum + p.games, 0);
   const wins = byPatch.reduce((sum, p) => sum + p.wins, 0);
 
+  const lengths = ranked ? await lengthRows(db, patches, championId, used, bracket) : [];
   return {
     patches,
     positions,
@@ -262,6 +280,7 @@ export async function championOverview(
     tier: entry?.tier ?? null,
     winRateChange: patchChange(patches, new Map(byPatch.map((p) => [p.patch, p]))),
     banRate: ranked ? banRateOf(await poolBans(db, patches, bracket), championId) : null,
+    ...(lengths.length > 0 ? { lengths } : {}),
   };
 }
 

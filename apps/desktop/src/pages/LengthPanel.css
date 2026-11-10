@@ -1,0 +1,65 @@
+.length__bars {
+  display: flex;
+  gap: 12px;
+  max-width: 420px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.length__bars li {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  justify-items: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.length__bars li[data-enough="false"] {
+  opacity: 0.55;
+}
+
+.length__track {
+  position: relative;
+  width: 100%;
+  max-width: 44px;
+  height: 80px;
+  border-top: 1px solid var(--data-grid);
+  border-bottom: 1px solid var(--data-grid);
+}
+
+/* The middle of the track is 50%; bars grow up for better, down for worse. */
+.length__track::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px dashed var(--data-grid);
+}
+
+.length__bar {
+  position: absolute;
+  left: 15%;
+  right: 15%;
+}
+
+.length__bar[data-side="up"] {
+  bottom: 50%;
+  background: var(--data-win);
+}
+
+.length__bar[data-side="down"] {
+  top: 50%;
+  background: var(--data-loss);
+}
+
+.length__rate {
+  font-weight: 600;
+}
+
+.length__label,
+.length__games {
+  color: var(--glaze-muted);
+}

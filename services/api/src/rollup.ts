@@ -42,7 +42,12 @@ type Raw = {
   level_minutes: string | null;
   kda_minutes: string | null;
   rank_group: string | null;
+  duration: number | null;
 };
+
+/** Game lengths are counted in five buckets: under 20, 20 to 25, 25 to 30, 30 to 35 and 35 minutes or more. */
+export const LENGTH_BUCKET_MINUTES = [20, 25, 30, 35];
+export const lengthBucket = (seconds: number) => LENGTH_BUCKET_MINUTES.filter((m) => seconds >= m * 60).length;
 
 /** Rows from before groups were kept count as Emerald. */
 const groupOf = (row: { rank_group: string | null }) => row.rank_group ?? LEGACY_GROUP;
@@ -244,7 +249,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const { results } = await db
       .prepare(
         `SELECT rowid, match_id, patch, queue_id, team_position, champion_id, win, runes, spells, items, start_items,
-            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group
+            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, duration
           FROM participant_stats WHERE rowid > ? ORDER BY rowid LIMIT ?`,
       )
       .bind(from, CHUNK)
@@ -269,6 +274,8 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
       // Ranked solo by platform, for the region views of tier lists and champion pages.
       if (row.queue_id === RANKED_SOLO) tally.add(row, "region", platformOf(row.match_id), row.win);
+      // Win rate by game length, from every ranked game (builds read the same pool); older rolled games have no bucket.
+      if (row.queue_id === RANKED_SOLO && row.duration) tally.add(row, "length", String(lengthBucket(row.duration)), row.win);
       const choices = buildChoices(row, catalog.finished);
       addItemTimes(itemTimes, row, catalog.finished);
       addBench(bench, row);

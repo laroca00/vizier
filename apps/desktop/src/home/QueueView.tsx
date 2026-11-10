@@ -11,6 +11,8 @@ import { usePoolChanges } from "../patches/usePoolChanges";
 import { usePersonal } from "../personal";
 import { autofillPicks, queuePool } from "../queueView";
 import { useAsync } from "../useAsync";
+import { useOwnRankScope } from "../rank";
+import { RankChip } from "../ui/RankPicker";
 import "./queue.css";
 
 type Props = { flow: Flow; lobby: Lobby | null; onOpenChampion: (championId: number, position: string | null) => void };
@@ -21,6 +23,8 @@ const STATE_TEXT: Partial<Record<Flow, string>> = { lobby: "Lobidesin", queue: "
 export function QueueView({ flow, lobby, onOpenChampion }: Props) {
   const t = useT();
   const lang = useLang();
+  // Picks for the queue are read at the player's own rank, like champ select.
+  useOwnRankScope();
   const personal = usePersonal();
   const library = useLibrary();
   const patched = usePoolChanges();
@@ -70,7 +74,9 @@ export function QueueView({ flow, lobby, onOpenChampion }: Props) {
 
   return (
     <section className="queue enter" aria-label={t("Kuyruk")}>
-      <h2 className="section-title">{t(STATE_TEXT[flow] ?? "Kuyruk")}</h2>
+      <h2 className="section-title">
+        {t(STATE_TEXT[flow] ?? "Kuyruk")} <RankChip />
+      </h2>
       {roles.length > 0 && (
         <p className="state__text">{t("Seçtiğin roller: {roles}", { roles: roles.map((r) => positionLabel(r, lang) ?? r).join(", ") })}</p>
       )}

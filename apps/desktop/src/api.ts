@@ -184,6 +184,8 @@ export type ChampionOverview = {
   winRateChange: number | null;
   /** Null outside ranked or before enough ranked games. */
   banRate: number | null;
+  /** Games and win rate by game length (see data/lengthStats); missing before the crawler counted them and in region views. */
+  lengths?: { bucket: number; games: number; winRate: number }[];
 };
 
 /** Null when Vizier has no games for the champion yet. */

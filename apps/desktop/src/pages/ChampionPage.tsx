@@ -27,6 +27,7 @@ import { SplashLayers, useSkinSplash, useSplashUrl } from "../ui/Splash";
 import { useAsync } from "../useAsync";
 import { ChampionSummaryCard } from "./ChampionSummaryCard";
 import { RankCurvePanel } from "./RankCurvePanel";
+import { LengthPanel } from "./LengthPanel";
 import { EmptyState, ErrorState, Skeleton } from "../ui/States";
 import { ComboSection } from "../combos/ComboSection";
 import { Tabs } from "../ui/Tabs";
@@ -297,6 +298,7 @@ function Overview({ overview, championId, championName, champions, version, queu
             queue={queue}
           />
         </section>
+        {ranked && overview.lengths && <LengthPanel lengths={overview.lengths} patches={overview.patches} updatedAt={overview.updatedAt} />}
         {ranked && position && <RankCurvePanel championId={championId} position={position} />}
         {ranked && position && version && <BuildEvolution key={`${championId}:${position}`} championId={championId} position={position} version={version} />}
         {ranked && (

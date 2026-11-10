@@ -16,8 +16,8 @@ export const useBracket = (): Bracket => useRank().bracket;
 
 export const rankLabel = (bracket: Bracket, lang: "tr" | "en") => BRACKET_LABELS[bracket][lang];
 
-/** Marks champ select as open for as long as the calling page is mounted, so its requests can follow the player's own rank. */
-export function useDraftRankScope() {
+/** Marks champ select or the queue view as open for as long as the calling component is mounted, so its requests can follow the player's own rank. */
+export function useOwnRankScope() {
   useEffect(() => {
     setDraftScope(true);
     return () => setDraftScope(false);

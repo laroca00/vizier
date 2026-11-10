@@ -54,6 +54,7 @@ const MatchupPage = lazy(() => import("./pages/MatchupPage").then((m) => ({ defa
 const AugmentsPage = lazy(() => import("./pages/AugmentsPage").then((m) => ({ default: m.AugmentsPage })));
 const ArchetypesPage = lazy(() => import("./pages/ArchetypesPage").then((m) => ({ default: m.ArchetypesPage })));
 const CombosPage = lazy(() => import("./pages/CombosPage").then((m) => ({ default: m.CombosPage })));
+const EloPage = lazy(() => import("./pages/EloPage").then((m) => ({ default: m.EloPage })));
 const MatrixPage = lazy(() => import("./pages/MatrixPage").then((m) => ({ default: m.MatrixPage })));
 const ChallengePage = lazy(() => import("./pages/ChallengePage").then((m) => ({ default: m.ChallengePage })));
 const SynergyPage = lazy(() => import("./pages/SynergyPage").then((m) => ({ default: m.SynergyPage })));
@@ -88,6 +89,7 @@ const LABELS: Record<Page, string> = {
   combos: "Kombo kütüphanesi",
   archetypes: "Şampiyon tipleri",
   matrix: "Karşı seçim matrisi",
+  elo: "Elo gezgini",
   challenge: "Draft meydan okuması",
   templates: "Takım şablonları",
   synergy: "Sinerji gezgini",
@@ -328,6 +330,7 @@ function App() {
         { id: "matchup", label: "Eşleşme", icon: "matchup" },
         { id: "matrix", label: "Karşı seçim matrisi", icon: "matchup" },
         { id: "synergy", label: "Sinerji gezgini", icon: "archetypes" },
+        { id: "elo", label: "Elo gezgini", icon: "tiers" },
         { id: "pros", label: "Pro build'ler", icon: "pros" },
         { id: "augments", label: "Augment'ler", icon: "augments" },
       ],
@@ -476,6 +479,8 @@ function App() {
               <TemplatesPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "challenge" ? (
               <ChallengePage />
+            ) : route.page === "elo" ? (
+              <EloPage route={route} onChange={replace} />
             ) : route.page === "matrix" ? (
               <MatrixPage route={route} onChange={replace} />
             ) : route.page === "quiz" ? (

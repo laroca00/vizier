@@ -1,0 +1,9 @@
+.elo-tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--glaze-border, currentColor);
+  font-size: 11px;
+  color: var(--glaze-muted);
+  white-space: nowrap;
+}
