@@ -396,9 +396,13 @@ Builds on: raw ranked rows, timelines, `rollup.ts`, lane sums, item times, the c
 
 - [x] 36.1 Win rate by game length: per champion and role, games and win rate in five buckets (<20, 20–25, 25–30, 30–35, 35+ min). Chart on the champion page; the draft phase curve (1.5) uses it when the data is thick enough and keeps the hand-kept curve as the labelled fallback. (fe28f70; lengths on the champion overview (kind length, five buckets), champion page chart, matchup phase read uses data when all phases are thick, else hand-kept bars labelled editorial; owner step added)
 - [ ] 36.2 Jungle paths: from timeline participant frames, the first camp side (topside or botside, by position at 1:30–2:00), the first lane visited after the clear (level 3–4 position near a lane) and the first gank minute, summed per jungler. Champion page "İlk tur" section with games per path. Tests on recorded frames.
+<!-- claimed: auto/36-game-stats 2026-11-10T03:40Z -->
 - [ ] 36.3 Objectives per champion and role: team first dragon, first grubs or herald, first tower and first blood rates against the role average, with games. On the champion page, and "objektif gücü" tags where clear.
+<!-- claimed: auto/36-game-stats 2026-11-10T03:40Z -->
 - [ ] 36.4 Item path tree: first, second and third completed item as a tree with win rate and games per branch (top 3 per level), from purchase order. Champion page build tab and the Itemization Lab's column picker.
+<!-- claimed: auto/36-game-stats 2026-11-10T03:40Z -->
 - [ ] 36.5 Start and timing: most common starting items with win rate, and the median minute of boots and first completed item per champion and role (extends item times).
+<!-- claimed: auto/36-game-stats 2026-11-10T03:40Z -->
 - [ ] 36.6 Builds of players who play the champion a lot: games from seeds with many games on it in the kept window (anonymised, no names, no profiles), summed as their own build doc with games. Shown as "Çok oynayanlar" next to the popular build when it differs.
 - [ ] 36.7 Daily history: once a day a compact row per champion, role and bracket (win rate, pick rate, ban rate, games), kept for the two newest patches. Route `/v1/history/:championId`. Sparkline on the champion page header and tier list rows.
 
