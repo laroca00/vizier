@@ -423,7 +423,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
   }
 }
 
-type MatchRow = { rank_group: string | null; dropped: string | null; rowid: number; match_id: string; patch: string; queue_id: number; game_start: number; bans: string | null };
+type MatchRow = { rank_group: string | null; dropped: string | null; role_fixed: number | null; rowid: number; match_id: string; patch: string; queue_id: number; game_start: number; bans: string | null };
 
 function tallyPoolMatches(tally: Tally, matches: MatchRow[]) {
   for (const m of matches) {
@@ -448,7 +448,7 @@ async function backfillPool(db: D1Database) {
     .all<{ match_id: string; patch: string; queue_id: number; team_position: string; champion_id: number; win: number; rank_group: string | null }>();
   for (const row of rows) if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
   const { results: games } = await db
-    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans, rank_group, dropped FROM crawled_matches WHERE rowid <= ?")
+    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans, rank_group, dropped, role_fixed FROM crawled_matches WHERE rowid <= ?")
     .bind(matches)
     .all<MatchRow>();
   tallyPoolMatches(tally, games);
@@ -460,7 +460,7 @@ async function backfillPool(db: D1Database) {
 async function rollupMatches(db: D1Database) {
   const from = await watermark(db, "rolled_matches");
   const { results: all } = await db
-    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans, rank_group, dropped FROM crawled_matches WHERE rowid > ? ORDER BY rowid")
+    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans, rank_group, dropped, role_fixed FROM crawled_matches WHERE rowid > ? ORDER BY rowid")
     .bind(from)
     .all<MatchRow>();
   if (all.length === 0) return;
@@ -470,6 +470,7 @@ async function rollupMatches(db: D1Database) {
   // Remakes and games where somebody left are only counted as dropped, so pick and ban rates keep their denominators.
   for (const m of all) if (m.dropped) tally.add(matchRow(m), "dropped", m.dropped, 0);
   const results = all.filter((m) => !m.dropped);
+  for (const m of results) if (m.role_fixed) tally.add(matchRow(m), "role-fixed", "", 0);
   for (const m of results) {
     const key = `${m.patch}\t${m.queue_id}`;
     const g = games.get(key) ?? { patch: m.patch, queue: m.queue_id, games: 0, last: 0 };

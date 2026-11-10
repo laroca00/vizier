@@ -18,6 +18,8 @@ export type Coverage = {
   /** Share of player rows with timeline data per rank bracket; ranked solo only. */
   /** Games not counted because of a remake or a player who left, per patch; absent in older docs. */
   dropped?: { patch: string; queue: number; reason: string; games: number }[];
+  /** Counted games whose roles had to be inferred, per patch; absent in older docs. */
+  roleFixed?: { patch: string; queue: number; games: number }[];
   timelineBrackets?: { patch: string; queue: number; bracket: Bracket; players: number; withTimeline: number; share: number | null }[];
 };
 
@@ -72,8 +74,13 @@ export async function coverage(db: D1Database): Promise<Coverage> {
     .prepare("SELECT patch, queue_id AS queue, value AS reason, SUM(games) AS games FROM stat_counts_g WHERE kind = 'dropped' GROUP BY patch, queue_id, value")
     .all<{ patch: string; queue: number; reason: string; games: number }>()
     .catch(() => ({ results: [] }));
+  const fixedRows = await db
+    .prepare("SELECT patch, queue_id AS queue, SUM(games) AS games FROM stat_counts_g WHERE kind = 'role-fixed' GROUP BY patch, queue_id")
+    .all<{ patch: string; queue: number; games: number }>()
+    .catch(() => ({ results: [] }));
   return {
     patches,
+    roleFixed: fixedRows.results.filter((r) => keep.has(r.patch)),
     dropped: droppedRows.results.filter((r) => keep.has(r.patch)).sort((a, b) => a.patch.localeCompare(b.patch) * -1 || a.reason.localeCompare(b.reason)),
     games: games.results.filter((r) => keep.has(r.patch)),
     timeline: counts.results

@@ -39,3 +39,8 @@ export function droppedGames(doc: CoverageDoc | null, patch: string): { surrende
   const all = kept + surrender + afk;
   return { surrender, afk, share: all > 0 ? (surrender + afk) / all : null };
 }
+
+/** Games of the patch whose roles had to be inferred, or 0. */
+export function roleFixedGames(doc: CoverageDoc | null, patch: string): number {
+  return doc?.roleFixed?.filter((r) => r.patch === patch && r.queue === 420).reduce((sum, r) => sum + r.games, 0) ?? 0;
+}

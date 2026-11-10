@@ -137,6 +137,8 @@ export function localSchema(sqlite: DatabaseSync) {
   addColumn(sqlite, "crawled_matches", "rank_group", "TEXT");
   // Why a game was not counted (remake or a player who left); null for games that were.
   addColumn(sqlite, "crawled_matches", "dropped", "TEXT");
+  // 1 when the game's roles had to be inferred (see roles.ts).
+  addColumn(sqlite, "crawled_matches", "role_fixed", "INTEGER");
   // The jungler's early route (side, first lane, first gank minute) from the timeline.
   addColumn(sqlite, "participant_stats", "jungle_path", "TEXT");
   // Letters of the objectives the player's team took first; null on games from before.

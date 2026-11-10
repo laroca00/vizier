@@ -50,3 +50,12 @@ describe("droppedGames", () => {
     expect(droppedGames({ ...doc, dropped: [] }, "16.21")).toBeNull();
   });
 });
+
+describe("roleFixedGames", () => {
+  it("sums ranked games of the patch", async () => {
+    const { roleFixedGames } = await import("./coverageRows");
+    const doc = { ...base, roleFixed: [{ patch: "16.21", queue: 420, games: 7 }, { patch: "16.20", queue: 420, games: 3 }] };
+    expect(roleFixedGames(doc, "16.21")).toBe(7);
+    expect(roleFixedGames(base, "16.21")).toBe(0);
+  });
+});

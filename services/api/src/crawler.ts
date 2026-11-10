@@ -1,4 +1,5 @@
 import { dropReason } from "./quality.ts";
+import { fixRoles } from "./roles.ts";
 import { GROUP_TIERS, GroupBudget, SEED_QUOTA, SEED_SIZE } from "./groupBudget.ts";
 import { TIER_GROUPS, bracketOfTier, type TierGroup } from "@vizier/shared/brackets";
 import type { Platform, Region, RiotClient } from "./riot/client.ts";
@@ -409,10 +410,12 @@ export class Crawler {
     const ranked = info.queueId === RANKED_SOLO;
     const bans = ranked ? (info.teams ?? []).flatMap((t) => t.bans ?? []).map((b) => b.championId).filter((id) => id > 0) : [];
     const dropped = ranked ? dropReason(info) : null;
+    const roles = ranked && !dropped ? fixRoles(info, timeline) : null;
+    const positionOf = (p: Participant) => roles?.positions.get(p) ?? p.teamPosition;
     // Recorded either way so a skipped game isn't fetched again.
     const record = this.db
-      .prepare("INSERT OR IGNORE INTO crawled_matches (match_id, patch, game_start, queue_id, bans, rank_group, dropped) VALUES (?, ?, ?, ?, ?, ?, ?)")
-      .bind(matchId, patch, info.gameStartTimestamp, info.queueId, ranked ? bans.join(",") : null, group, dropped);
+      .prepare("INSERT OR IGNORE INTO crawled_matches (match_id, patch, game_start, queue_id, bans, rank_group, dropped, role_fixed) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(matchId, patch, info.gameStartTimestamp, info.queueId, ranked ? bans.join(",") : null, group, dropped, roles?.fixed ? 1 : null);
     if (!STORED_QUEUES.has(info.queueId) || info.gameDuration < MIN_DURATION_SECONDS || dropped) {
       await record.run();
       return false;
@@ -441,23 +444,23 @@ export class Crawler {
     const rows = info.participants.flatMap((p) => {
       // Arena has no rune pages; every other stored queue does.
       const runes = info.queueId === ARENA ? "" : runeKey(p.perks);
-      if (runes === null || (ranked && !p.teamPosition)) return [];
-      const position = ranked ? p.teamPosition : "";
+      if (runes === null || (ranked && !positionOf(p))) return [];
+      const position = ranked ? positionOf(p) : "";
       // In Arena a top-four finish is the win.
       const win = info.queueId === ARENA ? (p.placement ?? 9) <= 4 : p.win;
       const augments = [p.playerAugment1, p.playerAugment2, p.playerAugment3, p.playerAugment4, p.playerAugment5, p.playerAugment6].filter(
         (id): id is number => !!id,
       );
       const spells = [p.summoner1Id ?? 0, p.summoner2Id ?? 0].sort((a, b) => a - b).join(",");
-      const opponent = ranked ? info.participants.find((o) => o.teamId !== p.teamId && o.teamPosition === p.teamPosition) : undefined;
+      const opponent = ranked ? info.participants.find((o) => o.teamId !== p.teamId && positionOf(o) === positionOf(p)) : undefined;
       const c = p.challenges ?? {};
       const cs = (p.totalMinionsKilled ?? 0) + (p.neutralMinionsKilled ?? 0);
-      const cs10 = p.teamPosition === "JUNGLE" ? c.jungleCsBefore10Minutes : c.laneMinionsFirst10Minutes;
+      const cs10 = positionOf(p) === "JUNGLE" ? c.jungleCsBefore10Minutes : c.laneMinionsFirst10Minutes;
       const path = p.participantId ? paths.get(p.participantId) : undefined;
       const csMinutes = p.participantId ? pace.get(p.participantId) : undefined;
       const levelMinutes = p.participantId ? levels.get(p.participantId) : undefined;
       const kdaMinutes = p.participantId ? kdas.get(p.participantId) : undefined;
-      const route = timeline && ranked && p.teamPosition === "JUNGLE" && p.participantId ? junglePath(timeline, p.participantId) : null;
+      const route = timeline && ranked && positionOf(p) === "JUNGLE" && p.participantId ? junglePath(timeline, p.participantId) : null;
       const jungle = route ? encodeJungle(route) : null;
       return [
         insert.bind(

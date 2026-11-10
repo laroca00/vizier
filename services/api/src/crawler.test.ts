@@ -450,3 +450,21 @@ describe("other queues", () => {
     ]);
   });
 });
+
+describe("role fix on save", () => {
+  it("fills one empty role and counts the game in coverage", async () => {
+    const { rollup } = await import("./rollup.ts");
+    const { emptyCatalog } = await import("./archetypes.ts");
+    const { coverage } = await import("./coverage.ts");
+    const { db, sqlite } = fakeD1();
+    const crawler = new Crawler(db, {} as RiotClient, () => 5 * DAY, { region: "asia", platforms: ["kr"], leagues: "challenger", playersPerRun: 0, matchesPerRun: 5, extraMatchesPerRun: 0, timelinesPerRun: 0 });
+    const roles = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
+    const team = (teamId: number, empty: string | null) =>
+      roles.map((r, i) => participant(100 + i + (teamId === 200 ? 10 : 0), true, { puuid: `x${teamId}${i}`, teamId, participantId: i + 1 + (teamId === 200 ? 5 : 0), teamPosition: r === empty ? "" : r }));
+    await crawler.save(match("KR_30", [...team(100, "MIDDLE"), ...team(200, null)]), null, "gold");
+    expect(sqlite.prepare("SELECT team_position AS p FROM participant_stats WHERE match_id = 'KR_30' AND team_id = 100 ORDER BY p").all().map((r) => r.p)).toContain("MIDDLE");
+    expect(sqlite.prepare("SELECT COUNT(*) AS n FROM participant_stats WHERE match_id = 'KR_30'").get()).toEqual({ n: 10 });
+    await rollup(db, async () => emptyCatalog());
+    expect((await coverage(db)).roleFixed).toEqual([{ patch: expect.any(String), queue: 420, games: 1 }]);
+  });
+});

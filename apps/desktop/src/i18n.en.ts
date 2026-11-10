@@ -1972,6 +1972,7 @@ export const EN: Record<string, string> = {
   "İkincil rünler aynı satırdan; farklı satırlardan olmalı.": "The secondary runes are from the same row; they must come from different rows.",
   "Başlangıç eşyaları": "Starting items",
   "Çok oynayanlar": "Frequent players",
+  "Rolü Smite, çiftlik ve harita konumundan tamamlanan maç: {games}": "Games where the roles were filled in from Smite, farm and map position: {games}",
   "Sayılmayan maç: {remake} yeniden başlatma, {left} oyuncu çıkışı{share}": "Games not counted: {remake} remakes, {left} with a player who left{share}",
   "Yama boyunca kazanma oranı: {first} → {last}, {games} maç": "Win rate over the patch: {first} → {last}, {games} games",
   "Şampiyonu çok oynayan oyuncuların seçimi; isim ya da profil tutulmaz.": "What players with many games on the champion pick; no names or profiles are kept.",
