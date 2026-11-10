@@ -1989,4 +1989,13 @@ export const EN: Record<string, string> = {
   "karşısında {opponent}": "against {opponent}",
   "İki pro build'in karşılaştırması": "Comparison of two pro builds",
   "Şampiyonu aç": "Open champion",
+  "Değişimin kaynağı": "Where the change is measured",
+  "Yama içinde": "Within the patch",
+  "Yama içinde değişenler": "Changes within the patch",
+  "Yama içinde yükselenler": "Risers within the patch",
+  "Yama içinde düşenler": "Fallers within the patch",
+  "Yama içi geçmiş yalnızca Emerald+ için tutuluyor.": "Within-patch history is only kept for Emerald+.",
+  "Yama içinde net bir değişim yok. Yeterli maç birikince burada görünür.": "No clear change within the patch yet. It shows here once there are enough games.",
+  "Yamanın ilk günlerindeki maçlarla sonradan eklenen maçlar karşılaştırılır; yalnızca aralıkları ayrışan değişimler gösterilir.": "Games from the first days of the patch are compared with the games added since; only changes whose intervals do not overlap are shown.",
+  "{early} → {later}; {earlyGames} ve {laterGames} maç": "{early} → {later}; {earlyGames} and {laterGames} games",
 };
