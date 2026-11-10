@@ -1972,6 +1972,8 @@ export const EN: Record<string, string> = {
   "İkincil rünler aynı satırdan; farklı satırlardan olmalı.": "The secondary runes are from the same row; they must come from different rows.",
   "Başlangıç eşyaları": "Starting items",
   "Çok oynayanlar": "Frequent players",
+  "{rank} rankında {place}. sırada; Zümrüt+ önerilerinde yok": "{place}. in {rank}; not among the Emerald+ suggestions",
+  "{rank} rankında {place}. sırada, Zümrüt+ listesinde {baseline}.": "{place}. in {rank}, {baseline}. in Emerald+",
   "Bu eşleşmede oyun süresine göre": "In this matchup by game length",
   "Kısa maçlarda zor, uzun maçlarda senin lehine.": "Hard in short games, in your favour in long ones.",
   "Kısa maçlarda senin lehine, uzun maçlarda zor.": "In your favour in short games, hard in long ones.",

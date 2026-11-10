@@ -476,3 +476,8 @@ export function getStatsBoardAt(position: string, bracket: string) {
 export function getLaneStatsAt(championId: number, position: string, vs: number, bracket: string) {
   return get<LaneStat>(`/v1/champions/${championId}/lane?position=${position}&vs=${vs}&rank=${bracket}`);
 }
+
+/** Counters for one bracket whatever the rank filter says. */
+export function getCountersAt(championId: number, position: string, bracket: string) {
+  return get<Counters>(`/v1/champions/${championId}/counters?position=${position}&rank=${bracket}`);
+}

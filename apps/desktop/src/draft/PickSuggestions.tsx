@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { getCounters, getTierList } from "../api";
+import { DEFAULT_BRACKET } from "@vizier/shared/brackets";
+import { getCounters, getCountersAt, getTierList, getTierListAt } from "../api";
+import { rankLabel, useBracket } from "../rank";
+import { rankNotes } from "./rankReason";
 import { championIconUrl, type Champion } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
 import { usePersonal } from "../personal";
@@ -47,10 +50,16 @@ export function PickSuggestions({ role, opponentId, allies, unavailable, champio
   const [poolFirst, setPoolFirst] = useState(false);
   const [tiers] = useAsync(`tiers:${role}`, () => getTierList(role));
   const [counters] = useAsync(opponentId ? `counters:${opponentId}:${role}` : null, () => getCounters(opponentId!, role));
+  // The Emerald+ order, to say where the player's own rank changes it; nothing to compare when the filter is Emerald+.
+  const bracket = useBracket();
+  const compare = bracket !== DEFAULT_BRACKET;
+  const [baseTiers] = useAsync(compare ? `tiers:${role}:base` : null, () => getTierListAt(role, DEFAULT_BRACKET).catch(() => null));
+  const [baseCounters] = useAsync(compare && opponentId ? `counters:${opponentId}:${role}:base` : null, () => getCountersAt(opponentId!, role, DEFAULT_BRACKET).catch(() => null));
 
   if (tiers.status === "error") return null;
   if (tiers.status !== "done" || counters.status === "loading") return <p className="draft__empty">{t("Öneriler hazırlanıyor")}</p>;
 
+  const poolSet = poolFirst ? new Set(pool.filter((p) => !p.position || p.position === role).map((p) => p.championId)) : undefined;
   const picks = suggestPicks({
     tierList: tiers.value.champions,
     opponentCounters: counters.status === "done" ? counters.value : null,
@@ -58,8 +67,21 @@ export function PickSuggestions({ role, opponentId, allies, unavailable, champio
     allies,
     champions,
     unavailable,
-    pool: poolFirst ? new Set(pool.filter((p) => !p.position || p.position === role).map((p) => p.championId)) : undefined,
+    pool: poolSet,
   }).slice(0, limit);
+  const baseline =
+    compare && baseTiers.status === "done" && baseTiers.value
+      ? suggestPicks({
+          tierList: baseTiers.value.champions,
+          opponentCounters: baseCounters.status === "done" ? baseCounters.value : null,
+          opponentId,
+          allies,
+          champions,
+          unavailable,
+          pool: poolSet,
+        })
+      : null;
+  const notes = baseline ? rankNotes(picks, baseline) : new Map();
   if (picks.length === 0) return <p className="draft__empty">{t("Şu an öne çıkan bir seçim yok.")}</p>;
 
   // A gap every pick fills is said once above the list instead of on every row.
@@ -117,6 +139,17 @@ export function PickSuggestions({ role, opponentId, allies, unavailable, champio
                       {reasonText(reason)}
                     </li>
                   ))}
+                  {notes.get(pick.championId) && (
+                    <li data-kind="rank">
+                      {notes.get(pick.championId)!.baseline === null
+                        ? t("{rank} rankında {place}. sırada; Zümrüt+ önerilerinde yok", { rank: rankLabel(bracket, lang === "en" ? "en" : "tr"), place: notes.get(pick.championId)!.place })
+                        : t("{rank} rankında {place}. sırada, Zümrüt+ listesinde {baseline}.", {
+                            rank: rankLabel(bracket, lang === "en" ? "en" : "tr"),
+                            place: notes.get(pick.championId)!.place,
+                            baseline: notes.get(pick.championId)!.baseline!,
+                          })}
+                    </li>
+                  )}
                 </ul>
               </div>
               {turn !== undefined && <LockButtons championId={pick.championId} championName={champion.name} turn={turn} gone={unavailable} />}
