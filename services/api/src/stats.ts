@@ -45,6 +45,8 @@ export type TierEntry = {
   winRateChange: number | null;
   /** Change in pick rate over the same two patches; null when either has too few games. */
   pickRateChange?: number | null;
+  /** ARAM only: win rate in short and in long games, when both have enough games. */
+  lengthSides?: LengthSides;
 };
 
 const smoothed = (wins: number, games: number) => (wins + sampleLimits.priorGames / 2) / (games + sampleLimits.priorGames);
@@ -52,6 +54,24 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 const RANKED = 420;
 const ARENA = 1700;
+const ARAM = 450;
+// A side of the length comparison needs a sample of its own before the tier list says anything about it.
+const MIN_LENGTH_SIDE_GAMES = 60;
+
+export type LengthSides = { short: { games: number; winRate: number }; long: { games: number; winRate: number } };
+
+/** Games under 25 minutes against 30 or more (buckets 0-1 and 3-4); null while either side is thin. */
+export function lengthSides(buckets: { bucket: number; games: number; wins: number }[]): LengthSides | null {
+  const side = (wanted: number[]) => {
+    const rows = buckets.filter((b) => wanted.includes(b.bucket));
+    const games = rows.reduce((sum, r) => sum + r.games, 0);
+    const wins = rows.reduce((sum, r) => sum + r.wins, 0);
+    return { games, winRate: games > 0 ? round3(wins / games) : 0 };
+  };
+  const short = side([0, 1]);
+  const long = side([3, 4]);
+  return short.games >= MIN_LENGTH_SIDE_GAMES && long.games >= MIN_LENGTH_SIDE_GAMES ? { short, long } : null;
+}
 
 /** Players a pick rate is out of in one match: two per role on the Rift, everyone elsewhere. */
 function slotsPerGame(queue: number) {
@@ -165,6 +185,23 @@ export async function tierList(
     for (const r of results) allRoles.set(r.champion_id, r.games);
   }
 
+  const sides = new Map<number, LengthSides>();
+  if (queue === ARAM) {
+    const { results } = await db
+      .prepare(
+        `SELECT champion_id, CAST(value AS INTEGER) AS bucket, SUM(games) AS games, SUM(wins) AS wins FROM ${scope("stat_counts", bracket)}
+          WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ${ARAM} AND kind = 'length' GROUP BY champion_id, value`,
+      )
+      .bind(...patches, position)
+      .all<{ champion_id: number; bucket: number; games: number; wins: number }>();
+    const rowsOf = new Map<number, { bucket: number; games: number; wins: number }[]>();
+    for (const r of results) rowsOf.set(r.champion_id, [...(rowsOf.get(r.champion_id) ?? []), r]);
+    for (const [id, rows] of rowsOf) {
+      const split = lengthSides(rows);
+      if (split) sides.set(id, split);
+    }
+  }
+
   const entries = [...byChampion.entries()]
     .filter(([, c]) => c.games >= Math.min(sampleLimits.listGames, sampleLimits.tierGames))
     .map(([championId, c]) => {
@@ -181,6 +218,7 @@ export async function tierList(
         presence: pickRate + (banRate ?? 0) * roleShare,
         winRateChange: patchChange(patches, c.patches),
         pickRateChange: pickChange(patches, c.patches, patchGames, slotsPerGame(queue)),
+        ...(sides.has(championId) ? { lengthSides: sides.get(championId) } : {}),
       };
     });
   return { patches, games: total, champions: assignTiers(entries), rule: tierRule() };
@@ -217,7 +255,7 @@ export type ChampionOverview = {
   patchRates?: { patch: string; games: number; winRate: number }[];
   /**
    * Games and win rate by game length, in buckets 0 to 4 (under 20, 20 to 25, 25 to 30, 30 to 35, 35+ minutes).
-   * Only buckets with games are listed; missing outside ranked, in region views and for docs older than it.
+   * Only buckets with games are listed; ranked and ARAM only; missing in region views and for docs older than it.
    */
   lengths?: { bucket: number; games: number; winRate: number }[];
   /** Jungle only: how the first minutes went. Missing for other roles and before timelines were read for it. */
@@ -303,11 +341,11 @@ async function jungleRoutes(db: D1Database, patches: string[], championId: numbe
   };
 }
 
-async function lengthRows(db: D1Database, patches: string[], championId: number, position: string, bracket: Where) {
+async function lengthRows(db: D1Database, patches: string[], championId: number, position: string, bracket: Where, queue = RANKED) {
   const { results } = await db
     .prepare(
       `SELECT CAST(value AS INTEGER) AS bucket, SUM(games) AS games, SUM(wins) AS wins FROM ${scope("stat_counts", bracket)}
-        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ? AND queue_id = ${RANKED} AND kind = 'length'
+        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = ? AND queue_id = ${queue} AND kind = 'length'
         GROUP BY value ORDER BY bucket`,
     )
     .bind(...patches, championId, position)
@@ -356,7 +394,7 @@ export async function championOverview(
     const p = byPatch.find((row) => row.patch === patch);
     return p && p.games > 0 ? [{ patch, games: p.games, winRate: round3(p.wins / p.games) }] : [];
   });
-  const lengths = ranked ? await lengthRows(db, patches, championId, used, bracket) : [];
+  const lengths = ranked ? await lengthRows(db, patches, championId, used, bracket) : queue === ARAM ? await lengthRows(db, patches, championId, "", bracket, ARAM) : [];
   const objectives = ranked && used ? await objectiveRates(db, patches, championId, used, bracket) : null;
   const jungle = ranked && used === "JUNGLE" ? await jungleRoutes(db, patches, championId, bracket) : null;
   return {

@@ -5,6 +5,7 @@ import { LEGACY_GROUP } from "./localSchema.ts";
 import { decodeJungle, decodeKda } from "./timeline.ts";
 
 const RANKED_SOLO = 420;
+const ARAM_QUEUE = 450;
 const ARENA = 1700;
 const CHUNK = 5000;
 const CORE_ITEMS = 3;
@@ -333,8 +334,8 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
       // Ranked solo by platform, for the region views of tier lists and champion pages.
       if (row.queue_id === RANKED_SOLO) tally.add(row, "region", platformOf(row.match_id), row.win);
-      // Win rate by game length, from every ranked game (builds read the same pool); older rolled games have no bucket.
-      if (row.queue_id === RANKED_SOLO && row.duration) tally.add(row, "length", String(lengthBucket(row.duration)), row.win);
+      // Win rate by game length, from every ranked and ARAM game (builds read the same pool); older rolled games have no bucket.
+      if ((row.queue_id === RANKED_SOLO || row.queue_id === ARAM_QUEUE) && row.duration) tally.add(row, "length", String(lengthBucket(row.duration)), row.win);
       // The jungler's route: first camps' side with the first lane, and the first gank minute, each its own count.
       const route = decodeJungle(row.jungle_path);
       if (route) {

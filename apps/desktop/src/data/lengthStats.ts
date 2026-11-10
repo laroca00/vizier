@@ -1,4 +1,4 @@
-import { hasEnoughGames } from "./confidence";
+import { hasEnoughGames, wilson } from "./confidence";
 
 export type LengthBucket = { bucket: number; games: number; winRate: number };
 
@@ -27,4 +27,16 @@ export function phaseRates(lengths: LengthBucket[] | undefined): Record<LengthPh
 export function lengthsAreThick(lengths: LengthBucket[] | undefined): boolean {
   const rates = phaseRates(lengths);
   return Object.values(rates).every((r) => r !== null && hasEnoughGames(r.games, r.winRate));
+}
+
+export type LengthSides = { short: PhaseRate; long: PhaseRate };
+
+/** Which kind of game a champion clearly wins more in; null unless the intervals of the two sides do not overlap. */
+export function lengthLean(sides: LengthSides | undefined): "short" | "long" | null {
+  if (!sides) return null;
+  const a = wilson(sides.short.winRate, sides.short.games);
+  const b = wilson(sides.long.winRate, sides.long.games);
+  if (a.low > b.high) return "short";
+  if (b.low > a.high) return "long";
+  return null;
 }

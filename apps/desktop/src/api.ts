@@ -172,6 +172,8 @@ export type TierEntry = {
   winRateChange: number | null;
   /** Pick rate change over the same two patches; absent on servers that predate it. */
   pickRateChange?: number | null;
+  /** ARAM only: win rate in games under 25 minutes against 30 or more, when both sides have enough games. */
+  lengthSides?: { short: { games: number; winRate: number }; long: { games: number; winRate: number } };
 };
 /** The numbers behind a tier; absent on servers that predate it. */
 export type TierRule = { priorGames: number; presenceWeight: number; listGames: number; tierGames: number; cuts: { tier: string; score: number }[] };

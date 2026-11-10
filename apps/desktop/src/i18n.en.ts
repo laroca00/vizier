@@ -2000,4 +2000,8 @@ export const EN: Record<string, string> = {
   "{early} → {later}; {earlyGames} ve {laterGames} maç": "{early} → {later}; {earlyGames} and {laterGames} games",
   "{champion} {rank} rankında yükseldi: {before} → {after} ({beforeGames} ve {afterGames} maç)": "{champion} rose in {rank}: {before} → {after} ({beforeGames} and {afterGames} games)",
   "{champion} {rank} rankında düştü: {before} → {after} ({beforeGames} ve {afterGames} maç)": "{champion} fell in {rank}: {before} → {after} ({beforeGames} and {afterGames} games)",
+  "Vizier crawler, ARAM maçları": "Vizier crawler, ARAM games",
+  "25 dakikadan kısa oyunlar: {shortRate} ({shortGames} maç); 30 dakika ve üstü: {longRate} ({longGames} maç)": "Games under 25 minutes: {shortRate} ({shortGames} games); 30 minutes and more: {longRate} ({longGames} games)",
+  "kısa oyunda güçlü": "strong in short games",
+  "uzun oyunda güçlü": "strong in long games",
 };
