@@ -2,7 +2,7 @@ import { buildStyle, foeProfiles, type Catalog } from "./archetypes.ts";
 import { maxOrder, parseRuneKey } from "./builds.ts";
 import { loadCatalog } from "./ddragon.ts";
 import { LEGACY_GROUP } from "./localSchema.ts";
-import { decodeKda } from "./timeline.ts";
+import { decodeJungle, decodeKda } from "./timeline.ts";
 
 const RANKED_SOLO = 420;
 const ARENA = 1700;
@@ -43,6 +43,7 @@ type Raw = {
   kda_minutes: string | null;
   rank_group: string | null;
   duration: number | null;
+  jungle_path: string | null;
 };
 
 /** Game lengths are counted in five buckets: under 20, 20 to 25, 25 to 30, 30 to 35 and 35 minutes or more. */
@@ -249,7 +250,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const { results } = await db
       .prepare(
         `SELECT rowid, match_id, patch, queue_id, team_position, champion_id, win, runes, spells, items, start_items,
-            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, duration
+            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, duration, jungle_path
           FROM participant_stats WHERE rowid > ? ORDER BY rowid LIMIT ?`,
       )
       .bind(from, CHUNK)
@@ -276,6 +277,12 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       if (row.queue_id === RANKED_SOLO) tally.add(row, "region", platformOf(row.match_id), row.win);
       // Win rate by game length, from every ranked game (builds read the same pool); older rolled games have no bucket.
       if (row.queue_id === RANKED_SOLO && row.duration) tally.add(row, "length", String(lengthBucket(row.duration)), row.win);
+      // The jungler's route: first camps' side with the first lane, and the first gank minute, each its own count.
+      const route = decodeJungle(row.jungle_path);
+      if (route) {
+        tally.add(row, "jpath", `${route.side}|${route.lane}`, row.win);
+        tally.add(row, "jgank", route.gankMinute === null ? "none" : String(route.gankMinute), row.win);
+      }
       const choices = buildChoices(row, catalog.finished);
       addItemTimes(itemTimes, row, catalog.finished);
       addBench(bench, row);

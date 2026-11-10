@@ -186,6 +186,12 @@ export type ChampionOverview = {
   banRate: number | null;
   /** Games and win rate by game length (see data/lengthStats); missing before the crawler counted them and in region views. */
   lengths?: { bucket: number; games: number; winRate: number }[];
+  /** Jungle only: the first camps' side with the first lane, and the first gank minute. */
+  jungle?: {
+    games: number;
+    paths: { side: "top" | "bot"; lane: "top" | "mid" | "bot" | "none"; games: number; winRate: number }[];
+    gank: { games: number; medianMinute: number } | null;
+  };
 };
 
 /** Null when Vizier has no games for the champion yet. */

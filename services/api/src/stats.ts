@@ -218,7 +218,49 @@ export type ChampionOverview = {
    * Only buckets with games are listed; missing outside ranked, in region views and for docs older than it.
    */
   lengths?: { bucket: number; games: number; winRate: number }[];
+  /** Jungle only: how the first minutes went. Missing for other roles and before timelines were read for it. */
+  jungle?: JungleRoutes;
 };
+
+export type JungleRoutes = {
+  /** Games with a route; the share of every path is out of these. */
+  games: number;
+  /** First camps' side and the first lane visited, most played first. */
+  paths: { side: "top" | "bot"; lane: "top" | "mid" | "bot" | "none"; games: number; winRate: number }[];
+  /** Median minute of the first gank among games that had one, with how many did. */
+  gank: { games: number; medianMinute: number } | null;
+};
+
+const MIN_ROUTE_GAMES = 20;
+const MAX_ROUTES = 6;
+
+async function jungleRoutes(db: D1Database, patches: string[], championId: number, bracket: Where): Promise<JungleRoutes | null> {
+  const { results } = await db
+    .prepare(
+      `SELECT kind, value, SUM(games) AS games, SUM(wins) AS wins FROM ${scope("stat_counts", bracket)}
+        WHERE patch IN (${placeholders(patches.length)}) AND champion_id = ? AND team_position = 'JUNGLE' AND queue_id = ${RANKED} AND kind IN ('jpath', 'jgank')
+        GROUP BY kind, value`,
+    )
+    .bind(...patches, championId)
+    .all<{ kind: string; value: string; games: number; wins: number }>();
+  const paths = results
+    .filter((r) => r.kind === "jpath")
+    .sort((a, b) => b.games - a.games || a.value.localeCompare(b.value));
+  const games = paths.reduce((sum, r) => sum + r.games, 0);
+  if (games < MIN_ROUTE_GAMES) return null;
+  const ganks = results.filter((r) => r.kind === "jgank" && r.value !== "none").map((r) => ({ minute: Number(r.value), games: r.games })).sort((a, b) => a.minute - b.minute);
+  const ganked = ganks.reduce((sum, g) => sum + g.games, 0);
+  let seen = 0;
+  const median = ganks.find((g) => (seen += g.games) >= ganked / 2)?.minute;
+  return {
+    games,
+    paths: paths.slice(0, MAX_ROUTES).map((r) => {
+      const [side, lane] = r.value.split("|");
+      return { side: side as "top" | "bot", lane: lane as "top" | "mid" | "bot" | "none", games: r.games, winRate: round3(r.wins / r.games) };
+    }),
+    gank: ganked >= MIN_ROUTE_GAMES && median !== undefined ? { games: ganked, medianMinute: median } : null,
+  };
+}
 
 async function lengthRows(db: D1Database, patches: string[], championId: number, position: string, bracket: Where) {
   const { results } = await db
@@ -270,6 +312,7 @@ export async function championOverview(
   const wins = byPatch.reduce((sum, p) => sum + p.wins, 0);
 
   const lengths = ranked ? await lengthRows(db, patches, championId, used, bracket) : [];
+  const jungle = ranked && used === "JUNGLE" ? await jungleRoutes(db, patches, championId, bracket) : null;
   return {
     patches,
     positions,
@@ -281,6 +324,7 @@ export async function championOverview(
     winRateChange: patchChange(patches, new Map(byPatch.map((p) => [p.patch, p]))),
     banRate: ranked ? banRateOf(await poolBans(db, patches, bracket), championId) : null,
     ...(lengths.length > 0 ? { lengths } : {}),
+    ...(jungle ? { jungle } : {}),
   };
 }
 
