@@ -143,6 +143,9 @@ export function localSchema(sqlite: DatabaseSync) {
   addColumn(sqlite, "participant_stats", "jungle_path", "TEXT");
   // Letters of the objectives the player's team took first; null on games from before.
   addColumn(sqlite, "participant_stats", "objectives", "TEXT");
+  // Kills and assists of the player's game; with deaths and cs_pm they feed the stats board (null on rows from before).
+  addColumn(sqlite, "participant_stats", "kills", "INTEGER");
+  addColumn(sqlite, "participant_stats", "assists", "INTEGER");
   // A salted one-way key of the player, so games of people who play a champion a lot can be told apart. No name or puuid is kept.
   addColumn(sqlite, "participant_stats", "player_key", "TEXT");
   sqlite.exec(`CREATE TABLE IF NOT EXISTS player_champs (

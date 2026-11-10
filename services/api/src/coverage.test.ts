@@ -53,3 +53,27 @@ describe("coverage", () => {
     expect(await (await app.request("/v1/meta/coverage")).json()).toEqual({ patches: [], games: [], timeline: [], players: [] });
   });
 });
+
+describe("coverage status", () => {
+  it("reads last publishes and holds from the crawler's state and counts today's ranked games", async () => {
+    const { db, sqlite } = fakeD1();
+    const now = 10 * 24 * 3_600_000;
+    sqlite.exec("CREATE TABLE publish_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+    sqlite.prepare("INSERT INTO publish_state (key, value) VALUES (?, ?)").run("last:emerald_plus", String(now - 3600_000));
+    sqlite.prepare("INSERT INTO publish_state (key, value) VALUES (?, ?)").run("held:gold_minus", JSON.stringify({ at: now, problems: ["7.00 players a game, expected up to 10"] }));
+    const game = sqlite.prepare("INSERT INTO crawled_matches (match_id, patch, game_start, queue_id, dropped) VALUES (?, '16.21', ?, ?, ?)");
+    game.run("EUW1_1", now - 3600_000, 420, null);
+    game.run("EUW1_2", now - 7200_000, 420, null);
+    game.run("EUW1_3", now - 7200_000, 420, "afk");
+    game.run("EUW1_4", now - 7200_000, 450, null);
+    game.run("EUW1_5", now - 30 * 3600_000, 420, null);
+    const result = await coverage(db, now);
+    expect(result.gamesToday).toBe(2);
+    expect(result.status?.find((s) => s.bracket === "emerald_plus")).toEqual({ bracket: "emerald_plus", lastPublishAt: now - 3600_000, held: [] });
+    expect(result.status?.find((s) => s.bracket === "gold_minus")).toEqual({ bracket: "gold_minus", lastPublishAt: null, held: ["7.00 players a game, expected up to 10"] });
+  });
+
+  it("has no status without the crawler's state", async () => {
+    expect((await coverage((await seeded()))).status).toBeUndefined();
+  });
+});

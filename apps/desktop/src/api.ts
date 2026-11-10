@@ -172,6 +172,8 @@ export type TierEntry = {
   winRateChange: number | null;
   /** Pick rate change over the same two patches; absent on servers that predate it. */
   pickRateChange?: number | null;
+  /** Games and win rate on the two newest patches, newest first; absent on servers that predate it. */
+  byPatch?: { patch: string; games: number; winRate: number }[];
 };
 /** The numbers behind a tier; absent on servers that predate it. */
 export type TierRule = { priorGames: number; presenceWeight: number; listGames: number; tierGames: number; cuts: { tier: string; score: number }[] };
@@ -194,6 +196,8 @@ export type ChampionOverview = {
   winRateChange: number | null;
   /** Null outside ranked or before enough ranked games. */
   banRate: number | null;
+  /** Games and win rate on the two newest patches, newest first; absent on servers that predate it. */
+  byPatch?: { patch: string; games: number; winRate: number }[];
   /** Games and win rate by game length (see data/lengthStats); missing before the crawler counted them and in region views. */
   lengths?: { bucket: number; games: number; winRate: number }[];
   /** Jungle only: the first camps' side with the first lane, and the first gank minute. */
@@ -407,6 +411,10 @@ export type CoverageDoc = {
   dropped?: { patch: string; queue: number; reason: string; games: number }[];
   /** Counted games whose roles were inferred; missing in older docs. */
   roleFixed?: { patch: string; queue: number; games: number }[];
+  /** Last publish and any hold per bracket; missing in older docs. */
+  status?: { bracket: string; lastPublishAt: number | null; held: string[] }[];
+  /** Ranked games played in the 24 hours before the doc was made. */
+  gamesToday?: number;
 };
 
 /** What the stats stand on: games per patch, rank bracket and platform. */
@@ -427,4 +435,34 @@ export function getChampionHistory(championId: number) {
 /** Win rate per day of every champion in one role (Emerald+). */
 export function getTierHistory(position: string) {
   return get<TierHistoryDoc>(`/v1/history/tier/${position}`);
+}
+
+export type BoardRow = {
+  championId: number;
+  /** Games that carried the averages below. */
+  games: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  kda: number;
+  csPerMinute: number;
+  minutes: number;
+  goldDiff15: { games: number; value: number } | null;
+  /** Win rate in games of 35 minutes or more; missing in older docs. */
+  late?: { games: number; winRate: number } | null;
+};
+export type StatsBoard = { patches: string[]; updatedAt?: number; rank?: string; rows: BoardRow[] };
+
+/** Per-game averages of every champion in a role; win, pick and ban rates come from the tier list. */
+export function getStatsBoard(position: string) {
+  return get<StatsBoard>(`/v1/stats/board/${position}`);
+}
+
+/** A tier list for one bracket whatever the rank filter says; the compare page reads every bracket. */
+export function getTierListAt(position: string, bracket: string) {
+  return get<TierList>(`/v1/tierlist/${position}?rank=${bracket}`);
+}
+
+export function getStatsBoardAt(position: string, bracket: string) {
+  return get<StatsBoard>(`/v1/stats/board/${position}?rank=${bracket}`);
 }

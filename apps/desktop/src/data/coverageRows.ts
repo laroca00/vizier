@@ -44,3 +44,12 @@ export function droppedGames(doc: CoverageDoc | null, patch: string): { surrende
 export function roleFixedGames(doc: CoverageDoc | null, patch: string): number {
   return doc?.roleFixed?.filter((r) => r.patch === patch && r.queue === 420).reduce((sum, r) => sum + r.games, 0) ?? 0;
 }
+
+export type StatusRow = { bracket: Bracket; lastPublishAt: number | null; held: string[] };
+
+/** One row per bracket in the order of BRACKETS, or null when the crawler published no status yet. */
+export function statusRows(doc: CoverageDoc | null): StatusRow[] | null {
+  if (!doc?.status || doc.status.length === 0) return null;
+  const known = new Map(doc.status.map((s) => [s.bracket, s]));
+  return BRACKETS.map((bracket) => ({ bracket, lastPublishAt: known.get(bracket)?.lastPublishAt ?? null, held: known.get(bracket)?.held ?? [] }));
+}

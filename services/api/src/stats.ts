@@ -45,7 +45,19 @@ export type TierEntry = {
   winRateChange: number | null;
   /** Change in pick rate over the same two patches; null when either has too few games. */
   pickRateChange?: number | null;
+  /** Games and win rate on each of the two newest patches (newest first), so a thin new patch can show the previous one. */
+  byPatch?: PatchSample[];
 };
+
+export type PatchSample = { patch: string; games: number; winRate: number };
+
+const patchSamples = (patches: string[], byPatch: Map<string, { games: number; wins: number }>): PatchSample[] | undefined =>
+  patches.length < 2
+    ? undefined
+    : patches.map((patch) => {
+        const p = byPatch.get(patch);
+        return { patch, games: p?.games ?? 0, winRate: p && p.games > 0 ? round3(p.wins / p.games) : 0 };
+      });
 
 const smoothed = (wins: number, games: number) => (wins + sampleLimits.priorGames / 2) / (games + sampleLimits.priorGames);
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
@@ -181,6 +193,7 @@ export async function tierList(
         presence: pickRate + (banRate ?? 0) * roleShare,
         winRateChange: patchChange(patches, c.patches),
         pickRateChange: pickChange(patches, c.patches, patchGames, slotsPerGame(queue)),
+        byPatch: patchSamples(patches, c.patches),
       };
     });
   return { patches, games: total, champions: assignTiers(entries), rule: tierRule() };
@@ -222,6 +235,8 @@ export type ChampionOverview = {
   jungle?: JungleRoutes;
   /** How often the champion's team took each first objective, against the role's average. Missing before games carried it. */
   objectives?: ObjectiveRates;
+  /** Games and win rate on each of the two newest patches (newest first); missing with one patch. */
+  byPatch?: PatchSample[];
 };
 
 export type ObjectiveRates = {
@@ -350,6 +365,7 @@ export async function championOverview(
   const games = byPatch.reduce((sum, p) => sum + p.games, 0);
   const wins = byPatch.reduce((sum, p) => sum + p.wins, 0);
 
+  const samples = patchSamples(patches, new Map(byPatch.map((p) => [p.patch, p])));
   const lengths = ranked ? await lengthRows(db, patches, championId, used, bracket) : [];
   const objectives = ranked && used ? await objectiveRates(db, patches, championId, used, bracket) : null;
   const jungle = ranked && used === "JUNGLE" ? await jungleRoutes(db, patches, championId, bracket) : null;
@@ -362,6 +378,7 @@ export async function championOverview(
     pickRate: round3(games / Math.max(list.games / slotsPerGame(queue), 1)),
     tier: entry?.tier ?? null,
     winRateChange: patchChange(patches, new Map(byPatch.map((p) => [p.patch, p]))),
+    ...(samples ? { byPatch: samples } : {}),
     banRate: ranked ? banRateOf(await poolBans(db, patches, bracket), championId) : null,
     ...(lengths.length > 0 ? { lengths } : {}),
     ...(jungle ? { jungle } : {}),
@@ -749,4 +766,88 @@ export async function rankCurve(db: D1Database, brackets: readonly Bracket[], po
     }
   }
   return { patches, brackets: [...brackets], entries: [...byKey.values()].sort((a, b) => a.championId - b.championId || a.position.localeCompare(b.position)) };
+}
+
+/** One champion's per-game averages in a role: each figure carries the games it comes from. */
+export type BoardRow = {
+  championId: number;
+  /** Games that carried kills, deaths, assists, farm and length; fewer than the tier list's games while older games lack them. */
+  games: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  /** (kills + assists) / deaths, with deaths at least 1. */
+  kda: number;
+  csPerMinute: number;
+  minutes: number;
+  /** Gold lead over the lane opponent at 15 minutes, from games with a timeline; null when there are too few. */
+  goldDiff15: { games: number; value: number } | null;
+  /** Win rate in games of 35 minutes or more; null with fewer than 20 of them. */
+  late: { games: number; winRate: number } | null;
+};
+
+const MIN_BOARD_GAMES = 20;
+const MIN_LATE_GAMES = 20;
+
+/**
+ * Averages for the stats explorer, one row per champion in a role. The win,
+ * pick and ban columns come from the tier list; these are the figures it does
+ * not carry.
+ */
+export async function statsBoard(db: D1Database, position: string, bracket: Bracket = DEFAULT_BRACKET): Promise<{ patches: string[]; rows: BoardRow[] }> {
+  const patches = await latestPatches(db);
+  if (patches.length === 0) return { patches, rows: [] };
+  const table = scope("stat_counts", bracket);
+  const { results } = await db
+    .prepare(
+      `SELECT champion_id, kind, SUM(games) AS games FROM ${table}
+        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ${RANKED}
+          AND kind IN ('stat-n', 'sum-kills', 'sum-deaths', 'sum-assists', 'sum-cspm', 'sum-secs')
+        GROUP BY champion_id, kind`,
+    )
+    .bind(...patches, position)
+    .all<{ champion_id: number; kind: string; games: number }>();
+  const lane = await db
+    .prepare(
+      `SELECT champion_id, SUM(games) AS games, SUM(gold15) AS gold15 FROM ${scope("lane_sums", bracket)}
+        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? GROUP BY champion_id`,
+    )
+    .bind(...patches, position)
+    .all<{ champion_id: number; games: number; gold15: number }>();
+  const laneBy = new Map(lane.results.map((r) => [r.champion_id, r]));
+  const { results: lateRows } = await db
+    .prepare(
+      `SELECT champion_id, SUM(games) AS games, SUM(wins) AS wins FROM ${table}
+        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ${RANKED} AND kind = 'length' AND value = '4'
+        GROUP BY champion_id`,
+    )
+    .bind(...patches, position)
+    .all<{ champion_id: number; games: number; wins: number }>();
+  const lateBy = new Map(lateRows.map((r) => [r.champion_id, r]));
+  const by = new Map<number, Map<string, number>>();
+  for (const r of results) by.set(r.champion_id, (by.get(r.champion_id) ?? new Map()).set(r.kind, r.games));
+  const rows: BoardRow[] = [];
+  for (const [championId, k] of by) {
+    const n = k.get("stat-n") ?? 0;
+    if (n < MIN_BOARD_GAMES) continue;
+    const avg = (kind: string, scale = 1) => ((k.get(kind) ?? 0) / n) / scale;
+    const kills = avg("sum-kills");
+    const deaths = avg("sum-deaths");
+    const assists = avg("sum-assists");
+    const l = laneBy.get(championId);
+    const late = lateBy.get(championId);
+    rows.push({
+      championId,
+      games: n,
+      kills: Math.round(kills * 10) / 10,
+      deaths: Math.round(deaths * 10) / 10,
+      assists: Math.round(assists * 10) / 10,
+      kda: Math.round(((kills + assists) / Math.max(deaths, 1)) * 100) / 100,
+      csPerMinute: Math.round(avg("sum-cspm", 100) * 10) / 10,
+      minutes: Math.round(avg("sum-secs", 60) * 10) / 10,
+      goldDiff15: l && l.games >= MIN_LANE_GAMES ? { games: l.games, value: Math.round(l.gold15 / l.games) } : null,
+      late: late && late.games >= MIN_LATE_GAMES ? { games: late.games, winRate: round3(late.wins / late.games) } : null,
+    });
+  }
+  return { patches, rows: rows.sort((a, b) => b.games - a.games || a.championId - b.championId) };
 }

@@ -6,6 +6,7 @@ import type { LanguageSetting } from "./i18n";
 import { DEFAULT_REF, type RefSection } from "./overlay/reference";
 import { DEFAULT_BRACKET } from "@vizier/shared/brackets";
 import { sanitizeRank, sanitizeRegion, setDraftOwnRank, setRankChoice, setRegionChoice, type RankChoice, type RegionChoice } from "./rankChoice";
+import { ALL_COLUMNS, sanitizeColumns, sanitizeViews, type ColumnChoice, type SavedView } from "./data/statsViews";
 import type { OverlayTheme, WidgetStyles } from "./overlay/appearance";
 
 export type Settings = {
@@ -93,6 +94,10 @@ export type Settings = {
   champSelectOwnRank: boolean;
   /** Which region the tier list and champion overview count; "all" pools TR, EUW and KR. */
   region: RegionChoice;
+  /** Columns the stats explorer shows beside the champion. */
+  statsColumns: ColumnChoice;
+  /** Views the player saved in the stats explorer; the ready ones are built in. */
+  statsViews: SavedView[];
 };
 
 const DEFAULTS: Settings = {
@@ -144,6 +149,8 @@ const DEFAULTS: Settings = {
   rank: DEFAULT_BRACKET,
   champSelectOwnRank: true,
   region: "all",
+  statsColumns: ALL_COLUMNS,
+  statsViews: [],
 };
 
 const KEY = "vizier.settings";
@@ -162,7 +169,7 @@ function read(): Settings {
       }
       localStorage.setItem(AUTO_IMPORT_KEY, "1");
     }
-    return { ...DEFAULTS, ...stored, rank: sanitizeRank(stored.rank), region: sanitizeRegion(stored.region) };
+    return { ...DEFAULTS, ...stored, rank: sanitizeRank(stored.rank), region: sanitizeRegion(stored.region), statsColumns: sanitizeColumns(stored.statsColumns), statsViews: sanitizeViews(stored.statsViews) };
   } catch {
     return DEFAULTS;
   }

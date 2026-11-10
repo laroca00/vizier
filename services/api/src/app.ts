@@ -303,6 +303,16 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
     return c.json((await readDoc(statsDb, docKey.rankCurve(420))) ?? { patches: [], brackets: BRACKETS, entries: [] });
   });
 
+  // Per-game averages of every champion in a role (KDA, farm, length, gold lead); win, pick and ban rates stay on the tier list.
+  app.get("/v1/stats/board/:position", async (c) => {
+    const position = c.req.param("position").toUpperCase();
+    if (!POSITIONS.has(position)) badRequest("Unsupported position");
+    const rank = rankOf(c);
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    const board = await readDoc<object>(statsDb, docKey.statsBoard(position, rank));
+    return c.json(withRank(board ?? { patches: [], rows: [] }, rank));
+  });
+
   app.get("/v1/history/:championId", async (c) => {
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     const id = Number(c.req.param("championId"));

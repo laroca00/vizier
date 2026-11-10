@@ -6,6 +6,8 @@ import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { useState } from "react";
 import { getChampion, getChampionHistory, getCounters, getSynergies, getTierList, type ChampionOverview, type Counters } from "../api";
 import { trendOf } from "../data/history";
+import { useOpenPage } from "../pageLink";
+import { previousPatchBlend } from "../data/patchBlend";
 import { TrendSpark } from "../ui/TrendSpark";
 import { BuildSuggestion } from "../BuildSuggestion";
 import { Abilities, ChampionReference, ChampionTitle, StrengthsWeaknesses } from "../ChampionGuide";
@@ -84,6 +86,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
   useSplashUrl(splash);
   const personal = usePersonal();
   const pooled = inPool(personal, championId);
+  const openPage = useOpenPage();
 
   return (
     <LiquidGlass
@@ -132,6 +135,11 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
         >
           {pooled ? t("Havuzunda") : t("Havuzuna ekle")}
         </button>
+        {queue === RANKED && rolePosition && (
+          <button type="button" className="star" onClick={() => openPage({ page: "compare", picks: [{ championId, position: rolePosition }] })}>
+            {t("Karşılaştır")}
+          </button>
+        )}
       </header>
 
       {state.status === "error" ? (
@@ -208,6 +216,7 @@ function Overview({ overview, championId, championName, champions, version, queu
   const percent = percentIn(useLang());
   const t = useT();
   const position = overview.position;
+  const blend = previousPatchBlend(overview.byPatch);
   // A lane opponent to prepare for outside champ select; it resets with the role.
   const [opponent, setOpponent] = useState<number | null>(null);
   const [opponentRole, setOpponentRole] = useState(position);
@@ -262,9 +271,14 @@ function Overview({ overview, championId, championName, champions, version, queu
         <div>
           <dt>{t(winLabel(queue))}</dt>
           <dd>
-            {percent(overview.winRate)}
+            {percent(blend ? blend.winRate : overview.winRate)}
+            {blend && (
+              <span className="champion__thin" title={t("Yeni yamada az maç var; yama {patch} gösteriliyor.", { patch: blend.patch })}>
+                {t("geçen yama")} · {t("{games} maç", { games: blend.games.toLocaleString() })}
+              </span>
+            )}
             {/* The API ranks a champion from 100 games; below that the rate is shown but flagged. */}
-            {overview.games < 100 && <span className="champion__thin">{t("{games} maçtan, henüz güvenilir değil", { games: overview.games })}</span>}
+            {!blend && overview.games < 100 && <span className="champion__thin">{t("{games} maçtan, henüz güvenilir değil", { games: overview.games })}</span>}
           </dd>
         </div>
         <div>

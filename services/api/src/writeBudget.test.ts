@@ -42,7 +42,7 @@ async function fixture(champions: number) {
 }
 
 type Kinds = Map<string, { fixed: number; champion: number; pair: number }>;
-const FIXED_KINDS = ["tierlist", "bans", "coverage", "augments", "augmentchamps", "buildindex", "historytier"];
+const FIXED_KINDS = ["tierlist", "bans", "coverage", "augments", "augmentchamps", "buildindex", "historytier", "statsboard"];
 
 /** Docs a publish of this bracket sends, split by what they grow with. */
 async function shape(db: D1Database, bracket: Bracket) {

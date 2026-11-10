@@ -1,0 +1,52 @@
+.compare__slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-bottom: 20px;
+}
+
+.compare__slot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: end;
+}
+
+.compare__table th:not(:first-child),
+.compare__table td {
+  text-align: right;
+  white-space: nowrap;
+  padding-left: 14px;
+}
+
+.compare__table caption {
+  padding-bottom: 6px;
+  text-align: left;
+  color: var(--glaze-muted);
+}
+
+.compare__table small,
+.compare__head small {
+  margin-left: 6px;
+  color: var(--glaze-muted);
+  font-size: 12px;
+}
+
+.compare__head {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.compare__table td[data-solid="false"] {
+  opacity: 0.5;
+}
+
+.compare__table td[data-lead] {
+  color: var(--gilt);
+  font-weight: 500;
+}
+
+.compare__table tr[data-current] th {
+  box-shadow: inset 2px 0 0 var(--gilt);
+}
