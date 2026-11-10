@@ -1971,6 +1971,8 @@ export const EN: Record<string, string> = {
   "İkincil ağaçta eksik rün var.": "The secondary tree is missing a rune.",
   "İkincil rünler aynı satırdan; farklı satırlardan olmalı.": "The secondary runes are from the same row; they must come from different rows.",
   "Başlangıç eşyaları": "Starting items",
+  "Çok oynayanlar": "Frequent players",
+  "Şampiyonu çok oynayan oyuncuların seçimi; isim ya da profil tutulmaz.": "What players with many games on the champion pick; no names or profiles are kept.",
   "Farklı": "Different",
   "Galibiyet": "Win",
   "Mağlubiyet": "Loss",

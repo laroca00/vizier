@@ -45,6 +45,7 @@ type Raw = {
   duration: number | null;
   jungle_path: string | null;
   objectives: string | null;
+  player_key: string | null;
 };
 
 /** Game lengths are counted in five buckets: under 20, 20 to 25, 25 to 30, 30 to 35 and 35 minutes or more. */
@@ -235,6 +236,46 @@ function buildChoices(row: Raw, finished: Set<number>): [string, string][] {
   return choices;
 }
 
+const MAINS_KINDS = ["rune", "spell", "item", "core", "skill"];
+
+/** Games on one champion inside the kept patches that make a player a "main" of it. */
+export const MAIN_GAMES = 5;
+
+/**
+ * Games from players who have played the champion a lot: a game counts once
+ * the player has MAIN_GAMES of them on it, itself included. Players are only
+ * a salted key; the running counts live in player_champs and go with the patch.
+ */
+async function findMains(db: D1Database, rows: Raw[]): Promise<{ mains: Set<number>; writes: D1PreparedStatement[] }> {
+  const keyed = rows.filter((r) => r.player_key && r.queue_id === RANKED_SOLO && r.team_position);
+  const mains = new Set<number>();
+  if (keyed.length === 0) return { mains, writes: [] };
+  const running = new Map<string, number>();
+  const keys = [...new Set(keyed.map((r) => r.player_key!))];
+  for (let i = 0; i < keys.length; i += 80) {
+    const part = keys.slice(i, i + 80);
+    const { results } = await db
+      .prepare(`SELECT player_key, patch, champion_id, games FROM player_champs WHERE player_key IN (${part.map(() => "?").join(",")})`)
+      .bind(...part)
+      .all<{ player_key: string; patch: string; champion_id: number; games: number }>();
+    for (const r of results) running.set(`${r.player_key}|${r.patch}|${r.champion_id}`, r.games);
+  }
+  const added = new Map<string, { key: string; patch: string; champion: number; games: number }>();
+  for (const r of keyed) {
+    const id = `${r.player_key}|${r.patch}|${r.champion_id}`;
+    const n = (running.get(id) ?? 0) + 1;
+    running.set(id, n);
+    if (n >= MAIN_GAMES) mains.add(r.rowid);
+    const entry = added.get(id) ?? { key: r.player_key!, patch: r.patch, champion: r.champion_id, games: 0 };
+    entry.games++;
+    added.set(id, entry);
+  }
+  const upsert = db.prepare(
+    "INSERT INTO player_champs (player_key, patch, champion_id, games) VALUES (?, ?, ?, ?) ON CONFLICT DO UPDATE SET games = games + excluded.games",
+  );
+  return { mains, writes: [...added.values()].map((a) => upsert.bind(a.key, a.patch, a.champion, a.games)) };
+}
+
 async function watermark(db: D1Database, key: string) {
   const row = await db.prepare("SELECT value FROM crawl_state WHERE key = ?").bind(key).first<{ value: string }>();
   return Number(row?.value ?? 0);
@@ -266,7 +307,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const { results } = await db
       .prepare(
         `SELECT rowid, match_id, patch, queue_id, team_position, champion_id, win, runes, spells, items, start_items,
-            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, duration, jungle_path, objectives
+            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, duration, jungle_path, objectives, player_key
           FROM participant_stats WHERE rowid > ? ORDER BY rowid LIMIT ?`,
       )
       .bind(from, CHUNK)
@@ -286,6 +327,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const lanes = new Map<string, LaneSum>();
     const itemTimes = new Map<string, ItemTime>();
     const bench = new Map<string, BenchSum>();
+    const { mains, writes: mainWrites } = await findMains(db, rows);
     for (const row of rows) {
       tally.add(row, "games", "", row.win);
       if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
@@ -320,6 +362,11 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       addItemTimes(itemTimes, row, catalog.finished);
       addBench(bench, row);
       for (const [kind, value] of choices) tally.add(row, kind, value, row.win);
+      // The same picks again, for games of players who play this champion a lot.
+      if (mains.has(row.rowid)) {
+        tally.add(row, "m-games", "", row.win);
+        for (const [kind, value] of choices) if (MAINS_KINDS.includes(kind)) tally.add(row, `m-${kind}`, value, row.win);
+      }
       // Single runes, for pick rates inside a rune page.
       // Perk 0 counts the games these rows come from; older games were rolled up before single runes were counted.
       if (row.runes) for (const id of new Set([0, ...parseRuneKey(row.runes).perks])) tally.add(row, "perk", String(id), row.win);
@@ -371,7 +418,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
         }
       }
     }
-    await db.batch([...upserts(db, tally), ...laneUpserts(db, lanes), ...itemTimeUpserts(db, itemTimes), ...benchUpserts(db, bench), setWatermark(db, "rolled_participants", rows[rows.length - 1].rowid)]);
+    await db.batch([...upserts(db, tally), ...laneUpserts(db, lanes), ...itemTimeUpserts(db, itemTimes), ...benchUpserts(db, bench), ...mainWrites, setWatermark(db, "rolled_participants", rows[rows.length - 1].rowid)]);
     rolled += rows.length;
   }
 }
@@ -473,5 +520,6 @@ export async function pruneRaw(db: D1Database, now = Date.now()) {
     db.prepare("DELETE FROM lane_sums_g WHERE patch NOT IN (?, ?)").bind(...keep),
     db.prepare("DELETE FROM item_time_sums_g WHERE patch NOT IN (?, ?)").bind(...keep),
     db.prepare("DELETE FROM bench_sums_g WHERE patch NOT IN (?, ?)").bind(...keep),
+    db.prepare("DELETE FROM player_champs WHERE patch NOT IN (?, ?)").bind(...keep),
   ]);
 }

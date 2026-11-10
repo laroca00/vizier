@@ -64,6 +64,8 @@ export type Build = Picks & {
   startOptions?: Choice<{ ids: number[] }>[];
   /** Median minute of the first boots and the first finished item. */
   timing?: { boots: { games: number; medianMinute: number } | null; firstItem: { games: number; medianMinute: number } | null };
+  /** Picks of players with many games on the champion; missing until enough games. */
+  mains?: Picks & { games: number; winRate: number };
 };
 
 /** Null when Vizier has no games for the champion yet. */

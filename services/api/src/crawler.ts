@@ -416,13 +416,14 @@ export class Crawler {
       return false;
     }
 
+    const salt = ranked ? await this.salt() : "";
     const insert = this.db.prepare(
       `INSERT OR IGNORE INTO participant_stats
         (match_id, patch, champion_id, team_position, win, runes, spells, items,
          opponent_champion_id, duration, deaths, cs10, cs_pm, gold_pm, vision_pm,
          kill_participation, damage_share, start_items, skill_order, purchase_order, cs_minutes,
-         queue_id, team_id, augments, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, jungle_path, objectives)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         queue_id, team_id, augments, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, jungle_path, objectives, player_key)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const paths = timeline ? buildPaths(timeline) : new Map<number, BuildPath>();
     const pace = timeline ? csByMinute(timeline) : new Map<number, number[]>();
@@ -433,6 +434,8 @@ export class Crawler {
     const gold15 = timeline ? goldAtMinute(timeline, 15) : new Map<number, number>();
     const minutes = info.gameDuration / 60;
     const round = (n: number) => Math.round(n * 100) / 100;
+    const keys = new Map<string, string>();
+    if (ranked) for (const p of info.participants) if (p.puuid) keys.set(p.puuid, await playerKey(salt, p.puuid));
     const rows = info.participants.flatMap((p) => {
       // Arena has no rune pages; every other stored queue does.
       const runes = info.queueId === ARENA ? "" : runeKey(p.perks);
@@ -490,11 +493,29 @@ export class Crawler {
           group,
           jungle,
           ranked ? firstObjectives(info.teams?.find((t) => t.teamId === p.teamId)) : null,
+          (p.puuid && keys.get(p.puuid)) || null,
         ),
       ];
     });
     await this.db.batch([record, ...rows, ...(await this.follow(match))]);
     return true;
+  }
+
+  private saltValue: string | null = null;
+
+  /** A random value kept in this database only, so player keys cannot be matched to anyone from outside. */
+  private async salt(): Promise<string> {
+    if (this.saltValue) return this.saltValue;
+    const row = await this.db.prepare("SELECT value FROM crawl_state WHERE key = 'player_salt'").first<{ value: string }>();
+    let value = row?.value;
+    if (!value) {
+      value = crypto.randomUUID();
+      await this.db.prepare("INSERT OR IGNORE INTO crawl_state (key, value) VALUES ('player_salt', ?)").bind(value).run();
+      const again = await this.db.prepare("SELECT value FROM crawl_state WHERE key = 'player_salt'").first<{ value: string }>();
+      value = again?.value ?? value;
+    }
+    this.saltValue = value;
+    return value;
   }
 
   /** Remembers a mode game's players so their next games of that mode are found. */
@@ -506,6 +527,12 @@ export class Crawler {
     const insert = this.db.prepare("INSERT OR IGNORE INTO mode_players (puuid, region, queue_id, added_at) VALUES (?, ?, ?, ?)");
     return match.info.participants.filter((p) => p.puuid).map((p) => insert.bind(p.puuid, this.options.region, queue, this.now()));
   }
+}
+
+/** A short salted hash: enough to tell players apart inside this database, useless anywhere else. */
+export async function playerKey(salt: string, puuid: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${salt}:${puuid}`));
+  return [...new Uint8Array(digest).slice(0, 6)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 /** Letters for the objectives a team took first (d dragon, g grubs, h herald, t tower, c first blood); null when the match carries none, "" when the team took none. */
