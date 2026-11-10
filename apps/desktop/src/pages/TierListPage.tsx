@@ -12,7 +12,7 @@ import { usePersonal } from "../personal";
 import { Scatter } from "../charts";
 import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
-import { RankPicker } from "../ui/RankPicker";
+import { RankPicker, RegionPicker } from "../ui/RankPicker";
 import { Tabs } from "../ui/Tabs";
 import { rankLabel, useBracket } from "../rank";
 import { SearchInput, Toggle } from "../ui/Fields";
@@ -96,6 +96,7 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
           <>
             <Tabs label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
             {ranked && <RankPicker />}
+            {ranked && <RegionPicker />}
             {state.status === "done" && state.value.list.champions.length > 0 && (
               <DataBadge {...pooled(state.value.list.champions)} patches={state.value.list.patches} updatedAt={state.value.list.updatedAt} ranked source={t("Vizier crawler, dereceli maçlar")} />
             )}

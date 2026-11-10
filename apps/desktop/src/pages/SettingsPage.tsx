@@ -20,7 +20,7 @@ const LANGUAGES: { id: LanguageSetting; label: string }[] = [
 ];
 
 /** The on/off settings; language is a choice, not a toggle. */
-export type ToggleKey = Exclude<keyof Settings, "language" | "customTimerSeconds" | "homeLayout" | "navFolded" | "autopilot" | "autopilotLockSeconds" | "overlayScale" | "overlayRefSections" | "overlayTheme" | "overlayWidgetStyles" | "hotkeys" | "overlayMinimapSide" | "overlayMinimapSize" | "overlayCampSide" | "rank">;
+export type ToggleKey = Exclude<keyof Settings, "language" | "customTimerSeconds" | "homeLayout" | "navFolded" | "autopilot" | "autopilotLockSeconds" | "overlayScale" | "overlayRefSections" | "overlayTheme" | "overlayWidgetStyles" | "hotkeys" | "overlayMinimapSide" | "overlayMinimapSize" | "overlayCampSide" | "rank" | "region">;
 
 const CLIENT_TOGGLES: { key: ToggleKey; label: string; hint: string }[] = [
   { key: "autoImportRunes", label: "Rünleri kendiliğinden aktar", hint: "Şampiyonunu kilitlediğinde önerilen rün sayfası Vizier sayfasına yazılır." },

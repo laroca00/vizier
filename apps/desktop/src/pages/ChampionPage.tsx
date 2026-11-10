@@ -1,4 +1,4 @@
-import { RankPicker } from "../ui/RankPicker";
+import { RankPicker, RegionPicker } from "../ui/RankPicker";
 import { rankLabel, useBracket } from "../rank";
 import { BuildEvolution } from "../patches/BuildEvolutionView";
 import { ChampionHistory } from "../patches/ChampionHistory";
@@ -102,6 +102,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           )}
           <Tabs className="champion__queues" size="small" label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
           {queue === RANKED && <RankPicker />}
+          {queue === RANKED && <RegionPicker />}
         </div>
         <button
           type="button"

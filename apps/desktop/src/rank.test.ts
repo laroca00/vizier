@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { effectiveChoice, resolveRank, sanitizeRank, withRank } from "./rankChoice";
+import { effectiveChoice, regionApplies, resolveRank, sanitizeRank, sanitizeRegion, withRank } from "./rankChoice";
 
 describe("sanitizeRank", () => {
   it("keeps known choices and defaults anything else to Emerald+", () => {
@@ -44,5 +44,28 @@ describe("effectiveChoice", () => {
     expect(effectiveChoice("all", false, "gold_minus", true)).toBe("all");
     expect(effectiveChoice("all", true, "gold_minus", false)).toBe("all");
     expect(effectiveChoice("all", true, null, true)).toBe("all");
+  });
+});
+
+describe("withRank with a region", () => {
+  it("adds region on tier lists and the champion overview only, then rank", () => {
+    expect(withRank("/v1/tierlist/MIDDLE", "emerald_plus", "tr")).toBe("/v1/tierlist/MIDDLE?region=tr");
+    expect(withRank("/v1/tierlist/MIDDLE", "all", "kr")).toBe("/v1/tierlist/MIDDLE?region=kr&rank=all");
+    expect(withRank("/v1/champions/103?position=TOP", "emerald_plus", "euw")).toBe("/v1/champions/103?position=TOP&region=euw");
+    expect(withRank("/v1/champions/103/counters?position=TOP", "emerald_plus", "tr")).toBe("/v1/champions/103/counters?position=TOP");
+    expect(withRank("/v1/builds/103", "emerald_plus", "tr")).toBe("/v1/builds/103");
+  });
+  it("sends no region when pooled", () => {
+    expect(withRank("/v1/tierlist/MIDDLE", "emerald_plus", null)).toBe("/v1/tierlist/MIDDLE");
+  });
+});
+
+describe("regions", () => {
+  it("sanitises stored values and knows which brackets have region docs", () => {
+    expect(sanitizeRegion("tr")).toBe("tr");
+    expect(sanitizeRegion("na")).toBe("all");
+    expect(regionApplies("emerald_plus")).toBe(true);
+    expect(regionApplies("all")).toBe(true);
+    expect(regionApplies("gold_minus")).toBe(false);
   });
 });

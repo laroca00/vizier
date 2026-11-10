@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { activeBracket, subscribeRank } from "./rankChoice";
+import { activeScope, subscribeRank } from "./rankChoice";
 import { createStaleCache } from "./staleCache";
 
 const results = createStaleCache(10 * 60_000);
@@ -15,9 +15,9 @@ export type AsyncState<T> =
  * A key seen before shows its last result straight away and refreshes behind it.
  */
 export function useAsync<T>(callerKey: string | null, load: () => Promise<T>) {
-  // Stats routes follow the rank filter, so every load restarts when it changes and each bracket keeps its own result.
-  const bracket = useSyncExternalStore(subscribeRank, activeBracket);
-  const key = callerKey === null ? null : `${callerKey}@${bracket}`;
+  // Stats routes follow the rank and region filters, so every load restarts when it changes and each bracket keeps its own result.
+  const scope = useSyncExternalStore(subscribeRank, activeScope);
+  const key = callerKey === null ? null : `${callerKey}@${scope}`;
   const [state, setState] = useState<AsyncState<T>>({ status: "idle" });
   const [attempt, setAttempt] = useState(0);
   // `load` closes over values that `key` already identifies, so a new

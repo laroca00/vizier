@@ -1,9 +1,12 @@
+import { useSyncExternalStore } from "react";
 import { CONFIDENCE_LABEL, type Confidence, confidenceOf, wilson, type Sample } from "../data/confidence";
 import { ageText } from "../data/freshness";
 import { latestVersion } from "../data/ddragon";
 import { formatPercent, useLang, useT } from "../i18n";
 import { useOpenSources } from "../sourcesLink";
 import { rankLabel, useBracket } from "../rank";
+import { REGION_LABELS } from "@vizier/shared/brackets";
+import { activeRegion, subscribeRank } from "../rankChoice";
 import { useAsync } from "../useAsync";
 
 type Props =
@@ -19,6 +22,7 @@ export function DataBadge(props: Props) {
   const lang = useLang();
   const openSources = useOpenSources();
   const bracket = useBracket();
+  const region = useSyncExternalStore(subscribeRank, () => activeRegion() ?? "");
   const [version] = useAsync("ddragon-version", latestVersion);
   const badge = (level: Confidence, title: string) =>
     openSources ? (
@@ -38,7 +42,7 @@ export function DataBadge(props: Props) {
   const { low, high } = wilson(props.winRate, props.games);
   const lines = [
     props.source,
-    props.ranked ? t("Rank: {rank}", { rank: rankLabel(bracket, lang === "en" ? "en" : "tr") }) : null,
+    props.ranked ? t("Rank: {rank}", { rank: rankLabel(bracket, lang === "en" ? "en" : "tr") + (region ? ` · ${REGION_LABELS[region as keyof typeof REGION_LABELS]}` : "") }) : null,
     props.patches && props.patches.length > 0 ? t("Yama {patch}", { patch: props.patches.join(", ") }) : null,
     t("{games} maç", { games: props.games }),
     ageText(t, props.updatedAt),

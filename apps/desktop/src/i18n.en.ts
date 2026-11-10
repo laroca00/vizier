@@ -124,6 +124,8 @@ export const EN: Record<string, string> = {
   "Ligler ve maç sayıları": "Ranks and game counts",
   "Yama {patch}, dereceli tek/çift maçları": "Patch {patch}, ranked solo/duo games",
   "Lig": "Rank",
+  "Tüm bölgeler": "All regions",
+  "Bölge verisi yalnız Zümrüt+ ve Hepsi için var": "Regional data exists only for Emerald+ and All",
   "Veri: {rank}": "Data: {rank}",
   "Kendi rankının verisi (Ayarlar'dan değiştirilir)": "Your own rank's data (change it in Settings)",
   "Seçili rank filtresi": "The rank filter you chose",
