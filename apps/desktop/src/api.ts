@@ -457,3 +457,12 @@ export type StatsBoard = { patches: string[]; updatedAt?: number; rank?: string;
 export function getStatsBoard(position: string) {
   return get<StatsBoard>(`/v1/stats/board/${position}`);
 }
+
+/** A tier list for one bracket whatever the rank filter says; the compare page reads every bracket. */
+export function getTierListAt(position: string, bracket: string) {
+  return get<TierList>(`/v1/tierlist/${position}?rank=${bracket}`);
+}
+
+export function getStatsBoardAt(position: string, bracket: string) {
+  return get<StatsBoard>(`/v1/stats/board/${position}?rank=${bracket}`);
+}

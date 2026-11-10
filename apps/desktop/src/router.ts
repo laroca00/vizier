@@ -26,6 +26,7 @@ export type Route =
   | { page: "lab"; championId: number | null; position: string }
   | { page: "matrix"; position: string }
   | { page: "elo"; position: string; minGames: number }
+  | { page: "compare"; picks: { championId: number; position: string }[] }
   | { page: "stats"; position: string; sort: StatsColumn; desc: boolean; minGames: number; query: string }
   | { page: "challenge" }
   | { page: "templates" }
@@ -44,6 +45,7 @@ export function pageRoute(page: Page): Route {
   if (page === "lab") return { page, championId: null, position: "MIDDLE" };
   if (page === "synergy") return { page, championId: null, position: "MIDDLE" };
   if (page === "matrix") return { page, position: "MIDDLE" };
+  if (page === "compare") return { page, picks: [] };
   if (page === "stats") return { page, ...DEFAULT_STATS_VIEW };
   if (page === "elo") return { page, position: "ALL", minGames: 500 };
   if (page === "pro") return { page, player: "" };

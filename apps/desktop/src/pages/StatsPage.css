@@ -32,3 +32,21 @@
   gap: 8px;
   align-items: center;
 }
+
+.stats__compare {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 6px;
+  color: var(--glaze-muted);
+  opacity: 0;
+}
+
+.stats__table tr:hover .stats__compare,
+.stats__compare:focus-visible {
+  opacity: 1;
+}
+
+.stats__name {
+  display: flex;
+  align-items: center;
+}

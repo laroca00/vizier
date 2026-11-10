@@ -41,6 +41,7 @@ const ACADEMY: { id: string; tr: string; en: string; words: string[]; route: Rou
   { id: "matchup", tr: "Eşleşme çalışması", en: "Matchup study", words: ["matchup", "akademi", "academy", "lane"], route: { page: "matchup", championId: null, opponentId: null, position: "MIDDLE" } },
   { id: "matrix", tr: "Karşı seçim matrisi", en: "Counterpick matrix", words: ["counter", "matrix", "matris", "karsi secim"], route: { page: "matrix", position: "MIDDLE" } },
   { id: "stats", tr: "İstatistik gezgini", en: "Stats explorer", words: ["stats", "istatistik", "tablo", "table", "kda", "cs", "winrate", "altin farki", "gold diff"], route: { page: "stats", ...DEFAULT_STATS_VIEW } },
+  { id: "compare", tr: "Karşılaştır", en: "Compare champions", words: ["compare", "karsilastir", "yan yana", "versus", "vs"], route: { page: "compare", picks: [] } },
   { id: "elo", tr: "Elo gezgini", en: "Elo explorer", words: ["elo", "rank", "lig", "yuksek elo", "dusuk elo", "high elo", "low elo"], route: { page: "elo", position: "ALL", minGames: 500 } },
   { id: "synergy", tr: "Sinerji gezgini", en: "Synergy explorer", words: ["synergy", "sinerji", "duo"], route: { page: "synergy", championId: null, position: "MIDDLE" } },
   { id: "challenge", tr: "Draft meydan okuması", en: "Draft challenge", words: ["draft", "challenge", "meydan okuma"], route: { page: "challenge" } },

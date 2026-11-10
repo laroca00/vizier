@@ -6,6 +6,7 @@ import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { useState } from "react";
 import { getChampion, getChampionHistory, getCounters, getSynergies, getTierList, type ChampionOverview, type Counters } from "../api";
 import { trendOf } from "../data/history";
+import { useOpenPage } from "../pageLink";
 import { previousPatchBlend } from "../data/patchBlend";
 import { TrendSpark } from "../ui/TrendSpark";
 import { BuildSuggestion } from "../BuildSuggestion";
@@ -85,6 +86,7 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
   useSplashUrl(splash);
   const personal = usePersonal();
   const pooled = inPool(personal, championId);
+  const openPage = useOpenPage();
 
   return (
     <LiquidGlass
@@ -133,6 +135,11 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
         >
           {pooled ? t("Havuzunda") : t("Havuzuna ekle")}
         </button>
+        {queue === RANKED && rolePosition && (
+          <button type="button" className="star" onClick={() => openPage({ page: "compare", picks: [{ championId, position: rolePosition }] })}>
+            {t("Karşılaştır")}
+          </button>
+        )}
       </header>
 
       {state.status === "error" ? (

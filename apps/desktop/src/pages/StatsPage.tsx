@@ -19,6 +19,7 @@ import { formatPercent, useLang, useT } from "../i18n";
 import { POSITIONS } from "../labels";
 import { loadErrorMessage } from "../loadError";
 import { useOpenChampion } from "../championLink";
+import { useOpenPage } from "../pageLink";
 import { rankLabel, useBracket } from "../rank";
 import { activeRegion, subscribeRank } from "../rankChoice";
 import { DataBadge } from "../ui/DataBadge";
@@ -173,6 +174,7 @@ function StatsTable({ route, onChange, data, rank }: { route: StatsRoute; onChan
   const t = useT();
   const lang = useLang();
   const openChampion = useOpenChampion();
+  const openPage = useOpenPage();
   const { statsColumns } = useSettings();
   const nameOf = (id: number) => data.names.get(id)?.name ?? String(id);
   const all = viewStats(data.rows, route, nameOf);
@@ -253,11 +255,16 @@ function StatsTable({ route, onChange, data, rank }: { route: StatsRoute; onChan
           {rows.map((row) => (
             <tr key={`${row.championId}:${row.position}`}>
               <td>
+                <span className="stats__name">
                 <button type="button" className="tiers__champion" onClick={() => openChampion(row.championId, row.position, 420)}>
                   {data.names.get(row.championId) && <img src={championIconUrl(data.version, data.names.get(row.championId)!.id)} alt="" width={26} height={26} />}
                   {nameOf(row.championId)}
                   {route.position === "ALL" && <img className="role-icon" src={roleIconUrl(row.position)} alt={t(POSITIONS[row.position])} title={t(POSITIONS[row.position])} width={16} height={16} />}
                 </button>
+                <button type="button" className="stats__compare" title={t("Karşılaştırmaya ekle")} aria-label={t("Karşılaştırmaya ekle")} onClick={() => openPage({ page: "compare", picks: [{ championId: row.championId, position: row.position }] })}>
+                  ⇄
+                </button>
+                </span>
               </td>
               {shown.map((column) => cell(row, column))}
             </tr>

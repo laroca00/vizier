@@ -54,6 +54,7 @@ const MatchupPage = lazy(() => import("./pages/MatchupPage").then((m) => ({ defa
 const AugmentsPage = lazy(() => import("./pages/AugmentsPage").then((m) => ({ default: m.AugmentsPage })));
 const ArchetypesPage = lazy(() => import("./pages/ArchetypesPage").then((m) => ({ default: m.ArchetypesPage })));
 const CombosPage = lazy(() => import("./pages/CombosPage").then((m) => ({ default: m.CombosPage })));
+const ComparePage = lazy(() => import("./pages/ComparePage").then((m) => ({ default: m.ComparePage })));
 const StatsPage = lazy(() => import("./pages/StatsPage").then((m) => ({ default: m.StatsPage })));
 const EloPage = lazy(() => import("./pages/EloPage").then((m) => ({ default: m.EloPage })));
 const MatrixPage = lazy(() => import("./pages/MatrixPage").then((m) => ({ default: m.MatrixPage })));
@@ -92,6 +93,7 @@ const LABELS: Record<Page, string> = {
   matrix: "Karşı seçim matrisi",
   elo: "Elo gezgini",
   stats: "İstatistik gezgini",
+  compare: "Karşılaştır",
   challenge: "Draft meydan okuması",
   templates: "Takım şablonları",
   synergy: "Sinerji gezgini",
@@ -333,6 +335,7 @@ function App() {
         { id: "matrix", label: "Karşı seçim matrisi", icon: "matchup" },
         { id: "synergy", label: "Sinerji gezgini", icon: "archetypes" },
         { id: "stats", label: "İstatistik gezgini", icon: "tiers" },
+        { id: "compare", label: "Karşılaştır", icon: "matchup" },
         { id: "elo", label: "Elo gezgini", icon: "tiers" },
         { id: "pros", label: "Pro build'ler", icon: "pros" },
         { id: "augments", label: "Augment'ler", icon: "augments" },
@@ -482,6 +485,8 @@ function App() {
               <TemplatesPage onOpenChampion={(id, position) => openChampion(id, position)} />
             ) : route.page === "challenge" ? (
               <ChallengePage />
+            ) : route.page === "compare" ? (
+              <ComparePage route={route} onChange={replace} />
             ) : route.page === "stats" ? (
               <StatsPage route={route} onChange={replace} />
             ) : route.page === "elo" ? (
