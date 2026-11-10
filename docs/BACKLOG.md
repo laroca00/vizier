@@ -400,15 +400,20 @@ Builds on: raw ranked rows, timelines, `rollup.ts`, lane sums, item times, the c
 - [x] 36.4 Item path tree: first, second and third completed item as a tree with win rate and games per branch (top 3 per level), from purchase order. Champion page build tab and the Itemization Lab's column picker. (e320829; item path tree (path1-3 counts, top 3 per level) in the build doc, build tab and a lab "Eşya yolu" column)
 - [x] 36.5 Start and timing: most common starting items with win rate, and the median minute of boots and first completed item per champion and role (extends item times). (e320829; startOptions and timing (median minutes of first boots and first finished item) in the build doc; the median comes from per-minute counts)
 - [ ] 36.6 Builds of players who play the champion a lot: games from seeds with many games on it in the kept window (anonymised, no names, no profiles), summed as their own build doc with games. Shown as "Çok oynayanlar" next to the popular build when it differs.
+<!-- claimed: auto/36-history-quality 2026-11-10T04:00Z -->
 - [ ] 36.7 Daily history: once a day a compact row per champion, role and bracket (win rate, pick rate, ban rate, games), kept for the two newest patches. Route `/v1/history/:championId`. Sparkline on the champion page header and tier list rows.
+<!-- claimed: auto/36-history-quality 2026-11-10T04:00Z -->
 
 ## 37. Data quality and trust
 
 Builds on: rollup, coverage, `confidenceOf`, 22.x.
 
 - [ ] 37.1 Leaver and remake filter: drop games that ended in early surrender or where a player left (`gameEndedInEarlySurrender`, AFK signs such as near-zero gold or damage), counted in coverage as dropped.
+<!-- claimed: auto/36-history-quality 2026-11-10T04:00Z -->
 - [ ] 37.2 Role fix: when `teamPosition` is empty or two players share it, infer roles from Smite, items and timeline lane positions; fixture tests. Coverage counts how many games needed it.
+<!-- claimed: auto/36-history-quality 2026-11-10T04:00Z -->
 - [ ] 37.3 Sanity checks on every rollup: average win rate of all champions near 50%, pick rates summing to 10 per game per bracket, no champion with more games than the patch total. A failing check holds the publish for that bracket and logs why.
+<!-- claimed: auto/36-history-quality 2026-11-10T04:00Z -->
 - [ ] 37.4 New patch blending: in the first days of a patch, when a champion's new-patch sample is thin, show the previous patch labelled "geçen yama" instead of empty values, until the new sample passes the confidence rule.
 - [ ] 37.5 Status card under About: last publish per bracket, games today, timeline share and any bracket held by 37.3, from coverage.
 
