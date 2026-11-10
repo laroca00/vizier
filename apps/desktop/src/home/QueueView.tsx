@@ -62,7 +62,7 @@ export function QueueView({ flow, lobby, onOpenChampion }: Props) {
             </span>
             {extra?.buildName && <span className="queue__detail">{t("Kayıtlı build: {name}", { name: extra.buildName })}</span>}
           </span>
-          {entry && <DataBadge games={entry.games} winRate={entry.winRate} patches={patches[position]} source={t("Vizier crawler, dereceli maçlar")} />}
+          {entry && <DataBadge games={entry.games} winRate={entry.winRate} patches={patches[position]} ranked source={t("Vizier crawler, dereceli maçlar")} />}
         </button>
       </li>
     );

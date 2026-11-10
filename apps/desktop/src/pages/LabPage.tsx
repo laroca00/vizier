@@ -215,7 +215,7 @@ function LabCard({ column, data, patches, updatedAt, actions }: { column: LabCol
         <p className="build__stat">
           {t("{games} maçta, {rate} kazanma", { games: column.sample.games, rate: formatPercent(column.sample.winRate, lang, 1) })}
           {column.style && ` · ${column.style}`}{" "}
-          <DataBadge {...column.sample} patches={patches} updatedAt={updatedAt} source={t("Vizier crawler, dereceli maçlar")} />
+          <DataBadge {...column.sample} patches={patches} updatedAt={updatedAt} ranked source={t("Vizier crawler, dereceli maçlar")} />
         </p>
       ) : column.basis === "data" ? (
         <p className="build__stat">{t("Tank takımlara karşı alınan eşyalar, {games} maç", { games: column.games ?? 0 })}</p>

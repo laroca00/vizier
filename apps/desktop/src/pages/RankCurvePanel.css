@@ -1,0 +1,61 @@
+.rank-curve__chart {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  display: block;
+}
+
+.rank-curve__half {
+  stroke: var(--data-grid);
+  stroke-dasharray: 3 3;
+}
+
+.rank-curve__half[data-visible="false"] {
+  display: none;
+}
+
+.rank-curve__line {
+  stroke: var(--data-series);
+  stroke-width: 2;
+}
+
+.rank-curve__dot {
+  fill: var(--data-series);
+}
+
+.rank-curve__dot[data-enough="false"] {
+  fill: none;
+  stroke: var(--glaze-muted);
+  stroke-dasharray: 2 2;
+}
+
+.rank-curve__cols {
+  display: flex;
+  max-width: 420px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.rank-curve__cols li {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.rank-curve__cols li[data-enough="false"] {
+  opacity: 0.55;
+}
+
+.rank-curve__rate {
+  font-weight: 600;
+}
+
+.rank-curve__rank,
+.rank-curve__games {
+  color: var(--glaze-muted);
+}

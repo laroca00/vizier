@@ -1,8 +1,9 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "https://vizier-api.vizier-api.workers.dev";
 
 import { createApiCache } from "./apiCache";
-import { activeBracket, withRank } from "./rankChoice";
+import { activeBracket, activeRegion, withRank } from "./rankChoice";
 import { ApiError, requestJson } from "./http";
+import type { RankCurveDoc } from "./data/rankCurve";
 
 export { ApiError };
 
@@ -13,7 +14,7 @@ const cache = createApiCache(typeof sessionStorage === "undefined" ? null : sess
 function get<T>(route: string, init?: RequestInit): Promise<T> {
   if (init) return request<T>(route, init);
   // The cache key carries the bracket, so each rank keeps its own answers.
-  const path = withRank(route, activeBracket());
+  const path = withRank(route, activeBracket(), activeRegion());
   return cache.get(path, () => request<T>(path));
 }
 
@@ -368,8 +369,9 @@ export function getScout(platform: string, asks: { puuid: string; championId: nu
 export type BenchMinute = { minute: number; games: number; cs: number; level: number; kdaGames?: number; kills?: number; deaths?: number; assists?: number; killParticipation?: number };
 
 /** Average CS and level of ranked games at a few minutes; empty until enough timelines were crawled. */
-export function getBench(championId: number, position: string) {
-  return get<{ minutes: BenchMinute[] }>(`/v1/champions/${championId}/bench?position=${position}`);
+export function getBench(championId: number, position: string, bracket?: string) {
+  // An explicit rank is always sent, even Emerald+, so a window with another filter cannot change which one it asks for.
+  return get<{ minutes: BenchMinute[] }>(`/v1/champions/${championId}/bench?position=${position}${bracket ? `&rank=${bracket}` : ""}`);
 }
 
 export type CoverageDoc = {
@@ -386,4 +388,9 @@ export type CoverageDoc = {
 /** What the stats stand on: games per patch, rank bracket and platform. */
 export function getCoverage() {
   return get<CoverageDoc>("/v1/meta/coverage");
+}
+
+/** Win rate, pick rate and games of every champion and role in each bracket, side by side; empty until the crawler publishes it. */
+export function getRankCurve() {
+  return get<RankCurveDoc>("/v1/meta/rank-curve");
 }

@@ -11,12 +11,14 @@ export function Select<T extends string>({
   options,
   onChange,
   hideLabel = false,
+  disabled = false,
 }: {
   label: string;
   value: T;
   options: Option<T>[];
   onChange: (value: T) => void;
   hideLabel?: boolean;
+  disabled?: boolean;
 }) {
   const id = useId();
   return (
@@ -25,7 +27,7 @@ export function Select<T extends string>({
         {label}
       </label>
       <span className="select">
-        <select id={id} value={value} onChange={(event) => onChange(event.target.value as T)}>
+        <select id={id} value={value} disabled={disabled} onChange={(event) => onChange(event.target.value as T)}>
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}

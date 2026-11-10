@@ -27,6 +27,7 @@ export function importSummary(
   t: Translate,
   champion: string,
   results: Partial<Record<ImportKind, ImportOutcome>>,
+  bracket?: string,
 ): { kind: "success" | "error"; message: string } {
   const entries = (Object.keys(DONE) as ImportKind[]).flatMap((k) => (results[k] ? [[k, results[k]] as const] : []));
   const done = entries.filter(([, r]) => r.ok).map(([k]) => t(DONE[k]));
@@ -34,7 +35,9 @@ export function importSummary(
     r.ok ? (r.unconfirmed ? [`${t(DONE[k])}: ${t("istemcide görünmedi")}`] : []) : [`${t(DONE[k])}: ${t(FAILED[r.reason])}`],
   );
   const joined = done.length > 1 ? `${done.slice(0, -1).join(", ")} ${t("ve")} ${done[done.length - 1]}` : done.join("");
-  if (failed.length === 0) return { kind: "success", message: t("{champion}: {parts} aktarıldı", { champion, parts: joined }) };
+  // Naming the bracket tells the player whose games the build was counted from.
+  const from = bracket ? ` ${t("({rank} verisi)", { rank: bracket })}` : "";
+  if (failed.length === 0) return { kind: "success", message: `${t("{champion}: {parts} aktarıldı", { champion, parts: joined })}${from}` };
   const bad = t("{champion}: aktarılamadı, {parts}", { champion, parts: failed.join("; ") });
-  return { kind: "error", message: done.length ? `${t("{champion}: {parts} aktarıldı", { champion, parts: joined })}. ${bad}` : bad };
+  return { kind: "error", message: done.length ? `${t("{champion}: {parts} aktarıldı", { champion, parts: joined })}${from}. ${bad}` : bad };
 }

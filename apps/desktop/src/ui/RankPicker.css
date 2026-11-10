@@ -8,3 +8,12 @@
   font-size: 12px;
   color: var(--glaze-muted);
 }
+
+.rank-chip {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--glaze-border, currentColor);
+  color: var(--glaze-muted);
+  white-space: nowrap;
+}

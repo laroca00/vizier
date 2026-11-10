@@ -3,6 +3,7 @@ import { DataBadge } from "./ui/DataBadge";
 import { BuildPath } from "./BuildPathPanel";
 import { RunePageView } from "./RunePageView";
 import { formatPercent, useLang, useT, type Lang } from "./i18n";
+import { rankLabel, useBracket } from "./rank";
 import { shardName } from "./library/RuneEditor";
 import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
@@ -130,6 +131,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   const percent = percentIn(lang);
   const t = useT();
   const toast = useToast();
+  const bracket = useBracket();
   const openChampion = useOpenChampion();
   const [state, retry] = useAsync(`${queue}:${championId}:${position}:${vs}`, () => load(championId, position, vs, queue));
   const [runeImport, setRuneImport] = useState<ImportState>({ status: "idle" });
@@ -165,7 +167,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
     if (run.length === 0) return;
     const forChampion = championId;
     void Promise.all(run.map(([, fn]) => fn())).then((outcomes) => {
-      const summary = importSummary(t, championName, Object.fromEntries(run.map(([kind], i) => [kind, outcomes[i]])));
+      const summary = importSummary(t, championName, Object.fromEntries(run.map(([kind], i) => [kind, outcomes[i]])), rankLabel(bracket, lang === "en" ? "en" : "tr"));
       toast(summary.kind, summary.message, { label: t("Build'i değiştir"), onClick: () => openChampion(forChampion, position, queue) });
     });
     // The import functions read the latest props through `actions`; only a new lock should rerun this.
@@ -329,7 +331,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           rate: percent(shown.winRate),
         })}
         {vs && !versus ? `. ${t("{opponent} eşleşmesi için yeterli maç yok; genel build gösteriliyor", { opponent: opponentName })}` : ""}{" "}
-        <DataBadge games={shown.games} winRate={shown.winRate} patches={build.patches} updatedAt={build.updatedAt} source={t("Vizier crawler, dereceli maçlar")} />
+        <DataBadge games={shown.games} winRate={shown.winRate} patches={build.patches} updatedAt={build.updatedAt} ranked source={t("Vizier crawler, dereceli maçlar")} />
       </p>
 
       <div className="build__save">

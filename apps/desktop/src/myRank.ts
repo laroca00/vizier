@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import { bracketForTier } from "@vizier/shared/brackets";
+import { bracketForTier, type Bracket } from "@vizier/shared/brackets";
 import type { LcuStatus } from "./lcu";
 import { setMyBracket } from "./rankChoice";
 
@@ -11,6 +11,27 @@ export type SoloRank = { tier: string; division: string };
  * setting which bracket "Benim rankım" means. Unranked, a closed client or a
  * failed read leave it unknown, and the stats fall back to Emerald+ with a note.
  */
+export function readMyBracket() {
+  return invoke<SoloRank | null>("my_rank").then((rank) => bracketForTier(rank?.tier));
+}
+
+/** The overlay has no client status of its own; it asks once while a game is running. */
+export function useOwnBracketInGame(active: boolean) {
+  const [own, setOwn] = useState<Bracket | null>(null);
+  useEffect(() => {
+    if (!active || !isTauri()) return;
+    let current = true;
+    readMyBracket().then(
+      (bracket) => current && setOwn(bracket),
+      () => current && setOwn(null),
+    );
+    return () => {
+      current = false;
+    };
+  }, [active]);
+  return own;
+}
+
 export function useMyRank(status: LcuStatus) {
   const connected = status.state === "connected";
   // A game ends or a lobby opens: the rank may have changed since the last look.

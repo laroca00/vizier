@@ -64,13 +64,13 @@ export function MatchupGuide({ championId, position, opponent, version }: Props)
             {standIn && counters.status === "done" && (
               <>
                 {" "}
-                <DataBadge games={standIn.games} winRate={standIn.winRate} patches={counters.value.patches} source={t("Vizier crawler, benzer rakiplere karşı toplanmış maçlar")} />
+                <DataBadge games={standIn.games} winRate={standIn.winRate} patches={counters.value.patches} ranked source={t("Vizier crawler, benzer rakiplere karşı toplanmış maçlar")} />
               </>
             )}
             {matchup && !standIn && counters.status === "done" && (
               <>
                 {" "}
-                <DataBadge games={matchup.games} winRate={matchup.winRate} patches={counters.value.patches} source={t("Vizier crawler, dereceli maçlar")} />
+                <DataBadge games={matchup.games} winRate={matchup.winRate} patches={counters.value.patches} ranked source={t("Vizier crawler, dereceli maçlar")} />
               </>
             )}
           </p>

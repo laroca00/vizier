@@ -40,9 +40,11 @@ import { MAYHEM } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { useSplash } from "../ui/Splash";
 import { Tabs } from "../ui/Tabs";
+import { RankChip } from "../ui/RankPicker";
 import { loadErrorMessage } from "../loadError";
 import { ErrorState } from "../ui/States";
 import { useAsync } from "../useAsync";
+import { useDraftRankScope } from "../rank";
 import { useOnline } from "../useOnline";
 import "./ChampSelectPage.css";
 // After the page's base styles, which it adjusts.
@@ -66,6 +68,7 @@ function useSecondsLeft(endsAt: number) {
 
 export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const t = useT();
+  useDraftRankScope();
   const matchupTemplate = useMatchupTemplate();
   const lang = useLang();
   const [data, retryStatic] = useAsync("static", loadStatic);
@@ -137,6 +140,7 @@ export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
     <LiquidGlass className="panel draft" radius={28} strength={2.5} scroll>
       <header className="draft__header enter">
         <h1 className="draft__title">{t("Şampiyon seçimi")}</h1>
+        <RankChip />
         <Tabs
           items={[
             { id: "draft" as DraftView, label: t("Draft") },

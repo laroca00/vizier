@@ -26,6 +26,9 @@ import {
 } from "./live";
 import { skillSequence } from "../SkillGrid";
 import { benchRead, expectedAt, pushHistory, BENCH_END_MINUTE } from "./bench";
+import { pickBench } from "./benchRank";
+import { BRACKET_LABELS } from "@vizier/shared/brackets";
+import { useOwnBracketInGame } from "../myRank";
 import { rootVars, widgetVars } from "./appearance";
 import { GRID, ROW_GAP, snapSpot, useLayout, type ScreenSize } from "./layout";
 import { modeOf, widgetsFor, type Spot, type WidgetId } from "./registry";
@@ -161,8 +164,17 @@ export function Overlay() {
   const [augmentNames] = useAsync(wantAugments ? `augment-info:${lang}` : null, () => augmentInfo(lang));
 
   const wantBench = settings.overlayBench && mode === "rift" && championId !== null && position !== null && time / 60 <= BENCH_END_MINUTE;
-  const [benchDoc] = useAsync(wantBench ? `bench:${championId}:${position}` : null, () => getBench(championId!, position!).catch(() => null));
-  const expected = wantBench && benchDoc.status === "done" && benchDoc.value ? expectedAt(benchDoc.value.minutes, time / 60) : null;
+  // The benchmark is against the player's own bracket when it has the games, else Emerald+.
+  const ownBracket = useOwnBracketInGame(wantBench);
+  const [benchDocs] = useAsync(wantBench ? `bench:${championId}:${position}:${ownBracket}` : null, async () => {
+    const [own, fallback] = await Promise.all([
+      ownBracket && ownBracket !== "emerald_plus" ? getBench(championId!, position!, ownBracket).catch(() => null) : null,
+      getBench(championId!, position!, "emerald_plus").catch(() => null),
+    ]);
+    return pickBench(ownBracket, own, fallback);
+  });
+  const benchDoc = benchDocs.status === "done" ? benchDocs.value : null;
+  const expected = wantBench && benchDoc ? expectedAt(benchDoc.doc.minutes, time / 60) : null;
   const benchNow = expected && me ? benchRead(
         {
           cs: me.scores.creepScore,
@@ -328,7 +340,7 @@ export function Overlay() {
     minimap: { box: minimapBox(size, settings.overlayMinimapSide, settings.overlayMinimapSize), campSide: settings.overlayCampSide },
     itemGold,
     nextItem: next,
-    bench: benchNow ? { read: benchNow, history: csHistory.map((p) => p.diff) } : null,
+    bench: benchNow ? { read: benchNow, history: csHistory.map((p) => p.diff), bracketLabel: BRACKET_LABELS[benchDoc?.bracket ?? "emerald_plus"][lang === "en" ? "en" : "tr"] } : null,
     rows,
     buildPanel: {
       shown: buildOpen || editing,

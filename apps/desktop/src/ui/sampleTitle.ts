@@ -8,12 +8,13 @@ type Translate = (text: string, params?: Record<string, string | number>) => str
 export function sampleTitle(
   t: Translate,
   lang: Lang,
-  sample: { games: number; winRate: number; patches?: string[]; updatedAt?: number },
+  sample: { games: number; winRate: number; patches?: string[]; updatedAt?: number; bracket?: string },
   source?: string,
 ): string {
   const { low, high } = wilson(sample.winRate, sample.games);
   return [
     source,
+    sample.bracket ? t("Rank: {rank}", { rank: sample.bracket }) : null,
     sample.patches && sample.patches.length > 0 ? t("Yama {patch}", { patch: sample.patches.join(", ") }) : null,
     t("{games} maç", { games: sample.games }),
     ageText(t, sample.updatedAt),

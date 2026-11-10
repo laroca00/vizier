@@ -5,7 +5,7 @@ import type { AutopilotMode } from "./autopilot";
 import type { LanguageSetting } from "./i18n";
 import { DEFAULT_REF, type RefSection } from "./overlay/reference";
 import { DEFAULT_BRACKET } from "@vizier/shared/brackets";
-import { sanitizeRank, setRankChoice, type RankChoice } from "./rankChoice";
+import { sanitizeRank, sanitizeRegion, setDraftOwnRank, setRankChoice, setRegionChoice, type RankChoice, type RegionChoice } from "./rankChoice";
 import type { OverlayTheme, WidgetStyles } from "./overlay/appearance";
 
 export type Settings = {
@@ -89,6 +89,10 @@ export type Settings = {
   welcomeSeen: boolean;
   /** Which rank bracket the crawler stats show; "mine" follows the player's own rank. */
   rank: RankChoice;
+  /** In champ select the stats are read for the player's own rank, whatever the filter says. */
+  champSelectOwnRank: boolean;
+  /** Which region the tier list and champion overview count; "all" pools TR, EUW and KR. */
+  region: RegionChoice;
 };
 
 const DEFAULTS: Settings = {
@@ -138,6 +142,8 @@ const DEFAULTS: Settings = {
   navFolded: [],
   welcomeSeen: false,
   rank: DEFAULT_BRACKET,
+  champSelectOwnRank: true,
+  region: "all",
 };
 
 const KEY = "vizier.settings";
@@ -156,7 +162,7 @@ function read(): Settings {
       }
       localStorage.setItem(AUTO_IMPORT_KEY, "1");
     }
-    return { ...DEFAULTS, ...stored, rank: sanitizeRank(stored.rank) };
+    return { ...DEFAULTS, ...stored, rank: sanitizeRank(stored.rank), region: sanitizeRegion(stored.region) };
   } catch {
     return DEFAULTS;
   }
@@ -164,6 +170,8 @@ function read(): Settings {
 
 let current = read();
 setRankChoice(current.rank);
+setDraftOwnRank(current.champSelectOwnRank);
+setRegionChoice(current.region);
 
 // The overlay is a second window on the same origin; this keeps it in step
 // with changes made on the settings page.
@@ -171,6 +179,8 @@ window.addEventListener("storage", (event) => {
   if (event.key !== KEY) return;
   current = read();
   setRankChoice(current.rank);
+  setDraftOwnRank(current.champSelectOwnRank);
+  setRegionChoice(current.region);
   for (const listener of listeners) listener();
 });
 
@@ -181,6 +191,8 @@ export function getSettings(): Settings {
 export function updateSettings(patch: Partial<Settings>) {
   current = { ...current, ...patch };
   setRankChoice(current.rank);
+  setDraftOwnRank(current.champSelectOwnRank);
+  setRegionChoice(current.region);
   try {
     localStorage.setItem(KEY, JSON.stringify(current));
   } catch {
