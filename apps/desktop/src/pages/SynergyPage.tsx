@@ -126,6 +126,7 @@ function Partners({
             winRate={sample.reduce((s, r) => s + r.data!.winRate * r.data!.games, 0) / badgeRows}
             patches={meta.patches}
             updatedAt={meta.updatedAt}
+            ranked
             source={t("Ortaklık verisi")}
           />
         )}{" "}

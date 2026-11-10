@@ -329,7 +329,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
           rate: percent(shown.winRate),
         })}
         {vs && !versus ? `. ${t("{opponent} eşleşmesi için yeterli maç yok; genel build gösteriliyor", { opponent: opponentName })}` : ""}{" "}
-        <DataBadge games={shown.games} winRate={shown.winRate} patches={build.patches} updatedAt={build.updatedAt} source={t("Vizier crawler, dereceli maçlar")} />
+        <DataBadge games={shown.games} winRate={shown.winRate} patches={build.patches} updatedAt={build.updatedAt} ranked source={t("Vizier crawler, dereceli maçlar")} />
       </p>
 
       <div className="build__save">

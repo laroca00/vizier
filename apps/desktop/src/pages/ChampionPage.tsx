@@ -1,5 +1,5 @@
 import { RankPicker } from "../ui/RankPicker";
-import { useBracket } from "../rank";
+import { rankLabel, useBracket } from "../rank";
 import { BuildEvolution } from "../patches/BuildEvolutionView";
 import { ChampionHistory } from "../patches/ChampionHistory";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
@@ -90,13 +90,14 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
           {champion && <ChampionTitle champion={champion} />}
           {state.status === "done" && state.value && (
             <p className="detail__meta">
-              {t("Yama {patch}, Emerald+ {scope}, {games} maç", {
+              {t("Yama {patch}, {rank} {scope}, {games} maç", {
+                rank: rankLabel(bracket, lang === "en" ? "en" : "tr"),
                 patch: state.value.patches[0],
                 scope: queue === RANKED ? t(POSITIONS[state.value.position ?? ""] ?? "").toLocaleLowerCase(lang) : queueLabel,
                 games: state.value.games,
               })}
               {" "}
-              <DataBadge games={state.value.games} winRate={state.value.winRate} patches={state.value.patches} updatedAt={state.value.updatedAt} source={t("Vizier crawler, dereceli maçlar")} />
+              <DataBadge games={state.value.games} winRate={state.value.winRate} patches={state.value.patches} updatedAt={state.value.updatedAt} ranked source={t("Vizier crawler, dereceli maçlar")} />
             </p>
           )}
           <Tabs className="champion__queues" size="small" label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
@@ -415,7 +416,7 @@ function Matchups({ counters, champions, version, onOpenChampion, championId, po
     <div key={group.title} className="matchups">
       <h2 className="draft__heading">{t(group.title)}</h2>
       <p className="section-badge">
-        <DataBadge {...pooled(group.list)} patches={counters.patches} updatedAt={counters.updatedAt} source={t("Vizier crawler, dereceli maçlar")} />
+        <DataBadge {...pooled(group.list)} patches={counters.patches} updatedAt={counters.updatedAt} ranked source={t("Vizier crawler, dereceli maçlar")} />
       </p>
       <ul className="matchups__list">
         {group.list.map((m, i) => {
@@ -507,7 +508,7 @@ function AllyList({
     <section className="matchups" aria-label={t("Takım arkadaşları")}>
       <h2 className="draft__heading">{t("En iyi anlaştığı takım arkadaşları")}</h2>
       <p className="section-badge">
-        <DataBadge {...pooled(groups.flatMap((g) => g.allies))} patches={state.value.patches} updatedAt={state.value.updatedAt} source={t("Vizier crawler, dereceli maçlar")} />
+        <DataBadge {...pooled(groups.flatMap((g) => g.allies))} patches={state.value.patches} updatedAt={state.value.updatedAt} ranked source={t("Vizier crawler, dereceli maçlar")} />
       </p>
       {groups.map((group) => (
         <div key={group.position}>

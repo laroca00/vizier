@@ -14,7 +14,7 @@ import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
 import { RankPicker } from "../ui/RankPicker";
 import { Tabs } from "../ui/Tabs";
-import { useBracket } from "../rank";
+import { rankLabel, useBracket } from "../rank";
 import { SearchInput, Toggle } from "../ui/Fields";
 import { changeText, trendOf } from "./trend";
 import { DEFAULT_TIER_VIEW, isThin, THIN_GAMES, viewTiers, type TierColumn, type TierSort, type TierView } from "./tierSort";
@@ -97,7 +97,7 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
             <Tabs label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />
             {ranked && <RankPicker />}
             {state.status === "done" && state.value.list.champions.length > 0 && (
-              <DataBadge {...pooled(state.value.list.champions)} patches={state.value.list.patches} updatedAt={state.value.list.updatedAt} source={t("Vizier crawler, dereceli maçlar")} />
+              <DataBadge {...pooled(state.value.list.champions)} patches={state.value.list.patches} updatedAt={state.value.list.updatedAt} ranked source={t("Vizier crawler, dereceli maçlar")} />
             )}
             {state.status === "done" && <TierRuleInfo list={state.value.list} />}
           </>
@@ -238,11 +238,15 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
                           >
                             {champion && <img src={championIconUrl(state.value.version, champion.id)} alt="" width={26} height={26} />}
                             {champion?.name ?? c.championId}
-                            {isThin(c) && <span className="tiers__thin">{t("az maç")}</span>}
+                            {isThin(c) && (
+                              <span className="tiers__thin" title={t("{rank} rankında az maç var", { rank: rankLabel(bracket, lang === "en" ? "en" : "tr") })}>
+                                {t("az maç")}
+                              </span>
+                            )}
                             {mine && <span className="tiers__mine">{mine === "pool" ? t("Havuzunda") : t("Favori")}</span>}
                           </button>
                         </td>
-                        <td title={sampleTitle(t, lang, { ...c, patches: state.value.list.patches, updatedAt: state.value.list.updatedAt })}>{percent(c.winRate)}</td>
+                        <td title={sampleTitle(t, lang, { ...c, bracket: rankLabel(bracket, lang === "en" ? "en" : "tr"), patches: state.value.list.patches, updatedAt: state.value.list.updatedAt })}>{percent(c.winRate)}</td>
                         <td className="tiers__change" data-trend={trendOf(c.winRateChange) ?? undefined}
                           title={c.winRateChange == null ? t("Önceki yamada yeterli maç yok.") : t("Önceki yamaya göre {change} puan", { change: signed(c.winRateChange) })}
                         >

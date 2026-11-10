@@ -17,6 +17,7 @@ import { POSITIONS } from "../labels";
 import { matchupNoteKey, noteMatchupOpened } from "../personal";
 import { Button } from "../ui/Button";
 import { Select } from "../ui/Fields";
+import { RankPicker } from "../ui/RankPicker";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { FavouriteButton } from "../workspace/FavouriteButton";
 import { PageHeader } from "../ui/Page";
@@ -81,7 +82,7 @@ export function MatchupPage({ route, onChange }: { route: MatchupRoute; onChange
 
   return (
     <LiquidGlass className="panel tiers matchup-page" radius={28} strength={2.5} scroll>
-      <PageHeader title={t("Eşleşme çalışması")} subtitle={t("İki şampiyonun bir rolde karşılaşmasını oyundan önce incele.")} />
+      <PageHeader title={t("Eşleşme çalışması")} subtitle={t("İki şampiyonun bir rolde karşılaşmasını oyundan önce incele.")} toolbar={<RankPicker />} />
       {data.status === "error" ? (
         <ErrorState message={t(loadErrorMessage(data.error, online))} onRetry={retry} />
       ) : data.status !== "done" ? (

@@ -124,6 +124,8 @@ export const EN: Record<string, string> = {
   "Ligler ve maç sayıları": "Ranks and game counts",
   "Yama {patch}, dereceli tek/çift maçları": "Patch {patch}, ranked solo/duo games",
   "Lig": "Rank",
+  "Rank: {rank}": "Rank: {rank}",
+  "{rank} rankında az maç var": "Few games at {rank}",
   "Benim rankım": "My rank",
   "Rankın bilinmiyor, Zümrüt+ gösteriliyor": "Your rank is unknown, showing Emerald+",
   "Zaman çizelgeli": "With timeline",
@@ -464,7 +466,7 @@ export const EN: Record<string, string> = {
   "Seçim bekleniyor": "Waiting for a pick",
 
   // Champion page
-  "Yama {patch}, Emerald+ {scope}, {games} maç": "Patch {patch}, Emerald+ {scope}, {games} games",
+  "Yama {patch}, {rank} {scope}, {games} maç": "Patch {patch}, {rank} {scope}, {games} games",
   "Oyun modu": "Game mode",
   "Şampiyon istatistikleri alınamadı. Vizier sunucusuna şu an ulaşılamıyor.": "Couldn't load champion stats. The Vizier server can't be reached right now.",
   "{champion} için {mode} modunda henüz yeterli maç yok. Vizier her gün daha fazla maç topluyor.":
