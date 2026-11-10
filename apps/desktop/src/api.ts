@@ -192,6 +192,8 @@ export type ChampionOverview = {
     paths: { side: "top" | "bot"; lane: "top" | "mid" | "bot" | "none"; games: number; winRate: number }[];
     gank: { games: number; medianMinute: number } | null;
   };
+  /** How often the team took each first objective (d dragon, g grubs, h herald, t tower, c first blood) against the role. */
+  objectives?: { games: number; rates: { key: string; games: number; rate: number; winRate: number; roleRate: number }[] };
 };
 
 /** Null when Vizier has no games for the champion yet. */

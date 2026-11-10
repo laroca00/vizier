@@ -70,7 +70,11 @@ export type Match = {
     gameStartTimestamp: number;
     gameDuration: number;
     participants: Participant[];
-    teams?: { teamId: number; bans?: { championId: number; pickTurn: number }[] }[];
+    teams?: {
+      teamId: number;
+      bans?: { championId: number; pickTurn: number }[];
+      objectives?: Partial<Record<"dragon" | "horde" | "riftHerald" | "tower" | "champion", { first: boolean; kills: number }>>;
+    }[];
   };
 };
 

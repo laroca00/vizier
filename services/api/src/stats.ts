@@ -220,7 +220,46 @@ export type ChampionOverview = {
   lengths?: { bucket: number; games: number; winRate: number }[];
   /** Jungle only: how the first minutes went. Missing for other roles and before timelines were read for it. */
   jungle?: JungleRoutes;
+  /** How often the champion's team took each first objective, against the role's average. Missing before games carried it. */
+  objectives?: ObjectiveRates;
 };
+
+export type ObjectiveRates = {
+  /** Games that carried objective data. */
+  games: number;
+  /** `key` is d dragon, g grubs, h herald, t tower, c first blood; `games` is where the team took it first. */
+  rates: { key: string; games: number; rate: number; winRate: number; roleRate: number }[];
+};
+
+const MIN_OBJECTIVE_GAMES = 30;
+const OBJECTIVES = ["d", "g", "h", "t", "c"];
+
+async function objectiveRates(db: D1Database, patches: string[], championId: number, position: string, bracket: Where): Promise<ObjectiveRates | null> {
+  const read = async (champion: boolean) => {
+    const { results } = await db
+      .prepare(
+        `SELECT kind, value, SUM(games) AS games, SUM(wins) AS wins FROM ${scope("stat_counts", bracket)}
+          WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ${RANKED} AND kind IN ('obj', 'obj-games')
+            ${champion ? "AND champion_id = ?" : ""}
+          GROUP BY kind, value`,
+      )
+      .bind(...patches, position, ...(champion ? [championId] : []))
+      .all<{ kind: string; value: string; games: number; wins: number }>();
+    return { total: results.find((r) => r.kind === "obj-games")?.games ?? 0, by: new Map(results.filter((r) => r.kind === "obj").map((r) => [r.value, r])) };
+  };
+  const own = await read(true);
+  if (own.total < MIN_OBJECTIVE_GAMES) return null;
+  const role = await read(false);
+  return {
+    games: own.total,
+    rates: OBJECTIVES.flatMap((key) => {
+      const mine = own.by.get(key);
+      const all = role.by.get(key);
+      if (!all || role.total === 0) return [];
+      return [{ key, games: mine?.games ?? 0, rate: round3((mine?.games ?? 0) / own.total), winRate: mine ? round3(mine.wins / mine.games) : 0, roleRate: round3(all.games / role.total) }];
+    }),
+  };
+}
 
 export type JungleRoutes = {
   /** Games with a route; the share of every path is out of these. */
@@ -312,6 +351,7 @@ export async function championOverview(
   const wins = byPatch.reduce((sum, p) => sum + p.wins, 0);
 
   const lengths = ranked ? await lengthRows(db, patches, championId, used, bracket) : [];
+  const objectives = ranked && used ? await objectiveRates(db, patches, championId, used, bracket) : null;
   const jungle = ranked && used === "JUNGLE" ? await jungleRoutes(db, patches, championId, bracket) : null;
   return {
     patches,
@@ -325,6 +365,7 @@ export async function championOverview(
     banRate: ranked ? banRateOf(await poolBans(db, patches, bracket), championId) : null,
     ...(lengths.length > 0 ? { lengths } : {}),
     ...(jungle ? { jungle } : {}),
+    ...(objectives && objectives.rates.length > 0 ? { objectives } : {}),
   };
 }
 

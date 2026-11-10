@@ -44,6 +44,7 @@ type Raw = {
   rank_group: string | null;
   duration: number | null;
   jungle_path: string | null;
+  objectives: string | null;
 };
 
 /** Game lengths are counted in five buckets: under 20, 20 to 25, 25 to 30, 30 to 35 and 35 minutes or more. */
@@ -250,7 +251,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const { results } = await db
       .prepare(
         `SELECT rowid, match_id, patch, queue_id, team_position, champion_id, win, runes, spells, items, start_items,
-            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, duration, jungle_path
+            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, duration, jungle_path, objectives
           FROM participant_stats WHERE rowid > ? ORDER BY rowid LIMIT ?`,
       )
       .bind(from, CHUNK)
@@ -282,6 +283,11 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       if (route) {
         tally.add(row, "jpath", `${route.side}|${route.lane}`, row.win);
         tally.add(row, "jgank", route.gankMinute === null ? "none" : String(route.gankMinute), row.win);
+      }
+      // Which objectives the team took first: obj-games is the denominator, obj counts the games it took each.
+      if (row.queue_id === RANKED_SOLO && row.objectives !== null) {
+        tally.add(row, "obj-games", "", row.win);
+        for (const letter of row.objectives) tally.add(row, "obj", letter, row.win);
       }
       const choices = buildChoices(row, catalog.finished);
       addItemTimes(itemTimes, row, catalog.finished);
