@@ -88,6 +88,8 @@ describe("champion pages", () => {
     // Pick rate is per match: Ahri is in every one of these.
     expect(overview).toMatchObject({ position: "MIDDLE", games: 20, winRate: 0.5, pickRate: 1, winRateChange: 0.2 });
     expect(overview?.positions).toEqual([{ position: "MIDDLE", games: 20, share: 1 }]);
+    // Newest patch first, each with its own games.
+    expect(overview?.patchRates?.map((p) => [p.games, p.winRate])).toEqual([[10, 0.6], [10, 0.4]]);
     expect(await championOverview(db, 1, null)).toBeNull();
   });
 

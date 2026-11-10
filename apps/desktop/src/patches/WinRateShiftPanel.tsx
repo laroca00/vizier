@@ -10,10 +10,15 @@ function Shift({ championId }: { championId: number }) {
   const [state] = useAsync(`shift:${championId}`, () => getChampion(championId, null));
   if (state.status === "loading" || state.status === "idle") return <span className="build__stat">{t("Kazanma oranı yükleniyor")}</span>;
   const shift = state.status === "done" ? winRateShift(state.value) : null;
-  if (!shift) return <span className="build__stat">{t("Kazanma oranı farkı için yeterli maç yok")}</span>;
+  if (!shift) return <span className="build__stat">{t("Yeni yamada henüz yeterli maç yok")}</span>;
   return (
     <span className="build__stat">
-      {t("Kazanma oranı: {before} → {after}, son yama {games} maç", { before: formatPercent(shift.before, lang, 1), after: formatPercent(shift.after, lang, 1), games: shift.games })}
+      {t("Kazanma oranı: {before} ({beforeGames} maç) → {after} ({afterGames} maç)", {
+        before: formatPercent(shift.before, lang, 1),
+        after: formatPercent(shift.after, lang, 1),
+        beforeGames: shift.beforeGames.toLocaleString(),
+        afterGames: shift.afterGames.toLocaleString(),
+      })}
     </span>
   );
 }

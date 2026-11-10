@@ -213,6 +213,8 @@ export type ChampionOverview = {
   winRateChange: number | null;
   /** Share of ranked games the champion was banned in; null outside ranked. */
   banRate: number | null;
+  /** Games and win rate on each of the two newest patches, newest first; only patches with games. Missing before this field existed. */
+  patchRates?: { patch: string; games: number; winRate: number }[];
   /**
    * Games and win rate by game length, in buckets 0 to 4 (under 20, 20 to 25, 25 to 30, 30 to 35, 35+ minutes).
    * Only buckets with games are listed; missing outside ranked, in region views and for docs older than it.
@@ -350,6 +352,10 @@ export async function championOverview(
   const games = byPatch.reduce((sum, p) => sum + p.games, 0);
   const wins = byPatch.reduce((sum, p) => sum + p.wins, 0);
 
+  const patchRates = patches.flatMap((patch) => {
+    const p = byPatch.find((row) => row.patch === patch);
+    return p && p.games > 0 ? [{ patch, games: p.games, winRate: round3(p.wins / p.games) }] : [];
+  });
   const lengths = ranked ? await lengthRows(db, patches, championId, used, bracket) : [];
   const objectives = ranked && used ? await objectiveRates(db, patches, championId, used, bracket) : null;
   const jungle = ranked && used === "JUNGLE" ? await jungleRoutes(db, patches, championId, bracket) : null;
@@ -363,6 +369,7 @@ export async function championOverview(
     tier: entry?.tier ?? null,
     winRateChange: patchChange(patches, new Map(byPatch.map((p) => [p.patch, p]))),
     banRate: ranked ? banRateOf(await poolBans(db, patches, bracket), championId) : null,
+    ...(patchRates.length > 0 ? { patchRates } : {}),
     ...(lengths.length > 0 ? { lengths } : {}),
     ...(jungle ? { jungle } : {}),
     ...(objectives && objectives.rates.length > 0 ? { objectives } : {}),

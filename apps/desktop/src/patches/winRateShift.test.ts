@@ -1,17 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { winRateShift } from "./winRateShift";
 
+const rate = (patch: string, games: number, winRate: number) => ({ patch, games, winRate });
+
 describe("winRateShift", () => {
-  it("derives the old win rate from the change", () => {
-    const shift = winRateShift({ winRate: 0.52, winRateChange: 0.015, games: 400 })!;
-    expect(shift.before).toBeCloseTo(0.505);
-    expect(shift.after).toBe(0.52);
-    expect(shift.games).toBe(400);
+  it("reads each patch with its own games", () => {
+    const shift = winRateShift({ patchRates: [rate("16.22", 900, 0.52), rate("16.21", 1200, 0.5)] })!;
+    expect(shift).toMatchObject({ before: 0.5, after: 0.52, beforeGames: 1200, afterGames: 900, beforePatch: "16.21", afterPatch: "16.22" });
   });
 
-  it("stays quiet without a change or with few games", () => {
-    expect(winRateShift({ winRate: 0.5, winRateChange: null, games: 900 })).toBeNull();
-    expect(winRateShift({ winRate: 0.5, winRateChange: 0.01, games: 40 })).toBeNull();
+  it("waits until the new patch has enough games", () => {
+    expect(winRateShift({ patchRates: [rate("16.22", 40, 0.6), rate("16.21", 1200, 0.5)] })).toBeNull();
+  });
+
+  it("stays quiet with one patch, no per-patch rates or no overview", () => {
+    expect(winRateShift({ patchRates: [rate("16.22", 900, 0.5)] })).toBeNull();
+    expect(winRateShift({})).toBeNull();
     expect(winRateShift(null)).toBeNull();
   });
 });

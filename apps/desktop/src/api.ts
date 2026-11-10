@@ -194,6 +194,8 @@ export type ChampionOverview = {
   winRateChange: number | null;
   /** Null outside ranked or before enough ranked games. */
   banRate: number | null;
+  /** Games and win rate on each of the two newest patches, newest first; missing on servers that predate it. */
+  patchRates?: { patch: string; games: number; winRate: number }[];
   /** Games and win rate by game length (see data/lengthStats); missing before the crawler counted them and in region views. */
   lengths?: { bucket: number; games: number; winRate: number }[];
   /** Jungle only: the first camps' side with the first lane, and the first gank minute. */
