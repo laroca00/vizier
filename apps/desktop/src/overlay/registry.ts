@@ -127,7 +127,7 @@ export const WIDGETS: readonly WidgetDef[] = [
     settings: ["overlayDragons"],
   },
   { id: "items", name: "Eşya altını farkı", hint: "Koridor rakibine ve rakip takıma göre eşyalarına harcanan altın.", modes: MODES, settings: ["overlayItems"] },
-  { id: "bench", name: "Karşılaştırma", hint: "İlk 15 dakikada minyon, seviye, K/D/A ve kill katılımın, aynı şampiyon ve rolün Emerald+ ortalamasıyla (veri yeterliyse).", modes: ["rift"], settings: ["overlayBench"] },
+  { id: "bench", name: "Karşılaştırma", hint: "İlk 15 dakikada minyon, seviye, K/D/A ve kill katılımın, aynı şampiyon ve rolün, kendi rankındaki (maç yetmezse Emerald+) ortalamasıyla.", modes: ["rift"], settings: ["overlayBench"] },
   { id: "augments", name: "Augment önerisi", hint: "Arena ve Şamata'da şampiyonunun her nadirlikteki en iyi augment'leri.", modes: ["arena", "mayhem"], settings: ["overlayAugments"] },
   {
     id: "scoreboard",

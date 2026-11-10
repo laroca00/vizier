@@ -46,7 +46,7 @@ export type WidgetContext = {
   reference: { shown: boolean; sections: RefSection[]; combos: Combo[]; note: { text: string; matchup: boolean } | null; opponent: string | null; lang: "tr" | "en" };
   rowGap: number;
   /** Your CS and level against the average, with the CS gap over time; null without data or after minute 15. */
-  bench: { read: BenchRead; history: number[] } | null;
+  bench: { read: BenchRead; history: number[]; bracketLabel: string } | null;
   augments: AugmentGroup[];
   /** Patches the augment numbers come from, for the confidence read. */
   augmentPatches: string[];

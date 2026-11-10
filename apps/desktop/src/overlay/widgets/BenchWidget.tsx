@@ -35,7 +35,12 @@ export function BenchWidget({ t, bench, me }: WidgetContext) {
           <polyline points={line} fill="none" stroke="currentColor" strokeWidth="1.5" />
         </svg>
       )}
-      <p className="overlay__caption">{t("{games} maçın ortalaması", { games: Math.min(read.games, read.kda?.games ?? Infinity, read.kp?.games ?? Infinity) })}</p>
+      <p className="overlay__caption">
+        {t("{games} maçın ortalaması, {rank}", {
+          games: Math.min(read.games, read.kda?.games ?? Infinity, read.kp?.games ?? Infinity),
+          rank: bench.bracketLabel,
+        })}
+      </p>
     </section>
   );
 }

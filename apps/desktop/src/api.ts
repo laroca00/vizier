@@ -368,8 +368,9 @@ export function getScout(platform: string, asks: { puuid: string; championId: nu
 export type BenchMinute = { minute: number; games: number; cs: number; level: number; kdaGames?: number; kills?: number; deaths?: number; assists?: number; killParticipation?: number };
 
 /** Average CS and level of ranked games at a few minutes; empty until enough timelines were crawled. */
-export function getBench(championId: number, position: string) {
-  return get<{ minutes: BenchMinute[] }>(`/v1/champions/${championId}/bench?position=${position}`);
+export function getBench(championId: number, position: string, bracket?: string) {
+  // An explicit rank is always sent, even Emerald+, so a window with another filter cannot change which one it asks for.
+  return get<{ minutes: BenchMinute[] }>(`/v1/champions/${championId}/bench?position=${position}${bracket ? `&rank=${bracket}` : ""}`);
 }
 
 export type CoverageDoc = {
