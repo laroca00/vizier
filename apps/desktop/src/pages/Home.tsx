@@ -4,6 +4,7 @@ import { greeting } from "../home/greeting";
 import { DailyComboCard } from "../home/DailyComboCard";
 import { HomeEditor } from "../home/HomeEditor";
 import { homeOrderFor, normalizeHome, type HomeCard } from "../home/layout";
+import { PoolNotices } from "../home/PoolNotices";
 import { QueueView } from "../home/QueueView";
 import { flowOf, inQueueFlow, type Lobby } from "../clientFlow";
 import { FavouritesCard, QuickLinksCard, ResumeCard } from "../home/Resume";
@@ -102,6 +103,7 @@ export function Home({ lcu, lobby = null, draftActive, onOpenChampion, onNavigat
           <section aria-labelledby="home-pool">
             <h2 id="home-pool" className="section-title">{t("Şampiyon havuzun")}</h2>
             {pool.length > 0 && data.status === "done" ? (
+              <>
               <div className="home__champions">
                 {pool.map((c) => {
                   const pick = personal.pool.find((p) => p.championId === c.key);
@@ -116,6 +118,8 @@ export function Home({ lcu, lobby = null, draftActive, onOpenChampion, onNavigat
                   );
                 })}
               </div>
+              <PoolNotices champions={data.value.champions} />
+              </>
             ) : (
               <p className="state__text">{t("Bir şampiyonun sayfasında \"Havuzuna ekle\"ye basınca burada ve şampiyon seçiminde görünür.")}</p>
             )}

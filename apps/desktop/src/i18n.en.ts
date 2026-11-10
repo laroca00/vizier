@@ -1998,4 +1998,6 @@ export const EN: Record<string, string> = {
   "Yama içinde net bir değişim yok. Yeterli maç birikince burada görünür.": "No clear change within the patch yet. It shows here once there are enough games.",
   "Yamanın ilk günlerindeki maçlarla sonradan eklenen maçlar karşılaştırılır; yalnızca aralıkları ayrışan değişimler gösterilir.": "Games from the first days of the patch are compared with the games added since; only changes whose intervals do not overlap are shown.",
   "{early} → {later}; {earlyGames} ve {laterGames} maç": "{early} → {later}; {earlyGames} and {laterGames} games",
+  "{champion} {rank} rankında yükseldi: {before} → {after} ({beforeGames} ve {afterGames} maç)": "{champion} rose in {rank}: {before} → {after} ({beforeGames} and {afterGames} games)",
+  "{champion} {rank} rankında düştü: {before} → {after} ({beforeGames} ve {afterGames} maç)": "{champion} fell in {rank}: {before} → {after} ({beforeGames} and {afterGames} games)",
 };
