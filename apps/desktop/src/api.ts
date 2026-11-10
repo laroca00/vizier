@@ -174,6 +174,8 @@ export type TierEntry = {
   pickRateChange?: number | null;
   /** Games and win rate on the two newest patches, newest first; absent on servers that predate it. */
   byPatch?: { patch: string; games: number; winRate: number }[];
+  /** ARAM only: win rate in games under 25 minutes against 30 or more, when both sides have enough games. */
+  lengthSides?: { short: { games: number; winRate: number }; long: { games: number; winRate: number } };
 };
 /** The numbers behind a tier; absent on servers that predate it. */
 export type TierRule = { priorGames: number; presenceWeight: number; listGames: number; tierGames: number; cuts: { tier: string; score: number }[] };
@@ -415,6 +417,9 @@ export type CoverageDoc = {
   status?: { bracket: string; lastPublishAt: number | null; held: string[] }[];
   /** Ranked games played in the 24 hours before the doc was made. */
   gamesToday?: number;
+  /** Counted mode games per UTC day over the last two weeks, and the mode players followed per tier group; missing in older docs. */
+  modeDays?: { day: string; queue: number; games: number }[];
+  modeGroups?: { group: string | null; players: number }[];
 };
 
 /** What the stats stand on: games per patch, rank bracket and platform. */

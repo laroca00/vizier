@@ -217,3 +217,11 @@
 .home__row img {
   border-radius: 6px;
 }
+
+.home__notices {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}

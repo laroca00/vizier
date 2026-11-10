@@ -148,6 +148,8 @@ export function localSchema(sqlite: DatabaseSync) {
   addColumn(sqlite, "participant_stats", "assists", "INTEGER");
   // A salted one-way key of the player, so games of people who play a champion a lot can be told apart. No name or puuid is kept.
   addColumn(sqlite, "participant_stats", "player_key", "TEXT");
+  // The tier group of the game a mode player was found in, so mode checks spread over every rank; null for earlier rows.
+  addColumn(sqlite, "mode_players", "rank_group", "TEXT");
   sqlite.exec(`CREATE TABLE IF NOT EXISTS player_champs (
     player_key TEXT NOT NULL, patch TEXT NOT NULL, champion_id INTEGER NOT NULL, games INTEGER NOT NULL,
     PRIMARY KEY (player_key, patch, champion_id)

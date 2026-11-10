@@ -24,9 +24,13 @@ export type Coverage = {
   status?: { bracket: Bracket; lastPublishAt: number | null; held: string[] }[];
   /** Ranked games played in the 24 hours before this doc was made. */
   gamesToday?: number;
+  /** Counted ARAM, Mayhem and Arena games per UTC day over the last two weeks, and the mode players followed per tier group; absent in older docs. */
+  modeDays?: { day: string; queue: number; games: number }[];
+  modeGroups?: { group: TierGroup | null; players: number }[];
   timelineBrackets?: { patch: string; queue: number; bracket: Bracket; players: number; withTimeline: number; share: number | null }[];
 };
 
+const MODE_DAYS = 14;
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 /**
@@ -100,10 +104,25 @@ export async function coverage(db: D1Database, now = Date.now()): Promise<Covera
     .bind(420, now - 24 * 3_600_000)
     .first<{ games: number }>()
     .catch(() => null);
+  const since = now - MODE_DAYS * 86_400_000;
+  const modeDays = await db
+    .prepare(
+      `SELECT strftime('%Y-%m-%d', game_start / 1000, 'unixepoch') AS day, queue_id AS queue, COUNT(*) AS games
+        FROM crawled_matches WHERE queue_id != 420 AND dropped IS NULL AND game_start >= ? GROUP BY day, queue_id ORDER BY day DESC, queue_id`,
+    )
+    .bind(since)
+    .all<{ day: string; queue: number; games: number }>()
+    .catch(() => ({ results: [] }));
+  const modeGroups = await db
+    .prepare("SELECT rank_group AS grp, COUNT(*) AS players FROM mode_players GROUP BY rank_group")
+    .all<{ grp: TierGroup | null; players: number }>()
+    .catch(() => ({ results: [] }));
   return {
     patches,
     ...(status ? { status } : {}),
     ...(today ? { gamesToday: today.games } : {}),
+    modeDays: modeDays.results,
+    modeGroups: modeGroups.results.map((r) => ({ group: r.grp, players: r.players })),
     roleFixed: fixedRows.results.filter((r) => keep.has(r.patch)),
     dropped: droppedRows.results.filter((r) => keep.has(r.patch)).sort((a, b) => a.patch.localeCompare(b.patch) * -1 || a.reason.localeCompare(b.reason)),
     games: games.results.filter((r) => keep.has(r.patch)),

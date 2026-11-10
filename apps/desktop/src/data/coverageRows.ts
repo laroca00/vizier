@@ -53,3 +53,10 @@ export function statusRows(doc: CoverageDoc | null): StatusRow[] | null {
   const known = new Map(doc.status.map((s) => [s.bracket, s]));
   return BRACKETS.map((bracket) => ({ bracket, lastPublishAt: known.get(bracket)?.lastPublishAt ?? null, held: known.get(bracket)?.held ?? [] }));
 }
+
+/** Mode games (ARAM, Mayhem, Arena) per day, newest first, or an empty list for older docs. */
+export function modeGamesPerDay(doc: CoverageDoc | null): { day: string; games: number }[] {
+  const byDay = new Map<string, number>();
+  for (const r of doc?.modeDays ?? []) byDay.set(r.day, (byDay.get(r.day) ?? 0) + r.games);
+  return [...byDay].map(([day, games]) => ({ day, games })).sort((a, b) => b.day.localeCompare(a.day));
+}

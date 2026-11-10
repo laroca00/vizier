@@ -6,7 +6,7 @@ import { sampleTitle } from "../ui/sampleTitle";
 import "./LengthPanel.css";
 
 /** Win rate by game length: one bar per bucket around the 50% line, games under each. */
-export function LengthPanel({ lengths, patches, updatedAt }: { lengths: LengthBucket[]; patches: string[]; updatedAt?: number }) {
+export function LengthPanel({ lengths, patches, updatedAt, ranked = true }: { lengths: LengthBucket[]; patches: string[]; updatedAt?: number; ranked?: boolean }) {
   const t = useT();
   const lang = useLang();
   const total = lengths.reduce((sum, l) => sum + l.games, 0);
@@ -18,7 +18,7 @@ export function LengthPanel({ lengths, patches, updatedAt }: { lengths: LengthBu
   return (
     <section className="enter length" aria-label={t("Oyun süresine göre")}>
       <h2 className="draft__heading">
-        {t("Oyun süresine göre")} <DataBadge games={total} winRate={winRate} patches={patches} updatedAt={updatedAt} ranked source={t("Vizier crawler, dereceli maçlar")} />
+        {t("Oyun süresine göre")} <DataBadge games={total} winRate={winRate} patches={patches} updatedAt={updatedAt} ranked={ranked} source={ranked ? t("Vizier crawler, dereceli maçlar") : t("Vizier crawler, ARAM maçları")} />
       </h2>
       <ul className="length__bars">
         {LENGTH_LABELS.map((label, bucket) => {

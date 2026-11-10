@@ -22,7 +22,7 @@ import { championNoteKey, inPool, matchupNoteKey, toggleFavouriteChampion, toggl
 import { ProBuildList } from "../ProBuildList";
 import { championIconUrl, champions, latestVersion, roleIconUrl, type Champion } from "../data/ddragon";
 import { POSITIONS } from "../labels";
-import { ARENA, AUGMENT_QUEUES, QUEUES, RANKED, winLabel } from "../queues";
+import { ARAM, ARENA, AUGMENT_QUEUES, QUEUES, RANKED, winLabel } from "../queues";
 import { ArenaItems } from "../draft/ArenaItems";
 import { ChampionAugmentBoard } from "../augments/ChampionAugmentBoard";
 import "../augments/augments.css";
@@ -323,6 +323,7 @@ function Overview({ overview, championId, championName, champions, version, queu
           />
         </section>
         {ranked && overview.lengths && <LengthPanel lengths={overview.lengths} patches={overview.patches} updatedAt={overview.updatedAt} />}
+        {queue === ARAM && overview.lengths && <LengthPanel lengths={overview.lengths} patches={overview.patches} updatedAt={overview.updatedAt} ranked={false} />}
         {ranked && overview.jungle && <JunglePanel jungle={overview.jungle} patches={overview.patches} updatedAt={overview.updatedAt} />}
         {ranked && overview.objectives && <ObjectivePanel objectives={overview.objectives} winRate={overview.winRate} patches={overview.patches} updatedAt={overview.updatedAt} />}
         {ranked && position && <RankCurvePanel championId={championId} position={position} />}

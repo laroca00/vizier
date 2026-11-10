@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lengthsAreThick, phaseRates } from "./lengthStats";
+import { lengthLean, lengthsAreThick, phaseRates } from "./lengthStats";
 
 const rows = (games: number[], rates: number[]) => games.map((g, bucket) => ({ bucket, games: g, winRate: rates[bucket] }));
 
@@ -22,5 +22,16 @@ describe("lengthsAreThick", () => {
     expect(lengthsAreThick(rows([2000, 2000, 2000, 2000, 2000], [0.5, 0.5, 0.5, 0.5, 0.5]))).toBe(true);
     expect(lengthsAreThick(rows([2000, 2000, 2000, 2000, 30], [0.5, 0.5, 0.5, 0.5, 0.5]))).toBe(false);
     expect(lengthsAreThick(undefined)).toBe(false);
+  });
+});
+
+describe("lengthLean", () => {
+  it("names the side whose interval clears the other", () => {
+    expect(lengthLean({ short: { games: 1000, winRate: 0.58 }, long: { games: 1000, winRate: 0.5 } })).toBe("short");
+    expect(lengthLean({ short: { games: 1000, winRate: 0.5 }, long: { games: 1000, winRate: 0.58 } })).toBe("long");
+  });
+  it("stays quiet when the intervals overlap or the data is missing", () => {
+    expect(lengthLean({ short: { games: 80, winRate: 0.56 }, long: { games: 80, winRate: 0.5 } })).toBeNull();
+    expect(lengthLean(undefined)).toBeNull();
   });
 });

@@ -1,7 +1,7 @@
 import { dropReason } from "./quality.ts";
 import { fixRoles } from "./roles.ts";
 import { GROUP_TIERS, GroupBudget, SEED_QUOTA, SEED_SIZE } from "./groupBudget.ts";
-import { TIER_GROUPS, bracketOfTier, type TierGroup } from "@vizier/shared/brackets";
+import { TIER_GROUPS, bracketOfTier, isTierGroup, type TierGroup } from "@vizier/shared/brackets";
 import type { Platform, Region, RiotClient } from "./riot/client.ts";
 import { buildPaths, csByMinute, encodeJungle, encodeKda, junglePath, goldAtMinute, kdaByMinute, levelByMinute, type BuildPath, type KdaPoint, type Timeline } from "./timeline.ts";
 import { patchOf, type LeagueEntryWithPuuid, type LeagueList, type Match, type Participant } from "./riot/types.ts";
@@ -43,7 +43,11 @@ const LOOKBACK = 3 * DAY;
 const EXTRA_LOOKBACK = 14 * DAY;
 // Players from Arena and Mayhem games, and ARAM players for Mayhem, checked each run.
 const MODE_PLAYERS_PER_RUN = 2;
-const MODE_PLAYERS_MAX = 3000;
+// Local table, one small row a player. With every rank seeded the pool is shared out by tier group so the
+// highest ranks cannot fill it; players with no known group (found through other mode players) share a slot.
+const MODE_PLAYERS_MAX = 12_000;
+const MODE_SLOTS: (TierGroup | null)[] = [...TIER_GROUPS, null];
+const MODE_SLOT_MAX = Math.floor(MODE_PLAYERS_MAX / MODE_SLOTS.length);
 // Mode game players are remembered under their mode, then asked about every mode in turn:
 // the same people play ARAM, Mayhem and Arena, and Mayhem and Arena come and go.
 const FOLLOW: Record<number, number> = { [ARAM]: ARAM, [MAYHEM]: MAYHEM, [ARENA]: ARENA };
@@ -374,16 +378,14 @@ export class Crawler {
         .run();
     }
     if (extraMatchesPerRun > 0) {
-      const { results: followed } = await this.db
-        .prepare("SELECT puuid, queue_id FROM mode_players WHERE region = ? ORDER BY last_crawled_at LIMIT ?")
-        .bind(region, MODE_PLAYERS_PER_RUN)
-        .all<{ puuid: string; queue_id: number }>();
-      for (const [i, { puuid, queue_id }] of followed.entries()) {
+      const followed = await this.dueModePlayers(region);
+      for (const [i, { puuid, queue_id, rank_group }] of followed.entries()) {
         // The player's own mode every other visit, the other modes in between.
         const slot = Math.floor(this.now() / 120_000) + i;
         const own = queue_id === ARENA ? ARENA_LIVE : queue_id === MAYHEM ? MAYHEM_QUEUES[(slot >> 1) % MAYHEM_QUEUES.length] : queue_id;
         const queue = slot % 2 === 0 ? own : MODE_QUEUES[(slot >> 1) % MODE_QUEUES.length];
-        for (const id of (await ids(puuid, queue, 10)) ?? []) add(extras, id, null);
+        const group = isTierGroup(rank_group) ? rank_group : null;
+        for (const id of (await ids(puuid, queue, 10, group)) ?? []) add(extras, id, group);
         await this.db.prepare("UPDATE mode_players SET last_crawled_at = ? WHERE puuid = ?").bind(this.now(), puuid).run();
       }
     }
@@ -399,6 +401,29 @@ export class Crawler {
       [...map].filter(([id]) => !seen.has(id)).slice(0, limit).map(([id, group]) => ({ id, group }));
     for (const id of candidates.keys()) extras.delete(id);
     return [...fresh(candidates, matchesPerRun), ...fresh(extras, extraMatchesPerRun)];
+  }
+
+  /**
+   * The players to ask about modes this run, one tier group at a time in turn so
+   * every rank gets its share of calls; a group with nobody due falls back to
+   * whoever was checked longest ago.
+   */
+  private async dueModePlayers(region: string): Promise<{ puuid: string; queue_id: number; rank_group: string | null }[]> {
+    type Row = { puuid: string; queue_id: number; rank_group: string | null };
+    const chosen: Row[] = [];
+    const turn = Math.floor(this.now() / 120_000);
+    for (let i = 0; i < MODE_PLAYERS_PER_RUN; i++) {
+      const group = MODE_SLOTS[(turn + i) % MODE_SLOTS.length];
+      const skip = chosen.map(() => "?").join(",");
+      const pick = (where: string, ...args: unknown[]) =>
+        this.db
+          .prepare(`SELECT puuid, queue_id, rank_group FROM mode_players WHERE region = ? ${where}${skip ? ` AND puuid NOT IN (${skip})` : ""} ORDER BY last_crawled_at LIMIT 1`)
+          .bind(region, ...args, ...chosen.map((c) => c.puuid))
+          .first<Row>();
+      const row = (await pick("AND rank_group IS ?", group)) ?? (await pick(""));
+      if (row) chosen.push(row);
+    }
+    return chosen;
   }
 
   /** Returns false for games that carry no build signal. */
@@ -504,7 +529,7 @@ export class Crawler {
         ),
       ];
     });
-    await this.db.batch([record, ...rows, ...(await this.follow(match))]);
+    await this.db.batch([record, ...rows, ...(await this.follow(match, group))]);
     return true;
   }
 
@@ -526,13 +551,13 @@ export class Crawler {
   }
 
   /** Remembers a mode game's players so their next games of that mode are found. */
-  private async follow(match: Match): Promise<D1PreparedStatement[]> {
+  private async follow(match: Match, group: TierGroup | null): Promise<D1PreparedStatement[]> {
     const queue = FOLLOW[gameQueue(match)];
     if (!queue) return [];
-    const count = await this.db.prepare("SELECT COUNT(*) AS n FROM mode_players").first<{ n: number }>();
-    if ((count?.n ?? 0) >= MODE_PLAYERS_MAX) return [];
-    const insert = this.db.prepare("INSERT OR IGNORE INTO mode_players (puuid, region, queue_id, added_at) VALUES (?, ?, ?, ?)");
-    return match.info.participants.filter((p) => p.puuid).map((p) => insert.bind(p.puuid, this.options.region, queue, this.now()));
+    const count = await this.db.prepare("SELECT COUNT(*) AS n FROM mode_players WHERE rank_group IS ?").bind(group).first<{ n: number }>();
+    if ((count?.n ?? 0) >= MODE_SLOT_MAX) return [];
+    const insert = this.db.prepare("INSERT OR IGNORE INTO mode_players (puuid, region, queue_id, added_at, rank_group) VALUES (?, ?, ?, ?, ?)");
+    return match.info.participants.filter((p) => p.puuid).map((p) => insert.bind(p.puuid, this.options.region, queue, this.now(), group));
   }
 }
 

@@ -70,3 +70,12 @@ describe("statusRows", () => {
     expect(statusRows(base)).toBeNull();
   });
 });
+
+describe("modeGamesPerDay", () => {
+  it("adds the modes of a day together, newest day first", async () => {
+    const { modeGamesPerDay } = await import("./coverageRows");
+    const doc = { ...base, modeDays: [{ day: "2026-11-09", queue: 450, games: 30 }, { day: "2026-11-10", queue: 450, games: 10 }, { day: "2026-11-10", queue: 1700, games: 5 }] };
+    expect(modeGamesPerDay(doc)).toEqual([{ day: "2026-11-10", games: 15 }, { day: "2026-11-09", games: 30 }]);
+    expect(modeGamesPerDay(null)).toEqual([]);
+  });
+});

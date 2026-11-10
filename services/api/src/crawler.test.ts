@@ -156,6 +156,46 @@ describe("Other modes", () => {
     expect(new Set(asked)).toEqual(new Set(["aram1:450", "aram1:2400", "aram1:2401", "aram1:2403", "aram1:2405", "aram1:1750"]));
   });
 
+  it("checks mode players of every tier group in turn", async () => {
+    const { db, sqlite } = fakeD1();
+    const asked: string[] = [];
+    const riot = {
+      get: async (_routing: string, _method: string, path: string) => {
+        if (path.includes("/ids?")) asked.push(path.split("/by-puuid/")[1].split("/")[0]);
+        return path.includes("/ids?") ? [] : null;
+      },
+    } as unknown as RiotClient;
+    let now = 30 * DAY;
+    const options = { region: "asia", platforms: ["kr"], leagues: "challenger", playersPerRun: 0, matchesPerRun: 5, extraMatchesPerRun: 2, timelinesPerRun: 0 } as const;
+    const crawler = new Crawler(db, riot, () => now, { ...options, platforms: [...options.platforms] });
+    await crawler.save(match("KR_20", [participant(103, true, { puuid: "silver1" })], { queueId: 450 }), null, "silver");
+    await crawler.save(match("KR_21", [participant(103, true, { puuid: "diamond1" })], { queueId: 450 }), null, "diamond");
+    await crawler.save(match("KR_22", [participant(103, true, { puuid: "apex1" })], { queueId: 450 }), null, "master_plus");
+    expect(sqlite.prepare("SELECT puuid, rank_group FROM mode_players ORDER BY puuid").all()).toEqual([
+      { puuid: "apex1", rank_group: "master_plus" },
+      { puuid: "diamond1", rank_group: "diamond" },
+      { puuid: "silver1", rank_group: "silver" },
+    ]);
+    // Eight slots of two minutes cover every group slot twice, so nobody waits for the others.
+    for (let slot = 0; slot < 8; slot++) {
+      now = 30 * DAY + slot * 120_000;
+      await crawler.run();
+    }
+    expect(new Set(asked)).toEqual(new Set(["silver1", "diamond1", "apex1"]));
+  });
+
+  it("keeps room in the mode player pool for every tier group", async () => {
+    const { db, sqlite } = fakeD1();
+    const options = { region: "asia", platforms: ["kr"], leagues: "challenger", playersPerRun: 0, matchesPerRun: 5, extraMatchesPerRun: 2, timelinesPerRun: 0 } as const;
+    const crawler = new Crawler(db, {} as RiotClient, () => 30 * DAY, { ...options, platforms: [...options.platforms] });
+    const full = sqlite.prepare("INSERT INTO mode_players (puuid, region, queue_id, added_at, rank_group) VALUES (?, 'asia', 450, 1, 'master_plus')");
+    for (let i = 0; i < 1800; i++) full.run(`top${i}`);
+    await crawler.save(match("KR_23", [participant(103, true, { puuid: "late-apex" })], { queueId: 450 }), null, "master_plus");
+    await crawler.save(match("KR_24", [participant(103, true, { puuid: "late-gold" })], { queueId: 450 }), null, "gold");
+    const names = sqlite.prepare("SELECT puuid FROM mode_players WHERE puuid LIKE 'late-%'").all();
+    expect(names).toEqual([{ puuid: "late-gold" }]);
+  });
+
   it("stores games of the live Arena queue as Arena", async () => {
     const { db, sqlite } = fakeD1();
     const options = { region: "asia", platforms: ["kr"], leagues: "challenger", playersPerRun: 0, matchesPerRun: 5, extraMatchesPerRun: 2, timelinesPerRun: 0 } as const;

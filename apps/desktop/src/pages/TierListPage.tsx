@@ -2,14 +2,15 @@ import { TierRuleInfo } from "./TierRuleInfo";
 import { MetaMovers } from "../MetaMovers";
 import { MatchupLink } from "../matchupLink";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
-import { getBans, getTierHistory, getTierList } from "../api";
+import { getBans, getTierHistory, getTierList, type TierEntry } from "../api";
 import { tierTrend } from "../data/history";
 import { previousPatchBlend } from "../data/patchBlend";
+import { lengthLean } from "../data/lengthStats";
 import { TrendSpark } from "../ui/TrendSpark";
 import { DEFAULT_BRACKET } from "@vizier/shared/brackets";
 import { championIconUrl, champions, latestVersion, roleIconUrl } from "../data/ddragon";
 import { POSITIONS } from "../labels";
-import { ARENA, QUEUES, RANKED, winLabel } from "../queues";
+import { ARAM, ARENA, QUEUES, RANKED, winLabel } from "../queues";
 import { LiquidGlass } from "../ui/LiquidGlass";
 import { useAsync } from "../useAsync";
 import { usePersonal } from "../personal";
@@ -56,6 +57,25 @@ type Props = {
   onView: (view: TierView) => void;
   onOpenChampion: (championId: number, position: string | null, queue: number) => void;
 };
+
+function LengthTag({ sides }: { sides: TierEntry["lengthSides"] }) {
+  const t = useT();
+  const lean = lengthLean(sides);
+  if (!sides || !lean) return null;
+  return (
+    <span
+      className="elo-tag"
+      title={t("25 dakikadan kısa oyunlar: {shortRate} ({shortGames} maç); 30 dakika ve üstü: {longRate} ({longGames} maç)", {
+        shortRate: `${(sides.short.winRate * 100).toFixed(1)}%`,
+        shortGames: sides.short.games.toLocaleString(),
+        longRate: `${(sides.long.winRate * 100).toFixed(1)}%`,
+        longGames: sides.long.games.toLocaleString(),
+      })}
+    >
+      {lean === "short" ? t("kısa oyunda güçlü") : t("uzun oyunda güçlü")}
+    </span>
+  );
+}
 
 export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion }: Props) {
   const lang = useLang();
@@ -255,6 +275,7 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
                               </span>
                             )}
                             {ranked && <EloTag verdict={eloTag(c.championId, position)} />}
+                            {queue === ARAM && <LengthTag sides={c.lengthSides} />}
                             {mine && <span className="tiers__mine">{mine === "pool" ? t("Havuzunda") : t("Favori")}</span>}
                           </button>
                         </td>
