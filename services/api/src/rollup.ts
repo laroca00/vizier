@@ -237,7 +237,7 @@ export const MAX_TIMING_MINUTE = 30;
 /** What a row adds to its champion's build, as [kind, value] pairs. */
 function buildChoices(row: Raw, finished: Set<number>): [string, string][] {
   const choices: [string, string][] = [
-    ["rune", row.runes],
+    ...(row.runes ? [["rune", row.runes] as [string, string]] : []),
     ["spell", row.spells],
     // An item counts once per game even when bought twice.
     ...[...new Set(ids(row.items))].map((id): [string, string] => ["item", String(id)]),

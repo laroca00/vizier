@@ -207,4 +207,24 @@ describe("synergies and queues", () => {
     expect(aram.champions.map((c) => [c.championId, c.tier])).toEqual([[103, "S"], [238, "D"]]);
     expect((await championOverview(db, 103, null, 450))?.games).toBe(12);
   });
+
+  it("builds Arena pages, which have no rune page", async () => {
+    const { db } = fakeD1();
+    const crawler = new Crawler(db, { get: async () => null } as unknown as RiotClient);
+    for (let n = 1; n <= 12; n++) {
+      const match: Match = {
+        metadata: { matchId: `TR1_${n}`, participants: [] },
+        info: { gameVersion: "16.21.1", queueId: 1700, gameStartTimestamp: n, gameDuration: 1200, participants: [player(1, 100, 103, true, 50), player(6, 200, 238, false, 50)] },
+      };
+      await crawler.save(match);
+    }
+    await rollup(db, noCatalog);
+    // Rows rolled up before empty rune keys were skipped are still in the counts.
+    await db
+      .prepare("INSERT INTO stat_counts (patch, queue_id, team_position, champion_id, kind, value, games, wins) SELECT patch, queue_id, team_position, champion_id, 'rune', '', games, wins FROM stat_counts WHERE kind = 'games' AND queue_id = 1700 AND champion_id = 103")
+      .run();
+    const build = await aggregateBuild(db, 103, null, null, 1700);
+    expect(build?.games).toBe(12);
+    expect(build?.runes).toEqual([]);
+  });
 });

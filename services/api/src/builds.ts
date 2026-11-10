@@ -243,7 +243,9 @@ function picks(rows: (kind: string) => Count[], wide = true): Picks {
   const choice = <T>(row: Count | undefined, shape: (value: string) => T) =>
     row ? { ...shape(row.value), games: row.games, winRate: rate(row.wins, row.games) } : null;
   return {
+    // Arena has no rune page; its games were counted under an empty key.
     runes: rows("rune")
+      .filter((r) => r.value !== "")
       .slice(0, TOP_RUNES)
       .map((r) => ({ ...parseRuneKey(r.value), games: r.games, winRate: rate(r.wins, r.games) })),
     spells: rows("spell")
