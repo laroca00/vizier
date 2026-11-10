@@ -1,5 +1,5 @@
 import type { Bracket } from "@vizier/shared/brackets";
-import { curveVerdict, type CurvePoint, type CurveVerdict, type RankCurveDoc } from "./rankCurve";
+import { curveFor, curveVerdict, type CurvePoint, type CurveVerdict, type RankCurveDoc } from "./rankCurve";
 import { hasEnoughGames } from "./confidence";
 
 /** The two ends compared: the lowest published ladder bracket and the highest. */
@@ -43,3 +43,8 @@ export const ELO_TAG_TEXT: Record<Exclude<CurveVerdict, null>, string> = {
   better_low: "Düşük elo dostu",
   better_high: "Yüksek elo ödüllendirir",
 };
+
+/** The tag for one champion and role from the rank-curve document; null when the data does not support one. */
+export function eloTagFor(doc: RankCurveDoc, championId: number, position: string): Exclude<CurveVerdict, null> | null {
+  return curveVerdict(curveFor(doc, championId, position));
+}

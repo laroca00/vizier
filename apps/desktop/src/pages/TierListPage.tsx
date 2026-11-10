@@ -13,6 +13,7 @@ import { Scatter } from "../charts";
 import { PageHeader } from "../ui/Page";
 import { ErrorState, Skeleton } from "../ui/States";
 import { RankPicker, RegionPicker } from "../ui/RankPicker";
+import { EloTag, useEloTags } from "../ui/EloTag";
 import { Tabs } from "../ui/Tabs";
 import { rankLabel, useBracket } from "../rank";
 import { SearchInput, Toggle } from "../ui/Fields";
@@ -64,6 +65,7 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
   const bracket = useBracket();
   const [state, retry] = useAsync(`${queue}:${position}:${bracket}`, () => load(queue, position));
   const ranked = queue === RANKED;
+  const eloTag = useEloTags();
   const personal = usePersonal();
   const poolIds = new Set(personal.pool.filter((p) => !ranked || !p.position || p.position === position).map((p) => p.championId));
 
@@ -244,6 +246,7 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
                                 {t("az maç")}
                               </span>
                             )}
+                            {ranked && <EloTag verdict={eloTag(c.championId, position)} />}
                             {mine && <span className="tiers__mine">{mine === "pool" ? t("Havuzunda") : t("Favori")}</span>}
                           </button>
                         </td>

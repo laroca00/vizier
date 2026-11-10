@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { eloShifts, sortedShifts } from "./eloShift";
+import { eloShifts, eloTagFor, sortedShifts } from "./eloShift";
 import type { RankCurveDoc } from "./rankCurve";
 
 const brackets = ["all", "gold_minus", "platinum_plus", "emerald_plus", "diamond_plus", "master_plus"] as const;
@@ -45,5 +45,14 @@ describe("eloShifts", () => {
 
   it("is empty when the document lacks an end bracket", () => {
     expect(eloShifts({ ...doc, brackets: ["all"] }, { position: null, minGames: 1 })).toEqual([]);
+  });
+});
+
+describe("eloTagFor", () => {
+  it("tags a clear climber and fallers, and nothing for a flat or unknown champion", () => {
+    expect(eloTagFor(doc, 1, "MIDDLE")).toBe("better_high");
+    expect(eloTagFor(doc, 2, "MIDDLE")).toBe("better_low");
+    expect(eloTagFor(doc, 3, "TOP")).toBeNull();
+    expect(eloTagFor(doc, 99, "TOP")).toBeNull();
   });
 });

@@ -124,6 +124,7 @@ export const EN: Record<string, string> = {
   "Ligler ve maç sayıları": "Ranks and game counts",
   "Yama {patch}, dereceli tek/çift maçları": "Patch {patch}, ranked solo/duo games",
   "Lig": "Rank",
+  "Alt ve üst rankın kazanma oranı aralıkları birbirine değmiyor.": "The win rate intervals of low and high rank do not overlap.",
   "Elo gezgini": "Elo explorer",
   "Rank yükselince kazanma oranı en çok artan ve düşen şampiyonlar: Altın ve altı ile Master ve üstü karşılaştırılır.": "Champions whose win rate rises or falls most as rank goes up: Gold and below against Master and above.",
   "En az maç": "Minimum games",
