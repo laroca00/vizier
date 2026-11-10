@@ -431,15 +431,20 @@ Builds on: tier list data, 33.x brackets, 36.x stats, the search palette.
 Builds on: 36.7 history, the patch tracker, Home 2.0 cards.
 
 - [ ] 39.1 Movers: champions whose win rate or pick rate moved most within the patch (history plus the interval rule), per bracket. Home card and a tab on the tier list.
+<!-- claimed: auto/39-movers-modes 2026-11-10T04:25Z -->
 - [ ] 39.2 Patch impact: for each champion changed in the patch tracker's diff, win rate before and after with games once the new patch has enough data.
+<!-- claimed: auto/39-movers-modes 2026-11-10T04:25Z -->
 - [ ] 39.3 Pool notices: a quiet line on Home when a champion in the player's pool rose or fell clearly in their bracket.
+<!-- claimed: auto/39-movers-modes 2026-11-10T04:25Z -->
 
 ## 40. Modes with more data
 
 Builds on: `mode_players`, the ARAM, Mayhem and Arena docs. All-rank seeding brings far more mode players.
 
 - [ ] 40.1 Mode player pool sized for all ranks: raise `MODE_PLAYERS_MAX` within the call budget, spread checks across the seed groups, report mode games per day in coverage.
+<!-- claimed: auto/39-movers-modes 2026-11-10T04:25Z -->
 - [ ] 40.2 ARAM win rate by game length (36.1 for ARAM) on the ARAM champion page and tier list.
+<!-- claimed: auto/39-movers-modes 2026-11-10T04:25Z -->
 - [ ] 40.3 Arena item win rates per champion behind the existing `ARENA_ITEMS` switch; budget test updated.
 - [ ] 40.4 Mayhem augment pairs: the two augments that do best together on a champion (taken in the same game), top five per champion with games, behind `AUGMENTS`.
 
