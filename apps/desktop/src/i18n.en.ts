@@ -2073,4 +2073,5 @@ export const EN: Record<string, string> = {
   "25 dakikadan kısa oyunlar: {shortRate} ({shortGames} maç); 30 dakika ve üstü: {longRate} ({longGames} maç)": "Games under 25 minutes: {shortRate} ({shortGames} games); 30 minutes and more: {longRate} ({longGames} games)",
   "kısa oyunda güçlü": "strong in short games",
   "uzun oyunda güçlü": "strong in long games",
+  "Birlikte iyi giden ikililer": "Pairs that work well together",
 };

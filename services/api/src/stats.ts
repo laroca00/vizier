@@ -66,6 +66,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 const RANKED = 420;
 const ARENA = 1700;
+const MAYHEM = 2400;
 const ARAM = 450;
 // A side of the length comparison needs a sample of its own before the tier list says anything about it.
 const MIN_LENGTH_SIDE_GAMES = 60;
@@ -532,6 +533,8 @@ export async function synergies(
   return { patches, games: results.reduce((sum, r) => sum + r.games, 0), allies };
 }
 
+export type AugmentPair = { augmentIds: [number, number]; games: number; winRate: number; delta: number };
+
 export type AugmentStat = {
   augmentId: number;
   games: number;
@@ -581,19 +584,39 @@ export async function augmentStats(
   db: D1Database,
   queue: number,
   championId: number | null,
-): Promise<{ patches: string[]; games: number; augments: AugmentStat[] }> {
+): Promise<{ patches: string[]; games: number; augments: AugmentStat[]; pairs?: AugmentPair[] }> {
   const patches = await latestPatches(db);
   if (patches.length === 0) return { patches, games: 0, augments: [] };
+  const pairs = championId !== null && queue === MAYHEM;
   const { results } = await db
     .prepare(
       `SELECT kind, value, SUM(games) AS games, SUM(wins) AS wins FROM stat_counts
         WHERE patch IN (${placeholders(patches.length)}) AND queue_id = ? ${championId ? "AND champion_id = ?" : ""}
-          AND kind IN ('augment', 'augmented')
+          AND kind IN ('augment', 'augmented'${pairs ? ", 'augpair'" : ""})
         GROUP BY kind, value`,
     )
     .bind(...patches, queue, ...(championId ? [championId] : []))
     .all<AugmentRow>();
-  return { patches, ...rateAugments(results) };
+  const rated = rateAugments(results.filter((r) => r.kind !== "augpair"));
+  const best = pairs ? bestPairs(results.filter((r) => r.kind === "augpair"), results) : [];
+  return { patches, ...rated, ...(best.length > 0 ? { pairs: best } : {}) };
+}
+
+const PAIRS_SHOWN = 5;
+
+/** The pairs that lift the champion most over its own rate, only from pairs with enough games. */
+function bestPairs(rows: AugmentRow[], all: AugmentRow[]): AugmentPair[] {
+  const total = all.find((r) => r.kind === "augmented");
+  const baseline = total && total.games > 0 ? total.wins / total.games : 0.5;
+  return rows
+    .filter((r) => r.games >= sampleLimits.pairGames)
+    .map((r) => {
+      const [a, b] = r.value.split("|").map(Number);
+      return { augmentIds: [a, b] as [number, number], games: r.games, winRate: round3(r.wins / r.games), delta: round3(r.wins / r.games - baseline), score: liftScore(r.wins, r.games, baseline) };
+    })
+    .sort((a, b) => b.score - a.score || b.games - a.games)
+    .slice(0, PAIRS_SHOWN)
+    .map(({ score: _, ...p }) => p);
 }
 
 export type AugmentChampion = { championId: number; games: number; winRate: number; delta: number; tier: string };

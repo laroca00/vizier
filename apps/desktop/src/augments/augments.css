@@ -298,3 +298,11 @@ button.augments__suited-row:hover {
 .augments__table .tiers__sort:hover {
   color: var(--glaze);
 }
+
+.augment-pairs {
+  margin-top: 16px;
+}
+
+.augment-chip[data-enough="false"] {
+  opacity: 0.6;
+}
