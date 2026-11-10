@@ -352,6 +352,20 @@ describe("rank of a game", () => {
     expect(sqlite.prepare("SELECT rank_group FROM crawled_matches WHERE match_id = 'KR_9'").all()).toEqual([{ rank_group: "gold" }]);
     expect(sqlite.prepare("SELECT rank_group FROM participant_stats WHERE match_id = 'KR_9'").all()).toEqual([{ rank_group: "gold" }]);
   });
+
+  it("records remakes and games with a leaver as dropped, without player rows", async () => {
+    const { db, sqlite } = fakeD1();
+    const crawler = new Crawler(db, {} as RiotClient, () => 5 * DAY, { ...options, platforms: ["kr"] });
+    expect(await crawler.save(match("KR_20", [participant(103, true, { gameEndedInEarlySurrender: true })]), null, "gold")).toBe(false);
+    expect(await crawler.save(match("KR_21", [participant(103, true, { timePlayed: 300 })]), null, "gold")).toBe(false);
+    expect(await crawler.save(match("KR_22", [participant(103, true)]), null, "gold")).toBe(true);
+    expect(sqlite.prepare("SELECT match_id, dropped FROM crawled_matches ORDER BY match_id").all()).toEqual([
+      { match_id: "KR_20", dropped: "surrender" },
+      { match_id: "KR_21", dropped: "afk" },
+      { match_id: "KR_22", dropped: null },
+    ]);
+    expect(sqlite.prepare("SELECT COUNT(*) AS n FROM participant_stats WHERE match_id IN ('KR_20', 'KR_21')").get()).toEqual({ n: 0 });
+  });
 });
 
 describe("buildPaths", () => {

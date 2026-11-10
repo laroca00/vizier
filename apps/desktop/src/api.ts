@@ -403,6 +403,8 @@ export type CoverageDoc = {
   brackets?: { patch: string; queue: number; bracket: string; platform: string; games: number }[];
   /** Timeline share per rank bracket (ranked solo). */
   timelineBrackets?: { patch: string; queue: number; bracket: string; players: number; withTimeline: number; share: number | null }[];
+  /** Ranked games left out (remakes, players who left) per patch; missing in older docs. */
+  dropped?: { patch: string; queue: number; reason: string; games: number }[];
 };
 
 /** What the stats stand on: games per patch, rank bracket and platform. */

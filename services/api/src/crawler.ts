@@ -1,3 +1,4 @@
+import { dropReason } from "./quality.ts";
 import { GROUP_TIERS, GroupBudget, SEED_QUOTA, SEED_SIZE } from "./groupBudget.ts";
 import { TIER_GROUPS, bracketOfTier, type TierGroup } from "@vizier/shared/brackets";
 import type { Platform, Region, RiotClient } from "./riot/client.ts";
@@ -407,11 +408,12 @@ export class Crawler {
     const patch = patchOf(info.gameVersion);
     const ranked = info.queueId === RANKED_SOLO;
     const bans = ranked ? (info.teams ?? []).flatMap((t) => t.bans ?? []).map((b) => b.championId).filter((id) => id > 0) : [];
+    const dropped = ranked ? dropReason(info) : null;
     // Recorded either way so a skipped game isn't fetched again.
     const record = this.db
-      .prepare("INSERT OR IGNORE INTO crawled_matches (match_id, patch, game_start, queue_id, bans, rank_group) VALUES (?, ?, ?, ?, ?, ?)")
-      .bind(matchId, patch, info.gameStartTimestamp, info.queueId, ranked ? bans.join(",") : null, group);
-    if (!STORED_QUEUES.has(info.queueId) || info.gameDuration < MIN_DURATION_SECONDS) {
+      .prepare("INSERT OR IGNORE INTO crawled_matches (match_id, patch, game_start, queue_id, bans, rank_group, dropped) VALUES (?, ?, ?, ?, ?, ?, ?)")
+      .bind(matchId, patch, info.gameStartTimestamp, info.queueId, ranked ? bans.join(",") : null, group, dropped);
+    if (!STORED_QUEUES.has(info.queueId) || info.gameDuration < MIN_DURATION_SECONDS || dropped) {
       await record.run();
       return false;
     }

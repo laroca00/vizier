@@ -16,6 +16,8 @@ export type Coverage = {
    */
   brackets?: { patch: string; queue: number; bracket: Bracket; platform: string; games: number }[];
   /** Share of player rows with timeline data per rank bracket; ranked solo only. */
+  /** Games not counted because of a remake or a player who left, per patch; absent in older docs. */
+  dropped?: { patch: string; queue: number; reason: string; games: number }[];
   timelineBrackets?: { patch: string; queue: number; bracket: Bracket; players: number; withTimeline: number; share: number | null }[];
 };
 
@@ -66,8 +68,13 @@ export async function coverage(db: D1Database): Promise<Coverage> {
       }
     }
   }
+  const droppedRows = await db
+    .prepare("SELECT patch, queue_id AS queue, value AS reason, SUM(games) AS games FROM stat_counts_g WHERE kind = 'dropped' GROUP BY patch, queue_id, value")
+    .all<{ patch: string; queue: number; reason: string; games: number }>()
+    .catch(() => ({ results: [] }));
   return {
     patches,
+    dropped: droppedRows.results.filter((r) => keep.has(r.patch)).sort((a, b) => a.patch.localeCompare(b.patch) * -1 || a.reason.localeCompare(b.reason)),
     games: games.results.filter((r) => keep.has(r.patch)),
     timeline: counts.results
       .filter((r) => keep.has(r.patch))

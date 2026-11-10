@@ -423,11 +423,11 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
   }
 }
 
-type MatchRow = { rank_group: string | null; rowid: number; match_id: string; patch: string; queue_id: number; game_start: number; bans: string | null };
+type MatchRow = { rank_group: string | null; dropped: string | null; rowid: number; match_id: string; patch: string; queue_id: number; game_start: number; bans: string | null };
 
 function tallyPoolMatches(tally: Tally, matches: MatchRow[]) {
   for (const m of matches) {
-    if (!inPool(m.match_id)) continue;
+    if (m.dropped || !inPool(m.match_id)) continue;
     tally.add(matchRow(m), POOL_GAMES, "", 0);
     for (const id of new Set(ids(m.bans ?? ""))) tally.add({ ...matchRow(m), champion_id: id }, POOL_BAN, "", 0);
   }
@@ -448,7 +448,7 @@ async function backfillPool(db: D1Database) {
     .all<{ match_id: string; patch: string; queue_id: number; team_position: string; champion_id: number; win: number; rank_group: string | null }>();
   for (const row of rows) if (inPool(row.match_id)) tally.add(row, POOL, "", row.win);
   const { results: games } = await db
-    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans, rank_group FROM crawled_matches WHERE rowid <= ?")
+    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans, rank_group, dropped FROM crawled_matches WHERE rowid <= ?")
     .bind(matches)
     .all<MatchRow>();
   tallyPoolMatches(tally, games);
@@ -459,14 +459,17 @@ async function backfillPool(db: D1Database) {
 /** Game counts per patch and queue, and ranked bans. */
 async function rollupMatches(db: D1Database) {
   const from = await watermark(db, "rolled_matches");
-  const { results } = await db
-    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans, rank_group FROM crawled_matches WHERE rowid > ? ORDER BY rowid")
+  const { results: all } = await db
+    .prepare("SELECT rowid, match_id, patch, queue_id, game_start, bans, rank_group, dropped FROM crawled_matches WHERE rowid > ? ORDER BY rowid")
     .bind(from)
     .all<MatchRow>();
-  if (results.length === 0) return;
+  if (all.length === 0) return;
 
   const games = new Map<string, { patch: string; queue: number; games: number; last: number }>();
   const tally = new Tally();
+  // Remakes and games where somebody left are only counted as dropped, so pick and ban rates keep their denominators.
+  for (const m of all) if (m.dropped) tally.add(matchRow(m), "dropped", m.dropped, 0);
+  const results = all.filter((m) => !m.dropped);
   for (const m of results) {
     const key = `${m.patch}\t${m.queue_id}`;
     const g = games.get(key) ?? { patch: m.patch, queue: m.queue_id, games: 0, last: 0 };
@@ -489,7 +492,7 @@ async function rollupMatches(db: D1Database) {
   await db.batch([
     ...[...games.values()].map((g) => insertGames.bind(g.patch, g.queue, g.games, g.last)),
     ...upserts(db, tally),
-    setWatermark(db, "rolled_matches", results[results.length - 1].rowid),
+    setWatermark(db, "rolled_matches", all[all.length - 1].rowid),
   ]);
 }
 
