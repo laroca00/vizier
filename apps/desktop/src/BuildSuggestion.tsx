@@ -34,10 +34,12 @@ import {
   type RuneStyle,
   type SummonerSpell,
 } from "./data/ddragon";
-import { useSettings } from "./settings";
+import { updateSettings, useSettings } from "./settings";
+import { chosenPath, importCore, type ImportPath } from "./lab/itemPath";
 import { SkillOptions } from "./SkillOptions";
 import { useAsync } from "./useAsync";
 import { Button } from "./ui/Button";
+import { Tabs } from "./ui/Tabs";
 import { ErrorState } from "./ui/States";
 import { useToast } from "./ui/Toast";
 import { useOpenChampion } from "./championLink";
@@ -204,6 +206,9 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
   const variant = variants.find((v) => v.style === tab) ?? null;
   const shown = tab === "vs" && versus ? versus : (variant ?? build);
   const picks: Picks = shown;
+  // Which route of the item tree the imported core items follow; only the general build has a tree.
+  const core = importCore(picks.coreItems, shown === build ? build.itemTree : undefined, settings.importItemPath, build.games);
+  const hasPaths = shown === build && !!chosenPath(build.itemTree, "popular", build.games);
   const setName = variant ? `Vizier ${championName} ${t(STYLE_NAMES[variant.style])}` : `Vizier ${championName}`;
   const foes = foesOf(enemies, state.value.champions);
   const situational = [...(build.situational ?? [])].sort((a, b) => Number(foes.has(b.vs)) - Number(foes.has(a.vs)));
@@ -286,7 +291,9 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
         title: setName,
         blocks: [
           ...(picks.startItems ? [{ title: t("Başlangıç"), items: picks.startItems.ids }] : []),
-          ...(picks.coreItems ? [{ title: t("Ana eşyalar, bu sırayla"), items: picks.coreItems.ids }] : []),
+          ...(core.ids.length > 0
+            ? [{ title: core.path ? t(settings.importItemPath === "winning" ? "Ana eşyalar: en çok kazanan yol" : "Ana eşyalar: en popüler yol") : t("Ana eşyalar, bu sırayla"), items: core.ids }]
+            : []),
           { title: t("Sık alınan eşyalar"), items: shownItems.map((i) => i.id) },
           ...situational.map((s) => ({ title: t(FOE_LABELS[s.vs]), items: s.items.map((i) => i.id) })),
         ],
@@ -472,6 +479,27 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
               );
             })}
           </div>
+          {hasPaths && (
+            <>
+              <Tabs<ImportPath>
+                label={t("Ana eşya yolu")}
+                size="small"
+                items={[
+                  { id: "default", label: t("Varsayılan") },
+                  { id: "winning", label: t("En çok kazanan yol") },
+                  { id: "popular", label: t("En popüler yol") },
+                ]}
+                value={settings.importItemPath}
+                onChange={(importItemPath) => updateSettings({ importItemPath })}
+              />
+              {core.path && (
+                <p className="build__note">
+                  {t("Ana eşyalar bu yolu izler: {games} maç, {rate} kazanma", { games: core.path.games.toLocaleString(), rate: percent(core.path.winRate) })}
+                </p>
+              )}
+              {settings.importItemPath === "winning" && !core.path && <p className="build__note">{t("Yeterli maçlı bir yol yok; varsayılan ana eşyalar aktarılır.")}</p>}
+            </>
+          )}
           <ImportControls label={t("Eşya setini aktar")} state={itemImport} disabled={!canImport} onImport={() => importItems()} />
         </section>
       )}

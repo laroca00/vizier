@@ -2,7 +2,7 @@ import type { Champion } from "./data/ddragon";
 import { fold } from "./fold";
 import { parseMatchupQuery } from "./pages/matchupRoute";
 import type { IconName } from "./ui/NavIcon";
-import { comboQuery, intentTopics } from "./search/intents";
+import { comboQuery, intentTopics, statsIntent } from "./search/intents";
 import type { Topic } from "./search/topics";
 
 const SHOWN = 8;
@@ -83,6 +83,7 @@ export function search(query: string, list: Champion[], links: PaletteLink[], pr
   const viaIntent = [
     ...(asked ? topics.filter((t) => t.group === "combo" && "champion" in t.target && t.target.champion === asked.key) : []),
     ...intentTopics(query, topics),
+    ...(statsIntent(query, topics) ? [statsIntent(query, topics)!] : []),
   ].map((topic) => ({ kind: "topic" as const, topic, viaIntent: true }));
   const named = topics
     .filter((t) => !viaIntent.some((r) => r.topic.id === t.id) && t.terms.some((term) => term.includes(needle)))

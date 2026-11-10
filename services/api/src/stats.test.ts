@@ -99,9 +99,9 @@ describe("champion pages", () => {
     ]);
     const result = await counters(db, 103, "MIDDLE");
     expect(result.games).toBe(28);
-    expect(result.matchups).toEqual([
-      { championId: 238, games: 12, winRate: 0.25 },
-      { championId: 7, games: 12, winRate: 0.75 },
+    expect(result.matchups).toMatchObject([
+      { championId: 238, games: 12, winRate: 0.25, lengths: [{ bucket: 3, games: 12, winRate: 0.25 }] },
+      { championId: 7, games: 12, winRate: 0.75, lengths: [{ bucket: 3, games: 12, winRate: 0.75 }] },
     ]);
   });
 });
