@@ -30,6 +30,7 @@ describe("doc keys with a bracket", () => {
         docKey.synergies(1, "TOP", bracket),
         docKey.lane(1, "TOP", bracket),
         docKey.bench(420, 1, "TOP", bracket),
+        docKey.statsBoard("TOP", bracket),
       ];
       expect(keys.map((k) => splitRank(k).bracket)).toEqual(keys.map(() => bracket));
       expect(keys.map((k) => splitRank(k).base)).toEqual(keys.map((k) => k.replace(/:r=\w+$/, "")));

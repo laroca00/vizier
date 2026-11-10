@@ -767,3 +767,73 @@ export async function rankCurve(db: D1Database, brackets: readonly Bracket[], po
   }
   return { patches, brackets: [...brackets], entries: [...byKey.values()].sort((a, b) => a.championId - b.championId || a.position.localeCompare(b.position)) };
 }
+
+/** One champion's per-game averages in a role: each figure carries the games it comes from. */
+export type BoardRow = {
+  championId: number;
+  /** Games that carried kills, deaths, assists, farm and length; fewer than the tier list's games while older games lack them. */
+  games: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  /** (kills + assists) / deaths, with deaths at least 1. */
+  kda: number;
+  csPerMinute: number;
+  minutes: number;
+  /** Gold lead over the lane opponent at 15 minutes, from games with a timeline; null when there are too few. */
+  goldDiff15: { games: number; value: number } | null;
+};
+
+const MIN_BOARD_GAMES = 20;
+
+/**
+ * Averages for the stats explorer, one row per champion in a role. The win,
+ * pick and ban columns come from the tier list; these are the figures it does
+ * not carry.
+ */
+export async function statsBoard(db: D1Database, position: string, bracket: Bracket = DEFAULT_BRACKET): Promise<{ patches: string[]; rows: BoardRow[] }> {
+  const patches = await latestPatches(db);
+  if (patches.length === 0) return { patches, rows: [] };
+  const table = scope("stat_counts", bracket);
+  const { results } = await db
+    .prepare(
+      `SELECT champion_id, kind, SUM(games) AS games FROM ${table}
+        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? AND queue_id = ${RANKED}
+          AND kind IN ('stat-n', 'sum-kills', 'sum-deaths', 'sum-assists', 'sum-cspm', 'sum-secs')
+        GROUP BY champion_id, kind`,
+    )
+    .bind(...patches, position)
+    .all<{ champion_id: number; kind: string; games: number }>();
+  const lane = await db
+    .prepare(
+      `SELECT champion_id, SUM(games) AS games, SUM(gold15) AS gold15 FROM ${scope("lane_sums", bracket)}
+        WHERE patch IN (${placeholders(patches.length)}) AND team_position = ? GROUP BY champion_id`,
+    )
+    .bind(...patches, position)
+    .all<{ champion_id: number; games: number; gold15: number }>();
+  const laneBy = new Map(lane.results.map((r) => [r.champion_id, r]));
+  const by = new Map<number, Map<string, number>>();
+  for (const r of results) by.set(r.champion_id, (by.get(r.champion_id) ?? new Map()).set(r.kind, r.games));
+  const rows: BoardRow[] = [];
+  for (const [championId, k] of by) {
+    const n = k.get("stat-n") ?? 0;
+    if (n < MIN_BOARD_GAMES) continue;
+    const avg = (kind: string, scale = 1) => ((k.get(kind) ?? 0) / n) / scale;
+    const kills = avg("sum-kills");
+    const deaths = avg("sum-deaths");
+    const assists = avg("sum-assists");
+    const l = laneBy.get(championId);
+    rows.push({
+      championId,
+      games: n,
+      kills: Math.round(kills * 10) / 10,
+      deaths: Math.round(deaths * 10) / 10,
+      assists: Math.round(assists * 10) / 10,
+      kda: Math.round(((kills + assists) / Math.max(deaths, 1)) * 100) / 100,
+      csPerMinute: Math.round(avg("sum-cspm", 100) * 10) / 10,
+      minutes: Math.round(avg("sum-secs", 60) * 10) / 10,
+      goldDiff15: l && l.games >= MIN_LANE_GAMES ? { games: l.games, value: Math.round(l.gold15 / l.games) } : null,
+    });
+  }
+  return { patches, rows: rows.sort((a, b) => b.games - a.games || a.championId - b.championId) };
+}

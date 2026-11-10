@@ -46,6 +46,10 @@ type Raw = {
   jungle_path: string | null;
   objectives: string | null;
   player_key: string | null;
+  kills: number | null;
+  assists: number | null;
+  deaths: number | null;
+  cs_pm: number | null;
 };
 
 /** Game lengths are counted in five buckets: under 20, 20 to 25, 25 to 30, 30 to 35 and 35 minutes or more. */
@@ -165,6 +169,14 @@ function itemTimeUpserts(db: D1Database, sums: Map<string, ItemTime>) {
 
 class Tally {
   counts = new Map<string, Count>();
+
+  /** Adds an amount to a sum kind: the value rides in `games`, so any bracket still sums by group. */
+  sum(row: { rank_group: string | null; patch: string; queue_id: number; team_position: string; champion_id: number }, kind: string, amount: number) {
+    const key = [groupOf(row), row.patch, row.queue_id, row.team_position, row.champion_id, kind, ""].join("\t");
+    const count = this.counts.get(key) ?? { group: groupOf(row), patch: row.patch, queue: row.queue_id, position: row.team_position, champion: row.champion_id, kind, value: "", games: 0, wins: 0 };
+    count.games += amount;
+    this.counts.set(key, count);
+  }
 
   add(row: { rank_group: string | null; patch: string; queue_id: number; team_position: string; champion_id: number }, kind: string, value: string, win: number) {
     const key = [groupOf(row), row.patch, row.queue_id, row.team_position, row.champion_id, kind, value].join("\t");
@@ -307,7 +319,7 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
     const { results } = await db
       .prepare(
         `SELECT rowid, match_id, patch, queue_id, team_position, champion_id, win, runes, spells, items, start_items,
-            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, duration, jungle_path, objectives, player_key
+            skill_order, purchase_order, opponent_champion_id, team_id, augments, cs_minutes, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, duration, jungle_path, objectives, player_key, kills, assists, deaths, cs_pm
           FROM participant_stats WHERE rowid > ? ORDER BY rowid LIMIT ?`,
       )
       .bind(from, CHUNK)
@@ -335,6 +347,15 @@ export async function rollup(db: D1Database, catalogOf: () => Promise<Catalog> =
       if (row.queue_id === RANKED_SOLO) tally.add(row, "region", platformOf(row.match_id), row.win);
       // Win rate by game length, from every ranked game (builds read the same pool); older rolled games have no bucket.
       if (row.queue_id === RANKED_SOLO && row.duration) tally.add(row, "length", String(lengthBucket(row.duration)), row.win);
+      // Kills, deaths, assists, farm and length for the stats board, only from games that carried them; stat-n is their own game count.
+      if (row.queue_id === RANKED_SOLO && row.team_position && row.kills !== null && row.assists !== null && row.deaths !== null && row.cs_pm !== null && row.duration) {
+        tally.add(row, "stat-n", "", row.win);
+        tally.sum(row, "sum-kills", row.kills);
+        tally.sum(row, "sum-deaths", row.deaths);
+        tally.sum(row, "sum-assists", row.assists);
+        tally.sum(row, "sum-cspm", Math.round(row.cs_pm * 100));
+        tally.sum(row, "sum-secs", row.duration);
+      }
       // The jungler's route: first camps' side with the first lane, and the first gank minute, each its own count.
       const route = decodeJungle(row.jungle_path);
       if (route) {

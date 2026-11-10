@@ -436,3 +436,22 @@ export function getChampionHistory(championId: number) {
 export function getTierHistory(position: string) {
   return get<TierHistoryDoc>(`/v1/history/tier/${position}`);
 }
+
+export type BoardRow = {
+  championId: number;
+  /** Games that carried the averages below. */
+  games: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  kda: number;
+  csPerMinute: number;
+  minutes: number;
+  goldDiff15: { games: number; value: number } | null;
+};
+export type StatsBoard = { patches: string[]; updatedAt?: number; rank?: string; rows: BoardRow[] };
+
+/** Per-game averages of every champion in a role; win, pick and ban rates come from the tier list. */
+export function getStatsBoard(position: string) {
+  return get<StatsBoard>(`/v1/stats/board/${position}`);
+}

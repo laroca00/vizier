@@ -95,7 +95,7 @@ export const activeRegion = (): Region | null => (region !== "all" && !draftScop
 export const activeScope = (): string => `${activeBracket()}${activeRegion() ? `/${activeRegion()}` : ""}`;
 
 // Stats routes split by rank. Item times, build history and the build index are not.
-const RANKED_ROUTES = [/^\/v1\/tierlist\//, /^\/v1\/builds\/\d+(\?|$)/, /^\/v1\/champions\/\d+(\?|$)/, /^\/v1\/champions\/\d+\/(counters|synergies|lane|bench)(\?|$)/];
+const RANKED_ROUTES = [/^\/v1\/tierlist\//, /^\/v1\/stats\/board\//, /^\/v1\/builds\/\d+(\?|$)/, /^\/v1\/champions\/\d+(\?|$)/, /^\/v1\/champions\/\d+\/(counters|synergies|lane|bench)(\?|$)/];
 
 // Only the tier lists and the champion overview have region docs.
 const REGION_ROUTES = [/^\/v1\/tierlist\//, /^\/v1\/champions\/\d+(\?|$)/];

@@ -1,0 +1,20 @@
+.stats__scroll {
+  overflow-x: auto;
+}
+
+.stats__table th:not(:first-child),
+.stats__table td:not(:first-child) {
+  text-align: right;
+  padding-left: 12px;
+  white-space: nowrap;
+}
+
+/* A value from too few games stays visible but is quieter than the solid ones. */
+.stats__table td[data-solid="false"] {
+  opacity: 0.5;
+}
+
+.stats__table .role-icon {
+  margin-left: 6px;
+  opacity: 0.8;
+}

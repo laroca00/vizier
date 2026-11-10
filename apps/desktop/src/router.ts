@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { TierView } from "./pages/tierSort";
+import { DEFAULT_STATS_VIEW, type StatsColumn } from "./data/statsTable";
 
 // The app has no URLs, so navigation is a typed route and a history stack.
 // Mouse back and forward buttons and Alt+Left and Alt+Right walk the stack.
@@ -25,6 +26,7 @@ export type Route =
   | { page: "lab"; championId: number | null; position: string }
   | { page: "matrix"; position: string }
   | { page: "elo"; position: string; minGames: number }
+  | { page: "stats"; position: string; sort: StatsColumn; desc: boolean; minGames: number; query: string }
   | { page: "challenge" }
   | { page: "templates" }
   | { page: "synergy"; championId: number | null; position: string }
@@ -42,6 +44,7 @@ export function pageRoute(page: Page): Route {
   if (page === "lab") return { page, championId: null, position: "MIDDLE" };
   if (page === "synergy") return { page, championId: null, position: "MIDDLE" };
   if (page === "matrix") return { page, position: "MIDDLE" };
+  if (page === "stats") return { page, ...DEFAULT_STATS_VIEW };
   if (page === "elo") return { page, position: "ALL", minGames: 500 };
   if (page === "pro") return { page, player: "" };
   if (page === "champion") return { page, championId: 0, position: null, queue: 420 };

@@ -7,7 +7,7 @@ import { buildHistory } from "./snapshots.ts";
 import { championHistory, tierHistory } from "./history.ts";
 import { coverage } from "./coverage.ts";
 import { scope } from "./localSchema.ts";
-import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, championOverview, counters, itemTimes, laneStats, latestPatches, rankCurve, synergies, tierList } from "./stats.ts";
+import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, statsBoard, championOverview, counters, itemTimes, laneStats, latestPatches, rankCurve, synergies, tierList } from "./stats.ts";
 
 // Queues with augments: Arena and ARAM Mayhem.
 export const AUGMENT_QUEUES = [1700, 2400];
@@ -39,7 +39,7 @@ export function isOtherQueueKey(key: string): boolean {
 }
 
 /** Kinds that exist per bracket; ranked solo only, since other queues have no ladder of their own. */
-export const BRACKET_KINDS = ["tierlist", "champion", "build", "buildvs", "counters", "synergies", "lane", "bench"] as const;
+export const BRACKET_KINDS = ["tierlist", "champion", "build", "buildvs", "counters", "synergies", "lane", "bench", "statsboard"] as const;
 
 export const docKey = {
   tierList: (queue: number, position: string, bracket: Bracket = DEFAULT_BRACKET) => `tierlist:${queue}:${position}${rank(bracket)}`,
@@ -55,6 +55,8 @@ export const docKey = {
   duos: (championId: number) => `duos:1700:${championId}`,
   /** Arena item win rates for a champion. */
   arenaItems: (championId: number) => `arenaitems:1700:${championId}`,
+  /** Per-game averages of every champion in a role, for the stats explorer. */
+  statsBoard: (position: string, bracket: Bracket = DEFAULT_BRACKET) => `statsboard:${RANKED}:${position}${rank(bracket)}`,
   /** Lane differences against each opponent, keyed by opponent id. */
   lane: (championId: number, position: string, bracket: Bracket = DEFAULT_BRACKET) => `lane:${championId}:${position}${rank(bracket)}`,
   /** When each finished item is usually completed, keyed by item id. */
@@ -139,7 +141,10 @@ export async function* statDocs(db: D1Database, bracket: Bracket = DEFAULT_BRACK
   const { results: queues } = await db.prepare("SELECT DISTINCT queue_id FROM stat_matches").all<{ queue_id: number }>();
   for (const { queue_id: queue } of queues) {
     if (queue === RANKED) {
-      for (const position of POSITIONS) yield [docKey.tierList(queue, position, bracket), await tierList(db, position, queue, bracket)];
+      for (const position of POSITIONS) {
+        yield [docKey.tierList(queue, position, bracket), await tierList(db, position, queue, bracket)];
+        yield [docKey.statsBoard(position, bracket), await statsBoard(db, position, bracket)];
+      }
     } else if (main) {
       yield [docKey.tierList(queue, "ALL"), await tierList(db, "", queue)];
     }

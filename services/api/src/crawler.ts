@@ -427,8 +427,8 @@ export class Crawler {
         (match_id, patch, champion_id, team_position, win, runes, spells, items,
          opponent_champion_id, duration, deaths, cs10, cs_pm, gold_pm, vision_pm,
          kill_participation, damage_share, start_items, skill_order, purchase_order, cs_minutes,
-         queue_id, team_id, augments, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, jungle_path, objectives, player_key)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         queue_id, team_id, augments, gold10, gold15, first_blood, purchase_times, level_minutes, kda_minutes, rank_group, jungle_path, objectives, player_key, kills, assists)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const paths = timeline ? buildPaths(timeline) : new Map<number, BuildPath>();
     const pace = timeline ? csByMinute(timeline) : new Map<number, number[]>();
@@ -499,6 +499,8 @@ export class Crawler {
           jungle,
           ranked ? firstObjectives(info.teams?.find((t) => t.teamId === p.teamId)) : null,
           (p.puuid && keys.get(p.puuid)) || null,
+          p.kills ?? null,
+          p.assists ?? null,
         ),
       ];
     });
