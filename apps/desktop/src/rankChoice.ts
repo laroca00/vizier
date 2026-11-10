@@ -18,6 +18,30 @@ const notify = () => {
   for (const listener of listeners) listener();
 };
 
+// Champ select reads the player's own rank by default (setting), only while its page is open, so other
+// pages keep the filter the player picked.
+let draftScope = false;
+let draftOwnRank = true;
+
+export function setDraftScope(on: boolean) {
+  if (on === draftScope) return;
+  draftScope = on;
+  notify();
+}
+
+export function setDraftOwnRank(on: boolean) {
+  if (on === draftOwnRank) return;
+  draftOwnRank = on;
+  notify();
+}
+
+/** The choice requests really use: the player's own rank in champ select when the setting is on and the rank is known. */
+export function effectiveChoice(choice: RankChoice, scope: boolean, own: Bracket | null, ownWanted: boolean): RankChoice {
+  return scope && ownWanted && own ? "mine" : choice;
+}
+
+export const inDraftScope = () => draftScope && draftOwnRank && mine !== null;
+
 export function setRankChoice(next: RankChoice) {
   if (next === chosen) return;
   chosen = next;
@@ -44,7 +68,7 @@ export function resolveRank(choice: RankChoice, own: Bracket | null): { bracket:
 }
 
 /** The bracket requests use right now. */
-export const activeBracket = (): Bracket => resolveRank(chosen, mine).bracket;
+export const activeBracket = (): Bracket => resolveRank(effectiveChoice(chosen, draftScope, mine, draftOwnRank), mine).bracket;
 
 // Stats routes split by rank. Item times, build history and the build index are not.
 const RANKED_ROUTES = [/^\/v1\/tierlist\//, /^\/v1\/builds\/\d+(\?|$)/, /^\/v1\/champions\/\d+(\?|$)/, /^\/v1\/champions\/\d+\/(counters|synergies|lane|bench)(\?|$)/];

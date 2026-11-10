@@ -27,3 +27,15 @@ export function RankPicker() {
     </span>
   );
 }
+
+/** A read-only note of which rank the page's numbers are for, where there is no room for the picker. */
+export function RankChip() {
+  const t = useT();
+  const lang = useLang() === "en" ? "en" : "tr";
+  const { bracket, inDraft } = useRank();
+  return (
+    <span className="rank-chip" title={inDraft ? t("Kendi rankının verisi (Ayarlar'dan değiştirilir)") : t("Seçili rank filtresi")}>
+      {t("Veri: {rank}", { rank: BRACKET_LABELS[bracket][lang] })}
+    </span>
+  );
+}

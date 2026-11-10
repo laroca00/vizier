@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveRank, sanitizeRank, withRank } from "./rankChoice";
+import { effectiveChoice, resolveRank, sanitizeRank, withRank } from "./rankChoice";
 
 describe("sanitizeRank", () => {
   it("keeps known choices and defaults anything else to Emerald+", () => {
@@ -35,5 +35,14 @@ describe("withRank", () => {
       expect(withRank(path, "gold_minus")).toBe(path);
     }
     expect(withRank("/v1/tierlist/TOP?rank=all", "gold_minus")).toBe("/v1/tierlist/TOP?rank=all");
+  });
+});
+
+describe("effectiveChoice", () => {
+  it("follows the player's own rank only in champ select, with the setting on and the rank known", () => {
+    expect(effectiveChoice("all", true, "gold_minus", true)).toBe("mine");
+    expect(effectiveChoice("all", false, "gold_minus", true)).toBe("all");
+    expect(effectiveChoice("all", true, "gold_minus", false)).toBe("all");
+    expect(effectiveChoice("all", true, null, true)).toBe("all");
   });
 });

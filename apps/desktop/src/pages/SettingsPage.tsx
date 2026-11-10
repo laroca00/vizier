@@ -29,6 +29,7 @@ const CLIENT_TOGGLES: { key: ToggleKey; label: string; hint: string }[] = [
   { key: "readyCheckAlert", label: "Maç bulununca haber ver", hint: "Kısa bir ses çalar ve görev çubuğundaki simge yanıp söner." },
   { key: "turnAlarm", label: "Seçim süresi bitmeden uyar", hint: "Seçim sıran sendeyken son 10 saniyede kısa bir ses çalar; süre dolup maçtan düşmeni önler." },
   { key: "autoAcceptReady", label: "Maçı kendiliğinden kabul et", hint: "Maç bulunur bulunmaz kabul edilir. Kabul etmek istemezsen sayaç dolmadan istemciden reddet." },
+  { key: "champSelectOwnRank", label: "Şampiyon seçiminde kendi rankımın verisi", hint: "Öneriler, yasak planı ve aktarılan build, filtre ne olursa olsun kendi rankındaki maçlardan gelir. Rankın okunamazsa filtre geçerli kalır." },
   { key: "showOnChampSelect", label: "Şampiyon seçiminde Vizier'i öne getir", hint: "Tepsideyken bile seçim başlayınca pencere açılır." },
   { key: "hideOnGame", label: "Oyun başlayınca tepsiye in", hint: "Oyun bitince, açıksa, pencere geri gelir." },
   { key: "showOnClientOpen", label: "League açılınca Vizier'i göster", hint: "Windows ile gizli başlayan Vizier, istemci açılınca pencereyi getirir." },

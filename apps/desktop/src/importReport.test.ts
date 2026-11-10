@@ -30,3 +30,12 @@ describe("reasonOf", () => {
     expect(reasonOf("HTTP 400")).toBe("failed");
   });
 });
+
+describe("importSummary with a bracket", () => {
+  it("names the rank the build was counted from", () => {
+    const t = (text: string, p?: Record<string, string | number>) => text.replace(/\{(\w+)\}/g, (_, k) => String(p?.[k]));
+    const { message } = importSummary(t, "Ahri", { runes: { ok: true } }, "Altın-");
+    expect(message).toContain("(Altın- verisi)");
+    expect(importSummary(t, "Ahri", { runes: { ok: true } }).message).not.toContain("verisi");
+  });
+});
