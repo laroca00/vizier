@@ -3,6 +3,7 @@ import { DataBadge } from "./ui/DataBadge";
 import { BuildPath } from "./BuildPathPanel";
 import { ItemTree } from "./ItemTreePanel";
 import { StartTiming } from "./StartTimingPanel";
+import { MainsBuild } from "./MainsBuildPanel";
 import { RunePageView } from "./RunePageView";
 import { formatPercent, useLang, useT, type Lang } from "./i18n";
 import { rankLabel, useBracket } from "./rank";
@@ -452,6 +453,7 @@ export function BuildSuggestion({ championId, championName, position, currentSpe
       <BuildPath picks={picks} items={state.value.items} version={version} times={state.value.itemTimes} />
       <ItemTree tree={"itemTree" in shown ? shown.itemTree : undefined} items={state.value.items} version={version} />
       <StartTiming build={shown} items={state.value.items} version={version} />
+      {shown === build && <MainsBuild build={build} items={state.value.items} version={version} />}
 
       {shownItems.length > 0 && (
         <section className="build__block" aria-label={t("Sık alınan eşyalar")}>

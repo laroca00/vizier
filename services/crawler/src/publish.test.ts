@@ -57,6 +57,29 @@ describe("publish", () => {
     expect(third.sent).toBeLessThan(third.total);
   });
 
+  it("holds back a bracket that fails the sanity checks and says why, and lets it through once it passes", async () => {
+    // Two players a game is far from ten, which the checks read as lost rows.
+    const local = await seeded(1, 520);
+    const remote = fakeRemote();
+    const held = await publish(local.db, local.sqlite, remote, 1);
+    expect(held.sent).toBe(0);
+    expect(held.held[0]).toMatch(/emerald_plus: .* players a game/);
+    expect(remote.statements).toHaveLength(0);
+    const state = local.sqlite.prepare("SELECT value FROM publish_state WHERE key = 'held:emerald_plus'").get() as { value: string };
+    expect(JSON.parse(state.value).problems[0]).toMatch(/players a game/);
+    // Other-queue docs have no bracket and are not held.
+    expect((await publish(local.db, local.sqlite, remote, 2, { bracket: "emerald_plus", only: "other" })).held).toEqual([]);
+  }, 60_000);
+
+  it("records when a bracket was last published and clears an old hold", async () => {
+    const local = await seeded(1, 12);
+    local.sqlite.exec("CREATE TABLE IF NOT EXISTS publish_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+    local.sqlite.prepare("INSERT INTO publish_state (key, value) VALUES ('held:emerald_plus', '{}')").run();
+    await publish(local.db, local.sqlite, fakeRemote(), 77);
+    const rows = local.sqlite.prepare("SELECT key, value FROM publish_state ORDER BY key").all();
+    expect(rows).toEqual([{ key: "last:emerald_plus", value: "77" }]);
+  });
+
   it("resends docs whose statement failed", async () => {
     const local = await seeded(1, 12);
     const failing = { query: async () => Promise.reject(new Error("D1 is down")) };

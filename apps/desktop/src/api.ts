@@ -4,6 +4,7 @@ import { createApiCache } from "./apiCache";
 import { activeBracket, activeRegion, withRank } from "./rankChoice";
 import { ApiError, requestJson } from "./http";
 import type { RankCurveDoc } from "./data/rankCurve";
+import type { ChampionHistoryDoc, TierHistoryDoc } from "./data/history";
 import type { ItemNode } from "./lab/itemPath";
 
 export { ApiError };
@@ -64,6 +65,8 @@ export type Build = Picks & {
   startOptions?: Choice<{ ids: number[] }>[];
   /** Median minute of the first boots and the first finished item. */
   timing?: { boots: { games: number; medianMinute: number } | null; firstItem: { games: number; medianMinute: number } | null };
+  /** Picks of players with many games on the champion; missing until enough games. */
+  mains?: Picks & { games: number; winRate: number };
 };
 
 /** Null when Vizier has no games for the champion yet. */
@@ -400,6 +403,10 @@ export type CoverageDoc = {
   brackets?: { patch: string; queue: number; bracket: string; platform: string; games: number }[];
   /** Timeline share per rank bracket (ranked solo). */
   timelineBrackets?: { patch: string; queue: number; bracket: string; players: number; withTimeline: number; share: number | null }[];
+  /** Ranked games left out (remakes, players who left) per patch; missing in older docs. */
+  dropped?: { patch: string; queue: number; reason: string; games: number }[];
+  /** Counted games whose roles were inferred; missing in older docs. */
+  roleFixed?: { patch: string; queue: number; games: number }[];
 };
 
 /** What the stats stand on: games per patch, rank bracket and platform. */
@@ -410,4 +417,14 @@ export function getCoverage() {
 /** Win rate, pick rate and games of every champion and role in each bracket, side by side; empty until the crawler publishes it. */
 export function getRankCurve() {
   return get<RankCurveDoc>("/v1/meta/rank-curve");
+}
+
+/** Daily win, pick and ban rates of one champion per role and bracket; empty until the crawler has recorded days. */
+export function getChampionHistory(championId: number) {
+  return get<ChampionHistoryDoc>(`/v1/history/${championId}`);
+}
+
+/** Win rate per day of every champion in one role (Emerald+). */
+export function getTierHistory(position: string) {
+  return get<TierHistoryDoc>(`/v1/history/tier/${position}`);
 }

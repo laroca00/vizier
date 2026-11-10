@@ -135,10 +135,26 @@ export function localSchema(sqlite: DatabaseSync) {
   // The tier group of the seed a game came from; null on rows from before.
   addColumn(sqlite, "participant_stats", "rank_group", "TEXT");
   addColumn(sqlite, "crawled_matches", "rank_group", "TEXT");
+  // Why a game was not counted (remake or a player who left); null for games that were.
+  addColumn(sqlite, "crawled_matches", "dropped", "TEXT");
+  // 1 when the game's roles had to be inferred (see roles.ts).
+  addColumn(sqlite, "crawled_matches", "role_fixed", "INTEGER");
   // The jungler's early route (side, first lane, first gank minute) from the timeline.
   addColumn(sqlite, "participant_stats", "jungle_path", "TEXT");
   // Letters of the objectives the player's team took first; null on games from before.
   addColumn(sqlite, "participant_stats", "objectives", "TEXT");
+  // A salted one-way key of the player, so games of people who play a champion a lot can be told apart. No name or puuid is kept.
+  addColumn(sqlite, "participant_stats", "player_key", "TEXT");
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS player_champs (
+    player_key TEXT NOT NULL, patch TEXT NOT NULL, champion_id INTEGER NOT NULL, games INTEGER NOT NULL,
+    PRIMARY KEY (player_key, patch, champion_id)
+  ) WITHOUT ROWID`);
+  // One row a day per bracket, champion and role for the newest patch: counts so far, for the history sparklines.
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS history_points (
+    day TEXT NOT NULL, patch TEXT NOT NULL, bracket TEXT NOT NULL, champion_id INTEGER NOT NULL, team_position TEXT NOT NULL,
+    games INTEGER NOT NULL, wins INTEGER NOT NULL, matches INTEGER NOT NULL, bans INTEGER NOT NULL,
+    PRIMARY KEY (day, bracket, champion_id, team_position)
+  ) WITHOUT ROWID`);
   for (const spec of TABLES) {
     if (isTable(sqlite, spec.name)) split(sqlite, spec);
     emeraldView(sqlite, spec);

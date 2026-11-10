@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { DEFAULT_BRACKET, type Bracket } from "@vizier/shared/brackets";
 import { nextExtra, scopeName, type ExtraScope } from "../../api/src/publishPlan.ts";
+import { sanityChecks } from "../../api/src/sanity.ts";
 import { isOtherQueueKey, rankCurveDocs, regionDocs, statDocs } from "../../api/src/statDocs.ts";
 
 // D1 binds at most 100 parameters a statement, three per doc here.
@@ -22,6 +23,18 @@ export type Scope = { bracket: Bracket; only?: "ranked" | "other"; regions?: boo
 
 export async function publish(db: D1Database, sqlite: DatabaseSync, remote: Remote, now = Date.now(), scope: Scope = { bracket: DEFAULT_BRACKET }) {
   sqlite.exec("CREATE TABLE IF NOT EXISTS published_docs (key TEXT PRIMARY KEY, hash TEXT NOT NULL)");
+  sqlite.exec("CREATE TABLE IF NOT EXISTS publish_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+  // A bracket whose counts fail the sanity checks keeps its last published docs instead of sending suspect ones.
+  if (scope.only !== "other") {
+    const check = await sanityChecks(db, scope.bracket);
+    const held = sqlite.prepare("INSERT OR REPLACE INTO publish_state (key, value) VALUES (?, ?)");
+    if (!check.ok) {
+      held.run(`held:${scope.bracket}`, JSON.stringify({ at: now, problems: check.problems }));
+      return { total: 0, sent: 0, held: check.problems.map((p) => `${scope.bracket}: ${p}`) };
+    }
+    sqlite.prepare("DELETE FROM publish_state WHERE key = ?").run(`held:${scope.bracket}`);
+  }
+
   const known = new Map(sqlite.prepare("SELECT key, hash FROM published_docs").all().map((r) => [String(r.key), String(r.hash)]));
 
   const changed: Doc[] = [];
@@ -52,7 +65,8 @@ export async function publish(db: D1Database, sqlite: DatabaseSync, remote: Remo
     );
     for (const d of group) mark.run(d.key, d.hash);
   }
-  return { total, sent: changed.length };
+  if (scope.only !== "other") sqlite.prepare("INSERT OR REPLACE INTO publish_state (key, value) VALUES (?, ?)").run(`last:${scope.bracket}`, String(now));
+  return { total, sent: changed.length, held: [] as string[] };
 }
 
 function* statements(docs: Doc[]): Generator<Doc[]> {
@@ -71,7 +85,6 @@ function* statements(docs: Doc[]): Generator<Doc[]> {
 }
 
 function lastRun(sqlite: DatabaseSync, name: string): number | undefined {
-  sqlite.exec("CREATE TABLE IF NOT EXISTS publish_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
   const row = sqlite.prepare("SELECT value FROM publish_state WHERE key = ?").get(`extra:${name}`);
   return row ? Number(row.value) : undefined;
 }
@@ -91,6 +104,7 @@ export async function publishTick(db: D1Database, sqlite: DatabaseSync, remote: 
   const extra = nextExtra((name) => lastRun(sqlite, name), now);
   if (!extra) return { ...main, extra: null as string | null };
   const sent = await publish(db, sqlite, remote, now, extraScope(extra));
-  sqlite.prepare("INSERT OR REPLACE INTO publish_state (key, value) VALUES (?, ?)").run(`extra:${scopeName(extra)}`, String(now));
-  return { total: main.total + sent.total, sent: main.sent + sent.sent, extra: scopeName(extra) as string | null };
+  // A held extra is tried again at the next publish, not a day later.
+  if (sent.held.length === 0) sqlite.prepare("INSERT OR REPLACE INTO publish_state (key, value) VALUES (?, ?)").run(`extra:${scopeName(extra)}`, String(now));
+  return { total: main.total + sent.total, sent: main.sent + sent.sent, extra: scopeName(extra) as string | null, held: [...main.held, ...sent.held] };
 }

@@ -352,6 +352,20 @@ describe("rank of a game", () => {
     expect(sqlite.prepare("SELECT rank_group FROM crawled_matches WHERE match_id = 'KR_9'").all()).toEqual([{ rank_group: "gold" }]);
     expect(sqlite.prepare("SELECT rank_group FROM participant_stats WHERE match_id = 'KR_9'").all()).toEqual([{ rank_group: "gold" }]);
   });
+
+  it("records remakes and games with a leaver as dropped, without player rows", async () => {
+    const { db, sqlite } = fakeD1();
+    const crawler = new Crawler(db, {} as RiotClient, () => 5 * DAY, { ...options, platforms: ["kr"] });
+    expect(await crawler.save(match("KR_20", [participant(103, true, { gameEndedInEarlySurrender: true })]), null, "gold")).toBe(false);
+    expect(await crawler.save(match("KR_21", [participant(103, true, { timePlayed: 300 })]), null, "gold")).toBe(false);
+    expect(await crawler.save(match("KR_22", [participant(103, true)]), null, "gold")).toBe(true);
+    expect(sqlite.prepare("SELECT match_id, dropped FROM crawled_matches ORDER BY match_id").all()).toEqual([
+      { match_id: "KR_20", dropped: "surrender" },
+      { match_id: "KR_21", dropped: "afk" },
+      { match_id: "KR_22", dropped: null },
+    ]);
+    expect(sqlite.prepare("SELECT COUNT(*) AS n FROM participant_stats WHERE match_id IN ('KR_20', 'KR_21')").get()).toEqual({ n: 0 });
+  });
 });
 
 describe("buildPaths", () => {
@@ -434,5 +448,23 @@ describe("other queues", () => {
       { champion_id: 64, win: 0, augments: null, runes: "", team_id: null },
       { champion_id: 103, win: 1, augments: "11,42", runes: "", team_id: null },
     ]);
+  });
+});
+
+describe("role fix on save", () => {
+  it("fills one empty role and counts the game in coverage", async () => {
+    const { rollup } = await import("./rollup.ts");
+    const { emptyCatalog } = await import("./archetypes.ts");
+    const { coverage } = await import("./coverage.ts");
+    const { db, sqlite } = fakeD1();
+    const crawler = new Crawler(db, {} as RiotClient, () => 5 * DAY, { region: "asia", platforms: ["kr"], leagues: "challenger", playersPerRun: 0, matchesPerRun: 5, extraMatchesPerRun: 0, timelinesPerRun: 0 });
+    const roles = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
+    const team = (teamId: number, empty: string | null) =>
+      roles.map((r, i) => participant(100 + i + (teamId === 200 ? 10 : 0), true, { puuid: `x${teamId}${i}`, teamId, participantId: i + 1 + (teamId === 200 ? 5 : 0), teamPosition: r === empty ? "" : r }));
+    await crawler.save(match("KR_30", [...team(100, "MIDDLE"), ...team(200, null)]), null, "gold");
+    expect(sqlite.prepare("SELECT team_position AS p FROM participant_stats WHERE match_id = 'KR_30' AND team_id = 100 ORDER BY p").all().map((r) => r.p)).toContain("MIDDLE");
+    expect(sqlite.prepare("SELECT COUNT(*) AS n FROM participant_stats WHERE match_id = 'KR_30'").get()).toEqual({ n: 10 });
+    await rollup(db, async () => emptyCatalog());
+    expect((await coverage(db)).roleFixed).toEqual([{ patch: expect.any(String), queue: 420, games: 1 }]);
   });
 });

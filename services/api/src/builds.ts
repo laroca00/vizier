@@ -63,7 +63,12 @@ export type Build = Picks & {
   startOptions: Choice<{ ids: number[] }>[];
   /** Median minute of the first boots and the first finished item; missing until enough timelines. */
   timing?: { boots: Timing | null; firstItem: Timing | null };
+  /** Builds of players with many games on the champion; missing until enough games. */
+  mains?: MainsBuild;
 };
+
+/** The picks of players who play the champion a lot, as a short build of its own. */
+export type MainsBuild = Picks & { games: number; winRate: number };
 
 export type Timing = { games: number; medianMinute: number };
 
@@ -160,7 +165,7 @@ export async function aggregateBuild(
   const kinds = ["rune", "spell", "item", "start", "core", "skill"];
   const { results } = used
     ? await query(patches, kinds.map((k) => `'vs-${k}'`).join(","), "AND value >= ? AND value < ?", [`${used}|`, `${used}}`])
-    : await query(patches, [...kinds.map((k) => `'${k}'`), ...kinds.map((k) => `'s-${k}'`), "'style'", "'foe'", "'foe-item'", "'perk'", "'path1'", "'path2'", "'path3'", "'boots-min'", "'first-min'"].join(","), "", []);
+    : await query(patches, [...kinds.map((k) => `'${k}'`), ...kinds.map((k) => `'s-${k}'`), "'style'", "'foe'", "'foe-item'", "'perk'", "'path1'", "'path2'", "'path3'", "'boots-min'", "'first-min'", "'m-games'", ...["rune", "spell", "item", "core", "skill"].map((k) => `'m-${k}'`)].join(","), "", []);
   const unprefixed = (kind: string, prefix?: string) =>
     results
       .filter((r) => r.kind === kind && (prefix === undefined || r.value.startsWith(`${prefix}|`)))
@@ -195,6 +200,10 @@ export async function aggregateBuild(
   const boots = medianMinute(unprefixed("boots-min"));
   const firstItem = medianMinute(unprefixed("first-min"));
   if (boots || firstItem) build.timing = { boots, firstItem };
+  const mainsGames = unprefixed("m-games").reduce((sum, r) => ({ games: sum.games + r.games, wins: sum.wins + r.wins }), { games: 0, wins: 0 });
+  if (mainsGames.games >= MIN_MAINS_GAMES) {
+    build.mains = { games: mainsGames.games, winRate: rate(mainsGames.wins, mainsGames.games), ...picks((kind) => unprefixed(`m-${kind}`), false) };
+  }
   build.itemTree = itemTree(unprefixed("path1"), unprefixed("path2"), unprefixed("path3"));
   const skillRows = unprefixed("skill");
   const skillGames = skillRows.reduce((sum, r) => sum + r.games, 0);
@@ -280,6 +289,8 @@ export function itemTree(first: PathCount[], second: PathCount[], third: PathCou
 }
 
 const TOP_STARTS = 5;
+// Fewer games from frequent players say more about a few people than about the champion.
+const MIN_MAINS_GAMES = 40;
 const MIN_START_GAMES = 20;
 const MIN_TIMING_GAMES = 20;
 

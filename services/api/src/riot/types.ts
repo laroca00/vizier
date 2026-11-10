@@ -38,6 +38,11 @@ export type Participant = {
   neutralMinionsKilled?: number;
   goldEarned?: number;
   visionScore?: number;
+  /** Seconds the player was in the game; shorter than the game when they left. */
+  timePlayed?: number;
+  totalDamageDealtToChampions?: number;
+  gameEndedInEarlySurrender?: boolean;
+  teamEarlySurrendered?: boolean;
   challenges?: {
     laneMinionsFirst10Minutes?: number;
     jungleCsBefore10Minutes?: number;

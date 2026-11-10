@@ -27,3 +27,20 @@ export function coverageRows(doc: CoverageDoc | null): { patch: string; rows: Co
   });
   return { patch, rows };
 }
+
+/** Games left out of the stats in a patch because of a remake or a player who left, with how much of the crawled games they were. */
+export function droppedGames(doc: CoverageDoc | null, patch: string): { surrender: number; afk: number; share: number | null } | null {
+  const rows = doc?.dropped?.filter((r) => r.patch === patch && r.queue === 420) ?? [];
+  if (rows.length === 0) return null;
+  const count = (reason: string) => rows.filter((r) => r.reason === reason).reduce((sum, r) => sum + r.games, 0);
+  const kept = doc?.games.filter((g) => g.patch === patch && g.queue === 420).reduce((sum, g) => sum + g.games, 0) ?? 0;
+  const surrender = count("surrender");
+  const afk = count("afk");
+  const all = kept + surrender + afk;
+  return { surrender, afk, share: all > 0 ? (surrender + afk) / all : null };
+}
+
+/** Games of the patch whose roles had to be inferred, or 0. */
+export function roleFixedGames(doc: CoverageDoc | null, patch: string): number {
+  return doc?.roleFixed?.filter((r) => r.patch === patch && r.queue === 420).reduce((sum, r) => sum + r.games, 0) ?? 0;
+}

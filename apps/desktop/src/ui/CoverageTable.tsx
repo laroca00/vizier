@@ -1,6 +1,6 @@
 import { BRACKET_LABELS } from "@vizier/shared/brackets";
 import { getCoverage } from "../api";
-import { coverageRows, PLATFORMS } from "../data/coverageRows";
+import { coverageRows, droppedGames, PLATFORMS, roleFixedGames } from "../data/coverageRows";
 import { useLang, useT } from "../i18n";
 import { useAsync } from "../useAsync";
 import "./CoverageTable.css";
@@ -12,6 +12,8 @@ export function CoverageTable() {
   const [state] = useAsync("coverage", getCoverage);
   const table = state.status === "done" ? coverageRows(state.value) : null;
   if (!table) return null;
+  const dropped = state.status === "done" ? droppedGames(state.value, table.patch) : null;
+  const fixed = state.status === "done" ? roleFixedGames(state.value, table.patch) : 0;
 
   return (
     <div className="coverage">
@@ -43,6 +45,16 @@ export function CoverageTable() {
           ))}
         </tbody>
       </table>
+      {dropped && (
+        <p className="build__note">
+          {t("Sayılmayan maç: {remake} yeniden başlatma, {left} oyuncu çıkışı{share}", {
+            remake: dropped.surrender.toLocaleString(),
+            left: dropped.afk.toLocaleString(),
+            share: dropped.share === null ? "" : ` (%${(dropped.share * 100).toFixed(1)})`,
+          })}
+        </p>
+      )}
+      {fixed > 0 && <p className="build__note">{t("Rolü Smite, çiftlik ve harita konumundan tamamlanan maç: {games}", { games: fixed.toLocaleString() })}</p>}
     </div>
   );
 }
