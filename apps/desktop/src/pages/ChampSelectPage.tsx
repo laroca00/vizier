@@ -44,7 +44,7 @@ import { RankChip } from "../ui/RankPicker";
 import { loadErrorMessage } from "../loadError";
 import { ErrorState } from "../ui/States";
 import { useAsync } from "../useAsync";
-import { useDraftRankScope } from "../rank";
+import { useOwnRankScope } from "../rank";
 import { useOnline } from "../useOnline";
 import "./ChampSelectPage.css";
 // After the page's base styles, which it adjusts.
@@ -68,7 +68,7 @@ function useSecondsLeft(endsAt: number) {
 
 export function ChampSelectPage({ draft }: { draft: ChampSelect }) {
   const t = useT();
-  useDraftRankScope();
+  useOwnRankScope();
   const matchupTemplate = useMatchupTemplate();
   const lang = useLang();
   const [data, retryStatic] = useAsync("static", loadStatic);

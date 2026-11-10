@@ -147,7 +147,7 @@ export const EN: Record<string, string> = {
   "Seçili rank filtresi": "The rank filter you chose",
   "({rank} verisi)": "({rank} data)",
   "Şampiyon seçiminde kendi rankımın verisi": "Use my own rank's data in champ select",
-  "Öneriler, yasak planı ve aktarılan build, filtre ne olursa olsun kendi rankındaki maçlardan gelir. Rankın okunamazsa filtre geçerli kalır.": "Suggestions, the ban plan and the imported build come from games at your own rank, whatever the filter says. If your rank can't be read, the filter applies.",
+  "Öneriler, yasak planı, aktarılan build ve kuyruk önerileri, filtre ne olursa olsun kendi rankındaki maçlardan gelir. Rankın okunamazsa filtre geçerli kalır.": "Suggestions, the ban plan, the imported build and queue picks come from games at your own rank, whatever the filter says. If your rank can't be read, the filter applies.",
   "Rank: {rank}": "Rank: {rank}",
   "{rank} rankında az maç var": "Few games at {rank}",
   "Benim rankım": "My rank",

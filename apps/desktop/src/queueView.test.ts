@@ -49,3 +49,18 @@ describe("autofillPicks", () => {
     expect(autofillPicks([], lists, () => null, new Set())).toEqual([]);
   });
 });
+
+describe("autofillPicks at another rank", () => {
+  it("orders by the lists it is given, so a bracket's own win rates decide", () => {
+    const easy = () => 3;
+    const emerald = { ...lists, TOP: [entry(1, 0.52, 3000), entry(2, 0.55, 3000)] };
+    const gold = { ...lists, TOP: [entry(1, 0.56, 3000), entry(2, 0.5, 3000)] };
+    expect(autofillPicks(["MIDDLE"], emerald, easy, new Set()).filter((p) => p.position === "TOP").map((p) => p.championId)).toEqual([2, 1]);
+    expect(autofillPicks(["MIDDLE"], gold, easy, new Set()).filter((p) => p.position === "TOP").map((p) => p.championId)).toEqual([1, 2]);
+  });
+
+  it("drops champions whose sample in the bracket is too thin", () => {
+    const thin = { ...lists, TOP: [entry(1, 0.6, 30), entry(2, 0.52, 3000)] };
+    expect(autofillPicks(["MIDDLE"], thin, () => 3, new Set()).filter((p) => p.position === "TOP").map((p) => p.championId)).toEqual([2]);
+  });
+});
