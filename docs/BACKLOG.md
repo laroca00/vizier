@@ -410,15 +410,20 @@ Builds on: rollup, coverage, `confidenceOf`, 22.x.
 - [x] 37.2 Role fix: when `teamPosition` is empty or two players share it, infer roles from Smite, items and timeline lane positions; fixture tests. Coverage counts how many games needed it. (292b61f; roles inferred from Smite, farm and early positions when a team lacks one of each role; counted in coverage (roleFixed))
 - [x] 37.3 Sanity checks on every rollup: average win rate of all champions near 50%, pick rates summing to 10 per game per bracket, no champion with more games than the patch total. A failing check holds the publish for that bracket and logs why. (292b61f; sanity checks (win rate near 50%, 8-10.1 players a game, no champion over the game count) hold a bracket publish and log why; last publish and holds kept in publish_state)
 - [ ] 37.4 New patch blending: in the first days of a patch, when a champion's new-patch sample is thin, show the previous patch labelled "geçen yama" instead of empty values, until the new sample passes the confidence rule.
+<!-- claimed: auto/37-status-explorer 2026-11-10T04:40Z -->
 - [ ] 37.5 Status card under About: last publish per bracket, games today, timeline share and any bracket held by 37.3, from coverage.
+<!-- claimed: auto/37-status-explorer 2026-11-10T04:40Z -->
 
 ## 38. Stats Explorer
 
 Builds on: tier list data, 33.x brackets, 36.x stats, the search palette.
 
 - [ ] 38.1 Stats Explorer page (`?view=stats`): every champion and role in one sortable table with win rate, pick rate, ban rate, games, KDA, CS/min, gold diff at 15 and average game length; filters for role, rank, region and patch; a badge on every cell.
+<!-- claimed: auto/37-status-explorer 2026-11-10T04:40Z -->
 - [ ] 38.2 Column picker and saved views in settings, with three ready ones: lane bullies (gold diff at 15), late game (35+ win rate), ban targets.
+<!-- claimed: auto/37-status-explorer 2026-11-10T04:40Z -->
 - [ ] 38.3 Compare up to three champions side by side across every stat and bracket, opened from the explorer or the champion page.
+<!-- claimed: auto/37-status-explorer 2026-11-10T04:40Z -->
 - [ ] 38.4 Intent searches for the explorer ("en yüksek winrate jungle", "lane bully top") through the 30.2 intent rules.
 
 ## 39. Rising and falling
