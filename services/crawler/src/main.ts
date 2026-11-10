@@ -151,8 +151,8 @@ if (remote) {
   setTimeout(
     () =>
       every(PUBLISH_EVERY, "publish", async () => {
-        const { total, sent, extra } = await publishTick(db, sqlite, remote);
-        return `${sent} of ${total} docs changed${extra ? ` (with ${extra})` : ""}`;
+        const { total, sent, extra, held } = await publishTick(db, sqlite, remote);
+        return `${sent} of ${total} docs changed${extra ? ` (with ${extra})` : ""}${held.length ? `; HELD: ${held.join("; ")}` : ""}`;
       }),
     ROLLUP_EVERY + MINUTE,
   );
