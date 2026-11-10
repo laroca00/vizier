@@ -411,6 +411,10 @@ export type CoverageDoc = {
   dropped?: { patch: string; queue: number; reason: string; games: number }[];
   /** Counted games whose roles were inferred; missing in older docs. */
   roleFixed?: { patch: string; queue: number; games: number }[];
+  /** Last publish and any hold per bracket; missing in older docs. */
+  status?: { bracket: string; lastPublishAt: number | null; held: string[] }[];
+  /** Ranked games played in the 24 hours before the doc was made. */
+  gamesToday?: number;
 };
 
 /** What the stats stand on: games per patch, rank bracket and platform. */

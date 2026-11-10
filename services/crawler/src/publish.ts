@@ -3,7 +3,8 @@ import type { DatabaseSync } from "node:sqlite";
 import { DEFAULT_BRACKET, type Bracket } from "@vizier/shared/brackets";
 import { nextExtra, scopeName, type ExtraScope } from "../../api/src/publishPlan.ts";
 import { sanityChecks } from "../../api/src/sanity.ts";
-import { isOtherQueueKey, rankCurveDocs, regionDocs, statDocs } from "../../api/src/statDocs.ts";
+import { coverage } from "../../api/src/coverage.ts";
+import { docKey, isOtherQueueKey, rankCurveDocs, regionDocs, statDocs } from "../../api/src/statDocs.ts";
 
 // D1 binds at most 100 parameters a statement, three per doc here.
 const DOCS_PER_STATEMENT = 33;
@@ -25,14 +26,15 @@ export async function publish(db: D1Database, sqlite: DatabaseSync, remote: Remo
   sqlite.exec("CREATE TABLE IF NOT EXISTS published_docs (key TEXT PRIMARY KEY, hash TEXT NOT NULL)");
   sqlite.exec("CREATE TABLE IF NOT EXISTS publish_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
   // A bracket whose counts fail the sanity checks keeps its last published docs instead of sending suspect ones.
+  // The coverage doc still goes out, so the status card on About can say what is held.
+  let heldProblems: string[] = [];
   if (scope.only !== "other") {
     const check = await sanityChecks(db, scope.bracket);
     const held = sqlite.prepare("INSERT OR REPLACE INTO publish_state (key, value) VALUES (?, ?)");
     if (!check.ok) {
       held.run(`held:${scope.bracket}`, JSON.stringify({ at: now, problems: check.problems }));
-      return { total: 0, sent: 0, held: check.problems.map((p) => `${scope.bracket}: ${p}`) };
-    }
-    sqlite.prepare("DELETE FROM publish_state WHERE key = ?").run(`held:${scope.bracket}`);
+      heldProblems = check.problems;
+    } else sqlite.prepare("DELETE FROM publish_state WHERE key = ?").run(`held:${scope.bracket}`);
   }
 
   const known = new Map(sqlite.prepare("SELECT key, hash FROM published_docs").all().map((r) => [String(r.key), String(r.hash)]));
@@ -40,6 +42,10 @@ export async function publish(db: D1Database, sqlite: DatabaseSync, remote: Remo
   const changed: Doc[] = [];
   let total = 0;
   async function* docs(): AsyncGenerator<[string, unknown]> {
+    if (heldProblems.length > 0) {
+      yield [docKey.coverage(), await coverage(db, now)];
+      return;
+    }
     for await (const [key, value] of statDocs(db, scope.bracket)) {
       if (scope.only && isOtherQueueKey(key) !== (scope.only === "other")) continue;
       yield [key, value];
@@ -66,7 +72,7 @@ export async function publish(db: D1Database, sqlite: DatabaseSync, remote: Remo
     for (const d of group) mark.run(d.key, d.hash);
   }
   if (scope.only !== "other") sqlite.prepare("INSERT OR REPLACE INTO publish_state (key, value) VALUES (?, ?)").run(`last:${scope.bracket}`, String(now));
-  return { total, sent: changed.length, held: [] as string[] };
+  return { total, sent: changed.length, held: heldProblems.map((p) => `${scope.bracket}: ${p}`) };
 }
 
 function* statements(docs: Doc[]): Generator<Doc[]> {

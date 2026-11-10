@@ -50,7 +50,8 @@ describe("publish", () => {
     const keys = remote.statements.flatMap((s) => s.params.filter((_, i) => i % 3 === 0));
     expect(keys).toContain("tierlist:420:MIDDLE");
 
-    expect((await publish(local.db, local.sqlite, remote, 2)).sent).toBe(0);
+    // Only the coverage doc moves: it carries the time of the last publish.
+    expect((await publish(local.db, local.sqlite, remote, 2)).sent).toBe(1);
     await seeded(13, 3, local);
     const third = await publish(local.db, local.sqlite, remote, 3);
     expect(third.sent).toBeGreaterThan(0);
@@ -62,9 +63,13 @@ describe("publish", () => {
     const local = await seeded(1, 520);
     const remote = fakeRemote();
     const held = await publish(local.db, local.sqlite, remote, 1);
-    expect(held.sent).toBe(0);
+    // Only the coverage doc goes out, carrying the hold.
+    expect(held.sent).toBe(1);
     expect(held.held[0]).toMatch(/emerald_plus: .* players a game/);
-    expect(remote.statements).toHaveLength(0);
+    expect(remote.statements).toHaveLength(1);
+    const coverageBody = JSON.parse(String(remote.statements[0].params[1]));
+    expect(coverageBody.status.find((s: { bracket: string }) => s.bracket === "emerald_plus").held[0]).toMatch(/players a game/);
+    expect(coverageBody.gamesToday).toBeTypeOf("number");
     const state = local.sqlite.prepare("SELECT value FROM publish_state WHERE key = 'held:emerald_plus'").get() as { value: string };
     expect(JSON.parse(state.value).problems[0]).toMatch(/players a game/);
     // Other-queue docs have no bracket and are not held.

@@ -59,3 +59,14 @@ describe("roleFixedGames", () => {
     expect(roleFixedGames(base, "16.21")).toBe(0);
   });
 });
+
+describe("statusRows", () => {
+  it("lists every bracket in order, with a missing one as never published", async () => {
+    const { statusRows } = await import("./coverageRows");
+    const rows = statusRows({ ...base, status: [{ bracket: "gold_minus", lastPublishAt: 5, held: ["x"] }, { bracket: "emerald_plus", lastPublishAt: 9, held: [] }] });
+    expect(rows?.map((r) => r.bracket)).toEqual(["all", "gold_minus", "platinum_plus", "emerald_plus", "diamond_plus", "master_plus"]);
+    expect(rows?.find((r) => r.bracket === "gold_minus")).toEqual({ bracket: "gold_minus", lastPublishAt: 5, held: ["x"] });
+    expect(rows?.find((r) => r.bracket === "all")).toEqual({ bracket: "all", lastPublishAt: null, held: [] });
+    expect(statusRows(base)).toBeNull();
+  });
+});
