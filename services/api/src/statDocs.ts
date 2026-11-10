@@ -4,6 +4,7 @@
 import { BRACKETS, DEFAULT_BRACKET, REGIONS, isBracket, type Bracket, type Region } from "@vizier/shared/brackets";
 import { aggregateBuild, POSITIONS, type Build } from "./builds.ts";
 import { buildHistory } from "./snapshots.ts";
+import { championHistory, tierHistory } from "./history.ts";
 import { coverage } from "./coverage.ts";
 import { scope } from "./localSchema.ts";
 import { arenaDuos, arenaItems, augmentChampions, augmentStats, banSuggestions, benchStats, championOverview, counters, itemTimes, laneStats, latestPatches, rankCurve, synergies, tierList } from "./stats.ts";
@@ -68,6 +69,10 @@ export const docKey = {
   championRegions: (championId: number, bracket: Bracket = DEFAULT_BRACKET) => `champregions:${RANKED}:${championId}${rank(bracket)}`,
   /** Win rate, pick rate and games of every champion and role in all six brackets; ranked solo only. */
   rankCurve: (queue: number) => `rankcurve:${queue}`,
+  /** A champion's daily points per role, bracket and patch. */
+  history: (championId: number) => `history:${championId}`,
+  /** A role's win rate per day for every champion, Emerald+. */
+  historyTier: (position: string) => `historytier:${position}`,
   bans: () => "bans",
   /** How many games, timelines and followed players sit behind the stats. */
   coverage: () => "coverage",
@@ -140,6 +145,7 @@ export async function* statDocs(db: D1Database, bracket: Bracket = DEFAULT_BRACK
     }
   }
   if (main) {
+    for (const position of POSITIONS) yield [docKey.historyTier(position), await tierHistory(db, position)];
     yield [docKey.bans(), await banSuggestions(db)];
     yield [docKey.coverage(), await coverage(db)];
     for (const queue of AUGMENT_QUEUES) {
@@ -164,6 +170,7 @@ export async function* statDocs(db: D1Database, bracket: Bracket = DEFAULT_BRACK
       yield [docKey.arenaItems(championId), await arenaItems(db, championId)];
     }
     if (queue !== RANKED) continue;
+    if (main) yield [docKey.history(championId), await championHistory(db, championId)];
 
     for (const { position } of overview.positions) {
       yield [docKey.champion(queue, championId, position, bracket), await championOverview(db, championId, position, queue, bracket)];

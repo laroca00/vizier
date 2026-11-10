@@ -2,7 +2,10 @@ import { TierRuleInfo } from "./TierRuleInfo";
 import { MetaMovers } from "../MetaMovers";
 import { MatchupLink } from "../matchupLink";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
-import { getBans, getTierList } from "../api";
+import { getBans, getTierHistory, getTierList } from "../api";
+import { tierTrend } from "../data/history";
+import { TrendSpark } from "../ui/TrendSpark";
+import { DEFAULT_BRACKET } from "@vizier/shared/brackets";
 import { championIconUrl, champions, latestVersion, roleIconUrl } from "../data/ddragon";
 import { POSITIONS } from "../labels";
 import { ARENA, QUEUES, RANKED, winLabel } from "../queues";
@@ -66,6 +69,9 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
   const [state, retry] = useAsync(`${queue}:${position}:${bracket}`, () => load(queue, position));
   const ranked = queue === RANKED;
   const eloTag = useEloTags();
+  const [history] = useAsync(`history-tier:${position}`, () => getTierHistory(position));
+  // The tier history is Emerald+ only; other ranks show no trend rather than the wrong one.
+  const trendDoc = ranked && bracket === DEFAULT_BRACKET && history.status === "done" ? history.value : null;
   const personal = usePersonal();
   const poolIds = new Set(personal.pool.filter((p) => !ranked || !p.position || p.position === position).map((p) => p.championId));
 
@@ -250,7 +256,9 @@ export function TierListPage({ view = DEFAULT_TIER_VIEW, onView, onOpenChampion 
                             {mine && <span className="tiers__mine">{mine === "pool" ? t("Havuzunda") : t("Favori")}</span>}
                           </button>
                         </td>
-                        <td title={sampleTitle(t, lang, { ...c, bracket: rankLabel(bracket, lang === "en" ? "en" : "tr"), patches: state.value.list.patches, updatedAt: state.value.list.updatedAt })}>{percent(c.winRate)}</td>
+                        <td title={sampleTitle(t, lang, { ...c, bracket: rankLabel(bracket, lang === "en" ? "en" : "tr"), patches: state.value.list.patches, updatedAt: state.value.list.updatedAt })}>
+                          {percent(c.winRate)} <TrendSpark trend={tierTrend(trendDoc, c.championId)} />
+                        </td>
                         <td className="tiers__change" data-trend={trendOf(c.winRateChange) ?? undefined}
                           title={c.winRateChange == null ? t("Önceki yamada yeterli maç yok.") : t("Önceki yamaya göre {change} puan", { change: signed(c.winRateChange) })}
                         >

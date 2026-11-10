@@ -303,6 +303,20 @@ export function createApp(store: Store, { statsDb, catalog, riot, augments = fal
     return c.json((await readDoc(statsDb, docKey.rankCurve(420))) ?? { patches: [], brackets: BRACKETS, entries: [] });
   });
 
+  app.get("/v1/history/:championId", async (c) => {
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    const id = Number(c.req.param("championId"));
+    if (!Number.isInteger(id) || id <= 0) badRequest("Invalid champion id");
+    return c.json((await readDoc(statsDb, docKey.history(id))) ?? { fields: [], roles: {} });
+  });
+
+  app.get("/v1/history/tier/:position", async (c) => {
+    if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
+    const position = c.req.param("position").toUpperCase();
+    if (!POSITIONS.has(position)) badRequest("Invalid position");
+    return c.json((await readDoc(statsDb, docKey.historyTier(position))) ?? { patch: null, days: [], champions: {} });
+  });
+
   app.get("/v1/meta/coverage", async (c) => {
     if (!statsDb) return c.json({ error: "Stats are not available" }, 503);
     return c.json((await readDoc<Coverage>(statsDb, docKey.coverage())) ?? { patches: [], games: [], timeline: [], players: [] });

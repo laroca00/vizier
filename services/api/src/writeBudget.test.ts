@@ -2,6 +2,7 @@ import { BRACKETS, REGIONS, REGION_BRACKETS, type Bracket } from "@vizier/shared
 import { beforeAll, describe, expect, it } from "vitest";
 import { emptyCatalog } from "./archetypes.ts";
 import { DAILY_WRITE_LIMIT, OTHER_QUEUES_PER_DAY, PUBLISHES_PER_DAY, VOLATILITY, WRITES_PER_DOC } from "./publishPlan.ts";
+import { recordHistory } from "./history.ts";
 import { rollup } from "./rollup.ts";
 import { regionDocs, splitRank, statDocs } from "./statDocs.ts";
 import { fakeD1 } from "./test/fakeD1.ts";
@@ -36,11 +37,12 @@ async function fixture(champions: number) {
     }
   }
   await rollup(db, async () => ({ ...emptyCatalog(), finished: new Set([3157]) }));
+  await recordHistory(db);
   return db;
 }
 
 type Kinds = Map<string, { fixed: number; champion: number; pair: number }>;
-const FIXED_KINDS = ["tierlist", "bans", "coverage", "augments", "augmentchamps", "buildindex"];
+const FIXED_KINDS = ["tierlist", "bans", "coverage", "augments", "augmentchamps", "buildindex", "historytier"];
 
 /** Docs a publish of this bracket sends, split by what they grow with. */
 async function shape(db: D1Database, bracket: Bracket) {
@@ -50,6 +52,7 @@ async function shape(db: D1Database, bracket: Bracket) {
     const [kind, ...rest] = base.split(":");
     const entry = kinds.get(kind) ?? { fixed: 0, champion: 0, pair: 0 };
     if (FIXED_KINDS.includes(kind)) entry.fixed++;
+    else if (kind === "history") entry.champion++;
     else if (rest[rest.length - 1] === "ANY") entry.champion++;
     else entry.pair++;
     kinds.set(kind, entry);

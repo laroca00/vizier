@@ -10,6 +10,7 @@ import { RiotClient, RiotError } from "../../api/src/riot/client.ts";
 import { RateLimiter } from "../../api/src/riot/rateLimiter.ts";
 import { pruneRaw, rollup } from "../../api/src/rollup.ts";
 import { snapshotClosedPatch } from "../../api/src/snapshots.ts";
+import { recordHistory } from "../../api/src/history.ts";
 import { sqliteD1 } from "../../api/src/sqliteD1.ts";
 import { D1Http } from "./d1Http.ts";
 import { publishTick } from "./publish.ts";
@@ -134,7 +135,8 @@ every(ROLLUP_EVERY, "rollup", async () => {
   const rows = await rollup(db);
   // The closed patch's builds are kept once, while its counts still exist.
   const snapshots = await snapshotClosedPatch(db);
-  return `${rows} rows${snapshots ? `, ${snapshots} build snapshots` : ""}`;
+  const points = await recordHistory(db);
+  return `${rows} rows${snapshots ? `, ${snapshots} build snapshots` : ""}${points ? `, ${points} history points` : ""}`;
 });
 every(PRUNE_EVERY, "prune", async () => {
   await pruneRaw(db);

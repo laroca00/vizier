@@ -145,6 +145,12 @@ export function localSchema(sqlite: DatabaseSync) {
     player_key TEXT NOT NULL, patch TEXT NOT NULL, champion_id INTEGER NOT NULL, games INTEGER NOT NULL,
     PRIMARY KEY (player_key, patch, champion_id)
   ) WITHOUT ROWID`);
+  // One row a day per bracket, champion and role for the newest patch: counts so far, for the history sparklines.
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS history_points (
+    day TEXT NOT NULL, patch TEXT NOT NULL, bracket TEXT NOT NULL, champion_id INTEGER NOT NULL, team_position TEXT NOT NULL,
+    games INTEGER NOT NULL, wins INTEGER NOT NULL, matches INTEGER NOT NULL, bans INTEGER NOT NULL,
+    PRIMARY KEY (day, bracket, champion_id, team_position)
+  ) WITHOUT ROWID`);
   for (const spec of TABLES) {
     if (isTable(sqlite, spec.name)) split(sqlite, spec);
     emeraldView(sqlite, spec);

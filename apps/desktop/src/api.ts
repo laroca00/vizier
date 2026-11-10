@@ -4,6 +4,7 @@ import { createApiCache } from "./apiCache";
 import { activeBracket, activeRegion, withRank } from "./rankChoice";
 import { ApiError, requestJson } from "./http";
 import type { RankCurveDoc } from "./data/rankCurve";
+import type { ChampionHistoryDoc, TierHistoryDoc } from "./data/history";
 import type { ItemNode } from "./lab/itemPath";
 
 export { ApiError };
@@ -412,4 +413,14 @@ export function getCoverage() {
 /** Win rate, pick rate and games of every champion and role in each bracket, side by side; empty until the crawler publishes it. */
 export function getRankCurve() {
   return get<RankCurveDoc>("/v1/meta/rank-curve");
+}
+
+/** Daily win, pick and ban rates of one champion per role and bracket; empty until the crawler has recorded days. */
+export function getChampionHistory(championId: number) {
+  return get<ChampionHistoryDoc>(`/v1/history/${championId}`);
+}
+
+/** Win rate per day of every champion in one role (Emerald+). */
+export function getTierHistory(position: string) {
+  return get<TierHistoryDoc>(`/v1/history/tier/${position}`);
 }

@@ -4,7 +4,9 @@ import { BuildEvolution } from "../patches/BuildEvolutionView";
 import { ChampionHistory } from "../patches/ChampionHistory";
 import { formatPercent, useLang, useT, type Lang } from "../i18n";
 import { useState } from "react";
-import { getChampion, getCounters, getSynergies, getTierList, type ChampionOverview, type Counters } from "../api";
+import { getChampion, getChampionHistory, getCounters, getSynergies, getTierList, type ChampionOverview, type Counters } from "../api";
+import { trendOf } from "../data/history";
+import { TrendSpark } from "../ui/TrendSpark";
 import { BuildSuggestion } from "../BuildSuggestion";
 import { Abilities, ChampionReference, ChampionTitle, StrengthsWeaknesses } from "../ChampionGuide";
 import { JournalNote, MatchupNotes } from "../Journal";
@@ -72,6 +74,9 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
   const [data] = useAsync("static", loadStatic);
   const bracket = useBracket();
   const [state, retry] = useAsync(`${queue}:${championId}:${position}:${bracket}`, () => getChampion(championId, position, queue));
+  const [history] = useAsync(`history:${championId}`, () => getChampionHistory(championId));
+  const rolePosition = state.status === "done" ? (state.value?.position ?? position) : position;
+  const trend = queue === RANKED && rolePosition && history.status === "done" ? trendOf(history.value, rolePosition, bracket) : null;
   const queueLabel = t(QUEUES.find((q) => q.id === queue)?.label ?? "");
   const champion = data.status === "done" ? data.value.champions.get(championId) : undefined;
   const version = data.status === "done" ? data.value.version : null;
@@ -103,6 +108,8 @@ export function ChampionPage({ championId, initialPosition = null, initialQueue 
               })}
               {" "}
               <DataBadge games={state.value.games} winRate={state.value.winRate} patches={state.value.patches} updatedAt={state.value.updatedAt} ranked source={t("Vizier crawler, dereceli maçlar")} />
+              {" "}
+              <TrendSpark trend={trend} />
             </p>
           )}
           <Tabs className="champion__queues" size="small" label={t("Oyun modu")} items={QUEUES.map((q) => ({ id: q.id, label: t(q.label) }))} value={queue} onChange={setQueue} />

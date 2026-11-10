@@ -29,7 +29,7 @@ export const OTHER_QUEUES_PER_DAY = 1;
  * Share of a kind's docs that differ from the last publish. Almost everything
  * moves with every game; a build history only changes when a patch closes.
  */
-export const VOLATILITY: Record<string, number> = { buildhistory: 0.1 };
+export const VOLATILITY: Record<string, number> = { buildhistory: 0.1, history: 1 / 6, historytier: 1 / 6 };
 
 /**
  * Every 4-hour publish sends Emerald+ ranked docs and at most one extra set:
