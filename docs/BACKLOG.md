@@ -420,6 +420,7 @@ Builds on: tier list data, 33.x brackets, 36.x stats, the search palette.
 - [x] 38.2 Column picker and saved views in settings, with three ready ones: lane bullies (gold diff at 15), late game (35+ win rate), ban targets. (d460159; column chips and named views in settings (statsColumns, statsViews) plus three ready views (Hat ezenler, Geç oyun, Yasak hedefleri); the board gains the 35+ minute win rate)
 - [x] 38.3 Compare up to three champions side by side across every stat and bracket, opened from the explorer or the champion page. (d460159; Compare page (?view=compare): up to three champions and roles, every stat in one rank and win rate across all ranks; opened from the explorer rows and the champion header)
 - [ ] 38.4 Intent searches for the explorer ("en yüksek winrate jungle", "lane bully top") through the 30.2 intent rules.
+<!-- claimed: auto/41-prepare-data 2026-11-10T05:10Z -->
 
 ## 39. Rising and falling
 
@@ -448,9 +449,13 @@ Builds on: `mode_players`, the ARAM, Mayhem and Arena docs. All-rank seeding bri
 Builds on: champ select (epic 1), Matchup Academy (24), the lab (23).
 
 - [ ] 41.1 Matchup page: lane gold and CS diff at 10 and 15 by bracket, and the matchup's win rate per game length bucket ("15. dakikaya kadar zor, sonra senin") when the data supports it.
+<!-- claimed: auto/41-prepare-data 2026-11-10T05:10Z -->
 - [ ] 41.2 Pick suggestions get a "senin rankında" reason line when bracket data changes the order compared with Emerald+.
+<!-- claimed: auto/41-prepare-data 2026-11-10T05:10Z -->
 - [ ] 41.3 Jungle paths from 36.2 in champ select: the player's jungler and the enemy jungler's most common first path, with games.
+<!-- claimed: auto/41-prepare-data 2026-11-10T05:10Z -->
 - [ ] 41.4 Item path tree (36.4) offered as an import choice in champ select ("en çok kazanan yol" or "en popüler").
+<!-- claimed: auto/41-prepare-data 2026-11-10T05:10Z -->
 
 ## 42. Night ideas (built in the owner's local session, 2026-11-10)
 
