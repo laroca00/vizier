@@ -426,21 +426,16 @@ Builds on: tier list data, 33.x brackets, 36.x stats, the search palette.
 
 Builds on: 36.7 history, the patch tracker, Home 2.0 cards.
 
-- [ ] 39.1 Movers: champions whose win rate or pick rate moved most within the patch (history plus the interval rule), per bracket. Home card and a tab on the tier list.
-<!-- claimed: auto/39-movers-modes 2026-11-10T04:25Z -->
-- [ ] 39.2 Patch impact: for each champion changed in the patch tracker's diff, win rate before and after with games once the new patch has enough data.
-<!-- claimed: auto/39-movers-modes 2026-11-10T04:25Z -->
-- [ ] 39.3 Pool notices: a quiet line on Home when a champion in the player's pool rose or fell clearly in their bracket.
-<!-- claimed: auto/39-movers-modes 2026-11-10T04:25Z -->
+- [x] 39.1 Movers: champions whose win rate or pick rate moved most within the patch (history plus the interval rule), per bracket. Home card and a tab on the tier list. (805bc47; movers within the patch from the daily history (early games against games added since, only non-overlapping intervals); switch on the Home card and tier list movers; Emerald+ only because history docs are Emerald+)
+- [x] 39.2 Patch impact: for each champion changed in the patch tracker's diff, win rate before and after with games once the new patch has enough data. (805bc47; patch tracker shows win rate before and after with both patches' games, only when both are solid (reads the overview's byPatch))
+- [x] 39.3 Pool notices: a quiet line on Home when a champion in the player's pool rose or fell clearly in their bracket. (805bc47; quiet pool lines on Home when a pick clearly rose or fell in the chosen rank, reusing the pool cards' request)
 
 ## 40. Modes with more data
 
 Builds on: `mode_players`, the ARAM, Mayhem and Arena docs. All-rank seeding brings far more mode players.
 
-- [ ] 40.1 Mode player pool sized for all ranks: raise `MODE_PLAYERS_MAX` within the call budget, spread checks across the seed groups, report mode games per day in coverage.
-<!-- claimed: auto/39-movers-modes 2026-11-10T04:25Z -->
-- [ ] 40.2 ARAM win rate by game length (36.1 for ARAM) on the ARAM champion page and tier list.
-<!-- claimed: auto/39-movers-modes 2026-11-10T04:25Z -->
+- [x] 40.1 Mode player pool sized for all ranks: raise `MODE_PLAYERS_MAX` within the call budget, spread checks across the seed groups, report mode games per day in coverage. (805bc47; mode players carry the tier group (local column rank_group), pool 12,000 shared per group, mode checks rotate over groups; coverage gains modeDays and modeGroups (About does not show them yet))
+- [x] 40.2 ARAM win rate by game length (36.1 for ARAM) on the ARAM champion page and tier list. (805bc47; ARAM length buckets rolled up, ARAM champion page panel and tier list tag (strong in short/long games) when intervals do not overlap)
 - [ ] 40.3 Arena item win rates per champion behind the existing `ARENA_ITEMS` switch; budget test updated.
 - [ ] 40.4 Mayhem augment pairs: the two augments that do best together on a champion (taken in the same game), top five per champion with games, behind `AUGMENTS`.
 
@@ -515,6 +510,7 @@ Everything up to 0.8.6 is shipped (2026-11-10): D1 migrations through 0017 appli
 - More from every game (36.2–36.5): the crawler restart adds two local columns to `participant_stats` (`jungle_path`, `objectives`) on start, nothing to run by hand. Jungle routes, first-objective rates, the item path tree, starting item options and boots and first-item timing fill from games saved after the restart (they need timelines or, for objectives, the match's team data), so the champion page panels appear after a day or two. The build and overview docs gain fields once, then change only when counts do. Worker deploy is not needed for these (docs are served as stored), but the desktop release should wait until the first docs with the new fields are published.
 - History, quality checks and frequent players (36.6, 36.7, 37.1–37.3), after the steps above: the crawler restart adds local columns (`participant_stats.player_key`, `crawled_matches.dropped` and `role_fixed`) and tables (`player_champs`, `history_points`) by itself. The "Çok oynayanlar" block fills as ranked games are rolled up (each player needs 5 games on a champion in a patch). History starts with the first rollup after the restart and gets one point a day. In the log, watch the `publish` line for `HELD:`: it means the sanity checks kept a bracket's last docs and says why; right after the upgrade counts from before games were counted per bracket make the game-count checks skip, not fail. Worker deploy before the desktop release: the app reads `/v1/history/...` (empty answers until the first points exist) and the `mains`, `dropped` and `roleFixed` fields. D1 writes: history docs change once a day (about 350 writes a day); the budget test projects 69,708 of 70,000, so there is almost no slack left: watch D1's rows written for two days and lower `PUBLISHES_PER_DAY` if it passes 90,000.
 - Stats explorer and board (37.4–38.3), after the steps above: the crawler restart adds local columns `participant_stats.kills` and `assists`; KDA, CS per minute and length fill from games rolled up after the restart (a champion needs 20 of them), and the 35+ minute win rate and gold lead use counts that already exist. New docs `statsboard:420:<role>` per bracket (5 per bracket, about 110 row writes a day): the budget test now projects 69,818 of 70,000, so check D1's rows written for two days and lower `PUBLISHES_PER_DAY` if it climbs past 90,000. Worker deploy before the desktop release for `/v1/stats/board/:position` and the `byPatch` fields; an app released earlier shows the explorer with win, pick and ban rates only.
+- Movers, mode pool and ARAM lengths (39.1–40.2), after the steps above: the crawler restart adds the local column `mode_players.rank_group` by itself; existing mode players keep no group and share one slot until they are replaced. ARAM game lengths count only for games rolled up after the restart, so the ARAM length panel fills over a few days. The ARAM tier list and champion overview docs change once (they gain length fields) in the daily other-queues publish. Worker deploy is not needed for these; the desktop release can go with the next one. The mode pool cap is now 12,000 players (about 1,700 per group); the call count per run is unchanged.
 - Mayhem queue id: the probe on euw1 found no 2400/2401/2403/2405/2410/2450 games among Challenger players. Run it with the Riot ID of someone who plays Mayhem (`probeQueues.ts euw1 "Name#TAG"`), then trim `MAYHEM_QUEUES`.
 - Check the lobby reading (epic 21) once against a live client.
 - Optional: set `ARENA_ITEMS=off` on the Worker to hide Arena item stats; they are on by default.
